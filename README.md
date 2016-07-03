@@ -1,4 +1,4 @@
-* Intro
+# Intro
 
   DataRes is a .NET library that lets you write data manipulation code
   the easy, inefficient way and have it executed like you wrote it the
@@ -14,6 +14,9 @@
   * How DataRes works (no magic, guaranteed)
   * How you can use DataRes in your next project
 
-* Motivation
-* How it works
-* How you can use it
+# Motivation
+
+
+
+# How it works
+# How you can use it
