@@ -30,7 +30,15 @@ Or maybe this:
 
 Ok, I promise to lay off the gifs. The point is, these are examples of
 the contortions we put our code through in order to avoid performance
-pitfalls. The code we want to write to bake a cake looks like this:
+pitfalls. The code we want to write to bake a cake --
+
+> Please, no. This is going to be like those `public class Cat : Animal` examples of object oriented programming in CS101, right?
+> Can we not do this?
+
+Yeah, it is going to be a bit like that. I'm hoping that using an
+arbitrary, unrealistic example like cakes will keep us from getting
+bogged down in the details for now, though. We'll do a real world
+example by the end of this. Anyway, here's how we'd bake a cake:
 
 ```csharp
 
@@ -145,7 +153,7 @@ the recipe, don't forget to multiply by the `count` of cakes!
 
 Also, since we didn't foresee this more complex version being
 necessary, we wasted time writing the simple first version, which had
-to be almost completely rewritten.
+to be almost completely replaced.
 
 Finally, our efforts to optimize this function are still limited to
 its scope. What do I mean by that? Well, in order to optimize these
@@ -156,8 +164,10 @@ No matter how well we wrote that method, we couldn't get the speed
 improvements we needed, because that method has blinders on. It only
 sees its own job; it can't know about all the other cakes that need to
 be made. It's a factory worker on an assembly line, doing one thing
-and doing it as well as it can (doesn't that sound like an ideal we're
-supposed to strive for in software architecture?).
+and doing it as well as it can.
+
+(wait, doesn't that sound like an ideal we're supposed to strive for
+in software architecture?)
 
 In the new version, we moved the logic up to a level at which we know
 how many cakes need to be made. You might say it's not a factory
@@ -173,6 +183,156 @@ we're making 200 cakes, but it seems pretty dumb when we need a cake,
 a steak, and a bowl of cereal -- even though those tasks could likely
 share resources like opening the fridge, getting the milk out, and so
 on.
+
+> It doesn't seem so bad to me.
+
+Ok, fair enough. So far, it seems manageable. Let's take a look at two
+things that make this type of optimization painful.
+
+## It doesn't compose well
+
+Suppose we've got a higher level method to throw a birthday
+celebration for somebody.
+
+```csharp
+
+public void Birthday(Person jollyGoodFellow)
+{
+    InstallDecorations(jollyGoodFellow.Home);
+    var cake = BakeCake();
+    for (var i = 0; i < jollyGoodFellow.Age; i++)
+    {
+        cake.AddCandle();
+    }
+    cake.LightCandles();
+    SingHappyBirthdayTo(jollyGoodFellow);
+    jollyGoodFellow.BlowCandles(cake);
+    var slice = cake.CutSlice();
+    jollyGoodFellow.Eat(slice);
+}
+
+```
+
+Seem OK? What if we have multiple people with birthdays?
+
+```csharp
+
+foreach (var person in people)
+{
+    Birthday(person);
+}
+
+```
+
+We might be baking quite a few cakes, but we're not taking advantage
+of all that code we wrote to make cake-baking efficient. To do so,
+we'd have to write something like this:
+
+```csharp
+
+public void Birthdays(List<Person> jollyGoodFellows)
+{
+    // Bake enough cakes for everybody.
+    var cakes = BakeCakes(jollyGoodFellows.Count);
+    var cakeIndex = 0;
+    // Have a birthday for each person, giving them a cake from our pre-baked batch.
+    foreach (var jollyGoodFellow in jollyGoodFellows)
+    {
+        InstallDecorations(jollyGoodFellow.Home);
+        var cake = cakes[cakeIndex++];
+        for (var i = 0; i < jollyGoodFellow.Age; i++)
+        {
+           cake.AddCandle();
+        }
+        cake.LightCandles();
+        SingHappyBirthdayTo(jollyGoodFellow);
+        jollyGoodFellow.BlowCandles(cake);
+        var slice = cake.CutSlice();
+        jollyGoodFellow.Eat(slice);
+    }
+}
+
+```
+
+And of course, that's assuming that only cake-baking can be batched.
+If we also have more efficient bulk operations for
+`InstallDecorations`, `LightCandles`, and so on, this could get even
+uglier. The point is, the effort required to perform tasks in batches
+keeps getting shoved upward to the caller, making every layer more
+complicated, up until the point where performance is sufficient and we
+can skip the optimization effort.
+
+Where that point is depends on your use cases and requirements, which
+we all know are established at the beginning of each project and
+*never change thereafter*.
+
+## It makes some simple changes annoyingly difficult
+
+Customers are getting bored of all these plain cakes with chocolate frosting.
+New requirements have come in. For each cake, users should be able to specify:
+
+* Whether to include strawberry puree in the batter
+* The flavor of frosting to use (chocolate or vanilla)
+
+The frontend team will pass us this info as a `CakeParameters` object:
+
+```csharp
+public class CakeParameters
+{
+    public Frosting Frosting { get; set; }
+    public bool Strawberry { get; set; }
+}
+```
+
+In our original, one-cake-at-a-time code, this is trivial to handle:
+
+```csharp
+public Cake BakeCake(CakeParameters parameters)
+{
+    Oven.PreheatOven(degreesF: 350);
+
+    var bowl = new Bowl();
+    using (var cupboard = Kitchen.OpenCupboard())
+    using (var fridge = Kitchen.OpenFridge())
+    {
+        var sugar = cupboard.GetSugar(cups: 1);
+        var butter = fridge.GetButter(cups: 0.5);
+
+        bowl.Mix(sugar, butter);
+
+        var eggs = fridge.GetEggs(2);
+        var milk = fridge.GetMilk(cups: 0.5);
+        var flour = cupboard.GetFlour(cups: 1.5);
+        var bakingPowder = cupboard.GetBakingPowder(tsp: 1.75);
+
+        bowl.Mix(eggs, milk, flour, bakingPowder);
+
+        // Add strawberry puree to the batter if desired.
+        if (parameters.Strawberry)
+        {
+            var puree = Mixer.Puree(fridge.GetStrawBerries(6));
+            bowl.Mix(puree);
+        }
+    }
+
+    var pan = new Pan();
+    bowl.PourInto(pan);
+    var baked = Oven.BakePan(TimeSpan.FromMinutes(30), pan);
+    using (var cupboard = Kitchen.OpenCupboard())
+    {
+        // Use the desired flavor of frosting.
+        var frosting = cupboard.GetFrosting(parameters.Frosting);
+        frosting.ApplyTo(baked);
+    }
+    return new Cake(baked);
+}
+```
+
+But in the bulk version... horror of horrors! Mixing one big bowl of
+batter ain't gonna cut it anymore -- not if some cakes need
+strawberries and others don't.
+
+
 
 [cheetos]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/cheetos.gif
 
