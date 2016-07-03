@@ -5,7 +5,7 @@
   hard, efficient way.
 
   It's implemented in C# and can be used from any .NET language.
-  However, it's especially well-suited usage from F#.
+  However, it's especially well-suited to usage from F#.
 
   This document introduces DataRes to you, a curious C# developer.
   By reading it, you'll learn:
@@ -50,17 +50,8 @@ public Cake BakeCake()
     using (var cupboard = Kitchen.OpenCupboard())
     using (var fridge = Kitchen.OpenFridge())
     {
-        var sugar = cupboard.GetSugar(cups: 1);
-        var butter = fridge.GetButter(cups: 0.5);
-
-        bowl.Mix(sugar, butter);
-
-        var eggs = fridge.GetEggs(2);
-        var milk = fridge.GetMilk(cups: 0.5);
-        var flour = cupboard.GetFlour(cups: 1.5);
-        var bakingPowder = cupboard.GetBakingPowder(tsp: 1.75);
-
-        bowl.Mix(eggs, milk, flour, bakingPowder);
+        bowl.Mix(cupboard.GetCakeIngredients(forCakes: 1));
+        bowl.Mix(fridge.GetCakeIngredients(forCakes: 1));
     }
 
     var pan = new Pan();
@@ -104,17 +95,8 @@ public List<Cake> BakeCakes(int count)
     using (var cupboard = Kitchen.OpenCupboard())
     using (var fridge = Kitchen.OpenFridge())
     {
-        var sugar = cupboard.GetSugar(cups: 1 * count);
-        var butter = fridge.GetButter(cups: 0.5 * count);
-
-        bowl.Mix(sugar, butter);
-
-        var eggs = fridge.GetEggs(2 * count);
-        var milk = fridge.GetMilk(cups: 0.5 * count);
-        var flour = cupboard.GetFlour(cups: 1.5 * count);
-        var bakingPowder = cupboard.GetBakingPowder(tsp: 1.75 * count);
-
-        bowl.Mix(eggs, milk, flour, bakingPowder);
+        bowl.Mix(cupboard.GetCakeIngredients(forCakes: count));
+        bowl.Mix(fridge.GetCakeIngredients(forCakes: count));
     }
     // We can bake 4 pans at a time in our big oven.
     const int batchSize = 4;
@@ -147,9 +129,7 @@ public List<Cake> BakeCakes(int count)
 
 We solved a performance problem at a cost to maintainability. The
 simple steps required to bake a cake haven't changed, but they're a
-little harder to figure out from reading the new code. There are also
-traps for future changes: if you want to add some vanilla extract to
-the recipe, don't forget to multiply by the `count` of cakes!
+little harder to figure out from reading the new code.
 
 Also, since we didn't foresee this more complex version being
 necessary, we wasted time writing the simple first version, which had
@@ -277,10 +257,15 @@ New requirements have come in. For each cake, users should be able to specify:
 The frontend team will pass us this info as a `CakeParameters` object:
 
 ```csharp
+public enum BatterType
+{
+    Plain,
+    Strawberry,
+}
 public class CakeParameters
 {
     public Frosting Frosting { get; set; }
-    public bool Strawberry { get; set; }
+    public BatterType Batter { get; set; }
 }
 ```
 
@@ -295,24 +280,15 @@ public Cake BakeCake(CakeParameters parameters)
     using (var cupboard = Kitchen.OpenCupboard())
     using (var fridge = Kitchen.OpenFridge())
     {
-        var sugar = cupboard.GetSugar(cups: 1);
-        var butter = fridge.GetButter(cups: 0.5);
+        bowl.Mix(cupboard.GetCakeIngredients(forCakes: 1));
+        bowl.Mix(fridge.GetCakeIngredients(forCakes: 1));
 
-        bowl.Mix(sugar, butter);
-
-        var eggs = fridge.GetEggs(2);
-        var milk = fridge.GetMilk(cups: 0.5);
-        var flour = cupboard.GetFlour(cups: 1.5);
-        var bakingPowder = cupboard.GetBakingPowder(tsp: 1.75);
-
-        bowl.Mix(eggs, milk, flour, bakingPowder);
-
-        // Add strawberry puree to the batter if desired.
-        if (parameters.Strawberry)
-        {
-            var puree = Mixer.Puree(fridge.GetStrawBerries(6));
-            bowl.Mix(puree);
-        }
+        // Add strawberry puree to the batter if desired.         // NEW CODE
+        if (parameters.Batter == BatterType.Strawberry)           // ...
+        {                                                         // ...
+            var puree = Mixer.Puree(fridge.GetStrawberries(6));   // ...
+            bowl.Mix(puree);                                      // ...
+        }                                                         // ...
     }
 
     var pan = new Pan();
@@ -320,8 +296,8 @@ public Cake BakeCake(CakeParameters parameters)
     var baked = Oven.BakePan(TimeSpan.FromMinutes(30), pan);
     using (var cupboard = Kitchen.OpenCupboard())
     {
-        // Use the desired flavor of frosting.
-        var frosting = cupboard.GetFrosting(parameters.Frosting);
+        // Use the desired flavor of frosting.                     // NEW CODE
+        var frosting = cupboard.GetFrosting(parameters.Frosting);  // ...
         frosting.ApplyTo(baked);
     }
     return new Cake(baked);
@@ -330,8 +306,72 @@ public Cake BakeCake(CakeParameters parameters)
 
 But in the bulk version... horror of horrors! Mixing one big bowl of
 batter ain't gonna cut it anymore -- not if some cakes need
-strawberries and others don't.
+strawberries and others don't. We have to start grouping by batter and
+frosting type to batch things effectively.
 
+```csharp
+
+private List<Cake> BakeCakes(List<CakeParameters> parameters)
+{
+    Oven.PreheatOven(degreesF: 350);
+
+    // Mix separate bowls for each type of batter.
+
+    Dictionary<BatterType, Bowl> batterBowls;
+    using (var cupboard = Kitchen.OpenCupboard())
+    using (var fridge = Kitchen.OpenFridge())
+    {
+        var batterGroups = parameters.GroupBy(p => p.Batter);
+        batterBowls =
+            batterGroups.Select(group =>
+            {
+                var bowl = new Bowl();
+                bowl.Mix(cupboard.GetCakeIngredients(forCakes: count);
+                bowl.Mix(fridge.GetCakeIngredients(forCakes: count);
+                if (group.Key == BatterType.Strawberry)
+                {
+                    var puree = Mixer.Puree(fridge.GetStrawberries(6));
+                    bowl.Mix(puree);
+                }
+                return new { Batter = group.Key, Bowl = bowl };
+            })
+            .ToDictionary(g => g.Batter);
+    }
+
+    // We can bake 4 pans at a time in our big oven.
+    const int batchSize = 4;
+    var allBaked = new List<BakedBatter>();
+    for (var i = 0; i < count; i += batchSize)
+    {
+        var batchPans = new List<Pan>();
+        // Up to 4 pans, unless that would overrun the overall count...
+        for (var j = i; j < count && j < i + batchSize; j++)
+        {
+            var pan = new Pan();
+            var bowl = bowls[parameters[j].Batter]; // Look up the bowl by the batter type.
+            bowl.PourInto(pan);
+            batchPans.Add(pan);
+        }
+        allBaked.AddRange(Oven.BakePans(TimeSpan.FromMinutes(30), batchPans));
+    }
+    // Frost all our cakes -- we only need to get the frosting once for this.
+    using (var cupboard = Kitchen.OpenCupboard())
+    {
+        var frostings =
+            parameters
+                .GroupBy(p => p.Frosting)
+                .ToDictionary(g => g.Key, g => cupboard.GetFrosting(g.Key));
+        for (var i = 0; i < parameters.Count; i++)
+        {
+            var baked = allBaked[i];
+            var pars = parameters[i];
+            frosting[pars.Frosting].ApplyTo(baked);
+        }
+    }
+    return allBaked.Select(b => new Cake(b)).ToList();
+}
+
+```
 
 
 [cheetos]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/cheetos.gif
