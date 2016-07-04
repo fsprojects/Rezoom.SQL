@@ -414,7 +414,7 @@ And if we run it in a `foreach` loop, we go through all the steps in order _n_ t
 
 The inefficiency is clear. What we want is to be able to execute it more like this:
 
-[linearexecsingle]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/linear-exec-single.gv.svg
-[linearexecmulti]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/linear-exec-multi.gv.svg
+[linearexecsingle]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/linear-exec-single.gv.png
+[linearexecmulti]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/linear-exec-multi.gv.png
 
 # How you can use it
