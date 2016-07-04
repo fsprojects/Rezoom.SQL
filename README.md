@@ -1,4 +1,4 @@
-# Intro
+# What is it?
 
   DataRes is a .NET library that lets you write data manipulation code
   the easy, inefficient way and have it executed like you wrote it the
@@ -14,7 +14,7 @@
   * How DataRes works (no magic, guaranteed)
   * How you can use DataRes in your next project
 
-# Motivation
+# What problem does it solve?
 
 Has *this* ever happened to *you*?
 
@@ -46,6 +46,7 @@ public Cake BakeCake()
 {
     Oven.PreheatOven(degreesF: 350);
 
+    // Mix up the batter
     var bowl = new Bowl();
     using (var cupboard = Kitchen.OpenCupboard())
     using (var fridge = Kitchen.OpenFridge())
@@ -54,19 +55,27 @@ public Cake BakeCake()
         bowl.Mix(fridge.GetCakeIngredients(forCakes: 1));
     }
 
+    // Put the batter in a pan
     var pan = new Pan();
     bowl.PourInto(pan);
+
+    // Bake it
     var baked = Oven.BakePan(TimeSpan.FromMinutes(30), pan);
+
+    // Frost it
     using (var cupboard = Kitchen.OpenCupboard())
     {
         var frosting = cupboard.GetFrosting(Frosting.Chocolate);
         frosting.ApplyTo(baked);
     }
+
+    // And we're done!
     return new Cake(baked);
 }
 
 public List<Cake> BakeCakes(int count)
 {
+    // We'll bake as many cakes as you need
     return Enumerable.Range(0, count)
         .Select(_ => BakeCake())
         .ToList();
@@ -98,6 +107,7 @@ public List<Cake> BakeCakes(int count)
         bowl.Mix(cupboard.GetCakeIngredients(forCakes: count));
         bowl.Mix(fridge.GetCakeIngredients(forCakes: count));
     }
+
     // We can bake 4 pans at a time in our big oven.
     const int batchSize = 4;
     var allBaked = new List<BakedBatter>();
@@ -113,6 +123,7 @@ public List<Cake> BakeCakes(int count)
         }
         allBaked.AddRange(Oven.BakePans(TimeSpan.FromMinutes(30), batchPans));
     }
+
     // Frost all our cakes -- we only need to get the frosting once for this.
     using (var cupboard = Kitchen.OpenCupboard())
     {
@@ -169,7 +180,7 @@ on.
 Ok, fair enough. So far, it seems manageable. Let's take a look at two
 things that make this type of optimization painful.
 
-## It doesn't compose well
+## Manual batching doesn't compose well
 
 Suppose we've got a higher level method to throw a birthday
 celebration for somebody.
@@ -180,12 +191,15 @@ public void Birthday(Person jollyGoodFellow)
 {
     InstallDecorations(jollyGoodFellow.Home);
     var cake = BakeCake();
+    // Add enough candles for your age
     for (var i = 0; i < jollyGoodFellow.Age; i++)
     {
         cake.AddCandle();
     }
     cake.LightCandles();
+
     SingHappyBirthdayTo(jollyGoodFellow);
+
     jollyGoodFellow.BlowCandles(cake);
     var slice = cake.CutSlice();
     jollyGoodFellow.Eat(slice);
@@ -215,6 +229,7 @@ public void Birthdays(List<Person> jollyGoodFellows)
     // Bake enough cakes for everybody.
     var cakes = BakeCakes(jollyGoodFellows.Count);
     var cakeIndex = 0;
+
     // Have a birthday for each person, giving them a cake from our pre-baked batch.
     foreach (var jollyGoodFellow in jollyGoodFellows)
     {
@@ -225,7 +240,9 @@ public void Birthdays(List<Person> jollyGoodFellows)
            cake.AddCandle();
         }
         cake.LightCandles();
+
         SingHappyBirthdayTo(jollyGoodFellow);
+
         jollyGoodFellow.BlowCandles(cake);
         var slice = cake.CutSlice();
         jollyGoodFellow.Eat(slice);
@@ -246,7 +263,7 @@ Where that point is depends on your use cases and requirements, which
 we all know are established at the beginning of each project and
 *never change thereafter*.
 
-## It makes some simple changes annoyingly difficult
+## Manual batching makes simple changes annoyingly difficult
 
 Customers are getting bored of all these plain cakes with chocolate frosting.
 New requirements have come in. For each cake, users should be able to specify:
@@ -373,6 +390,8 @@ private List<Cake> BakeCakes(List<CakeParameters> parameters)
 
 ```
 
+So, it seems that we are faced with a choice between simple inefficient code, and complex efficient code.
+Worse, if we choose the latter, the complexity will bubble up through the layers of our application.
 
 [cheetos]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/cheetos.gif
 
@@ -380,6 +399,22 @@ private List<Cake> BakeCakes(List<CakeParameters> parameters)
 
 [stampdocument]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/stamp-document.gif
 
+# How does DataRes solve the problem?
 
-# How it works
+Let's return to the code that we want to write: the simple code that
+works with one cake (or document, or widget, or account) at a time.
+
+What does this code actually do?
+
+![Linear execution with spots where we make round-trips to the cupboard, fridge, etc.][linearexecsingle]
+
+And if we run it in a `foreach` loop, we go through all the steps in order _n_ times.
+
+![Linear execution repeated three times][linearexecmulti]
+
+The inefficiency is clear. What we want is to be able to execute it more like this:
+
+[linearexecsingle]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/linear-exec-single.gv.svg
+[linearexecmulti]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/linear-exec-multi.gv.svg
+
 # How you can use it
