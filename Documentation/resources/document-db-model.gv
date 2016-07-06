@@ -9,6 +9,7 @@ digraph documentdb {
 <TR><TD>Id</TD><TD PORT="id">int</TD></TR>
 <TR><TD>Name</TD><TD>string</TD></TR>
 <TR><TD>Email</TD><TD>string</TD></TR>
+<TR><TD>IsApprover</TD><TD>bool</TD></TR>
 <TR><TD>...</TD><TD>etc</TD></TR>
 </TABLE>
 >]

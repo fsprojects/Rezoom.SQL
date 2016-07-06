@@ -76,12 +76,23 @@ We'll be keeping track of all the times a document is stamped, and who
 did the stamping. Here's the database model we'll be using:
 
 ![Document has many Stamps which have a User][documentdbmodel]
+**Figure 1:** *The database model for the document stamping example
 
-And here's the interface we're dealing with for accessing the database:
+`Document`s have many `Stamp`s. Each document points to its most
+recent `Stamp` via `LatestStampId`. Each `Stamp` is associated with
+the `User` who created it. `User`s have an `IsApprover` property which
+marks whether they are allowed to stamp a document as approved.
+
+We're tasked with writing a method `void Stamp(int stampingUserId, int
+documentId)`, which will contain the logic to add a stamp. Here's the
+interface we're dealing with for accessing the database:
 
 ```csharp
-public interface IDocumentDatabase
+public interface IDatabase
 {
+    // Get a user by their ID.
+    User GetUser(int userId);
+
     // Get one document by its ID.
     Document GetDocument(int documentId);
     // Get multiple documents by their IDs.
@@ -96,6 +107,7 @@ public interface IDocumentDatabase
     void UpdateLatestStamp(int documentId, int latestStampId);
     // Bulk version of above; takes a list of documentId/latestStampId pairs.
     void UpdateLatestsStamps(List<KeyValuePair<int, int>> idPairs);
+}
 ```
 
 [cheetos]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/cheetos.gif
