@@ -60,11 +60,11 @@ problem.
 
 Suppose we're working on an application for collaboratively authoring
 and organizing documents. These are **Very Important Documents**, so
-they must go through an approval process. Users can stamp documents
-with one of three approval states:
+they must go through an approval process. Users can *stamp* documents
+with one of three states:
 
 ```csharp
-public enum ApprovalState
+public enum StampState
 {
     Draft,
     ReadyForApproval,
@@ -72,20 +72,18 @@ public enum ApprovalState
 }
 ```
 
-We'll be keeping track of all the times a document is stamped, and who
-did the stamping. Here's the database model we'll be using:
+The stamp state of a document isn't just a field that we update. We
+need to keep track of all the times a document is stamped, and who did
+the stamping. Here's the database model we'll be using:
 
-![Document has many Stamps which have a User][documentdbmodel]
-**Figure 1:** *The database model for the document stamping example
+![Document has many Stamps which each have a User][documentdbmodel]
 
-`Document`s have many `Stamp`s. Each document points to its most
-recent `Stamp` via `LatestStampId`. Each `Stamp` is associated with
-the `User` who created it. `User`s have an `IsApprover` property which
-marks whether they are allowed to stamp a document as approved.
+**Figure 1:** *The database model for the document stamping example*
 
-We're tasked with writing a method `void Stamp(int stampingUserId, int
-documentId)`, which will contain the logic to add a stamp. Here's the
-interface we're dealing with for accessing the database:
+We're tasked with writing a method `void Approve(int approvingUserId,
+int documentId)`, which will contain the logic to add an `Approved`
+stamp. Here's the interface this method can use to access the
+database.
 
 ```csharp
 public interface IDatabase
@@ -93,22 +91,114 @@ public interface IDatabase
     // Get a user by their ID.
     User GetUser(int userId);
 
-    // Get one document by its ID.
-    Document GetDocument(int documentId);
-    // Get multiple documents by their IDs.
-    List<Document> GetDocuments(List<int> documentIds);
-
     // Insert a new stamp and return its ID.
     int InsertStamp(Stamp stamp);
-    // Insert multiple stamps and return their IDs.
-    List<int> InsertStamps(List<Stamp> stamps);
 
     // Update the `LatestStampId` pointer of the document in question.
     void UpdateLatestStamp(int documentId, int latestStampId);
-    // Bulk version of above; takes a list of documentId/latestStampId pairs.
-    void UpdateLatestsStamps(List<KeyValuePair<int, int>> idPairs);
 }
 ```
+
+And here's a first pass at the method's implementation.
+
+```csharp
+
+public void Approve(int approvingUserId, int documentId)
+{
+    // First, check the user's permissions.
+    var user = Database.GetUser(approvingUserId);
+    if (!user.IsApprover)
+    {
+        throw new SecurityException("User is not allowed to approve!");
+    }
+
+    // Next, create and insert the new stamp.
+    var stampId = Database.InsertStamp(new Stamp
+    {
+        DocumentId = documentId,
+        StampedByUserId = stampingUserId,
+        StampedUtc = DateTime.UtcNow,
+        State = StampState.Approved,
+    });
+
+    // Finally, update the document's `LatestStampId` to
+    // point to the new stamp.
+    Database.UpdateLatestStamp(documentId, stampId);
+}
+
+```
+
+This is very clear and straightforward, and it works well for a while.
+Then a new feature is added to the UI. Users can select multiple
+documents and stamp them all as approved with a single click.
+Initially, the logic is implemented by simply calling our method in a
+loop, like this:
+
+```csharp
+foreach (var documentId in selectedDocumentIds)
+{
+    Approve(approvingUserId, documentId);
+}
+```
+
+But of course, the accursed users select and stamp hundreds of
+documents at a time, and there's a noticable lag when stamping those
+large selections. How can we make this faster?
+
+We can't get significant improvements in our little method's
+performance without changing the interface. Perhaps we could add
+caching for `Database.GetUser(stampingUserId)`, but for the insert and
+update we're still going to be making two round trips to the database
+for every document being approved.
+
+To make fewer round trips, we could extend our database interface to
+support doing those actions in bulk.
+
+```csharp
+public interface IBulkDatabase : IDatabase
+{
+    // Insert multiple stamps and return their IDs.
+    List<int> InsertStamps(IEnumerable<Stamp> stamps);
+
+    // Update the latest stamps of multiple documents.
+    // Takes a set of DocumentId/LatestStampId pairs.
+    void UpdateLatestsStamps(IEnumerable<KeyValuePair<int, int>> idPairs);
+}
+```
+
+Now we can rewrite the approve method to work efficiently in bulk,
+too.
+
+```csharp
+
+public void Approve(int approvingUserId, List<int> documentIds)
+{
+    // First, check the user's permissions.
+    var user = Database.GetUser(approvingUserId);
+    if (!user.IsApprover)
+    {
+        throw new SecurityException("User is not allowed to approve!");
+    }
+
+    // Next, create and insert new stamps for all the documents.
+    var stamps = documentIds.Select(documentId => new Stamp
+    {
+        DocumentId = documentId,
+        StampedByUserId = stampingUserId,
+        StampedUtc = DateTime.UtcNow,
+        State = StampState.Approved,
+    });
+    var stampIds = Database.InsertStamps(stamps);
+
+    // Finally, update all the documents to point at the new stamps.
+    var documentStampPairs = documentIds
+        .Select((documentId, i) =>
+            new KeyValuePair<int, int>(documentId, stampIds[i]));
+    Database.UpdateLatestsStamps(documentStampPairs);
+}
+
+```
+
 
 [cheetos]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/cheetos.gif
 
