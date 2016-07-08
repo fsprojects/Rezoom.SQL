@@ -55,13 +55,13 @@ results.
 public Foo Combobulate(Bar bar);
 ```
 
-* ... becomes ... *
+*... becomes ...*
 
 ```csharp
 public List<Foo> Combobulate(List<Bar> bars);
 ```
 
-* ... or perhaps ... *
+*... or perhaps ...*
 
 ```csharp
 public Dictionary<Bar, Foo> Combobulate(List<Bar> bars);
@@ -76,6 +76,17 @@ various intermediate values along the way.
 It also composes poorly, since for the method's caller to make ideal
 use of it, they must also expose a batch API (and go through the same
 contortions).
+
+# How does DataRes solve the problem?
+
+The code we would like to write works with one entity at a time. It
+can't batch its expensive operations because it doesn't know that
+there are other entities being worked on in the same `for` loop at a
+higher layer of your application.
+
+
+
+
 
 [cheetos]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/cheetos.gif
 
