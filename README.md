@@ -28,7 +28,7 @@ This is similar in effect to Haskell's Haxl.
 
   * Computation expression builders `datatask` and `dataseq`. These
     are by far the best way to write `IDataTask<T>`s and
-    `IDataEnumerable<T>s`.
+    `IDataEnumerable<T>`s.
 
 * Test library Data.Resumption.Test
 
