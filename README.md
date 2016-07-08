@@ -1,94 +1,84 @@
-# What is it?
+# Work in progress
 
-  DataRes is a .NET library that lets you write data manipulation code
-  the easy, inefficient way and have it executed like you wrote it the
-  hard, efficient way.
+This is a library implementing a resumption monad for .NET, which
+allows for the following things to happen:
 
-  It's implemented in C# and can be used from any .NET language.
-  However, it's especially well-suited to usage from F#.
+* Requests to the same data source that don't depend on each other can be automatically batched into a single round-trip (or equivalent expensive operation).
 
-  This document introduces DataRes to you, a curious C# developer.
-  By reading it, you'll learn:
+* Idempotent requests for the same data (e.g. current user) in the same execution context (e.g. web API request) can be automatically cached and de-duplicated.
 
-  * The motivation behind DataRes
-  * How DataRes works (no magic, guaranteed)
-  * How you can use DataRes in your next project
+This is similar in effect to Haskell's Haxl.
 
-# What problem does it solve?
+## What's done so far
 
-Has *this* ever happened to *you*?
+* Core library Data.Resumption
 
-![Infomercial disaster][cheetos]
+  * The fundamental types `IDataTask<T>` and `IDataEnumerable<T>`.
 
-Wait, no, sorry. Has **this** ever happened to **you**?
+  * Operations like monadic bind, apply, map, etc. on those types.
 
-![Changing a method that returned a document by its ID to return multiple documents by multiple IDs][bulkifymethod]
+  * `ExecutionContext` for running `IDataTask<T>`s as `Task<T>`s with
+    all the caching/deduplication goodness.
 
-Ok, I promise to lay off the gifs. The point is, these are examples of
-the contortions we put our code through in order to avoid performance
-pitfalls. There are many situations in programming where it is better
-to do things in **batches** rather than **one at a time**. And while
-we strive not to prematurely optimize, the performance difference here
-is so great that it's often unacceptable to do things the slow way.
+  * Mostly XML-commented, but no "big picture" documentation yet.
 
-Here are some familiar cases where this is true:
+* F# library Data.Resumption.Workflows
 
-* Better to make one HTTP API request for answers to 100 questions
-  than 100 HTTP requests for one question apiece.
+  * F# idiomatic wrappers around the extension methods in Data.Resumption.
 
-* Better to make one database call for 100 rows than 100 database
-  calls for 1 row apiece.
+  * Computation expression builders `datatask` and `dataseq`. These
+    are by far the best way to write `IDataTask<T>`s and
+    `IDataEnumerable<T>s`.
 
-* Better to open a file once to write 1000 lines to it, than to open
-  it 1000 times to append one line at a time.
+* Test library Data.Resumption.Test
 
-* Better to load required information about a user once for 100
-  actions that user will undertake, than to load it redundantly for
-  each action.
+  * Unit tests against a hypothetical data source that just echos strings.
 
-As the animations above illustrated, a common way to handle batching
-is to do it explicitly. We can write methods that take a list of
-`Foo`s instead of a single `Foo`, and return a list or dictionary of
-results.
+  * Tests assert that batching, caching, dedup work as intended, and
+    that exception handling works in various scenarios.
 
-```csharp
-public Foo Combobulate(Bar bar);
-```
+  * Very few tests so far. Contributions in this area would of course
+    be welcomed, even in this early stage of the project.
 
-*... becomes ...*
+* Example integration: Data.Resumption.IPGeo
 
-```csharp
-public List<Foo> Combobulate(List<Bar> bars);
-```
+  * C# library demonstrating how to integrate an existing API
+    (ip-api.com) with DataRes.
 
-*... or perhaps ...*
+* Example integration test: Data.Resumption.IPGeo.Test
 
-```csharp
-public Dictionary<Bar, Foo> Combobulate(List<Bar> bars);
-```
+  * Demonstrates how the example integration can be used.
 
-However, the code implementing these batch methods is more error-prone
-and harder to follow, often obscuring the simple sequence of steps
-that we're trying to perform on each `Bar`. The method will be
-sprinkled with extra code to correlate the `Foo`s to the `Bar`s and
-various intermediate values along the way.
+* Example integration: Data.Resumption.EF
 
-It also composes poorly, since for the method's caller to make ideal
-use of it, they must also expose a batch API (and go through the same
-contortions).
+  * C# library demonstrating how to integrate with Entity Framework.
 
-# How does DataRes solve the problem?
+  * Uses EntityFramework.Extended to support batching queries.
 
-The code we would like to write works with one entity at a time. It
-can't batch its expensive operations because it doesn't know that
-there are other entities being worked on in the same `for` loop at a
-higher layer of your application.
+## What's still to come
 
+* SQL integration with a micro-ORM
 
+  * Should be comparable to Dapper/OrmLite/pals but work with DataRes
+    for batching.
 
+* Documentation
 
+  * A real README.
 
-[cheetos]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/cheetos.gif
+  * A long-form blog post working through a real world example.
 
-[bulkifymethod]: https://raw.githubusercontent.com/rspeele/Data.Resumption/master/Documentation/resources/add-list-method.gif
+  * API reference.
 
+* Example application
+
+  * Something like a TODO list app that runs in Azure.
+
+  * Ideally, would have two or three versions of the backend
+    implementation:
+
+    * A naive version (no batching)
+
+    * A version with manually coded batching
+
+    * A DataRes version
