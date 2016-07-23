@@ -39,7 +39,7 @@ namespace Rezoom.ADO.Materialization
     {
         public static Dictionary<TKey, TEntity> ToDictionary(Dictionary<TKey, IRowReader<TEntity>> collection)
         {
-            var dictionary = new Dictionary<TKey, TEntity>();
+            var dictionary = new Dictionary<TKey, TEntity>(collection.Count);
             foreach (var kv in collection)
             {
                 dictionary[kv.Key] = kv.Value.ToEntity();
