@@ -8,7 +8,7 @@ type TestQueries() =
     member __.TestQuerySingleUser() =
         {
             Task =
-                datatask {
+                plan {
                     let! user = query "select Id, Name from Users where Id = {0}" [1]
                     return string <| user.Rows.[0].[1]
                 }
@@ -19,7 +19,7 @@ type TestQueries() =
     member __.TestConcurrentQueries() =
         {
             Task =
-                datatask {
+                plan {
                     let! users = query "select Id from Users" []
                     let names = new ResizeArray<string>()
                     for user in batch users.Rows do

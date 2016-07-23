@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Rezoom.EF
 {
-    public abstract class ContextRequest<TContext, T> : CS.AsynchronousDataRequest<T>
+    public abstract class ContextErrand<TContext, T> : CS.AsynchronousErrand<T>
         where TContext : DbContext
     {
         public override object DataSource => typeof(TContext);

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -41,10 +41,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Execution\DebugExecutionLog.cs" />
-    <Compile Include="Execution\IExecutionLog.cs" />
-    <Compile Include="Execution\ExecutionContext.cs" />
-    <Compile Include="Execution\StepContext.cs" />
+    <Compile Include="DebugExecutionLog.cs" />
+    <Compile Include="IExecutionLog.cs" />
+    <Compile Include="ExecutionContext.cs" />
+    <Compile Include="StepContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

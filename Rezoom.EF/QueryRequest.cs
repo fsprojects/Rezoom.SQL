@@ -7,13 +7,13 @@ using EntityFramework.Extensions;
 
 namespace Rezoom.EF
 {
-    public class QueryRequest<TContext, T> : ContextRequest<TContext, List<T>>
+    public class QueryErrand<TContext, T> : ContextErrand<TContext, List<T>>
         where TContext : DbContext
         where T : class
     {
         private readonly Func<TContext, IQueryable<T>> _query;
 
-        public QueryRequest(Func<TContext, IQueryable<T>> query)
+        public QueryErrand(Func<TContext, IQueryable<T>> query)
         {
             _query = query;
         }

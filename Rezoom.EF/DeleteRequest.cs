@@ -4,14 +4,14 @@ using System.Threading.Tasks;
 
 namespace Rezoom.EF
 {
-    public class DeleteRequest<TContext, TEntity> : ContextRequest<TContext, object>
+    public class DeleteErrand<TContext, TEntity> : ContextErrand<TContext, object>
         where TContext : DbContext
         where TEntity : class
     {
         private readonly TEntity _entity;
         private readonly Func<TContext, IDbSet<TEntity>> _set;
 
-        public DeleteRequest(Func<TContext, IDbSet<TEntity>> set, TEntity entity)
+        public DeleteErrand(Func<TContext, IDbSet<TEntity>> set, TEntity entity)
         {
             _set = set;
             _entity = entity;

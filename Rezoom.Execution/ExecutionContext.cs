@@ -5,8 +5,8 @@ using Microsoft.FSharp.Core;
 namespace Rezoom.Execution
 {
     /// <summary>
-    /// Handles execution of an <see cref="DataTask{TResult}"/> by stepping through it and running its pending
-    /// <see cref="DataRequest"/>s with caching and deduplication.
+    /// Handles execution of an <see cref="Plan{TResult}"/> by stepping through it and running its pending
+    /// <see cref="Errand"/>s with caching and deduplication.
     /// </summary>
     public class ExecutionContext : IDisposable
     {
@@ -15,8 +15,8 @@ namespace Rezoom.Execution
         private readonly ResponseCache _responseCache = new ResponseCache();
 
         /// <summary>
-        /// Create an execution context by giving it an <see cref="IServiceFactory"/> to provide
-        /// services required by the <see cref="DataRequest"/>s that it'll be responsible for executing.
+        /// Create an execution context by giving it an <see cref="ServiceFactory"/> to provide
+        /// services required by the <see cref="Errand"/>s that it'll be responsible for executing.
         /// </summary>
         /// <param name="serviceFactory"></param>
         /// <param name="log"></param>
@@ -26,9 +26,9 @@ namespace Rezoom.Execution
             _log = log;
         }
 
-        private async Task<DataTask<T>> ExecutePending<T>
+        private async Task<Plan<T>> ExecutePending<T>
             ( Batch<Errand> pending
-            , FSharpFunc<Batch<DataResponse>, DataTask<T>> resume
+            , FSharpFunc<Batch<DataResponse>, Plan<T>> resume
             )
         {
             _log?.OnStepStart();
@@ -51,23 +51,23 @@ namespace Rezoom.Execution
         }
 
         /// <summary>
-        /// Asynchronously run the given <see cref="DataTask{TResult}"/> to completion.
+        /// Asynchronously run the given <see cref="Plan{TResult}"/> to completion.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="task"></param>
         /// <returns></returns>
-        public async Task<T> Execute<T>(DataTask<T> task)
+        public async Task<T> Execute<T>(Plan<T> task)
         {
             while (true)
             {
                 if (task.IsStep)
                 {
-                    var step = (DataTask<T>.Step)task;
+                    var step = (Plan<T>.Step)task;
                     task = await ExecutePending(step.Item.Item1, step.Item.Item2);
                 }
                 else
                 {
-                    return ((DataTask<T>.Result)task).Item;
+                    return ((Plan<T>.Result)task).Item;
                 }
             }
         }

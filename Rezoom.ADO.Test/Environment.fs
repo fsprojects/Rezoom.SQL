@@ -88,8 +88,8 @@ let query query args =
             member __.GetArgument(index) = args.[index]
             member __.ToString(provider) = String.Format(provider, query, args)
         } |> Command.Query
-    datatask {
-        let! rs = CommandRequest(command).ToDataTask()
+    plan {
+        let! rs = CommandErrand(command).ToPlan()
         return rs.[0]
     }
     
@@ -99,7 +99,7 @@ type 'a ExpectedResult =
 
 type 'a TestTask =
     {
-        Task : 'a DataTask
+        Task : 'a Plan
         ExpectedResult : 'a ExpectedResult
     }
 

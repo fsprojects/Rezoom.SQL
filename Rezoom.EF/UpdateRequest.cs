@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Rezoom.EF
 {
-    public class UpdateRequest<TContext, TEntity> : ContextRequest<TContext, object>
+    public class UpdateErrand<TContext, TEntity> : ContextErrand<TContext, object>
         where TContext : DbContext
         where TEntity : class, new()
     {
@@ -12,7 +12,7 @@ namespace Rezoom.EF
         private readonly Func<TContext, IDbSet<TEntity>> _set;
         private readonly Action<TEntity> _change;
 
-        public UpdateRequest(Func<TContext, IDbSet<TEntity>> set, TEntity entity, Action<TEntity> change)
+        public UpdateErrand(Func<TContext, IDbSet<TEntity>> set, TEntity entity, Action<TEntity> change)
         {
             _set = set;
             _entity = entity;

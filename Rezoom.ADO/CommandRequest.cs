@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 
 namespace Rezoom.ADO
 {
-    public class CommandRequest : CS.AsynchronousDataRequest<IReadOnlyList<CommandResponse>>
+    public class CommandErrand : CS.AsynchronousErrand<IReadOnlyList<CommandResponse>>
     {
         private readonly Command _command;
 
-        public CommandRequest(Command command)
+        public CommandErrand(Command command)
         {
             _command = command;
         }
