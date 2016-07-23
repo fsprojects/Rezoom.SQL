@@ -27,7 +27,7 @@ namespace Rezoom.Execution
         }
 
         private async Task<DataTask<T>> ExecutePending<T>
-            ( Batch<DataRequest> pending
+            ( Batch<Errand> pending
             , FSharpFunc<Batch<DataResponse>, DataTask<T>> resume
             )
         {

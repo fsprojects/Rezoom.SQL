@@ -28,7 +28,7 @@ namespace Rezoom.Execution
         {
             private DataResponse _result;
             public DataResponse Get() => _result;
-            public async Task Run(DataRequest request, IExecutionLog log, FSharpFunc<Unit, Task<object>> prepared)
+            public async Task Run(Errand request, IExecutionLog log, FSharpFunc<Unit, Task<object>> prepared)
             {
                 try
                 {
@@ -42,7 +42,7 @@ namespace Rezoom.Execution
             }
         }
 
-        private Func<DataResponse> AddRequestToRun(DataRequest request)
+        private Func<DataResponse> AddRequestToRun(Errand request)
         {
             if (request.Mutation)
             {
@@ -86,7 +86,7 @@ namespace Rezoom.Execution
             return eventual.Get;
         }
 
-        public Func<DataResponse> AddRequest(DataRequest request)
+        public Func<DataResponse> AddRequest(Errand request)
         {
             var identity = request.Identity;
             // If this request is not cachable, we have to run it.

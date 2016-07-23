@@ -12,13 +12,13 @@ namespace Rezoom.Execution
 
         public void OnStepFinish() => Debug.WriteLine("OnStepFinish()");
 
-        public void OnPrepare(DataRequest request)
+        public void OnPrepare(Errand request)
             => Debug.WriteLine($"OnPrepare({request.Identity})");
 
         public void OnPrepareFailure(Exception exception)
             => Debug.WriteLine($"OnException({exception.Message})");
 
-        public void OnComplete(DataRequest request, DataResponse response)
+        public void OnComplete(Errand request, DataResponse response)
             => Debug.WriteLine($"OnComplete({request.Identity},{response})");
     }
 }

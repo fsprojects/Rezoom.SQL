@@ -24,7 +24,7 @@ namespace Rezoom.Execution
         /// Called when a data request is prepared for execution.
         /// </summary>
         /// <param name="request"></param>
-        void OnPrepare(DataRequest request);
+        void OnPrepare(Errand request);
         /// <summary>
         /// Called when a data request's prepare method throws an exception.
         /// </summary>
@@ -35,6 +35,6 @@ namespace Rezoom.Execution
         /// </summary>
         /// <param name="request"></param>
         /// <param name="response"></param>
-        void OnComplete(DataRequest request, DataResponse response);
+        void OnComplete(Errand request, DataResponse response);
     }
 }
