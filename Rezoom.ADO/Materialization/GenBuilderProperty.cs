@@ -11,10 +11,10 @@ namespace Rezoom.ADO.Materialization
             {
                 return new PrimitiveGenBuilderProperty(name, propertyType);
             }
-            // TODO better handling, support many more collection types
-            if (propertyType.IsArray)
+            var elementType = ManyNavConverter.IsMany(propertyType);
+            if (elementType != null)
             {
-                return new ManyNavGenBuilderProperty(name, propertyType.GetElementType());
+                return new ManyNavGenBuilderProperty(name, elementType, propertyType);
             }
             return new SingleNavGenBuilderProperty(name, propertyType);
         }

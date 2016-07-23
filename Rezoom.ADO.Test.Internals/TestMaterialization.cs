@@ -1,10 +1,11 @@
-﻿using Rezoom.ADO.Materialization;
+﻿using System.Collections.Generic;
+using Rezoom.ADO.Materialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Rezoom.ADO.Test.Internals
 {
     [TestClass]
-    public class TestMaterialization
+    public class TestSingleMaterialization
     {
         public class ConstructorPoint
         {
@@ -125,7 +126,7 @@ namespace Rezoom.ADO.Test.Internals
         {
             public int Id { get; set; }
             public string Name { get; set; }
-            public Folder[] Children { get; set; }
+            public List<Folder> Children { get; set; }
         }
 
         [TestMethod]

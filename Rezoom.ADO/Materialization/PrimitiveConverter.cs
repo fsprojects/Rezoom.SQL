@@ -724,7 +724,9 @@ namespace Rezoom.ADO.Materialization
                 .Where(m =>
                 {
                     var pars = m.GetParameters();
-                    return pars.Length == 1 && pars[0].ParameterType == typeof(object);
+                    return pars.Length == 1
+                        && pars[0].ParameterType == typeof(object)
+                        && m.ReturnType != typeof(void);
                 }).ToDictionary(m => m.ReturnType);
 
         public static bool IsPrimitive(Type targetType) => Converters.ContainsKey(targetType);

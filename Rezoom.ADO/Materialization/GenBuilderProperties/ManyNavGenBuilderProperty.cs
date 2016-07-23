@@ -8,12 +8,14 @@ namespace Rezoom.ADO.Materialization.GenBuilderProperties
     internal class ManyNavGenBuilderProperty : NavGenBuilderProperty
     {
         private readonly Type _dictionaryType;
+        private readonly Type _collectionType;
 
         private FieldBuilder _dict;
 
-        public ManyNavGenBuilderProperty(string fieldName, Type entityType)
+        public ManyNavGenBuilderProperty(string fieldName, Type entityType, Type collectionType)
             : base(fieldName, entityType)
         {
+            _collectionType = collectionType;
             _dictionaryType = typeof(Dictionary<,>).MakeGenericType(KeyColumn.Type, EntityReaderType);
         }
 
@@ -110,12 +112,13 @@ namespace Rezoom.ADO.Materialization.GenBuilderProperties
 
             il.Emit(OpCodes.Ldloc, cxt.This); // this
             il.Emit(OpCodes.Ldfld, _dict); // dict
-            var values = _dictionaryType.GetProperty(nameof(Dictionary<object, object>.Values)).GetGetMethod();
-            il.Emit(OpCodes.Callvirt, values); // values
-
-            var converter = typeof(NavConverter<>).MakeGenericType(EntityType);
-            var toArray = converter.GetMethod(nameof(NavConverter<object>.ToArray));
-            il.Emit(OpCodes.Call, toArray); // arr
+            var manyNavConverter = typeof(ManyNavConverter<,>)
+                .MakeGenericType(KeyColumn.Type, EntityType);
+            var conversion =
+                (MethodInfo)
+                manyNavConverter.GetMethod(nameof(ManyNavConverter<object, object>.ToType))
+                    .Invoke(null, new object[] { _collectionType });
+            il.Emit(OpCodes.Call, conversion);
         }
     }
 }
