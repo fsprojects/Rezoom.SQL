@@ -62,12 +62,12 @@
 
 ## Integrating with DataRes
 
-   Start with the DataRequest implementation, leaving the Prepare()
+   Start with the Errand implementation, leaving the Prepare()
    method blank for now.
 
    Then cover the step-local batch class.
 
-   Finally, complete the DataRequest implementation and add a static
+   Finally, complete the Errand implementation and add a static
    wrapper method converting it to a Plan.
 
 ## Using the integration
