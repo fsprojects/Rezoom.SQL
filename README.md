@@ -13,11 +13,11 @@ This is similar in effect to Haskell's Haxl.
 
 * Core library Data.Resumption
 
-  * The fundamental types `IDataTask<T>` and `IDataEnumerable<T>`.
+  * The fundamental types `Plan<T>` and `IDataEnumerable<T>`.
 
   * Operations like monadic bind, apply, map, etc. on those types.
 
-  * `ExecutionContext` for running `IDataTask<T>`s as `Task<T>`s with
+  * `ExecutionContext` for running `Plan<T>`s as `Task<T>`s with
     all the caching/deduplication goodness.
 
   * Mostly XML-commented, but no "big picture" documentation yet.
@@ -27,7 +27,7 @@ This is similar in effect to Haskell's Haxl.
   * F# idiomatic wrappers around the extension methods in Data.Resumption.
 
   * Computation expression builders `datatask` and `dataseq`. These
-    are by far the best way to write `IDataTask<T>`s and
+    are by far the best way to write `Plan<T>`s and
     `IDataEnumerable<T>`s.
 
 * Test library Data.Resumption.Test

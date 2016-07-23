@@ -68,7 +68,7 @@
    Then cover the step-local batch class.
 
    Finally, complete the DataRequest implementation and add a static
-   wrapper method converting it to an IDataTask.
+   wrapper method converting it to a Plan.
 
 ## Using the integration
 
