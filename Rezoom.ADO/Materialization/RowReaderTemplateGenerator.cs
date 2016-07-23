@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using Rezoom.ADO.Materialization.GenBuilders;
+using Rezoom.ADO.Materialization.TypeInfo;
 
 namespace Rezoom.ADO.Materialization
 {
@@ -10,8 +11,10 @@ namespace Rezoom.ADO.Materialization
     {
         private static void ImplementRowReader(TypeBuilder builder, Type targetType)
         {
-            // TODO different builder type depending on the target
-            var gen = new PropertyAssignmentGenBuilder(targetType);
+            var profile = TypeProfile.OfType(targetType);
+            var gen = profile.Columns.Any(c => c.Setter == null)
+                ? new ConstructorGenBuilder(profile.PrimaryConstructor) as IGenBuilder
+                : new PropertyAssignmentGenBuilder(targetType);
             builder.AddInterfaceImplementation(typeof(IRowReader<>).MakeGenericType(targetType));
 
             GenInstanceMethodContext toEntityContext;

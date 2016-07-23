@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Rezoom.ADO.Materialization;
+﻿using Rezoom.ADO.Materialization;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Rezoom.ADO.Test.Internals
@@ -8,6 +6,30 @@ namespace Rezoom.ADO.Test.Internals
     [TestClass]
     public class TestMaterialization
     {
+        public class ConstructorPoint
+        {
+            public ConstructorPoint(int x, int y)
+            {
+                X = x;
+                Y = y;
+            }
+
+            public int X { get; }
+            public int Y { get; }
+        }
+
+        [TestMethod]
+        public void TestSimpleConstructor()
+        {
+            var template = RowReaderTemplate<ConstructorPoint>.Template;
+            var reader = template.CreateReader();
+            reader.ProcessColumnMap(ColumnMap.Parse(new[] { "X", "Y" }));
+            reader.ProcessRow(new object[] { 3, 5 });
+            var point = reader.ToEntity();
+            Assert.AreEqual(3, point.X);
+            Assert.AreEqual(5, point.Y);
+        }
+
         public class Point { public int X { get; set; } public int Y { get; set; } }
         [TestMethod]
         public void TestSimplePropertyAssignment()
