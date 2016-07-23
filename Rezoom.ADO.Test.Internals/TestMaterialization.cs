@@ -79,7 +79,7 @@ namespace Rezoom.ADO.Test.Internals
         [TestMethod]
         public void TestManyArrayNavProperty()
         {
-            var template = RowReaderTemplate<List<User>>.Template;
+            var template = RowReaderTemplate<User[]>.Template;
             var reader = template.CreateReader();
             var columnMap = ColumnMap.Parse(new[] { "Id", "Name", "Groups$Id", "Name" });
             reader.ProcessColumnMap(columnMap);
@@ -88,7 +88,7 @@ namespace Rezoom.ADO.Test.Internals
             reader.ProcessRow(new object[] { 2, "jim", 2, "developers" });
             reader.ProcessRow(new object[] { 2, "jim", 4, "slackers" });
             var users = reader.ToEntity();
-            Assert.AreEqual(2, users.Count);
+            Assert.AreEqual(2, users.Length);
 
             Assert.AreEqual(1, users[0].Id);
             Assert.AreEqual("bob", users[0].Name);

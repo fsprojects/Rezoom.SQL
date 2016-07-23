@@ -12,16 +12,23 @@ namespace Rezoom.ADO.Materialization.TypeInfo
     public class TypeProfile
     {
         private readonly Dictionary<string, TypeColumn> _columnsByNameCI;
-        private TypeProfile(Type type, ConstructorInfo primaryConstructor, IReadOnlyList<TypeColumn> typeColumns)
+        private TypeProfile
+            ( Type type
+            , Type collectionElementType
+            , ConstructorInfo primaryConstructor
+            , IReadOnlyList<TypeColumn> typeColumns
+            )
         {
             Type = type;
+            CollectionElementType = collectionElementType;
             PrimaryConstructor = primaryConstructor;
             Columns = typeColumns;
             _columnsByNameCI = typeColumns.ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
         }
 
-        public bool IsCollection => ManyNavConverter.IsMany(Type) != null;
+        public bool IsCollection => CollectionElementType != null;
         public Type Type { get; }
+        public Type CollectionElementType { get; }
         public ConstructorInfo PrimaryConstructor { get; }
         public IReadOnlyList<TypeColumn> Columns { get; }
 
@@ -39,6 +46,11 @@ namespace Rezoom.ADO.Materialization.TypeInfo
 
         public static TypeProfile OfType(Type type)
         {
+            var elementType = ManyNavConverter.IsMany(type);
+            if (elementType != null)
+            {
+                return new TypeProfile(type, elementType, null, new TypeColumn[0]);
+            }
             var settableProperties = type.GetProperties()
                 .Where(p => p.CanWrite)
                 .Select(p => new
@@ -61,14 +73,14 @@ namespace Rezoom.ADO.Materialization.TypeInfo
                 var columns = longestConstructor.Parameters
                     .Select(p => new TypeColumn(p.Name, p.ParameterType, null))
                     .ToList();
-                return new TypeProfile(type, longestConstructor.Constructor, columns);
+                return new TypeProfile(type, null, longestConstructor.Constructor, columns);
             }
             else
             {
                 var columns = settableProperties
                     .Select(p => new TypeColumn(p.Property.Name, p.Property.PropertyType, p.Setter))
                     .ToList();
-                return new TypeProfile(type, defaultConstructor.Constructor, columns);
+                return new TypeProfile(type, null, defaultConstructor.Constructor, columns);
             }
         }
     }
