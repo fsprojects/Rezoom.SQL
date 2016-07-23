@@ -20,6 +20,7 @@ namespace Rezoom.ADO.Materialization.TypeInfo
             _columnsByNameCI = typeColumns.ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
         }
 
+        public bool IsCollection => ManyNavConverter.IsMany(Type) != null;
         public Type Type { get; }
         public ConstructorInfo PrimaryConstructor { get; }
         public IReadOnlyList<TypeColumn> Columns { get; }

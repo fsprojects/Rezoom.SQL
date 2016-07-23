@@ -50,6 +50,7 @@
     <Compile Include="Materialization\ColumnMap.cs" />
     <Compile Include="Materialization\GenBuilderProperties\NavGenBuilderProperty.cs" />
     <Compile Include="Materialization\GenBuilderProperties\SingleNavGenBuilderProperty.cs" />
+    <Compile Include="Materialization\GenBuilders\ManyGenBuilder.cs" />
     <Compile Include="Materialization\ManyNavConverter.cs" />
     <Compile Include="Materialization\PrimitiveConverter.cs" />
     <Compile Include="Materialization\GenBuilderProperties\ManyNavGenBuilderProperty.cs" />

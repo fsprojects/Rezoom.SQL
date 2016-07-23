@@ -12,8 +12,10 @@ namespace Rezoom.ADO.Materialization
         private static void ImplementRowReader(TypeBuilder builder, Type targetType)
         {
             var profile = TypeProfile.OfType(targetType);
-            var gen = profile.Columns.Any(c => c.Setter == null)
-                ? new ConstructorGenBuilder(profile.PrimaryConstructor) as IGenBuilder
+            var gen = profile.IsCollection
+                    ? new ManyGenBuilder(targetType)
+                : profile.Columns.Any(c => c.Setter == null)
+                    ? new ConstructorGenBuilder(profile.PrimaryConstructor) as IGenBuilder
                 : new PropertyAssignmentGenBuilder(targetType);
             builder.AddInterfaceImplementation(typeof(IRowReader<>).MakeGenericType(targetType));
 
@@ -112,7 +114,7 @@ namespace Rezoom.ADO.Materialization
         public static object GenerateReaderTemplate(Type targetType)
         {
             // create a dynamic assembly to house our dynamic type
-            var assembly = new AssemblyName($"Readers.{targetType.FullName}");
+            var assembly = new AssemblyName($"Readers.{targetType.Name}{Guid.NewGuid():N}");
             var appDomain = System.Threading.Thread.GetDomain();
             var assemblyBuilder = appDomain.DefineDynamicAssembly(assembly, AssemblyBuilderAccess.Run);
             var moduleBuilder = assemblyBuilder.DefineDynamicModule(assembly.Name);

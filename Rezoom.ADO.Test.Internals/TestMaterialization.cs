@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace Rezoom.ADO.Test.Internals
 {
     [TestClass]
-    public class TestSingleMaterialization
+    public class TestMaterialization
     {
         public class ConstructorPoint
         {
@@ -74,6 +74,37 @@ namespace Rezoom.ADO.Test.Internals
             Assert.AreEqual("developers", user.Groups[0].Name);
             Assert.AreEqual(3, user.Groups[1].Id);
             Assert.AreEqual("testers", user.Groups[1].Name);
+        }
+
+        [TestMethod]
+        public void TestManyArrayNavProperty()
+        {
+            var template = RowReaderTemplate<List<User>>.Template;
+            var reader = template.CreateReader();
+            var columnMap = ColumnMap.Parse(new[] { "Id", "Name", "Groups$Id", "Name" });
+            reader.ProcessColumnMap(columnMap);
+            reader.ProcessRow(new object[] { 1, "bob", 2, "developers" });
+            reader.ProcessRow(new object[] { 1, "bob", 3, "testers" });
+            reader.ProcessRow(new object[] { 2, "jim", 2, "developers" });
+            reader.ProcessRow(new object[] { 2, "jim", 4, "slackers" });
+            var users = reader.ToEntity();
+            Assert.AreEqual(2, users.Count);
+
+            Assert.AreEqual(1, users[0].Id);
+            Assert.AreEqual("bob", users[0].Name);
+            Assert.AreEqual(2, users[0].Groups.Length);
+            Assert.AreEqual(2, users[0].Groups[0].Id);
+            Assert.AreEqual("developers", users[0].Groups[0].Name);
+            Assert.AreEqual(3, users[0].Groups[1].Id);
+            Assert.AreEqual("testers", users[0].Groups[1].Name);
+
+            Assert.AreEqual(2, users[1].Id);
+            Assert.AreEqual("jim", users[1].Name);
+            Assert.AreEqual(2, users[1].Groups.Length);
+            Assert.AreEqual(2, users[1].Groups[0].Id);
+            Assert.AreEqual("developers", users[1].Groups[0].Name);
+            Assert.AreEqual(4, users[1].Groups[1].Id);
+            Assert.AreEqual("slackers", users[1].Groups[1].Name);
         }
 
         public class NestUser

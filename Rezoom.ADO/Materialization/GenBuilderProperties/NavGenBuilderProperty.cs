@@ -44,6 +44,7 @@ namespace Rezoom.ADO.Materialization.GenBuilderProperties
         {
             var il = cxt.IL;
             var skip = il.DefineLabel();
+            var done = il.DefineLabel();
             il.Emit(OpCodes.Dup); // this, this
             il.Emit(OpCodes.Dup); // this, this, this
             // Get submap for this nav property
@@ -51,27 +52,33 @@ namespace Rezoom.ADO.Materialization.GenBuilderProperties
             il.Emit(OpCodes.Ldloc, cxt.ColumnMap); // this, this, this, this, colmap
             il.Emit(OpCodes.Dup);
             il.Emit(OpCodes.Brfalse_S, skip);
-            il.Emit(OpCodes.Ldstr, FieldName); // this, this, this, this colmap, fieldname
-            il.Emit(OpCodes.Call, typeof(ColumnMap).GetMethod(nameof(ColumnMap.SubMap)));
-            // this, this, this, this, submap
-            il.Emit(OpCodes.Dup);
-            il.Emit(OpCodes.Brfalse_S, skip);
-            // Set column map field to submap
-            il.Emit(OpCodes.Stfld, SubColumnMap); // this, this, this
-            il.Emit(OpCodes.Ldfld, SubColumnMap); // this, this, submap
-            // Get key column index from submap
-            il.Emit(OpCodes.Ldstr, KeyColumn.Name); // this, this, submap, keyfield
-            il.Emit(OpCodes.Call, typeof(ColumnMap).GetMethod(nameof(ColumnMap.ColumnIndex)));
-            // this, this, keyindex
-            il.Emit(OpCodes.Stfld, KeyColumnIndex);
-            var done = il.DefineLabel();
-            il.Emit(OpCodes.Br_S, done);
+            {
+                if (FieldName != null)
+                {
+                    il.Emit(OpCodes.Ldstr, FieldName); // this, this, this, this colmap, fieldname
+                    il.Emit(OpCodes.Call, typeof(ColumnMap).GetMethod(nameof(ColumnMap.SubMap)));
+                }
+                // this, this, this, this, submap
+                il.Emit(OpCodes.Dup);
+                il.Emit(OpCodes.Brfalse_S, skip);
+                // Set column map field to submap
+                il.Emit(OpCodes.Stfld, SubColumnMap); // this, this, this
+                il.Emit(OpCodes.Ldfld, SubColumnMap); // this, this, submap
+                                                      // Get key column index from submap
+                il.Emit(OpCodes.Ldstr, KeyColumn.Name); // this, this, submap, keyfield
+                il.Emit(OpCodes.Call, typeof(ColumnMap).GetMethod(nameof(ColumnMap.ColumnIndex)));
+                // this, this, keyindex
+                il.Emit(OpCodes.Stfld, KeyColumnIndex);
+                il.Emit(OpCodes.Br_S, done);
+            }
             il.MarkLabel(skip);
-            // this, this, this, this, submap
-            il.Emit(OpCodes.Pop);
-            il.Emit(OpCodes.Pop);
-            il.Emit(OpCodes.Pop);
-            il.Emit(OpCodes.Pop);
+            {
+                // this, this, this, this, submap
+                il.Emit(OpCodes.Pop);
+                il.Emit(OpCodes.Pop);
+                il.Emit(OpCodes.Pop);
+                il.Emit(OpCodes.Pop);
+            }
             il.MarkLabel(done);
         }
 
