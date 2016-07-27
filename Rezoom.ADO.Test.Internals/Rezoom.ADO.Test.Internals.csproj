@@ -50,7 +50,6 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="TestManyMaterialization.cs" />
     <Compile Include="TestMaterialization.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
