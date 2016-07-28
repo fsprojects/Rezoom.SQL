@@ -72,7 +72,7 @@ namespace Rezoom.ADO
                 gluedText.AppendLine(command);
             }
             _command.CommandText = gluedText.ToString();
-            using (var reader = await _command.ExecuteReaderAsync())
+            using (var reader = await _command.ExecuteReaderAsync().ConfigureAwait(false))
             {
                 var sepi = 0;
                 var allResults = new List<List<CommandResponse>>();
@@ -92,7 +92,7 @@ namespace Rezoom.ADO
                     else
                     {
                         var rows = new List<IReadOnlyList<object>>();
-                        while (await reader.ReadAsync())
+                        while (await reader.ReadAsync().ConfigureAwait(false))
                         {
                             var row = new object[reader.FieldCount];
                             reader.GetValues(row);
@@ -100,7 +100,7 @@ namespace Rezoom.ADO
                         }
                         currentCommandResults.Add(new CommandResponse(fieldNames, rows));
                     }
-                } while (await reader.NextResultAsync());
+                } while (await reader.NextResultAsync().ConfigureAwait(false));
                 if (sepi < allResults.Count)
                 {
                     throw new InvalidDataException($"Unexpected result sets missing separator");
@@ -115,11 +115,11 @@ namespace Rezoom.ADO
         {
             if (_executing != null)
             {
-                var allResults = await _executing;
+                var allResults = await _executing.ConfigureAwait(false);
                 return allResults[index];
             }
             _executing = GetAllResultSets();
-            var results = await _executing;
+            var results = await _executing.ConfigureAwait(false);
             return results[index];
         }
 

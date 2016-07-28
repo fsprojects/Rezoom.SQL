@@ -32,7 +32,7 @@ namespace Rezoom.Execution
             {
                 try
                 {
-                    _result = DataResponse.NewRetrievalSuccess(await prepared.Invoke(null));
+                    _result = DataResponse.NewRetrievalSuccess(await prepared.Invoke(null).ConfigureAwait(false));
                 }
                 catch (Exception ex)
                 {
@@ -118,10 +118,10 @@ namespace Rezoom.Execution
 
         private static async Task ExecuteSequentialGroup(Task pending, IEnumerator<Func<Task>> rest)
         {
-            await pending;
+            await pending.ConfigureAwait(false);
             while (rest.MoveNext())
             {
-                await rest.Current();
+                await rest.Current().ConfigureAwait(false);
             }
         }
 
@@ -138,7 +138,6 @@ namespace Rezoom.Execution
             }
             return Task.CompletedTask;
         }
-        private static async Task Execute(Task[] tasks) => await Task.WhenAll(tasks);
 
         public Task Execute()
         {
@@ -157,7 +156,7 @@ namespace Rezoom.Execution
                 tasks[i++] = task;
                 allDone &= task.IsCompleted;
             }
-            return allDone ? Task.CompletedTask : Execute(tasks);
+            return allDone ? Task.CompletedTask : Task.WhenAll(tasks);
         }
     }
 }

@@ -39,7 +39,7 @@ namespace Rezoom.Execution
                 var stepContext = new StepContext(_serviceContext, _log, _responseCache);
                 var retrievals = pending.MapCS
                     (request => stepContext.AddRequest(request));
-                await stepContext.Execute();
+                await stepContext.Execute().ConfigureAwait(false);
                 responses = retrievals.MapCS(retrieve => retrieve());
             }
             finally
@@ -63,7 +63,7 @@ namespace Rezoom.Execution
                 if (task.IsStep)
                 {
                     var step = (Plan<T>.Step)task;
-                    task = await ExecutePending(step.Item.Item1, step.Item.Item2);
+                    task = await ExecutePending(step.Item.Item1, step.Item.Item2).ConfigureAwait(false);
                 }
                 else
                 {
