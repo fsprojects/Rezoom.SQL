@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rezoom.Execution", "Rezoom.Execution\Rezoom.Execution.csproj", "{9DB721D3-DA97-4BE3-B60B-9B7A682E803E}"
 EndProject
@@ -24,6 +24,8 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.IPGeo.Test", "Rezoom.IPGeo.Test\Rezoom.IPGeo.Test.fsproj", "{97D70AE4-41FB-47D0-B518-589799F093D5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rezoom.ADO.Test.Internals", "Rezoom.ADO.Test.Internals\Rezoom.ADO.Test.Internals.csproj", "{3EA0244A-E97C-47B6-96C3-C83315674CAA}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.ORM", "Rezoom.ORM\Rezoom.ORM.fsproj", "{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -67,6 +69,10 @@ Global
 		{3EA0244A-E97C-47B6-96C3-C83315674CAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3EA0244A-E97C-47B6-96C3-C83315674CAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3EA0244A-E97C-47B6-96C3-C83315674CAA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -79,5 +85,6 @@ Global
 		{CEB9E01B-71C6-468B-8C3E-A1617F036370} = {B021A795-0151-4404-B592-0D375821890F}
 		{97D70AE4-41FB-47D0-B518-589799F093D5} = {3CFAC282-AFAA-4B7A-879F-D2BDF9EC631B}
 		{3EA0244A-E97C-47B6-96C3-C83315674CAA} = {3CFAC282-AFAA-4B7A-879F-D2BDF9EC631B}
+		{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333} = {B021A795-0151-4404-B592-0D375821890F}
 	EndGlobalSection
 EndGlobal
