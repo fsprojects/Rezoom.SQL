@@ -61,7 +61,7 @@ and ElementBlueprint =
 
 and Cardinality =
     | One
-    /// Carries a method converting a List<Builder<ElementType>> to the target collection type.
+    /// Carries a method converting an ICollection<Builder<ElementType>> to the target collection type.
     | Many of ConversionMethod
 
 and Blueprint =
