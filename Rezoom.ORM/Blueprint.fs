@@ -9,6 +9,8 @@ type ConversionMethod = Emit.ILGenerator -> unit
 type Setter =
     /// We initialize this column by passing it to the composite's constructor.
     | SetConstructorParameter of ParameterInfo
+    /// We initialize this column by setting a field post-construction.
+    | SetField of FieldInfo
     /// We initialize this column by setting a property post-construction.
     | SetProperty of PropertyInfo
 
@@ -19,14 +21,14 @@ type Getter =
 type Column =
     {
         /// The name of this column. This is the basename of the SQL column name that
-        /// will represent it.
+        /// will represent it. This should always be treated case-insensitively.
         Name : string
         /// The blueprint for this column's type.
         Blueprint : Blueprint
         /// The way to set this column when initializing an instance of the composite type.
         Setter : Setter
         /// The way to get this column's value (could be used for analyzing expression trees).
-        Getter : Getter
+        Getter : Getter option
     }
 
 and Composite =
@@ -58,7 +60,7 @@ and ElementBlueprint =
     }
 
 and Cardinality =
-    | Single
+    | One
     /// Carries a method converting a List<Builder<ElementType>> to the target collection type.
     | Many of ConversionMethod
 
