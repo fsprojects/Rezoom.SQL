@@ -1,5 +1,6 @@
 ﻿namespace Rezoom.ORM
 open System
+open System.Collections.Generic
 open System.Reflection
 
 /// A conversion that assumes an obj is on the stack, and pushes a value of whatever type is being
@@ -17,6 +18,10 @@ type Setter =
 type Getter =
     | GetField of FieldInfo
     | GetProperty of PropertyInfo
+    member this.MemberInfo =
+        match this with
+        | GetField f -> f :> MemberInfo
+        | GetProperty p -> p :> MemberInfo
 
 type Column =
     {
@@ -39,7 +44,8 @@ and Composite =
         /// The identity column for this composite type, if any.
         Identity : Column option
         /// All the columns of this composite type (including the identity, if any).
-        Columns : Column array
+        /// Indexed by name, case insensitive.
+        Columns : IReadOnlyDictionary<string, Column>
     }
 
 and Primitive =
