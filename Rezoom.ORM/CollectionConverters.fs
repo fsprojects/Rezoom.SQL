@@ -1,4 +1,5 @@
 ﻿module private Rezoom.ORM.CollectionConverters
+open LicenseToCIL
 open System
 open System.Collections.Generic
 
@@ -30,5 +31,35 @@ let representativeForInterface (ty : Type) =
         else repr elemTy
     | _ -> ty
 
+type Converters<'elem> =
+    static member ToArray(collection : 'elem IEntityReader ICollection) =
+        let arr = Array.zeroCreate collection.Count
+        let mutable i = 0
+        for reader in collection do
+            arr.[i] <- reader.ToEntity()
+            i <- i + 1
+        arr
+    static member ToResizeArray(collection : 'elem IEntityReader ICollection) =
+        let resizeArr = new ResizeArray<'elem>(collection.Count)
+        for reader in collection do
+            resizeArr.Add(reader.ToEntity())
+        resizeArr
+    static member ToList(collection : 'elem IEntityReader ICollection) =
+        collection |> Seq.map (fun r -> r.ToEntity()) |> List.ofSeq    
+
 let converter (ty : Type) (ienum : Type) (elem : Type) : ConversionMethod option =
-    None
+    let converter = typedefof<Converters<_>>.MakeGenericType(elem)
+    let specializedMethod =
+        converter.GetMethods()
+        |> Array.tryFind (fun m -> m.ReturnType = ty)
+    match specializedMethod with
+    | Some m -> Some (Ops.call1 m)
+    | None ->
+        // fall back to passing the type an IEnumerable<T>
+        let constructorOfIEnum = ty.GetConstructor([|ienum|])
+        if isNull constructorOfIEnum then None else
+        let toArray = converter.GetMethod("ToArray")
+        cil {
+            yield Ops.call1 toArray
+            yield Ops.newobj1 constructorOfIEnum
+        } |> Some
