@@ -53,10 +53,11 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="ColumnMap.fs" />
     <Compile Include="Row.fs" />
-    <Compile Include="IEntityReader.fs" />
+    <Compile Include="EntityReader.fs" />
+    <Compile Include="Converters.fs" />
+    <Compile Include="CollectionConverters.fs" />
     <Compile Include="BlueprintConstructorAttribute.fs" />
     <Compile Include="Blueprint.fs" />
-    <Compile Include="CollectionConverters.fs" />
     <Compile Include="BlueprintModule.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
