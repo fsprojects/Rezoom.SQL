@@ -32,19 +32,19 @@ let representativeForInterface (ty : Type) =
     | _ -> ty
 
 type Converters<'elem> =
-    static member ToArray(collection : 'elem IEntityReader ICollection) =
+    static member ToArray(collection : 'elem EntityReader ICollection) =
         let arr = Array.zeroCreate collection.Count
         let mutable i = 0
         for reader in collection do
             arr.[i] <- reader.ToEntity()
             i <- i + 1
         arr
-    static member ToResizeArray(collection : 'elem IEntityReader ICollection) =
+    static member ToResizeArray(collection : 'elem EntityReader ICollection) =
         let resizeArr = new ResizeArray<'elem>(collection.Count)
         for reader in collection do
             resizeArr.Add(reader.ToEntity())
         resizeArr
-    static member ToList(collection : 'elem IEntityReader ICollection) =
+    static member ToList(collection : 'elem EntityReader ICollection) =
         collection |> Seq.map (fun r -> r.ToEntity()) |> List.ofSeq    
 
 let converter (ty : Type) (ienum : Type) (elem : Type) : ConversionMethod option =

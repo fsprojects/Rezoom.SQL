@@ -51,6 +51,8 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="ColumnMap.fs" />
+    <Compile Include="Row.fs" />
     <Compile Include="IEntityReader.fs" />
     <Compile Include="BlueprintConstructorAttribute.fs" />
     <Compile Include="Blueprint.fs" />
