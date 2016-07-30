@@ -1,11 +1,13 @@
 ﻿namespace Rezoom.ORM
+open LicenseToCIL
+open LicenseToCIL.Stack
 open System
 open System.Collections.Generic
 open System.Reflection
 
 /// A conversion that assumes an obj is on the stack, and pushes a value of whatever type is being
 /// converted to (depends on the context in which you see the conversion).
-type ConversionMethod = Emit.ILGenerator -> unit
+type ConversionMethod = Op<E S, E S>
 
 type Setter =
     /// We initialize this column by passing it to the composite's constructor.
@@ -66,15 +68,14 @@ and ElementBlueprint =
     }
 
 and Cardinality =
-    | One
-    /// Carries a method converting an ICollection<Builder<ElementType>> to the target collection type.
-    | Many of ConversionMethod
+    | One of ElementBlueprint
+    /// Carries an element type blueprint and a method converting an ICollection<Builder<ElementType>>
+    /// to the target collection type.
+    | Many of ElementBlueprint * ConversionMethod
 
 and Blueprint =
     {
-        Element : ElementBlueprint
         Cardinality : Cardinality
-        /// The type this blueprint specifies how to construct.
-        /// If x.Cardinality = Single, x.Output will match x.Element.Output.
+        /// The type (possibly a collectiont ype) this blueprint specifies how to construct.
         Output : Type
     }

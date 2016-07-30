@@ -1,7 +1,9 @@
 ﻿[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Rezoom.ORM.Blueprint
 open Rezoom.ADO.Materialization
+open LicenseToCIL
 open System
+open System.Collections
 open System.Collections.Generic
 open System.ComponentModel
 open System.Reflection
@@ -11,10 +13,6 @@ let private ciDictionary keyValues =
     for key, value in keyValues do
         dictionary.[key] <- value // overwrite duplicates, last wins
     dictionary
-
-let private staticConversionMethod (meth : MethodInfo) =
-    fun (il : Emit.ILGenerator) -> 
-        il.Emit(Emit.OpCodes.Call, meth)
 
 /// Get the constructor that the blueprint for `ty` should use.
 /// This is simply the constructor with the most parameters,
@@ -71,17 +69,8 @@ let private pickIdentity (ty : Type) (cols : IReadOnlyDictionary<string, Column>
             "Type %O has %d columns with [<Key>] applied. Cannot disambiguate key (composite keys are not supported)."
             ty
             (List.length multiple)
-    
 
-let rec private shapeOfType (ty : Type) =
-    if PrimitiveConverter.IsPrimitive(ty) then
-        {
-            Converter = staticConversionMethod (PrimitiveConverter.ToType(ty))
-        } |> Primitive
-    else
-        compositeShapeOfType ty |> Composite
-
-and private compositeShapeOfType ty =
+let rec private compositeShapeOfType ty =
     let ctor, pars = pickConstructor ty
     let props =
         ty.GetProperties() |> Array.filter (fun p -> p.CanRead && p.CanWrite)
@@ -121,13 +110,66 @@ and private compositeShapeOfType ty =
         Columns = columns
     }
 
-and ofType (ty : Type) =
+and private cardinalityOfType (ty : Type) =
+    let ty = CollectionConverters.representativeForInterface ty
+    let ifaces = ty.GetInterfaces()
+    // For this to be a collection, it must implement IEnumerable.
+    if ifaces |> Array.contains (typeof<IEnumerable>) |> not then One (elementOfType ty) else
+    // Ok, really it needs to be a generic IEnumerable *of* something...
+    let possible =
+        ifaces
+        |> Seq.filter
+            (fun iface ->
+                iface.IsConstructedGenericType
+                && iface.GetGenericTypeDefinition() = typedefof<_ seq>)
+        |> Seq.truncate 2
+        |> Seq.toList
+    match possible with
+    | [] -> One (elementOfType ty)
+    | [ienum] ->
+        // Also, we need to figure out some way to construct it.
+        let elemTy =
+            match ienum.GetGenericArguments() with
+            | [|e|] -> e
+            | _ -> failwith "Cannot run in bizzare universe where IEnumerable<T> doesn't have one generic arg."
+        match CollectionConverters.converter ty ienum elemTy with
+        | None -> One (elementOfType ty)
+        | Some converter -> Many (elementOfType ty, converter)
+    | multiple ->
+        failwithf "Type %O has %d IEnumerable<T> implementations. This confuses us."
+            ty
+            (List.length multiple)
+
+and private primitiveShapeOfType (ty : Type) =
+    if PrimitiveConverter.IsPrimitive(ty) then
+        {
+            Converter = Ops.call1 (PrimitiveConverter.ToType(ty))
+        } |> Some
+    else None
+
+and private elementOfType (ty : Type) =
+    let shape =
+        match primitiveShapeOfType ty with
+        | Some p -> Primitive p
+        | None -> Composite (compositeShapeOfType ty)
     {
-        Element =
-            {
-                Shape = shapeOfType ty
-                Output = ty
-            }
-        Cardinality = One // TODO
+        Shape = shape
         Output = ty
     }
+
+and ofType (ty : Type) =
+    match primitiveShapeOfType ty with
+    | Some p ->
+        {
+            Cardinality =
+                {
+                    Shape = Primitive p
+                    Output = ty
+                } |> One
+            Output = ty
+        }
+    | None -> 
+        {
+            Cardinality = cardinalityOfType ty 
+            Output = ty
+        }
