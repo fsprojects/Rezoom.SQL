@@ -2,10 +2,27 @@
 open System
 open System.Collections.Generic
 
+type ColumnType =
+    | Invalid  = 0s
+    | Object   = 1s // whatever it is goes through boxing
+    | String   = 2s
+    | Byte     = 3s
+    | Int16    = 4s
+    | Int32    = 5s
+    | Int64    = 6s
+    | SByte    = 7s
+    | UInt16   = 8s
+    | UInt32   = 9s
+    | UInt64   = 10s
+    | Single   = 11s
+    | Double   = 12s
+    | Decimal  = 13s
+    | DateTime = 14s
+
 type ColumnInfo =
     struct
         val Index : int16
-        val Type : RowValueType
+        val Type : ColumnType
         new (index, rowValueType) = { Index = index; Type = rowValueType }
     end
 
@@ -23,7 +40,7 @@ type ColumnMap() =
         sub
     member private this.SetColumn(name, info) =
         columns.[name] <- info
-    member private this.Load(columnNames : (string * RowValueType) array) =
+    member private this.Load(columnNames : (string * ColumnType) array) =
         let root = this
         let mutable current = this
         for i = 0 to columnNames.Length - 1 do
@@ -36,7 +53,7 @@ type ColumnMap() =
             current.SetColumn(Array.last path, ColumnInfo(int16 i, rowValueType))
     member this.Column(name) =
         let succ, info = columns.TryGetValue(name)
-        if succ then info else ColumnInfo(-1s, RowValueType.Invalid)
+        if succ then info else ColumnInfo(-1s, ColumnType.Invalid)
     member this.SubMap(name) =
         let succ, map = subMaps.TryGetValue(name)
         if succ then map else null

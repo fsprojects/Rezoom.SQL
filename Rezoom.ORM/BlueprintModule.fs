@@ -143,11 +143,8 @@ and private cardinalityOfType (ty : Type) =
             (List.length multiple)
 
 and private primitiveShapeOfType (ty : Type) =
-    if PrimitiveConverter.IsPrimitive(ty) then
-        {
-            Converter = failwith "FIXME" // FIXME TODO DISASTER HELP
-        } |> Some
-    else None
+    PrimitiveConverters.converter ty
+    |> Option.map (fun converter -> { Converter = converter })
 
 and private elementOfType (ty : Type) =
     let shape =
