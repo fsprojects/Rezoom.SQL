@@ -279,22 +279,37 @@ and private StaticEntityReaderTemplate<'ent>() =
             let appDomain = Threading.Thread.GetDomain()
             let assemblyBuilder = appDomain.DefineDynamicAssembly(assembly, AssemblyBuilderAccess.Run)
             assemblyBuilder.DefineDynamicModule(assembly.Name)
+        let readerBaseType = typedefof<_ EntityReader>.MakeGenericType(entType)
         let readerType =
             let builder =
                 moduleBuilder.DefineType
                     ( entType.Name + "Reader"
                     , TypeAttributes.Public ||| TypeAttributes.AutoClass ||| TypeAttributes.AnsiClass
-                    , typedefof<_ EntityReader>.MakeGenericType(entType)
+                    , readerBaseType
                     )
             StaticEntityReaderTemplate.ImplementReader(Blueprint.ofType entType, builder)
-        let templateBuilder =
-            moduleBuilder.DefineType
-                ( entType.Name + "Template"
-                , TypeAttributes.Public ||| TypeAttributes.AutoClass ||| TypeAttributes.AnsiClass
-                , typedefof<_ EntityReaderTemplate>.MakeGenericType(entType)
-                )
-
-        Activator.CreateInstance(templateBuilder.CreateType())
+        let templateType =
+            let builder =
+                moduleBuilder.DefineType
+                    ( entType.Name + "Template"
+                    , TypeAttributes.Public ||| TypeAttributes.AutoClass ||| TypeAttributes.AnsiClass
+                    , typedefof<_ EntityReaderTemplate>.MakeGenericType(entType)
+                    )
+            ignore <| builder.DefineDefaultConstructor(MethodAttributes.Public)
+            let meth =
+                builder.DefineMethod
+                    ( "CreateReader"
+                    , MethodAttributes.Public ||| MethodAttributes.Virtual
+                    , readerBaseType
+                    , Type.EmptyTypes
+                    )
+            (Stack.empty, IL(meth.GetILGenerator())) ||>
+                cil {
+                    yield newobj0 (readerType.GetConstructor(Type.EmptyTypes))
+                    yield ret
+                } |> ignore
+            builder.CreateType()
+        Activator.CreateInstance(templateType)
         |> Unchecked.unbox : 'ent EntityReaderTemplate
     static member Template() = template
 

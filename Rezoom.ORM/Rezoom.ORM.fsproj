@@ -77,11 +77,6 @@
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\Rezoom.ADO\Rezoom.ADO.csproj">
-      <Name>Rezoom.ADO</Name>
-      <Project>{13bb08a8-8135-4630-beab-1f35d660b52b}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
