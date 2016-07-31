@@ -2,7 +2,7 @@
 
 [<AbstractClass>]
 type EntityReader<'ent> =
-    abstract member Next : unit -> EntityReader<'ent>
+    abstract member ImpartKnowledgeToNext : EntityReader<'ent> -> unit
     abstract member ProcessColumns : ColumnMap -> unit
     abstract member Read : Row -> unit
     abstract member ToEntity : unit -> 'ent
