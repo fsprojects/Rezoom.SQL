@@ -8,6 +8,8 @@ open System.Collections.Generic
 open System.ComponentModel
 open System.Reflection
 
+let private blueprintCache = new Dictionary<Type, Blueprint>()
+
 let private ciDictionary keyValues =
     let dictionary = new Dictionary<string, _>(StringComparer.OrdinalIgnoreCase)
     for key, value in keyValues do
@@ -98,7 +100,7 @@ let rec private compositeShapeOfType ty =
                 let succ, (getterTy, getter) = gettersByName.TryGetValue(name)
                 name, {
                     Name = name
-                    Blueprint = ofType setterTy
+                    Blueprint = lazy ofType setterTy
                     Setter = setter
                     Getter =
                         if succ && getterTy.IsAssignableFrom(setterTy) then Some getter
@@ -143,7 +145,7 @@ and private cardinalityOfType (ty : Type) =
 and private primitiveShapeOfType (ty : Type) =
     if PrimitiveConverter.IsPrimitive(ty) then
         {
-            Converter = Ops.call1 (PrimitiveConverter.ToType(ty))
+            Converter = failwith "FIXME" // FIXME TODO DISASTER HELP
         } |> Some
     else None
 
@@ -157,7 +159,7 @@ and private elementOfType (ty : Type) =
         Output = ty
     }
 
-and ofType (ty : Type) =
+and private ofTypeRaw (ty : Type) =
     match primitiveShapeOfType ty with
     | Some p ->
         {
@@ -173,3 +175,11 @@ and ofType (ty : Type) =
             Cardinality = cardinalityOfType ty 
             Output = ty
         }
+
+and ofType ty =
+    lock blueprintCache <| fun () ->
+    let succ, existing = blueprintCache.TryGetValue(ty)
+    if succ then existing else
+    let blueprint = ofTypeRaw ty
+    blueprintCache.[ty] <- blueprint
+    blueprint

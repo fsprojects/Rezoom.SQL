@@ -25,7 +25,7 @@ type Column =
         /// will represent it. This should always be treated case-insensitively.
         Name : string
         /// The blueprint for this column's type.
-        Blueprint : Blueprint
+        Blueprint : Blueprint Lazy
         /// The way to set this column when initializing an instance of the composite type.
         Setter : Setter
         /// The way to get this column's value (could be used for analyzing expression trees).
@@ -47,7 +47,7 @@ and Composite =
 and Primitive =
     {
         /// A method converting an object to the output type.
-        Converter : ConversionMethod
+        Converter : RowConversionMethod
     }
 
 and BlueprintShape =
