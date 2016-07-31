@@ -11,7 +11,7 @@ type 'x THIS = 'x S
 type 'x ENT = 'x S
 
 [<AbstractClass>]
-type private EntityReaderColumnGenerator(builder : TypeBuilder, column : Column) =
+type private EntityReaderColumnGenerator(builder : TypeBuilder) =
     abstract member DefineConstructor : unit -> Op<E THIS, E THIS>
     abstract member DefineProcessColumns :  unit -> Op<E THIS, E THIS>
     abstract member DefineImpartKnowledgeToNext : unit -> Op<E THIS, E THIS>
@@ -19,7 +19,7 @@ type private EntityReaderColumnGenerator(builder : TypeBuilder, column : Column)
     abstract member DefinePush : unit -> Op<'x, 'x S>
 
 type private PrimitiveColumnGenerator(builder, column, primitive : Primitive) =
-    inherit EntityReaderColumnGenerator(builder, column)
+    inherit EntityReaderColumnGenerator(builder)
     let output = column.Blueprint.Value.Output
     let mutable colValue = null
     let mutable colInfo = null
@@ -91,11 +91,8 @@ type private StaticEntityReaderTemplate =
         | One { Shape = Composite c } ->
             CompositeColumnGenerator(builder, column, c) :> EntityReaderColumnGenerator
         | Many (element, conversion) ->
-            match element.Shape with
-            | Composite { Identity = Some id } ->
-                ManyColumnGenerator(builder, column, element, id, conversion)
-                :> EntityReaderColumnGenerator
-            | _ -> failwith "Unsupported collection type"
+            ManyColumnGenerator(builder, Some column, element, conversion) :> EntityReaderColumnGenerator
+
     static member ImplementReader(builder : TypeBuilder, ty : Type, primitive : Primitive, readerBuilder) =
         let info = builder.DefineField("_i", typeof<ColumnInfo>, FieldAttributes.Private)
         let value = builder.DefineField("_v", ty, FieldAttributes.Private)
@@ -131,6 +128,44 @@ type private StaticEntityReaderTemplate =
             cil {
                 yield ldarg 0
                 yield ldfld value
+                yield ret
+            } |> ignore
+
+    static member ImplementReader(builder : TypeBuilder, element : ElementBlueprint, conversion, readerBuilder) =
+        let generator = ManyColumnGenerator(builder, None, element, conversion)
+        readerBuilder.Ctor ||> 
+            cil {
+                yield ldarg 0
+                yield generator.DefineConstructor()
+                yield pop
+                yield ret'void
+            } |> ignore
+        readerBuilder.ProcessColumns ||>
+            cil {
+                yield ldarg 0
+                yield generator.DefineProcessColumns()
+                yield pop
+                yield ret'void
+            } |> ignore
+        readerBuilder.ImpartKnowledge ||>
+            cil {
+                yield ldarg 0
+                yield generator.DefineImpartKnowledgeToNext()
+                yield pop
+                yield ret'void
+            } |> ignore
+        readerBuilder.Read ||>
+            cil {
+                let! lbl = deflabel
+                yield ldarg 0
+                yield generator.DefineRead(lbl)
+                yield mark lbl
+                yield pop
+                yield ret'void
+            } |> ignore
+        readerBuilder.ToEntity ||>
+            cil {
+                yield generator.DefinePush()
                 yield ret
             } |> ignore
             
@@ -233,7 +268,7 @@ type private StaticEntityReaderTemplate =
         | One { Shape = Composite composite } ->
             StaticEntityReaderTemplate.ImplementReader(builder, composite, readerBuilder)
         | Many (element, conversion) ->
-            ()
+            StaticEntityReaderTemplate.ImplementReader(builder, element, conversion, readerBuilder)
         builder.CreateType()
 
 and private StaticEntityReaderTemplate<'ent>() =
@@ -264,7 +299,7 @@ and private StaticEntityReaderTemplate<'ent>() =
     static member Template() = template
 
 and private CompositeColumnGenerator(builder, column, composite : Composite) =
-    inherit EntityReaderColumnGenerator(builder, column)
+    inherit EntityReaderColumnGenerator(builder)
     let output = column.Blueprint.Value.Output
     let staticTemplate = typedefof<_ StaticEntityReaderTemplate>.MakeGenericType(output)
     let entTemplate = typedefof<_ EntityReaderTemplate>.MakeGenericType(output)
@@ -312,12 +347,15 @@ and private CompositeColumnGenerator(builder, column, composite : Composite) =
 
 and private ManyColumnGenerator
     ( builder
-    , column
+    , column : Column option
     , element : ElementBlueprint
-    , elementId : Column
     , conversion : ConversionMethod
     ) =
-    inherit EntityReaderColumnGenerator(builder, column)
+    inherit EntityReaderColumnGenerator(builder)
+    let elementId =
+        match element.Shape with
+        | Composite { Identity = Some id } -> id
+        | _ -> failwith "Unsupported collection type"
     let elemTy = element.Output
     let staticTemplate = typedefof<_ StaticEntityReaderTemplate>.MakeGenericType(elemTy)
     let entTemplate = typedefof<_ EntityReaderTemplate>.MakeGenericType(elemTy)
@@ -334,15 +372,19 @@ and private ManyColumnGenerator
     let mutable refReader = null
     let mutable idInfo = null
     override __.DefineConstructor() =
-        idInfo <- builder.DefineField("_m_i_" + column.Name, typeof<ColumnInfo>, FieldAttributes.Private)
-        entDict <- builder.DefineField("_m_d_" + column.Name, dictTy, FieldAttributes.Private)
-        refReader <- builder.DefineField("_m_r_" + column.Name, elemReaderTy, FieldAttributes.Private)
+        let name = defaultArg (column |> Option.map (fun c -> c.Name)) "self"
+        idInfo <- builder.DefineField("_m_i_" + name, typeof<ColumnInfo>, FieldAttributes.Private)
+        entDict <- builder.DefineField("_m_d_" + name, dictTy, FieldAttributes.Private)
+        refReader <- builder.DefineField("_m_r_" + name, elemReaderTy, FieldAttributes.Private)
         zero // don't initialize dictionary yet
     override __.DefineProcessColumns() =
         cil {
             yield ldarg 1 // column map
-            yield ldstr column.Name
-            yield call2 ColumnMap.SubMapMethod
+            match column with
+            | Some column ->
+                yield ldstr column.Name
+                yield call2 ColumnMap.SubMapMethod
+            | None -> ()
             let! sub = deflocal typeof<ColumnMap>
             yield stloc sub
             yield ldarg 0 // this
