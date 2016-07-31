@@ -60,6 +60,12 @@ and ElementBlueprint =
         /// The element type this blueprint specifies how to construct.
         Output : Type
     }
+    member this.IsOne =
+        match this.Shape with
+        | Primitive _ -> true
+        | Composite c ->
+            c.Columns.Values
+            |> Seq.forall (fun c -> c.Blueprint.Value.IsOne)
 
 and Cardinality =
     | One of ElementBlueprint
@@ -73,3 +79,7 @@ and Blueprint =
         /// The type (possibly a collectiont ype) this blueprint specifies how to construct.
         Output : Type
     }
+    member this.IsOne =
+        match this.Cardinality with
+        | One e -> e.IsOne
+        | Many _ -> false
