@@ -31,6 +31,7 @@ type ColumnMap() =
     let columns = new Dictionary<string, ColumnInfo>(StringComparer.OrdinalIgnoreCase)
     let subMaps = new Dictionary<string, ColumnMap>(StringComparer.OrdinalIgnoreCase)
     static let columnMethod = typeof<ColumnMap>.GetMethod("Column")
+    static let primaryColumnMethod = typeof<ColumnMap>.GetMethod("PrimaryColumn")
     static let subMapMethod = typeof<ColumnMap>.GetMethod("SubMap")
     member private this.GetOrCreateSubMap(name) =
         let succ, sub = subMaps.TryGetValue(name)
@@ -54,6 +55,8 @@ type ColumnMap() =
     member this.Column(name) =
         let succ, info = columns.TryGetValue(name)
         if succ then info else ColumnInfo(-1s, ColumnType.Invalid)
+    member this.PrimaryColumn() =
+        columns.Values |> Seq.head
     member this.SubMap(name) =
         let succ, map = subMaps.TryGetValue(name)
         if succ then map else null
@@ -62,5 +65,6 @@ type ColumnMap() =
         map.Load(columnNames)
         map
 
+    static member internal PrimaryColumnMethod = primaryColumnMethod
     static member internal ColumnMethod = columnMethod
     static member internal SubMapMethod = subMapMethod
