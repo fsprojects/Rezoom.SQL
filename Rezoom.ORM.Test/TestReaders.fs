@@ -26,4 +26,24 @@ type TestReaders() =
         Assert.AreEqual(1, user.Id)
         Assert.AreEqual("jim", user.Name)
 
+    [<TestMethod>]
+    member __.TestReadManyUsers() =
+        let colMap =
+            [|
+                "Id", ColumnType.Int32
+                "Name", ColumnType.String
+            |] |> ColumnMap.Parse
+        let reader = ReaderTemplate<User list>.Template().CreateReader()
+        reader.ProcessColumns(colMap)
+        reader.Read(ObjectRow(1, "jim"))
+        reader.Read(ObjectRow(1, "jim"))
+        reader.Read(ObjectRow(2, "jerry"))
+        let users = reader.ToEntity()
+        Assert.AreEqual(
+            [
+                { Id = 1; Name = "jim" }
+                { Id = 2; Name = "jerry" }
+            ],
+            users)
+
             
