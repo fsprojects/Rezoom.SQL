@@ -96,16 +96,18 @@ let rec private compositeShapeOfType ty =
     let columns = 
         seq {
             for KeyValue(name, (setterTy, setter)) in settersByName ->
-                let succ, (getterTy, getter) = gettersByName.TryGetValue(name)
+                let succ, getter = gettersByName.TryGetValue(name)
                 name, {
                     Name = name
                     Blueprint = lazy ofType setterTy
                     Setter = setter
                     Getter =
-                        if succ && getterTy.IsAssignableFrom(setterTy) then Some getter
+                        if not succ then None else
+                        let getterTy, getter = getter
+                        if getterTy.IsAssignableFrom(setterTy) then Some getter
                         else None
                 }
-        } |> ciDictionary
+        } |> List.ofSeq |> ciDictionary
     {   Constructor = ctor
         Identity = pickIdentity ty columns
         Columns = columns

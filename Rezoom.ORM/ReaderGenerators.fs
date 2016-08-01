@@ -271,7 +271,7 @@ type private StaticEntityReaderTemplate =
             StaticEntityReaderTemplate.ImplementReader(builder, element, conversion, readerBuilder)
         builder.CreateType()
 
-and private StaticEntityReaderTemplate<'ent>() =
+and ReaderTemplate<'ent>() =
     static let entType = typeof<'ent>
     static let template =
         let moduleBuilder =
@@ -316,7 +316,7 @@ and private StaticEntityReaderTemplate<'ent>() =
 and private CompositeColumnGenerator(builder, column, composite : Composite) =
     inherit EntityReaderColumnGenerator(builder)
     let output = column.Blueprint.Value.Output
-    let staticTemplate = typedefof<_ StaticEntityReaderTemplate>.MakeGenericType(output)
+    let staticTemplate = typedefof<_ ReaderTemplate>.MakeGenericType(output)
     let entTemplate = typedefof<_ EntityReaderTemplate>.MakeGenericType(output)
     let entReaderType = typedefof<_ EntityReader>.MakeGenericType(output)
     let mutable entReader = null
@@ -372,7 +372,7 @@ and private ManyColumnGenerator
         | Composite { Identity = Some id } -> id
         | _ -> failwith "Unsupported collection type"
     let elemTy = element.Output
-    let staticTemplate = typedefof<_ StaticEntityReaderTemplate>.MakeGenericType(elemTy)
+    let staticTemplate = typedefof<_ ReaderTemplate>.MakeGenericType(elemTy)
     let entTemplate = typedefof<_ EntityReaderTemplate>.MakeGenericType(elemTy)
     let elemReaderTy = typedefof<_ EntityReader>.MakeGenericType(elemTy)
     let dictTy = typedefof<Dictionary<_, _>>.MakeGenericType(elementId.Blueprint.Value.Output, elemReaderTy)

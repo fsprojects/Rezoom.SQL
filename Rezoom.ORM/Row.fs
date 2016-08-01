@@ -18,3 +18,21 @@ type Row() =
     abstract member GetDouble : int16 -> double
     abstract member GetDecimal : int16 -> decimal
     abstract member GetDateTime : int16 -> DateTime
+
+type ObjectRow([<ParamArray>] row : obj array) =
+    inherit Row()
+    override __.IsNull(i) = isNull (row.[int i])
+    override __.GetObject(i) = row.[int i]
+    override __.GetString(i) = row.[int i] |> Unchecked.unbox
+    override __.GetByte(i) = row.[int i] |> Unchecked.unbox
+    override __.GetInt16(i) = row.[int i] |> Unchecked.unbox
+    override __.GetInt32(i) = row.[int i] |> Unchecked.unbox
+    override __.GetInt64(i) = row.[int i] |> Unchecked.unbox
+    override __.GetSByte(i) = row.[int i] |> Unchecked.unbox
+    override __.GetUInt16(i) = row.[int i] |> Unchecked.unbox
+    override __.GetUInt32(i) = row.[int i] |> Unchecked.unbox
+    override __.GetUInt64(i) = row.[int i] |> Unchecked.unbox
+    override __.GetSingle(i) = row.[int i] |> Unchecked.unbox
+    override __.GetDouble(i) = row.[int i] |> Unchecked.unbox
+    override __.GetDecimal(i) = row.[int i] |> Unchecked.unbox
+    override __.GetDateTime(i) = row.[int i] |> Unchecked.unbox

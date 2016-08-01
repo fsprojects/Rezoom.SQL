@@ -3,6 +3,7 @@ open LicenseToCIL
 open LicenseToCIL.Ops
 open System
 open System.Collections.Generic
+open System.Reflection
 
 let inline private toNumeric
     (row : Row)
@@ -38,6 +39,10 @@ let inline private toNumeric
 
 type Converters =
     static member ToObject(row : Row, col : ColumnInfo) = row.GetObject(col.Index)
+    static member ToString(row : Row, col : ColumnInfo) =
+        match col.Type with
+        | ColumnType.String -> row.GetString(col.Index)
+        | _ -> row.GetObject(col.Index) |> Convert.ToString
     static member ToByteArray(row : Row, col : ColumnInfo) =
         row.GetObject(col.Index)
         |> Unchecked.unbox : byte array
@@ -114,10 +119,12 @@ type Converters =
         | x -> failwithf "Invalid column type %A for DateTime" x
 
 let private convertersByType =
-    typeof<Converters>.GetMethods()
+    let methods = typeof<Converters>.GetMethods(BindingFlags.Static ||| BindingFlags.NonPublic)
+    methods
     |> Seq.filter
         (fun m ->
-            (m.GetParameters() |> Array.map (fun p -> p.ParameterType)) = [|typeof<Row>; typeof<ColumnInfo>|])
+            let parTypes = m.GetParameters() |> Array.map (fun p -> p.ParameterType)
+            parTypes = [|typeof<Row>; typeof<ColumnInfo>|])
     |> Seq.map
         (fun m -> m.ReturnType, m)
     |> dict
