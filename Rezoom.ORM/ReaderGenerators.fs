@@ -395,6 +395,7 @@ and private ManyColumnGenerator
         zero // don't initialize dictionary yet
     override __.DefineProcessColumns() =
         cil {
+            let! skip = deflabel
             yield ldarg 1 // column map
             match column with
             | Some column ->
@@ -403,22 +404,21 @@ and private ManyColumnGenerator
             | None -> ()
             let! sub = deflocal typeof<ColumnMap>
             yield stloc sub
-            yield ldarg 0 // this
+            yield ldloc sub
+            yield brfalse's skip
+            yield dup
             yield ldloc sub
             yield ldstr elementId.Name
             yield call2 ColumnMap.ColumnMethod
             yield stfld idInfo
-            yield ldloc sub
-            let! skip = deflabel
-            yield brfalse's skip
             yield cil {
-                yield ldarg 0
-                yield call0 (staticTemplate.GetMethod("Template"))
-                yield call1 (entTemplate.GetMethod("CreateReader"))
-                yield dup
-                yield ldloc sub
-                yield callvirt2'void (elemReaderTy.GetMethod("ProcessColumns"))
-                yield stfld refReader
+                yield dup // this
+                yield call0 (staticTemplate.GetMethod("Template")) // this, template
+                yield callvirt1 (entTemplate.GetMethod("CreateReader")) // this, reader
+                yield dup // this, reader, reader
+                yield ldloc sub // this, reader, reader, submap
+                yield callvirt2'void (elemReaderTy.GetMethod("ProcessColumns")) // this, reader
+                yield stfld refReader // _
             }
             yield mark skip
         }
@@ -484,6 +484,16 @@ and private ManyColumnGenerator
                 let! entReader = deflocal elemReaderTy
                 yield dup
                 yield ldfld entDict
+                let! hasDict = deflabel
+                yield dup
+                yield brtrue's hasDict
+                yield pop
+                yield dup
+                yield newobj0 (dictTy.GetConstructor(Type.EmptyTypes))
+                yield stfld entDict
+                yield dup
+                yield ldfld entDict
+                yield mark hasDict
                 yield ldloc id
                 yield ldloca entReader
                 yield call3 (dictTy.GetMethod("TryGetValue"))
@@ -494,7 +504,7 @@ and private ManyColumnGenerator
                 yield ldfld entDict
                 yield ldloc id
                 yield call0 (staticTemplate.GetMethod("Template"))
-                yield call1 (entTemplate.GetMethod("CreateReader"))
+                yield callvirt1 (entTemplate.GetMethod("CreateReader"))
                 yield dup
                 yield stloc entReader
                 yield call3'void (dictTy.GetMethod("Add", [| idTy; elemReaderTy |]))
