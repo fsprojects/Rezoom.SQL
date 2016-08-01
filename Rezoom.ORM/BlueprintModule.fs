@@ -137,7 +137,7 @@ and private cardinalityOfType (ty : Type) =
             | _ -> failwith "Cannot run in bizzare universe where IEnumerable<T> doesn't have one generic arg."
         match CollectionConverters.converter ty ienum elemTy with
         | None -> One (elementOfType ty)
-        | Some converter -> Many (elementOfType ty, converter)
+        | Some converter -> Many (elementOfType elemTy, converter)
     | multiple ->
         failwithf "Type %O has %d IEnumerable<T> implementations. This confuses us."
             ty
