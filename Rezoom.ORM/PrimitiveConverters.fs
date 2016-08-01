@@ -1,4 +1,4 @@
-﻿module private Rezoom.ORM.PrimitiveConverters
+﻿module Rezoom.ORM.PrimitiveConverters
 open LicenseToCIL
 open LicenseToCIL.Ops
 open System
@@ -119,7 +119,7 @@ type Converters =
         | x -> failwithf "Invalid column type %A for DateTime" x
 
 let private convertersByType =
-    let methods = typeof<Converters>.GetMethods(BindingFlags.Static ||| BindingFlags.NonPublic)
+    let methods = typeof<Converters>.GetMethods()
     methods
     |> Seq.filter
         (fun m ->

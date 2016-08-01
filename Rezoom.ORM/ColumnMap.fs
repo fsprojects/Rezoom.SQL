@@ -19,12 +19,14 @@ type ColumnType =
     | Decimal  = 13s
     | DateTime = 14s
 
+[<Struct>]
 type ColumnInfo =
-    struct
-        val Index : int16
-        val Type : ColumnType
-        new (index, rowValueType) = { Index = index; Type = rowValueType }
-    end
+    val mutable public Index : int16
+    val mutable public Type : ColumnType
+    new (index, rowValueType) = { Index = index; Type = rowValueType }
+
+    static member IndexField = typeof<ColumnInfo>.GetField("Index")
+    static member TypeField = typeof<ColumnInfo>.GetField("Type")
 
 [<AllowNullLiteral>]
 type ColumnMap() =

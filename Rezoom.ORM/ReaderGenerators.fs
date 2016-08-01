@@ -53,6 +53,7 @@ type private PrimitiveColumnGenerator(builder, column, primitive : Primitive) =
             yield brtrue's skipOnes
             yield dup
             yield ldfld colInfo
+            yield ldfld ColumnInfo.IndexField
             yield ldc'i4 0
             yield blt's skip
             yield cil {
@@ -201,12 +202,12 @@ type private StaticEntityReaderTemplate =
         readerBuilder.Read ||>
             cil {
                 let! skipOnes = deflabel
+                let! skipAll = deflabel
                 yield ldarg 0
                 let ones, others = columns |> Array.partition (fun (b, _) -> b.Blueprint.Value.IsOne)
                 for _, column in ones do
                     yield column.DefineRead(skipOnes)
                 yield mark skipOnes
-                let! skipAll = deflabel
                 for _, column in others do
                     yield column.DefineRead(skipAll)
                 yield mark skipAll
