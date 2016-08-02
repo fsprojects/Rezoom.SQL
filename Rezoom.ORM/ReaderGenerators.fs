@@ -522,8 +522,12 @@ and private ManyColumnGenerator
         }
     override __.DefinePush() =
         cil {
+            let! ncase = deflabel
             yield ldarg 0
             yield ldfld entDict
+            yield dup
+            yield brfalse's ncase
             yield call1 (dictTy.GetProperty("Values").GetGetMethod())
             yield generalize conversion
+            yield mark ncase
         }
