@@ -4,8 +4,14 @@ open Microsoft.VisualStudio.TestTools.UnitTesting
 
 type User = 
     {
-        Id : int
+        UserId : int
         Name : string
+    }
+
+type Folder =
+    {
+        FolderId : int
+        Children : Folder array
     }
 
 [<TestClass>]
@@ -14,7 +20,7 @@ type TestCompositeReaders() =
     member __.TestReadUser() =
         let colMap =
             [|
-                "Id", ColumnType.Int32
+                "UserId", ColumnType.Int32
                 "Name", ColumnType.String
             |] |> ColumnMap.Parse
         let row = ObjectRow(1, "jim")
@@ -23,14 +29,14 @@ type TestCompositeReaders() =
         reader.Read(row)
         let user = reader.ToEntity()
         Assert.IsNotNull(user)
-        Assert.AreEqual(1, user.Id)
+        Assert.AreEqual(1, user.UserId)
         Assert.AreEqual("jim", user.Name)
 
     [<TestMethod>]
     member __.TestReadManyUsers() =
         let colMap =
             [|
-                "Id", ColumnType.Int32
+                "UserId", ColumnType.Int32
                 "Name", ColumnType.String
             |] |> ColumnMap.Parse
         let reader = ReaderTemplate<User list>.Template().CreateReader()
@@ -41,9 +47,42 @@ type TestCompositeReaders() =
         let users = reader.ToEntity()
         Assert.AreEqual(
             [
-                { Id = 1; Name = "jim" }
-                { Id = 2; Name = "jerry" }
+                { UserId = 1; Name = "jim" }
+                { UserId = 2; Name = "jerry" }
             ],
             users)
 
+    [<TestMethod>]
+    member __.TestReadFolder1Level() =
+        let colMap =
+            [|
+                "FolderId", ColumnType.Int32
+            |] |> ColumnMap.Parse
+        let reader = ReaderTemplate<Folder>.Template().CreateReader()
+        reader.ProcessColumns(colMap)
+        reader.Read(ObjectRow(1))
+        let folder = reader.ToEntity()
+        Assert.IsNotNull(folder)
+        Assert.AreEqual(1, folder.FolderId)
+        Assert.IsNull(folder.Children)
+
+    [<TestMethod>]
+    member __.TestReadFolder2Levels() =
+        let colMap =
+            [|
+                "FolderId", ColumnType.Int32
+                "Children.FolderId", ColumnType.Int32
+            |] |> ColumnMap.Parse
+        let reader = ReaderTemplate<Folder>.Template().CreateReader()
+        reader.ProcessColumns(colMap)
+        reader.Read(ObjectRow(1, 2))
+        reader.Read(ObjectRow(1, 3))
+        let folder = reader.ToEntity()
+        Assert.IsNotNull(folder)
+        Assert.AreEqual(1, folder.FolderId)
+        Assert.AreEqual(2, folder.Children.Length)
+        Assert.AreEqual(2, folder.Children.[0].FolderId)
+        Assert.AreEqual(3, folder.Children.[1].FolderId)
+        Assert.IsNull(folder.Children.[0].Children)
+        Assert.IsNull(folder.Children.[1].Children)
             
