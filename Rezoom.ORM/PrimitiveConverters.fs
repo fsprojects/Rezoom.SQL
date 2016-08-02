@@ -27,7 +27,7 @@ let inline private toNumeric
     | ColumnType.Byte -> row.GetByte(col.Index) |> fromByte
     | ColumnType.Int16 -> row.GetInt16(col.Index) |> fromInt16
     | ColumnType.Int32 -> row.GetInt32(col.Index) |> fromInt32
-    | ColumnType.Int64 -> row.GetInt16(col.Index) |> fromInt64
+    | ColumnType.Int64 -> row.GetInt64(col.Index) |> fromInt64
     | ColumnType.SByte -> row.GetSByte(col.Index) |> fromSByte
     | ColumnType.UInt16 -> row.GetUInt16(col.Index) |> fromUInt16
     | ColumnType.UInt32 -> row.GetUInt32(col.Index) |> fromUInt32
@@ -150,7 +150,7 @@ let converter (ty : Type) : RowConversionMethod option =
                 yield ldloc colInfo // row, row, col
                 yield ldfld columnIndexField // row, row, index
                 yield Ops.callvirt2 rowIsNullMethod // row, isnull
-                yield brfalse's ncase
+                yield brtrue's ncase
                 yield cil {
                     yield ldloc colInfo
                     yield Ops.call2 meth
@@ -160,7 +160,10 @@ let converter (ty : Type) : RowConversionMethod option =
                 yield mark ncase
                 yield cil {
                     yield pop
-                    yield newobj0 (ty.GetConstructor(Type.EmptyTypes))
+                    let! empty = deflocal ty
+                    yield ldloca empty
+                    yield initobj ty
+                    yield ldloc empty
                 }
                 yield mark exit
             } |> Some
