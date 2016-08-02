@@ -42,7 +42,10 @@ type Converters =
     static member ToString(row : Row, col : ColumnInfo) =
         match col.Type with
         | ColumnType.String -> row.GetString(col.Index)
-        | _ -> row.GetObject(col.Index) |> Convert.ToString
+        | _ ->
+            match row.GetObject(col.Index) with
+            | null -> null
+            | o -> Convert.ToString(o)
     static member ToByteArray(row : Row, col : ColumnInfo) =
         row.GetObject(col.Index)
         |> Unchecked.unbox : byte array

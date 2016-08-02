@@ -16,9 +16,11 @@ type TestPrimitiveReaders() =
         reader.Read(row)
         let mat = reader.ToEntity()
         Assert.AreEqual(expected, mat)
-    let testRef expected ctype =
+    let testRef (expected : 'a) ctype =
         testCore expected ctype
         testCore expected ColumnType.Object
+        testCore (null : 'a) ctype
+        testCore (null : 'a) ColumnType.Object
     let test (expected : 'a) ctype =
         testCore expected ctype
         testCore expected ColumnType.Object
@@ -29,6 +31,9 @@ type TestPrimitiveReaders() =
 
     [<TestMethod>]
     member __.TestReadString() = testRef "thirteen" ColumnType.String
+
+    [<TestMethod>]
+    member __.TestReadByteArray() = testRef [|0uy;1uy;2uy;3uy|] ColumnType.Object
 
     [<TestMethod>]
     member __.TestReadInt32() = test 13 ColumnType.Int32
