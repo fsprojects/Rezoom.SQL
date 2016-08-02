@@ -9,7 +9,7 @@ type User =
     }
 
 [<TestClass>]
-type TestReaders() =
+type TestCompositeReaders() =
     [<TestMethod>]
     member __.TestReadUser() =
         let colMap =
