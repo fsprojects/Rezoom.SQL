@@ -72,6 +72,7 @@ let private pickIdentity (ty : Type) (cols : IReadOnlyDictionary<string, Column>
             (List.length multiple)
 
 let private isQueryParent (columnName : string) (setter : Setter) =
+    // TODO look at getter; if it's a record property it couldn't be on the setter
     let attr =
         match setter with
         | SetConstructorParameter par -> par.GetCustomAttribute<BlueprintQueryParentAttribute>()

@@ -45,8 +45,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="TestCompositeReaders.fs" />
     <Compile Include="TestPrimitiveReaders.fs" />
+    <Compile Include="TestCompositeReaders.fs" />
+    <Compile Include="TestQueryParents.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Rezoom.ORM\Rezoom.ORM.fsproj">

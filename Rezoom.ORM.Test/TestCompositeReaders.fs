@@ -1,4 +1,4 @@
-﻿namespace Rezoom.ORM.Test
+﻿namespace Rezoom.ORM.Test.CompositeReaders
 open Rezoom.ORM
 open Microsoft.VisualStudio.TestTools.UnitTesting
 

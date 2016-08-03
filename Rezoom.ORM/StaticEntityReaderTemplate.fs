@@ -178,7 +178,7 @@ type private StaticEntityReaderTemplate =
                         let uninit =
                             typeof<System.Runtime.Serialization.FormatterServices>.GetMethod("GetUninitializedObject")
                         yield ldtoken builder
-                        yield call1 (typeof<Type>.GetMethod("GetTypeFromHandle", BindingFlags.Static ||| BindingFlags.Public))
+                        yield call1 (typeof<Type>.GetMethod("GetTypeFromHandle"))
                         yield call1 uninit
                         yield castclass builder
                         yield dup
@@ -203,7 +203,8 @@ type private StaticEntityReaderTemplate =
                     | SetProperty prop ->
                         yield dup
                         yield column.DefinePush(self)
-                        yield callvirt2'void (prop.GetSetMethod())
+                        let meth = prop.GetSetMethod()
+                        yield (if meth.IsVirtual then callvirt2'void else call2'void) meth
                     | _ -> ()
                 yield ret
             } |> ignore
