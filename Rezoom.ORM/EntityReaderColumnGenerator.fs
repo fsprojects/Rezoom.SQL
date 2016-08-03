@@ -16,7 +16,11 @@ type private EntityReaderColumnGenerator(builder : TypeBuilder) =
     abstract member DefineProcessColumns :  unit -> Op<E THIS, E THIS>
     abstract member DefineImpartKnowledgeToNext : unit -> Op<E THIS, E THIS>
     abstract member DefineRead : skipOnes : Label<E THIS> -> Op<E THIS, E THIS>
-    abstract member DefinePush : unit -> Op<'x, 'x S>
+    abstract member DefineSetQueryParent : unit -> Op<E THIS, E THIS>
+    default __.DefineSetQueryParent() = zero
+    abstract member RequiresSelfReferenceToPush : bool
+    default __.RequiresSelfReferenceToPush = false
+    abstract member DefinePush : Local option -> Op<'x, 'x S>
 
 module private Generation =
     // We'll need to reference this type in various column generator implementations,

@@ -58,7 +58,7 @@ type private PrimitiveColumnGenerator(builder, column, primitive : Primitive) =
             }
             yield mark skip
         }
-    override __.DefinePush() =
+    override __.DefinePush(_) =
         cil {
             yield ldarg 0 // this
             yield ldfld colValue

@@ -45,6 +45,8 @@ and Composite =
         /// Indexed by name, case insensitive.
         Columns : IReadOnlyDictionary<string, Column>
     }
+    member this.ReferencesQueryParent =
+        this.Columns.Values |> Seq.exists (fun col -> col.IsQueryParent)
 
 and Primitive =
     {

@@ -45,7 +45,7 @@ type Converters<'elem> =
             resizeArr.Add(reader.ToEntity())
         resizeArr
     static member ToList(collection : 'elem EntityReader ICollection) =
-        collection |> Seq.map (fun r -> r.ToEntity()) |> List.ofSeq    
+        collection |> Seq.map (fun r -> r.ToEntity()) |> List.ofSeq
 
 let converter (ty : Type) (ienum : Type) (elem : Type) : ConversionMethod option =
     let converter = typedefof<Converters<_>>.MakeGenericType(elem)

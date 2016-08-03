@@ -13,6 +13,7 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
     let staticTemplate = Generation.readerTemplateGeneric.MakeGenericType(output)
     let entTemplate = typedefof<_ EntityReaderTemplate>.MakeGenericType(output)
     let entReaderType = typedefof<_ EntityReader>.MakeGenericType(output)
+    let requiresSelf = composite.ReferencesQueryParent
     let mutable entReader = null
     override __.DefineConstructor() =
         entReader <- builder.DefineField("_c_r_" + column.Name, entReaderType, FieldAttributes.Private)
@@ -47,9 +48,23 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
             yield ldarg 1
             yield callvirt2'void (entReaderType.GetMethod("Read"))
         }
-    override __.DefinePush() =
+    override __.RequiresSelfReferenceToPush = requiresSelf
+    override __.DefinePush(self) =
         cil {
-            yield ldarg 0
-            yield ldfld entReader
-            yield callvirt1 (entReaderType.GetMethod("ToEntity"))
+            match requiresSelf, self with
+            | true, Some self ->
+                yield ldarg 0
+                yield ldfld entReader
+                yield dup
+                yield ldloc self
+                if output.IsValueType then yield box'val output
+                yield callvirt2'void (entReaderType.GetMethod("SetQueryParent"))
+                yield callvirt1 (entReaderType.GetMethod("ToEntity"))
+            | true, None ->
+                failwith "Composite requires self reference, but none was supplied."
+                yield pretend
+            | false, _ ->
+                yield ldarg 0
+                yield ldfld entReader
+                yield callvirt1 (entReaderType.GetMethod("ToEntity"))
         }
