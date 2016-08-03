@@ -14,6 +14,13 @@ type Folder =
         Children : Folder array
     }
 
+type Person =
+    {
+        PersonId : int
+        Name : string
+        Parent : Person
+    }
+
 [<TestClass>]
 type TestCompositeReaders() =
     [<TestMethod>]
@@ -85,4 +92,40 @@ type TestCompositeReaders() =
         Assert.AreEqual(3, folder.Children.[1].FolderId)
         Assert.IsNull(folder.Children.[0].Children)
         Assert.IsNull(folder.Children.[1].Children)
+
+    [<TestMethod>]
+    member __.TestReadPerson1Level() =
+        let colMap =
+            [|
+                "PersonId", ColumnType.Int32
+                "Name", ColumnType.String
+            |] |> ColumnMap.Parse
+        let reader = ReaderTemplate<Person>.Template().CreateReader()
+        reader.ProcessColumns(colMap)
+        reader.Read(ObjectRow(1, "ben"))
+        let person = reader.ToEntity()
+        Assert.IsNotNull(person)
+        Assert.AreEqual(1, person.PersonId)
+        Assert.AreEqual("ben", person.Name)
+        Assert.IsNull(person.Parent)
+
+    [<TestMethod>]
+    member __.TestReadPerson2Levels() =
+        let colMap =
+            [|
+                "PersonId", ColumnType.Int32
+                "Name", ColumnType.String
+                "Parent.PersonId", ColumnType.Int32
+                "Name", ColumnType.String
+            |] |> ColumnMap.Parse
+        let reader = ReaderTemplate<Person>.Template().CreateReader()
+        reader.ProcessColumns(colMap)
+        reader.Read(ObjectRow(1, "ben", 2, "pat"))
+        let person = reader.ToEntity()
+        Assert.IsNotNull(person)
+        Assert.AreEqual(1, person.PersonId)
+        Assert.AreEqual("ben", person.Name)
+        Assert.IsNotNull(person.Parent)
+        Assert.AreEqual(2, person.Parent.PersonId)
+        Assert.AreEqual("pat", person.Parent.Name)
             

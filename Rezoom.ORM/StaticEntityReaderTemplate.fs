@@ -140,7 +140,7 @@ type private StaticEntityReaderTemplate =
                 let! skipOnes = deflabel
                 let! skipAll = deflabel
                 yield ldarg 0
-                let ones, others = columns |> Array.partition (fun (b, _) -> b.Blueprint.Value.IsOne)
+                let ones, others = columns |> Array.partition (fun (b, _) -> b.Blueprint.Value.IsOne())
                 for _, column in ones do
                     yield column.DefineRead(skipOnes)
                 yield mark skipOnes
@@ -227,8 +227,10 @@ type private StaticEntityReaderTemplate =
                         .GetILGenerator())
                 Read = Stack.empty, IL(builder
                     .DefineMethod("Read", methodAttrs, typeof<Void>, [| typeof<Row> |]).GetILGenerator())
-                SetQueryParent = Stack.empty, IL(builder
-                    .DefineMethod("SetQueryParent", methodAttrs, typeof<Void>, [| typeof<obj> |]).GetILGenerator())
+                SetQueryParent =
+                    Stack.empty, IL(builder
+                        .DefineMethod("SetQueryParent", methodAttrs, typeof<Void>, [| typeof<obj> |])
+                        .GetILGenerator())
                 ToEntity = Stack.empty, IL(builder
                     .DefineMethod("ToEntity", methodAttrs, blueprint.Output, Type.EmptyTypes).GetILGenerator())
             }

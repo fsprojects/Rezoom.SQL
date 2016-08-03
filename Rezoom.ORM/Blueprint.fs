@@ -64,12 +64,15 @@ and ElementBlueprint =
         /// The element type this blueprint specifies how to construct.
         Output : Type
     }
-    member this.IsOne =
+    member internal this.IsOne(roots : Type HashSet) =
         match this.Shape with
         | Primitive _ -> true
         | Composite c ->
             c.Columns.Values
-            |> Seq.forall (fun c -> c.Blueprint.Value.IsOne)
+            |> Seq.forall (fun c ->
+                let blueprint = c.Blueprint.Value
+                roots.Contains(blueprint.Output)
+                || roots.Add(blueprint.Output) && blueprint.IsOne(roots))
 
 and Cardinality =
     | One of ElementBlueprint
@@ -83,7 +86,8 @@ and Blueprint =
         /// The type (possibly a collectiont ype) this blueprint specifies how to construct.
         Output : Type
     }
-    member this.IsOne =
+    member internal this.IsOne(roots : Type HashSet) =
         match this.Cardinality with
-        | One e -> e.IsOne
+        | One e -> e.IsOne(roots)
         | Many _ -> false
+    member this.IsOne() = this.IsOne(new HashSet<_>([| this.Output |]))
