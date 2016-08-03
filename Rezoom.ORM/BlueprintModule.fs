@@ -71,6 +71,15 @@ let private pickIdentity (ty : Type) (cols : IReadOnlyDictionary<string, Column>
             ty
             (List.length multiple)
 
+let private isQueryParent (columnName : string) (setter : Setter) =
+    let attr =
+        match setter with
+        | SetConstructorParameter par -> par.GetCustomAttribute<BlueprintQueryParentAttribute>()
+        | SetField field -> field.GetCustomAttribute<BlueprintQueryParentAttribute>()
+        | SetProperty prop -> prop.GetCustomAttribute<BlueprintQueryParentAttribute>()
+    not (isNull attr)
+    || columnName.Equals("QUERYPARENT", StringComparison.OrdinalIgnoreCase)
+
 let rec private compositeShapeOfType ty =
     let ctor, pars = pickConstructor ty
     let props =
@@ -106,6 +115,7 @@ let rec private compositeShapeOfType ty =
                         let getterTy, getter = getter
                         if getterTy.IsAssignableFrom(setterTy) then Some getter
                         else None
+                    IsQueryParent = isQueryParent name setter
                 }
         } |> List.ofSeq |> ciDictionary
     {   Constructor = ctor

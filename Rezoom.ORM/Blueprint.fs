@@ -30,6 +30,8 @@ type Column =
         Setter : Setter
         /// The way to get this column's value (could be used for analyzing expression trees).
         Getter : Getter option
+        /// Whether this column is a back reference to the query-parent of this type.
+        IsQueryParent : bool
     }
 
 and Composite =

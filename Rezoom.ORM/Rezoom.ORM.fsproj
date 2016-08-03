@@ -58,7 +58,7 @@
     <Compile Include="Converters.fs" />
     <Compile Include="PrimitiveConverters.fs" />
     <Compile Include="CollectionConverters.fs" />
-    <Compile Include="BlueprintConstructorAttribute.fs" />
+    <Compile Include="BlueprintAttributes.fs" />
     <Compile Include="Blueprint.fs" />
     <Compile Include="BlueprintModule.fs" />
     <Compile Include="EntityReaderColumnGenerator.fs" />
