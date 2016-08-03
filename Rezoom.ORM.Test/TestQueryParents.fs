@@ -64,6 +64,8 @@ type TestQueryParents() =
             |] |> ColumnMap.Parse
         let reader = ReaderTemplate<ClassFolder array>.Template().CreateReader()
         reader.ProcessColumns(colMap)
+        let next = ReaderTemplate<ClassFolder array>.Template().CreateReader() 
+        reader.ImpartKnowledgeToNext(next)
         for objectRow in
             [|
                 ObjectRow(1, "A", 2, "A.1")

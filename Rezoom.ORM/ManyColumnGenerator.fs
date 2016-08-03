@@ -93,19 +93,18 @@ type private ManyColumnGenerator
             yield ldfld refReader
             yield brfalse's nread
             yield cil {
-                yield ldarg 1
-                yield ldarg 0
-                yield ldfld refReader
-                yield castclass builder
-                yield call0 (staticTemplate.GetMethod("Template"))
-                yield call1 (entTemplate.GetMethod("CreateReader"))
-                let! loc = deflocal elemReaderTy
+                yield ldarg 1 // that
+                yield ldarg 0 // that, this
+                yield ldfld refReader // that, oldReader
+                yield call0 (staticTemplate.GetMethod("Template")) // that, oldReader, template
+                yield callvirt1 (entTemplate.GetMethod("CreateReader")) // that, oldReader, newReader
+                let! newReader = deflocal elemReaderTy
                 yield dup
-                yield stloc loc
+                yield stloc newReader
                 // that, oldReader, newReader
                 yield callvirt2'void (elemReaderTy.GetMethod("ImpartKnowledgeToNext"))
                 // that
-                yield ldloc loc
+                yield ldloc newReader
                 yield stfld refReader
                 yield br's exit
             }
