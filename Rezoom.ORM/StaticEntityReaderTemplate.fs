@@ -19,6 +19,7 @@ type private EntityReaderBuilder =
 
 type private StaticEntityReaderTemplate =
     static member ColumnGenerator(builder, column) =
+        if column.IsQueryParent then QueryParentColumnGenerator(builder, column) :> EntityReaderColumnGenerator else
         match column.Blueprint.Value.Cardinality with
         | One { Shape = Primitive p } ->
             PrimitiveColumnGenerator(builder, column, p) :> EntityReaderColumnGenerator

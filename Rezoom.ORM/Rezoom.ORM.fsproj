@@ -62,6 +62,7 @@
     <Compile Include="Blueprint.fs" />
     <Compile Include="BlueprintModule.fs" />
     <Compile Include="EntityReaderColumnGenerator.fs" />
+    <Compile Include="QueryParentColumnGenerator.fs" />
     <Compile Include="PrimitiveColumnGenerator.fs" />
     <Compile Include="CompositeColumnGenerator.fs" />
     <Compile Include="ManyColumnGenerator.fs" />
