@@ -13,6 +13,7 @@ type private EntityReaderBuilder =
         ProcessColumns : E S * IL
         ImpartKnowledge : E S * IL
         Read : E S * IL
+        SetQueryParent : E S * IL
         ToEntity : E S * IL
     }
 
@@ -26,7 +27,7 @@ type private StaticEntityReaderTemplate =
         | Many (element, conversion) ->
             ManyColumnGenerator(builder, Some column, element, conversion) :> EntityReaderColumnGenerator
 
-    static member ImplementReader(builder : TypeBuilder, ty : Type, primitive : Primitive, readerBuilder) =
+    static member ImplementPrimitive(builder : TypeBuilder, ty : Type, primitive : Primitive, readerBuilder) =
         let info = builder.DefineField("_i", typeof<ColumnInfo>, FieldAttributes.Private)
         let value = builder.DefineField("_v", ty, FieldAttributes.Private)
         readerBuilder.Ctor ||> ret'void |> ignore
@@ -57,6 +58,7 @@ type private StaticEntityReaderTemplate =
                 yield stfld value
                 yield ret'void
             } |> ignore
+        readerBuilder.SetQueryParent ||> ret'void |> ignore
         readerBuilder.ToEntity ||>
             cil {
                 yield ldarg 0
@@ -64,7 +66,7 @@ type private StaticEntityReaderTemplate =
                 yield ret
             } |> ignore
 
-    static member ImplementReader(builder : TypeBuilder, element : ElementBlueprint, conversion, readerBuilder) =
+    static member ImplementMany(builder : TypeBuilder, element : ElementBlueprint, conversion, readerBuilder) =
         let generator = ManyColumnGenerator(builder, None, element, conversion)
         readerBuilder.Ctor ||> 
             cil {
@@ -96,13 +98,15 @@ type private StaticEntityReaderTemplate =
                 yield pop
                 yield ret'void
             } |> ignore
+        readerBuilder.SetQueryParent ||> ret'void |> ignore
         readerBuilder.ToEntity ||>
             cil {
-                yield generator.DefinePush()
+                let! self = deflocal builder
+                yield generator.DefinePush(self)
                 yield ret
             } |> ignore
             
-    static member ImplementReader(builder, composite : Composite, readerBuilder) =
+    static member ImplementComposite(builder, composite : Composite, readerBuilder) =
         let columns =
                 [| for column in composite.Columns.Values ->
                     column, StaticEntityReaderTemplate.ColumnGenerator(builder, column)
@@ -146,6 +150,14 @@ type private StaticEntityReaderTemplate =
                 yield pop
                 yield ret'void
             } |> ignore
+        readerBuilder.SetQueryParent ||>
+            cil {
+                yield ldarg 0
+                for _, column in columns do
+                    yield column.DefineSetQueryParent()
+                yield pop
+                yield ret'void
+            } |> ignore
         let constructorColumns =
             seq {
                 for blue, column in columns do
@@ -153,22 +165,44 @@ type private StaticEntityReaderTemplate =
                     | SetConstructorParameter paramInfo ->
                         yield paramInfo.Position, column
                     | _ -> ()
-            } |> Seq.sortBy fst |> Seq.map snd
+            } |> Seq.sortBy fst |> Seq.map snd |> Seq.toArray
         readerBuilder.ToEntity ||>
             cil {
-                for column in constructorColumns do
-                    yield column.DefinePush()
-                    yield pretend
-                yield newobj'x composite.Constructor
+                let! self = deflocal builder
+                if composite.ReferencesQueryParent then
+                    if Array.isEmpty constructorColumns then
+                        yield newobj0 composite.Constructor
+                        yield dup
+                        yield stloc self
+                    else
+                        let uninit =
+                            typeof<System.Runtime.Serialization.FormatterServices>.GetMethod("GetUninitializedObject")
+                        yield ldtoken builder
+                        yield call1 (typeof<Type>.GetMethod("GetTypeFromHandle", BindingFlags.Static ||| BindingFlags.Public))
+                        yield call1 uninit
+                        yield castclass builder
+                        yield dup
+                        yield stloc self
+                        for column in constructorColumns do
+                            yield column.DefinePush(self)
+                            yield pretend
+                        yield (fun st il ->
+                            il.Generator.Emit(OpCodes.Call, composite.Constructor)
+                            null)
+                else
+                    for column in constructorColumns do
+                        yield column.DefinePush(self)
+                        yield pretend
+                    yield newobj'x composite.Constructor
                 for blue, column in columns do
                     match blue.Setter with
                     | SetField field ->
                         yield dup
-                        yield column.DefinePush()
+                        yield column.DefinePush(self)
                         yield stfld field
                     | SetProperty prop ->
                         yield dup
-                        yield column.DefinePush()
+                        yield column.DefinePush(self)
                         yield callvirt2'void (prop.GetSetMethod())
                     | _ -> ()
                 yield ret
@@ -192,16 +226,18 @@ type private StaticEntityReaderTemplate =
                         .GetILGenerator())
                 Read = Stack.empty, IL(builder
                     .DefineMethod("Read", methodAttrs, typeof<Void>, [| typeof<Row> |]).GetILGenerator())
+                SetQueryParent = Stack.empty, IL(builder
+                    .DefineMethod("SetQueryParent", methodAttrs, typeof<Void>, [| typeof<obj> |]).GetILGenerator())
                 ToEntity = Stack.empty, IL(builder
                     .DefineMethod("ToEntity", methodAttrs, blueprint.Output, Type.EmptyTypes).GetILGenerator())
             }
         match blueprint.Cardinality with
         | One { Shape = Primitive primitive } ->
-            StaticEntityReaderTemplate.ImplementReader(builder, blueprint.Output, primitive, readerBuilder)
+            StaticEntityReaderTemplate.ImplementPrimitive(builder, blueprint.Output, primitive, readerBuilder)
         | One { Shape = Composite composite } ->
-            StaticEntityReaderTemplate.ImplementReader(builder, composite, readerBuilder)
+            StaticEntityReaderTemplate.ImplementComposite(builder, composite, readerBuilder)
         | Many (element, conversion) ->
-            StaticEntityReaderTemplate.ImplementReader(builder, element, conversion, readerBuilder)
+            StaticEntityReaderTemplate.ImplementMany(builder, element, conversion, readerBuilder)
         builder.CreateType()
 
 type ReaderTemplate<'ent>() =

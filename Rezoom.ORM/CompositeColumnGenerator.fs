@@ -51,20 +51,12 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
     override __.RequiresSelfReferenceToPush = requiresSelf
     override __.DefinePush(self) =
         cil {
-            match requiresSelf, self with
-            | true, Some self ->
-                yield ldarg 0
-                yield ldfld entReader
+            yield ldarg 0
+            yield ldfld entReader
+            if requiresSelf then
                 yield dup
                 yield ldloc self
                 if output.IsValueType then yield box'val output
                 yield callvirt2'void (entReaderType.GetMethod("SetQueryParent"))
-                yield callvirt1 (entReaderType.GetMethod("ToEntity"))
-            | true, None ->
-                failwith "Composite requires self reference, but none was supplied."
-                yield pretend
-            | false, _ ->
-                yield ldarg 0
-                yield ldfld entReader
-                yield callvirt1 (entReaderType.GetMethod("ToEntity"))
+            yield callvirt1 (entReaderType.GetMethod("ToEntity"))
         }

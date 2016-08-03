@@ -20,7 +20,7 @@ type private EntityReaderColumnGenerator(builder : TypeBuilder) =
     default __.DefineSetQueryParent() = zero
     abstract member RequiresSelfReferenceToPush : bool
     default __.RequiresSelfReferenceToPush = false
-    abstract member DefinePush : Local option -> Op<'x, 'x S>
+    abstract member DefinePush : selfReference : Local -> Op<'x, 'x S>
 
 module private Generation =
     // We'll need to reference this type in various column generator implementations,

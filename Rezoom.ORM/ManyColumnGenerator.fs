@@ -185,20 +185,13 @@ type private ManyColumnGenerator
             yield ldfld entDict
             yield dup
             yield brfalse's ncase
-            match requiresSelf, self with
-            | true, Some self ->
+            yield call1 (dictTy.GetProperty("Values").GetGetMethod())
+            if requiresSelf then
                 let setQueryParent =
                     typedefof<_ ManyColumnGeneratorCode>.MakeGenericType(elemTy).GetMethod("SetQueryParent")
-                yield call1 (dictTy.GetProperty("Values").GetGetMethod())
                 yield dup
                 yield ldloc self
                 yield call2'void setQueryParent
-                yield generalize conversion
-            | true, None ->
-                failwith "Many-composite requires self-reference, but none was suppleid."
-                yield pretend
-            | false, _ ->  
-                yield call1 (dictTy.GetProperty("Values").GetGetMethod())
-                yield generalize conversion
+            yield generalize conversion
             yield mark ncase
         }
