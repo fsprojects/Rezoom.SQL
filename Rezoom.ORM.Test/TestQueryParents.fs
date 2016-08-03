@@ -20,6 +20,57 @@ type ClassFolder() =
 [<TestClass>]
 type TestQueryParents() =
     [<TestMethod>]
+    [<Ignore>] // Expected to always stack overflow and crash VS test engine. Fun to run only as a curiousity.
+    member __.TestRecordEquality() =
+        let colMap =
+            [|
+                "Id", ColumnType.Int32
+                "Name", ColumnType.String
+                "Children$Id", ColumnType.Int32
+                "Name", ColumnType.String
+                "Children$Children$Id", ColumnType.Int32
+                "Name", ColumnType.String
+            |] |> ColumnMap.Parse
+        let reader = ReaderTemplate<RecordFolder list>.Template().CreateReader()
+        reader.ProcessColumns(colMap)
+        for objectRow in
+            [|
+                ObjectRow(1, "A", 2, "A.1", 7, "A.1.1")
+                ObjectRow(1, "A", 3, "A.2", 8, "A.2.1")
+                ObjectRow(4, "B", 5, "B.1", 9, "B.1.1")
+                ObjectRow(4, "B", 6, "B.2", 10, "B.2.1")
+            |] do reader.Read(objectRow)
+        let folders1 = reader.ToEntity()
+
+        let reader = ReaderTemplate<RecordFolder list>.Template().CreateReader()
+        reader.ProcessColumns(colMap)
+        for objectRow in
+            [|
+                ObjectRow(1, "A", 2, "A.1", 7, "A.1.1")
+                ObjectRow(1, "A", 3, "A.2", 8, "A.2.1")
+                ObjectRow(4, "B", 5, "B.1", 9, "B.1.1")
+                ObjectRow(4, "B", 6, "B.2", 10, "B.2.1")
+            |] do reader.Read(objectRow)
+        let folders2 = reader.ToEntity()
+        let bottom1 = folders1.Head.Children.[0].Children.[0]
+        let bottom2 = folders2.Head.Children.[0].Children.[0]
+        Assert.AreEqual(bottom1, bottom2)
+        // This will stack overflow, because the equality comparison goes:
+        // are we equal? -->
+        // ^    are our Ids equal? yes.
+        // |    are our Names equal? yes.
+        // ^    are our Children equal? yes.
+        // |    are our Parents equal? -->
+        // ^        are their Ids equal? yes.
+        // |        are their Names equal? yes.
+        // ^        are their Children equal? -->+
+        // |                                     |
+        // +-<--<--<--<--<--<--<--<--<--<--<--<--+
+
+        // There is nothing we can do about this other than advise against using records this way.
+        // This test serves as a handy way of demonstrating the problem.
+
+    [<TestMethod>]
     member __.TestRecordFolder() =
         let colMap =
             [|
