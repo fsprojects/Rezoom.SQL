@@ -36,6 +36,7 @@ type Column =
 
 and Composite =
     {
+        Output : Type
         /// The constructor to use when instantiating this composite type.
         /// All parameters must be supplied by columns.
         Constructor : ConstructorInfo
@@ -50,6 +51,7 @@ and Composite =
 
 and Primitive =
     {
+        Output : Type
         /// A method converting an object to the output type.
         Converter : RowConversionMethod
     }

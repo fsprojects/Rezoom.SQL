@@ -170,31 +170,30 @@ type private StaticEntityReaderTemplate =
         readerBuilder.ToEntity ||>
             cil {
                 let! self = deflocal builder
-                if composite.ReferencesQueryParent then
-                    if Array.isEmpty constructorColumns then
-                        yield newobj0 composite.Constructor
-                        yield dup
-                        yield stloc self
-                    else
-                        let uninit =
-                            typeof<System.Runtime.Serialization.FormatterServices>.GetMethod("GetUninitializedObject")
-                        yield ldtoken builder
-                        yield call1 (typeof<Type>.GetMethod("GetTypeFromHandle"))
-                        yield call1 uninit
-                        yield castclass builder
-                        yield dup
-                        yield stloc self
-                        for column in constructorColumns do
-                            yield column.DefinePush(self)
-                            yield pretend
-                        yield (fun st il ->
-                            il.Generator.Emit(OpCodes.Call, composite.Constructor)
-                            null)
+                if constructorColumns |> Array.exists (fun c -> c.RequiresSelfReferenceToPush) then
+                    let uninit =
+                        typeof<System.Runtime.Serialization.FormatterServices>.GetMethod("GetUninitializedObject")
+                    yield ldtoken composite.Output
+                    yield call1 (typeof<Type>.GetMethod("GetTypeFromHandle"))
+                    yield call1 uninit
+                    yield castclass composite.Output
+                    yield dup
+                    yield stloc self
+                    yield dup
+                    for column in constructorColumns do
+                        yield column.DefinePush(self)
+                        yield pretend
+                    yield (fun st il ->
+                        il.Generator.Emit(OpCodes.Call, composite.Constructor)
+                        null)
                 else
                     for column in constructorColumns do
                         yield column.DefinePush(self)
                         yield pretend
                     yield newobj'x composite.Constructor
+                    if composite.ReferencesQueryParent then
+                        yield dup
+                        yield stloc self
                 for blue, column in columns do
                     match blue.Setter with
                     | SetField field ->

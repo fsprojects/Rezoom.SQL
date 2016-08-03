@@ -119,7 +119,8 @@ let rec private compositeShapeOfType ty =
                     IsQueryParent = isQueryParent name setter
                 }
         } |> List.ofSeq |> ciDictionary
-    {   Constructor = ctor
+    {   Output = ty
+        Constructor = ctor
         Identity = pickIdentity ty columns
         Columns = columns
     }
@@ -156,7 +157,7 @@ and private cardinalityOfType (ty : Type) =
 
 and private primitiveShapeOfType (ty : Type) =
     PrimitiveConverters.converter ty
-    |> Option.map (fun converter -> { Converter = converter })
+    |> Option.map (fun converter -> { Output = ty; Converter = converter })
 
 and private elementOfType (ty : Type) =
     let shape =
