@@ -6,6 +6,7 @@ open System.Collections
 open System.Collections.Generic
 open System.ComponentModel
 open System.Reflection
+open System.Text.RegularExpressions
 
 let private blueprintCache = new Dictionary<Type, Blueprint>()
 
@@ -81,6 +82,36 @@ let private isQueryParent (columnName : string) (setter : Setter) =
     not (isNull attr)
     || columnName.Equals("QUERYPARENT", StringComparison.OrdinalIgnoreCase)
 
+let private swapParentChild (name : string) =
+    let swapper (m : Match) =
+        if m.Value.Equals("PARENT", StringComparison.OrdinalIgnoreCase) then "CHILD"
+        elif m.Value.Equals("CHILD", StringComparison.OrdinalIgnoreCase) then "PARENT"
+        else failwith "Impossible"
+    Regex.Replace(name, "PARENT|CHILD", swapper, RegexOptions.IgnoreCase)
+
+let private pickReverseRelationship (ty : Type) (columnName : string) (neighbor : Blueprint) =
+    match neighbor.Cardinality with
+    | One { Shape = Composite composite } ->
+        composite.Columns.Values
+            |> Seq.choose (function
+                | { Blueprint = manyBlue } as manyCol ->
+                    if manyCol.Name.IndexOf(swapParentChild columnName) >= 0 then
+                        match manyBlue.Value.Cardinality with
+                        | Many (elem, _) when elem.Output = ty -> Some manyCol
+                        | _ -> None
+                    else None)
+            |> Seq.tryHead
+    | Many ({ Shape = Composite composite }, _) ->
+        composite.Columns.Values
+            |> Seq.choose (fun oneCol ->
+                match oneCol.ReverseRelationship.Value with
+                | Some col when
+                    col.Name.Equals(columnName, StringComparison.OrdinalIgnoreCase)
+                    && col.Blueprint.Value.Output = ty -> Some col
+                | _ -> None)
+            |> Seq.tryHead
+    | _ -> None
+
 let rec private compositeShapeOfType ty =
     let ctor, pars = pickConstructor ty
     let props =
@@ -107,15 +138,18 @@ let rec private compositeShapeOfType ty =
         seq {
             for KeyValue(name, (setterTy, setter)) in settersByName ->
                 let succ, getter = gettersByName.TryGetValue(name)
+                let getter = 
+                    if not succ then None else
+                    let getterTy, getter = getter
+                    if getterTy.IsAssignableFrom(setterTy) then Some getter
+                    else None
+                let blueprint = lazy ofType setterTy
                 name, {
                     Name = name
-                    Blueprint = lazy ofType setterTy
+                    Blueprint = blueprint
                     Setter = setter
-                    Getter =
-                        if not succ then None else
-                        let getterTy, getter = getter
-                        if getterTy.IsAssignableFrom(setterTy) then Some getter
-                        else None
+                    Getter = getter
+                    ReverseRelationship = lazy pickReverseRelationship ty name blueprint.Value
                     IsQueryParent = isQueryParent name setter
                 }
         } |> List.ofSeq |> ciDictionary

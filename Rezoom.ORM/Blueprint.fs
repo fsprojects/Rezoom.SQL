@@ -30,6 +30,8 @@ type Column =
         Setter : Setter
         /// The way to get this column's value (could be used for analyzing expression trees).
         Getter : Getter option
+        /// The column on this column's type that points to this.
+        ReverseRelationship : Column option Lazy
         /// Whether this column is a back reference to the query-parent of this type.
         IsQueryParent : bool
     }
