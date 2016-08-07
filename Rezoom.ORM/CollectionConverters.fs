@@ -46,10 +46,6 @@ type Converters<'elem> =
         resizeArr
     static member ToList(collection : 'elem EntityReader ICollection) =
         collection |> Seq.map (fun r -> r.ToEntity()) |> List.ofSeq
-    static member ToOptional(collection : 'elem EntityReader ICollection) =
-        if collection.Count > 1 then failwith "More than one entity in ostensibly zero-or-one relationship"
-        elif collection.Count = 1 then Some ((collection |> Seq.head).ToEntity())
-        else None
 
 let converter (ty : Type) (ienum : Type) (elem : Type) : ConversionMethod option =
     let converter = typedefof<Converters<_>>.MakeGenericType(elem)

@@ -72,16 +72,6 @@ let private pickIdentity (ty : Type) (cols : IReadOnlyDictionary<string, Column>
             ty
             (List.length multiple)
 
-let private isQueryParent (columnName : string) (setter : Setter) =
-    // TODO look at getter; if it's a record property it couldn't be on the setter
-    let attr =
-        match setter with
-        | SetConstructorParameter par -> par.GetCustomAttribute<BlueprintQueryParentAttribute>()
-        | SetField field -> field.GetCustomAttribute<BlueprintQueryParentAttribute>()
-        | SetProperty prop -> prop.GetCustomAttribute<BlueprintQueryParentAttribute>()
-    not (isNull attr)
-    || columnName.Equals("QUERYPARENT", StringComparison.OrdinalIgnoreCase)
-
 let private swapParentChild (name : string) =
     let swapper (m : Match) =
         if m.Value.Equals("PARENT", StringComparison.OrdinalIgnoreCase) then "CHILD"
