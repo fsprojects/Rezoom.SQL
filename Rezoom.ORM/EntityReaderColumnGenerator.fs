@@ -16,8 +16,8 @@ type private EntityReaderColumnGenerator(builder : TypeBuilder) =
     abstract member DefineProcessColumns :  unit -> Op<E THIS, E THIS>
     abstract member DefineImpartKnowledgeToNext : unit -> Op<E THIS, E THIS>
     abstract member DefineRead : skipOnes : Label<E THIS> -> Op<E THIS, E THIS>
-    abstract member DefineSetQueryParent : unit -> Op<E THIS, E THIS>
-    default __.DefineSetQueryParent() = zero
+    abstract member DefineSetReverse : unit -> Op<E THIS, E THIS>
+    default __.DefineSetReverse() = zero
     abstract member RequiresSelfReferenceToPush : bool
     default __.RequiresSelfReferenceToPush = false
     abstract member DefinePush : selfReference : Local -> Op<'x, 'x S>

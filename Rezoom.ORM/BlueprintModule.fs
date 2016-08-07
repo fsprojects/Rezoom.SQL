@@ -139,7 +139,7 @@ let rec private compositeShapeOfType ty =
         } |> ciDictionary
     let columns = 
         seq {
-            for KeyValue(name, (setterTy, setter)) in settersByName ->
+            for index, KeyValue(name, (setterTy, setter)) in settersByName |> Seq.indexed ->
                 let succ, getter = gettersByName.TryGetValue(name)
                 let getter = 
                     if not succ then None else
@@ -148,13 +148,13 @@ let rec private compositeShapeOfType ty =
                     else None
                 let blueprint = lazy ofType setterTy
                 name, {
+                    ColumnId = index
                     Name = name
                     Blueprint = blueprint
                     Setter = setter
                     Getter = getter
                     ReverseRelationship =
                         lazy pickReverseRelationship ty name blueprint.Value
-                    IsQueryParent = isQueryParent name setter
                 }
         } |> List.ofSeq |> ciDictionary
     {   Output = ty

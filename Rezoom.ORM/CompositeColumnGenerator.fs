@@ -76,6 +76,24 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
             }
             yield mark ncase
         }
+    override __.DefineSetReverse() =
+        match column.ReverseRelationship.Value with
+        | None -> zero
+        | Some rev ->
+            cil {
+                let! skip = deflabel
+                yield ldarg 1
+                yield ldc'i4 column.ColumnId
+                yield bne'un's skip
+                yield cil {
+                    yield dup
+                    yield ldarg 2
+                    yield castclass composite.Output
+                    yield newobj1 (typedefof<_ ObjectEntityReader>.MakeGenericType(output).GetConstructor([|output|]))
+                    yield stfld entReader
+                }
+                yield mark skip
+            }
     override __.RequiresSelfReferenceToPush = requiresSelf
     override __.DefinePush(self) =
         cil {
@@ -85,11 +103,14 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
             yield dup
             yield brfalse's ncase
             yield cil {
-                if requiresSelf then
+                match column.ReverseRelationship.Value with
+                | None -> ()
+                | Some rev ->
                     yield dup
+                    yield ldc'i4 rev.ColumnId
                     yield ldloc self
                     if output.IsValueType then yield box'val output
-                    yield callvirt2'void (entReaderType.GetMethod("SetQueryParent"))
+                    yield callvirt3'void (entReaderType.GetMethod("SetReverse"))
                 yield callvirt1 (entReaderType.GetMethod("ToEntity"))
             }
             yield mark ncase

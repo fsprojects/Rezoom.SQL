@@ -13,13 +13,12 @@ type private EntityReaderBuilder =
         ProcessColumns : E S * IL
         ImpartKnowledge : E S * IL
         Read : E S * IL
-        SetQueryParent : E S * IL
+        SetReverse : E S * IL
         ToEntity : E S * IL
     }
 
 type private StaticEntityReaderTemplate =
     static member ColumnGenerator(builder, column) =
-        if column.IsQueryParent then QueryParentColumnGenerator(builder, column) :> EntityReaderColumnGenerator else
         match column.Blueprint.Value.Cardinality with
         | One { Shape = Primitive p } ->
             PrimitiveColumnGenerator(builder, column, p) :> EntityReaderColumnGenerator
@@ -59,7 +58,7 @@ type private StaticEntityReaderTemplate =
                 yield stfld value
                 yield ret'void
             } |> ignore
-        readerBuilder.SetQueryParent ||> ret'void |> ignore
+        readerBuilder.SetReverse ||> ret'void |> ignore
         readerBuilder.ToEntity ||>
             cil {
                 yield ldarg 0
@@ -99,7 +98,7 @@ type private StaticEntityReaderTemplate =
                 yield pop
                 yield ret'void
             } |> ignore
-        readerBuilder.SetQueryParent ||> ret'void |> ignore
+        readerBuilder.SetReverse ||> ret'void |> ignore
         readerBuilder.ToEntity ||>
             cil {
                 let! self = deflocal builder
@@ -151,11 +150,11 @@ type private StaticEntityReaderTemplate =
                 yield pop
                 yield ret'void
             } |> ignore
-        readerBuilder.SetQueryParent ||>
+        readerBuilder.SetReverse ||>
             cil {
                 yield ldarg 0
                 for _, column in columns do
-                    yield column.DefineSetQueryParent()
+                    yield column.DefineSetReverse()
                 yield pop
                 yield ret'void
             } |> ignore
@@ -227,9 +226,9 @@ type private StaticEntityReaderTemplate =
                         .GetILGenerator())
                 Read = Stack.empty, IL(builder
                     .DefineMethod("Read", methodAttrs, typeof<Void>, [| typeof<Row> |]).GetILGenerator())
-                SetQueryParent =
+                SetReverse =
                     Stack.empty, IL(builder
-                        .DefineMethod("SetQueryParent", methodAttrs, typeof<Void>, [| typeof<obj> |])
+                        .DefineMethod("SetReverse", methodAttrs, typeof<Void>, [| typeof<ColumnId>; typeof<obj> |])
                         .GetILGenerator())
                 ToEntity = Stack.empty, IL(builder
                     .DefineMethod("ToEntity", methodAttrs, blueprint.Output, Type.EmptyTypes).GetILGenerator())

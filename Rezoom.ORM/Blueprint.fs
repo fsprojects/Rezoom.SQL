@@ -21,6 +21,7 @@ type Getter =
 
 type Column =
     {
+        ColumnId : ColumnId
         /// The name of this column. This is the basename of the SQL column name that
         /// will represent it. This should always be treated case-insensitively.
         Name : string
@@ -32,8 +33,6 @@ type Column =
         Getter : Getter option
         /// The column on this column's type that points to this.
         ReverseRelationship : Column option Lazy
-        /// Whether this column is a back reference to the query-parent of this type.
-        IsQueryParent : bool
     }
 
 and Composite =
@@ -49,7 +48,8 @@ and Composite =
         Columns : IReadOnlyDictionary<string, Column>
     }
     member this.ReferencesQueryParent =
-        this.Columns.Values |> Seq.exists (fun col -> col.IsQueryParent)
+        this.Columns.Values
+        |> Seq.exists (fun c -> c.ReverseRelationship.Value |> Option.isSome)
 
 and Primitive =
     {
