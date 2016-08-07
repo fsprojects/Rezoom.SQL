@@ -47,24 +47,6 @@
     <Compile Include="DbServiceFactory.cs" />
     <Compile Include="DbTypeRecognizer.cs" />
     <Compile Include="IDbTypeRecognizer.cs" />
-    <Compile Include="Materialization\ColumnMap.cs" />
-    <Compile Include="Materialization\GenBuilderProperties\NavGenBuilderProperty.cs" />
-    <Compile Include="Materialization\GenBuilderProperties\SingleNavGenBuilderProperty.cs" />
-    <Compile Include="Materialization\GenBuilders\ManyGenBuilder.cs" />
-    <Compile Include="Materialization\ManyNavConverter.cs" />
-    <Compile Include="Materialization\PrimitiveConverter.cs" />
-    <Compile Include="Materialization\GenBuilderProperties\ManyNavGenBuilderProperty.cs" />
-    <Compile Include="Materialization\GenBuilderProperties\PrimitiveGenBuilderProperty.cs" />
-    <Compile Include="Materialization\GenBuilders\ConstructorGenBuilder.cs" />
-    <Compile Include="Materialization\GenBuilderProperty.cs" />
-    <Compile Include="Materialization\GenBuilders\PropertyAssignmentGenBuilder.cs" />
-    <Compile Include="Materialization\IGenBuilder.cs" />
-    <Compile Include="Materialization\IGenBuilderProperty.cs" />
-    <Compile Include="Materialization\GenInstanceMethodContext.cs" />
-    <Compile Include="Materialization\IRowReader.cs" />
-    <Compile Include="Materialization\RowReaderTemplateGenerator.cs" />
-    <Compile Include="Materialization\TypeInfo\TypeColumn.cs" />
-    <Compile Include="Materialization\TypeInfo\TypeProfile.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CommandResponse.cs" />
   </ItemGroup>
