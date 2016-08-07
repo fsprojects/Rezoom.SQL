@@ -98,7 +98,13 @@ type private StaticEntityReaderTemplate =
                 yield pop
                 yield ret'void
             } |> ignore
-        readerBuilder.SetReverse ||> ret'void |> ignore
+        readerBuilder.SetReverse ||> 
+            cil {
+                yield ldarg 0
+                yield generator.DefineSetReverse()
+                yield pop
+                yield ret'void
+            } |> ignore
         readerBuilder.ToEntity ||>
             cil {
                 let! self = deflocal builder

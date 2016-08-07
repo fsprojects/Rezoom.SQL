@@ -191,12 +191,12 @@ type private ManyColumnGenerator
                 match col.ReverseRelationship.Value with
                 | None -> ()
                 | Some rev ->
-                    let setQueryParent =
+                    let setReverse =
                         typedefof<_ ManyColumnGeneratorCode>.MakeGenericType(elemTy).GetMethod("SetReverse")
                     yield dup
                     yield ldc'i4 rev.ColumnId
                     yield ldloc self
-                    yield call3'void setQueryParent
+                    yield call3'void setReverse
             yield generalize conversion
             yield mark ncase
         }

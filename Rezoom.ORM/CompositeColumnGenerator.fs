@@ -77,23 +77,21 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
             yield mark ncase
         }
     override __.DefineSetReverse() =
-        match column.ReverseRelationship.Value with
-        | None -> zero
-        | Some rev ->
-            cil {
-                let! skip = deflabel
-                yield ldarg 1
-                yield ldc'i4 column.ColumnId
-                yield bne'un's skip
-                yield cil {
-                    yield dup
-                    yield ldarg 2
-                    yield castclass composite.Output
-                    yield newobj1 (typedefof<_ ObjectEntityReader>.MakeGenericType(output).GetConstructor([|output|]))
-                    yield stfld entReader
-                }
-                yield mark skip
+        if column.ReverseRelationship.Value |> Option.isNone then zero else
+        cil {
+            let! skip = deflabel
+            yield ldarg 1
+            yield ldc'i4 column.ColumnId
+            yield bne'un's skip
+            yield cil {
+                yield dup
+                yield ldarg 2
+                yield castclass composite.Output
+                yield newobj1 (typedefof<_ ObjectEntityReader>.MakeGenericType(output).GetConstructor([|output|]))
+                yield stfld entReader
             }
+            yield mark skip
+        }
     override __.RequiresSelfReferenceToPush = requiresSelf
     override __.DefinePush(self) =
         cil {

@@ -26,9 +26,9 @@ type TestQueryParents() =
             [|
                 "Id", ColumnType.Int32
                 "Name", ColumnType.String
-                "Children$Id", ColumnType.Int32
+                "ChildFolders$Id", ColumnType.Int32
                 "Name", ColumnType.String
-                "Children$Children$Id", ColumnType.Int32
+                "ChildFolders$ChildFolders$Id", ColumnType.Int32
                 "Name", ColumnType.String
             |] |> ColumnMap.Parse
         let reader = ReaderTemplate<RecordFolder list>.Template().CreateReader()
@@ -76,7 +76,7 @@ type TestQueryParents() =
             [|
                 "Id", ColumnType.Int32
                 "Name", ColumnType.String
-                "Children$Id", ColumnType.Int32
+                "ChildFolders$Id", ColumnType.Int32
                 "Name", ColumnType.String
             |] |> ColumnMap.Parse
         let reader = ReaderTemplate<RecordFolder array>.Template().CreateReader()
@@ -140,7 +140,7 @@ type TestQueryParents() =
             [|
                 "Id", ColumnType.Int32
                 "Name", ColumnType.String
-                "Children$Id", ColumnType.Int32
+                "ChildFolders$Id", ColumnType.Int32
                 "Name", ColumnType.String
             |] |> ColumnMap.Parse
         let reader = ReaderTemplate<ClassFolder array>.Template().CreateReader()
