@@ -54,6 +54,7 @@
     <Compile Include="CILHelpers.fs" />
     <Compile Include="Row.fs" />
     <Compile Include="ColumnMap.fs" />
+    <Compile Include="DataReader.fs" />
     <Compile Include="EntityReader.fs" />
     <Compile Include="Converters.fs" />
     <Compile Include="PrimitiveConverters.fs" />
@@ -80,6 +81,7 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

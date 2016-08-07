@@ -1,5 +1,6 @@
 ﻿namespace Rezoom.ORM
 open System
+open System.Data
 
 [<AbstractClass>]
 type Row() =
@@ -36,3 +37,4 @@ type ObjectRow([<ParamArray>] row : obj array) =
     override __.GetDouble(i) = row.[int i] |> Unchecked.unbox
     override __.GetDecimal(i) = row.[int i] |> Unchecked.unbox
     override __.GetDateTime(i) = row.[int i] |> Unchecked.unbox
+
