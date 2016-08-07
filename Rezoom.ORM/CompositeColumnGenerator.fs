@@ -21,7 +21,7 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
     override __.DefineProcessColumns() =
         cil {
             let! ncase = deflabel // if submap is null
-            let! sub = deflocal typeof<ColumnMap>
+            let! sub = tmplocal typeof<ColumnMap>
             yield ldarg 1 // column map
             yield ldstr column.Name
             yield call2 ColumnMap.SubMapMethod

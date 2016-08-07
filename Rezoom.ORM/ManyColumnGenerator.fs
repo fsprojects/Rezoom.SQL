@@ -59,7 +59,7 @@ type private ManyColumnGenerator
                 yield ldstr column.Name
                 yield call2 ColumnMap.SubMapMethod
             | None -> ()
-            let! sub = deflocal typeof<ColumnMap>
+            let! sub = tmplocal typeof<ColumnMap>
             yield stloc sub
             yield ldloc sub
             yield brfalse's skip
@@ -135,9 +135,9 @@ type private ManyColumnGenerator
                 yield ldfld idInfo // row, colinfo
                 yield generalize2 idConverter // id
                 
-                let! id = deflocal idTy
+                let! id = tmplocal idTy
                 yield stloc id
-                let! entReader = deflocal elemReaderTy
+                let! entReader = tmplocal elemReaderTy
                 yield dup
                 yield ldfld entDict
                 let! hasDict = deflabel

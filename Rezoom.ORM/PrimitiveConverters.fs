@@ -145,7 +145,7 @@ let converter (ty : Type) : RowConversionMethod option =
             let succ, meth = convertersByType.TryGetValue(nTy)
             if not succ then None else
             cil {
-                let! colInfo = deflocal typeof<ColumnInfo>
+                let! colInfo = tmplocal typeof<ColumnInfo>
                 let! ncase = deflabel
                 let! exit = deflabel
                 yield stloc colInfo // row
@@ -163,7 +163,7 @@ let converter (ty : Type) : RowConversionMethod option =
                 yield mark ncase
                 yield cil {
                     yield pop
-                    let! empty = deflocal ty
+                    let! empty = tmplocal ty
                     yield ldloca empty
                     yield initobj ty
                     yield ldloc empty
