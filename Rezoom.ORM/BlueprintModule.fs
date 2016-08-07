@@ -89,25 +89,28 @@ let private swapParentChild (name : string) =
         else failwith "Impossible"
     Regex.Replace(name, "PARENT|CHILD", swapper, RegexOptions.IgnoreCase)
 
-let private pickReverseRelationship (elem : ElementBlueprint) (columnName : string) (neighbor : Blueprint) =
+let private pickReverseRelationship (ty : Type) (columnName : string) (neighbor : Blueprint) =
     match neighbor.Cardinality with
     | One { Shape = Composite composite } ->
+        let swapped = swapParentChild columnName
         composite.Columns.Values
-            |> Seq.choose (function
-                | { Blueprint = manyBlue } as manyCol ->
-                    if manyCol.Name.IndexOf(swapParentChild columnName) >= 0 then
-                        match manyBlue.Value.Cardinality with
-                        | Many (manyElem, _) when manyElem.Output = elem.Output -> Some manyCol
-                        | _ -> None
-                    else None)
+            |> Seq.choose (fun manyCol ->
+                if manyCol.Name.IndexOf(swapped, StringComparison.OrdinalIgnoreCase) >= 0 then
+                    match manyCol.Blueprint.Value.Cardinality with
+                    | Many (manyElem, _) when manyElem.Output = ty -> Some manyCol
+                    | _ -> None
+                else None)
             |> Seq.tryHead
     | Many ({ Shape = Composite composite }, _) ->
         composite.Columns.Values
+            |> Seq.filter (fun oneCol -> composite.Output <> ty || oneCol.Name <> columnName)
             |> Seq.choose (fun oneCol ->
                 match oneCol.ReverseRelationship.Value with
-                | Some col when
-                    col.Name.Equals(columnName, StringComparison.OrdinalIgnoreCase)
-                    && col.Blueprint.Value.Output = elem.Output -> Some col
+                | Some manyCol when
+                    manyCol.Name.Equals(columnName, StringComparison.OrdinalIgnoreCase) ->
+                        match oneCol.Blueprint.Value.Cardinality with
+                        | One elem when elem.Output = ty -> Some oneCol
+                        | _ -> None
                 | _ -> None)
             |> Seq.tryHead
     | _ -> None
@@ -150,7 +153,7 @@ let rec private compositeShapeOfType ty =
                     Setter = setter
                     Getter = getter
                     ReverseRelationship =
-                        lazy pickReverseRelationship blueprint.Value.Cardinality.Element name blueprint.Value
+                        lazy pickReverseRelationship ty name blueprint.Value
                     IsQueryParent = isQueryParent name setter
                 }
         } |> List.ofSeq |> ciDictionary
