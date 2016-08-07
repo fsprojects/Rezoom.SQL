@@ -89,7 +89,7 @@ let private swapParentChild (name : string) =
         else failwith "Impossible"
     Regex.Replace(name, "PARENT|CHILD", swapper, RegexOptions.IgnoreCase)
 
-let private pickReverseRelationship (ty : Type) (columnName : string) (neighbor : Blueprint) =
+let private pickReverseRelationship (elem : ElementBlueprint) (columnName : string) (neighbor : Blueprint) =
     match neighbor.Cardinality with
     | One { Shape = Composite composite } ->
         composite.Columns.Values
@@ -97,7 +97,7 @@ let private pickReverseRelationship (ty : Type) (columnName : string) (neighbor 
                 | { Blueprint = manyBlue } as manyCol ->
                     if manyCol.Name.IndexOf(swapParentChild columnName) >= 0 then
                         match manyBlue.Value.Cardinality with
-                        | Many (elem, _) when elem.Output = ty -> Some manyCol
+                        | Many (manyElem, _) when manyElem.Output = elem.Output -> Some manyCol
                         | _ -> None
                     else None)
             |> Seq.tryHead
@@ -107,7 +107,7 @@ let private pickReverseRelationship (ty : Type) (columnName : string) (neighbor 
                 match oneCol.ReverseRelationship.Value with
                 | Some col when
                     col.Name.Equals(columnName, StringComparison.OrdinalIgnoreCase)
-                    && col.Blueprint.Value.Output = ty -> Some col
+                    && col.Blueprint.Value.Output = elem.Output -> Some col
                 | _ -> None)
             |> Seq.tryHead
     | _ -> None
@@ -149,7 +149,8 @@ let rec private compositeShapeOfType ty =
                     Blueprint = blueprint
                     Setter = setter
                     Getter = getter
-                    ReverseRelationship = lazy pickReverseRelationship ty name blueprint.Value
+                    ReverseRelationship =
+                        lazy pickReverseRelationship blueprint.Value.Cardinality.Element name blueprint.Value
                     IsQueryParent = isQueryParent name setter
                 }
         } |> List.ofSeq |> ciDictionary

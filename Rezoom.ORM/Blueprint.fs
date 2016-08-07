@@ -83,6 +83,10 @@ and Cardinality =
     /// Carries an element type blueprint and a method converting an ICollection<Builder<ElementType>>
     /// to the target collection type.
     | Many of ElementBlueprint * ConversionMethod
+    member this.Element =
+        match this with
+        | One elem -> elem
+        | Many (elem, _) -> elem
 
 and Blueprint =
     {
