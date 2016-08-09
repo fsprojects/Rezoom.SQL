@@ -9,6 +9,28 @@ open System.Collections.Generic
 open System.Data.SQLite
 open FSharp.Reflection
 
+[<ReferenceEquality>]
+type User =
+    {
+        Id : int
+        Name : string
+        GroupMaps : UserGroupMap array
+    }
+and [<ReferenceEquality>] Group =
+    {
+        Id : int
+        Name : string
+        GroupMaps : UserGroupMap array
+    }
+and [<ReferenceEquality>] UserGroupMap =
+    {
+        Id : int
+        UserId : int
+        GroupId : int
+        User : User
+        Group : Group
+    }
+
 let private initializeSchema (conn : SQLiteConnection) =
     let cmd = conn.CreateCommand()
     cmd.CommandText <- @"
@@ -23,9 +45,9 @@ let private initializeSchema (conn : SQLiteConnection) =
             )
         ;
         create table UserGroupMaps
-            ( UserId int
+            ( Id int primary key
+            , UserId int
             , GroupId int
-            , primary key(UserId, GroupId)
             , foreign key(UserId) references Users(Id)
             , foreign key(GroupId) references Groups(Id)
             )
@@ -51,14 +73,14 @@ let private initializeData (conn : SQLiteConnection) =
         , ( 3, ""Content Reviewers"" )
         , ( 4, ""Content Organizers"" )
         ;
-        insert into UserGroupMaps(UserId, GroupId)
+        insert into UserGroupMaps(Id, UserId, GroupId)
         values
-          ( 1, 1 )
-        , ( 1, 2 )
-        , ( 2, 3 )
-        , ( 2, 4 )
-        , ( 3, 2 )
-        , ( 4, 3 )
+          ( 0, 1, 1 )
+        , ( 1, 1, 2 )
+        , ( 2, 2, 3 )
+        , ( 3, 2, 4 )
+        , ( 4, 3, 2 )
+        , ( 5, 4, 3 )
         ;
     "
     cmd.Connection <- conn
@@ -78,20 +100,26 @@ type TestDbServiceFactory() =
         initializeDb conn
         upcast conn
 
-let query query args =
+let formattable query args =
     let args = Array.ofList args
-    let command =
-        { new FormattableString() with
-            member __.Format = query
-            member __.GetArguments() = args
-            member __.ArgumentCount = args.Length
-            member __.GetArgument(index) = args.[index]
-            member __.ToString(provider) = String.Format(provider, query, args)
-        } |> RawCommand.Query
+    { new FormattableString() with
+        member __.Format = query
+        member __.GetArguments() = args
+        member __.ArgumentCount = args.Length
+        member __.GetArgument(index) = args.[index]
+        member __.ToString(provider) = String.Format(provider, query, args)
+    } 
+
+let rawQuery query args =
+    let command = formattable query args |> RawCommand.Query
     plan {
         let! rs = CommandErrand(command).ToPlan()
         return rs.[0]
     }
+
+let readerQuery query args =
+    let command = new ReaderCommand<_>(formattable query args, mutation = false, idempotent = true)
+    CommandErrand(command).ToPlan()
     
 type 'a ExpectedResult =
     | Exception of (exn -> bool)

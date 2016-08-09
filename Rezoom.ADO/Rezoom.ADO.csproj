@@ -46,6 +46,7 @@
     <Compile Include="CommandErrand.cs" />
     <Compile Include="RawCommand.cs" />
     <Compile Include="RawResultSet.cs" />
+    <Compile Include="ReaderCommand.cs" />
     <Compile Include="ResultSetProcessor.cs" />
     <Compile Include="DbServiceFactory.cs" />
     <Compile Include="DbTypeRecognizer.cs" />
@@ -53,6 +54,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Rezoom.ORM\Rezoom.ORM.fsproj">
+      <Project>{6b6a06c5-157a-4fe3-8b4c-2a1ae6a15333}</Project>
+      <Name>Rezoom.ORM</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Rezoom\Rezoom.fsproj">
       <Project>{d98acbeb-a039-4340-a7c5-6ed2b677268b}</Project>
       <Name>Rezoom</Name>
