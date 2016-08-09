@@ -44,11 +44,13 @@
     <Compile Include="Command.cs" />
     <Compile Include="CommandBatch.cs" />
     <Compile Include="CommandErrand.cs" />
+    <Compile Include="RawCommand.cs" />
+    <Compile Include="RawResultSet.cs" />
+    <Compile Include="ResultSetProcessor.cs" />
     <Compile Include="DbServiceFactory.cs" />
     <Compile Include="DbTypeRecognizer.cs" />
     <Compile Include="IDbTypeRecognizer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CommandResponse.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Rezoom\Rezoom.fsproj">

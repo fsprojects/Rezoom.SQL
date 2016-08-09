@@ -87,7 +87,7 @@ let query query args =
             member __.ArgumentCount = args.Length
             member __.GetArgument(index) = args.[index]
             member __.ToString(provider) = String.Format(provider, query, args)
-        } |> Command.Query
+        } |> RawCommand.Query
     plan {
         let! rs = CommandErrand(command).ToPlan()
         return rs.[0]

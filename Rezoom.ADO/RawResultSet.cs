@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Rezoom.ADO
 {
-    public class CommandResponse
+    public class RawResultSet
     {
-        public CommandResponse
+        public RawResultSet
             (IReadOnlyList<string> columnNames, IReadOnlyList<IReadOnlyList<object>> rows)
         {
             ColumnNames = columnNames;
@@ -14,7 +14,7 @@ namespace Rezoom.ADO
         public IReadOnlyList<string> ColumnNames { get; }
         public IReadOnlyList<IReadOnlyList<object>> Rows { get; }
 
-        public static readonly CommandResponse Empty
-            = new CommandResponse(new string[0], new IReadOnlyList<object>[0]);
+        public static readonly RawResultSet Empty
+            = new RawResultSet(new string[0], new IReadOnlyList<object>[0]);
     }
 }

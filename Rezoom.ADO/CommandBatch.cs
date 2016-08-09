@@ -22,9 +22,10 @@ namespace Rezoom.ADO
 
         private readonly IDbTypeRecognizer _typeRecognizer;
         private readonly DbCommand _command;
-        private readonly List<string> _commands = new List<string>();
+        private readonly List<Command> _commands = new List<Command>();
+        private readonly List<string> _sql = new List<string>();
 
-        private Task<List<List<CommandResponse>>> _executing;
+        private Task<ResultSetProcessor[]> _executing;
 
         public CommandBatch(DbConnection connection, IDbTypeRecognizer typeRecognizer)
         {
@@ -33,7 +34,7 @@ namespace Rezoom.ADO
             _command.Connection = connection;
         }
 
-        public Func<Task<IReadOnlyList<CommandResponse>>> Prepare(Command command)
+        public Func<Task<T>> Prepare<T>(Command<T> command)
         {
             if (_executing != null)
                 throw new InvalidOperationException("Command is already executing");
@@ -52,15 +53,20 @@ namespace Rezoom.ADO
             var sqlReferencingParams = string.Format(command.Text.Format, parameterNames);
 
             var commandIndex = _commands.Count;
-            _commands.Add(sqlReferencingParams);
-            return () => GetResultSet(commandIndex);
+            _commands.Add(command);
+            _sql.Add(sqlReferencingParams);
+            return async () =>
+            {
+                var proc = await GetResultSet(commandIndex);
+                return command.ExtractResult(proc);
+            };
         }
 
-        private async Task<List<List<CommandResponse>>> GetAllResultSets()
+        private async Task<ResultSetProcessor[]> GetAllResultSets()
         {
             var separators = new List<string>();
             var gluedText = new StringBuilder();
-            foreach (var command in _commands)
+            foreach (var sql in _sql)
             {
                 if (gluedText.Length > 0)
                 {
@@ -69,49 +75,44 @@ namespace Rezoom.ADO
                     gluedText.AppendLine($"SELECT NULL as {sep};");
                     separators.Add(sep);
                 }
-                gluedText.AppendLine(command);
+                gluedText.AppendLine(sql);
             }
             _command.CommandText = gluedText.ToString();
             using (var reader = await _command.ExecuteReaderAsync().ConfigureAwait(false))
             {
-                var sepi = 0;
-                var allResults = new List<List<CommandResponse>>();
-                var currentCommandResults = new List<CommandResponse>();
+                var index = 0;
+                var allResults = new ResultSetProcessor[_commands.Count];
+                for (var i = 0; i < allResults.Length; i++)
+                {
+                    allResults[i] = _commands[i].Processor();
+                }
                 do
                 {
-                    var fieldNames = Enumerable.Range(0, reader.FieldCount)
-                        .Select(reader.GetName)
-                        .ToArray();
+                    var proc = allResults[index];
                     // If we hit our separator, that's the end of a command's result sets.
-                    if (separators.Count > sepi && fieldNames.Length == 1 && fieldNames[0] == separators[sepi])
+                    if (separators.Count > index && reader.FieldCount == 1 && reader.GetName(0) == separators[index])
                     {
-                        allResults.Add(currentCommandResults);
-                        currentCommandResults = new List<CommandResponse>();
-                        sepi++;
+                        index++;
                     }
                     else
                     {
-                        var rows = new List<IReadOnlyList<object>>();
+                        proc.BeginResultSet(reader);
                         while (await reader.ReadAsync().ConfigureAwait(false))
                         {
-                            var row = new object[reader.FieldCount];
-                            reader.GetValues(row);
-                            rows.Add(row);
+                            proc.ProcessRow();
                         }
-                        currentCommandResults.Add(new CommandResponse(fieldNames, rows));
                     }
                 } while (await reader.NextResultAsync().ConfigureAwait(false));
-                if (sepi < allResults.Count)
+                if (index + 1 < allResults.Length)
                 {
-                    throw new InvalidDataException($"Unexpected result sets missing separator");
+                    throw new InvalidDataException
+                        ("Missing separator from result sets. This may be caused by invalid SQL syntax.");
                 }
-                // The last result set doesn't have a trailing separator, so we need to add it on here.
-                allResults.Add(currentCommandResults);
                 return allResults;
             }
         }
 
-        private async Task<IReadOnlyList<CommandResponse>> GetResultSet(int index)
+        private async Task<ResultSetProcessor> GetResultSet(int index)
         {
             if (_executing != null)
             {

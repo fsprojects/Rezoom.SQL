@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Rezoom.ADO
 {
-    public class CommandErrand : CS.AsynchronousErrand<IReadOnlyList<CommandResponse>>
+    public class CommandErrand<T> : CS.AsynchronousErrand<T>
     {
-        private readonly Command _command;
+        private readonly Command<T> _command;
 
-        public CommandErrand(Command command)
+        public CommandErrand(Command<T> command)
         {
             _command = command;
         }
@@ -19,7 +18,7 @@ namespace Rezoom.ADO
         public override bool Idempotent => _command.Idempotent;
         public override object SequenceGroup => typeof(CommandBatch);
 
-        public override Func<Task<IReadOnlyList<CommandResponse>>> Prepare(ServiceContext context)
+        public override Func<Task<T>> Prepare(ServiceContext context)
             => context.GetService<CommandBatch>().Prepare(_command);
     }
 }
