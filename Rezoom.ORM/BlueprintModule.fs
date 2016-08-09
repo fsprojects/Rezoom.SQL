@@ -72,17 +72,20 @@ let private pickIdentity (ty : Type) (cols : IReadOnlyDictionary<string, Column>
             ty
             (List.length multiple)
 
-let private swapParentChild (name : string) =
+let private swapParentChild (me : string) (them : string) (name : string) =
     let swapper (m : Match) =
         if m.Value.Equals("PARENT", StringComparison.OrdinalIgnoreCase) then "CHILD"
         elif m.Value.Equals("CHILD", StringComparison.OrdinalIgnoreCase) then "PARENT"
+        elif m.Value.Equals(them, StringComparison.OrdinalIgnoreCase) then me
+        elif m.Value.Equals(me, StringComparison.OrdinalIgnoreCase) then them
         else failwith "Impossible"
-    Regex.Replace(name, "PARENT|CHILD", swapper, RegexOptions.IgnoreCase)
+    let re = Regex("PARENT|CHILD|" + Regex.Escape(me) + "|" + Regex.Escape(them), RegexOptions.IgnoreCase)
+    re.Replace(name, swapper)
 
 let private pickReverseRelationship (ty : Type) (columnName : string) (neighbor : Blueprint) =
     match neighbor.Cardinality with
     | One { Shape = Composite composite } ->
-        let swapped = swapParentChild columnName
+        let swapped = swapParentChild ty.Name composite.Output.Name columnName
         composite.Columns.Values
             |> Seq.choose (fun manyCol ->
                 if manyCol.Name.IndexOf(swapped, StringComparison.OrdinalIgnoreCase) >= 0 then

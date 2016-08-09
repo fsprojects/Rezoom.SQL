@@ -23,6 +23,17 @@ and User =
         Friend2Maps : UserFriendMap list
     }
 
+type Foo =
+    {
+        FooId : int
+        ChildBars : Bar array
+    }
+and Bar =
+    {
+        BarId : int
+        ParentFoo : Foo
+    }
+
 [<TestClass>]
 type TestBlueprints() =
     [<TestMethod>]
@@ -70,4 +81,26 @@ type TestBlueprints() =
             | None -> failwith "No reverse relationship for friend1"
             | Some friend2Maps ->
                 Assert.IsTrue("Friend2Maps".Equals(friend2Maps.Name, StringComparison.OrdinalIgnoreCase))
+        | _ -> failwith "Wrong cardinality/shape"
+
+    [<TestMethod>]
+    member __.TestFoo() =
+        let blue = Blueprint.ofType typeof<Foo>
+        match blue.Cardinality with
+        | One { Shape = Composite fooMap } ->
+            match fooMap.Columns.["ChildBars"].ReverseRelationship.Value with
+            | None -> failwith "No reverse relationship for ChildBars"
+            | Some parentFoo ->
+                Assert.IsTrue("ParentFoo".Equals(parentFoo.Name, StringComparison.OrdinalIgnoreCase))
+        | _ -> failwith "Wrong cardinality/shape"
+
+    [<TestMethod>]
+    member __.TestBar() =
+        let blue = Blueprint.ofType typeof<Bar>
+        match blue.Cardinality with
+        | One { Shape = Composite barMap } ->
+            match barMap.Columns.["ParentFoo"].ReverseRelationship.Value with
+            | None -> failwith "No reverse relationship for ParentFoo"
+            | Some childBars ->
+                Assert.IsTrue("ChildBars".Equals(childBars.Name, StringComparison.OrdinalIgnoreCase))
         | _ -> failwith "Wrong cardinality/shape"
