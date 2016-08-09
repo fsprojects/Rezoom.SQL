@@ -46,19 +46,18 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
             yield ldfld entReader
             yield brfalse's ncase
             yield cil {
-                let! ncase2 = deflabel
-                yield ldarg 0
-                yield ldfld entReader
+                let! newReader = tmplocal entReaderType
                 yield ldarg 1
                 yield castclass builder
+                yield ldarg 0
                 yield ldfld entReader
+                yield call0 (staticTemplate.GetMethod("Template"))
+                yield callvirt1 (entTemplate.GetMethod("CreateReader"))
                 yield dup
-                yield brfalse's ncase2
+                yield stloc newReader
                 yield callvirt2'void (entReaderType.GetMethod("ImpartKnowledgeToNext"))
-                yield br's ncase
-                yield mark ncase2
-                yield pop
-                yield pop
+                yield ldloc newReader
+                yield stfld entReader
             }
             yield mark ncase
         }

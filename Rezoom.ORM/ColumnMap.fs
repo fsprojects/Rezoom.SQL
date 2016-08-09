@@ -43,7 +43,7 @@ type ColumnMap() =
         sub
     member private this.SetColumn(name, info) =
         columns.[name] <- info
-    member private this.Load(column Names : (string * ColumnType) array) =
+    member private this.Load(columnNames : (string * ColumnType) array) =
         let root = this
         let mutable current = this
         for i = 0 to columnNames.Length - 1 do

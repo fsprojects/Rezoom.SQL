@@ -199,3 +199,33 @@ type TestQueryParents() =
         Assert.IsNull(folders.[1].ChildFolders.[1].ChildFolders)
         Assert.IsNotNull(folders.[1].ChildFolders.[1].ParentFolder)
         Assert.IsTrue(obj.ReferenceEquals(folders.[1], folders.[1].ChildFolders.[1].ParentFolder))
+
+    [<TestMethod>]
+    member __.TestRecordFolderParent() =
+        let colMap =
+            [|
+                "Id", ColumnType.Int32
+                "Name", ColumnType.String
+                "ParentFolder$Id", ColumnType.Int32
+                "Name", ColumnType.String
+            |] |> ColumnMap.Parse
+        let reader = ReaderTemplate<RecordFolder array>.Template().CreateReader()
+        reader.ProcessColumns(colMap)
+        for objectRow in
+            [|
+                ObjectRow(2, "A.1", 1, "A")
+                ObjectRow(3, "A.2", 1, "A")
+                ObjectRow(5, "B.1", 4, "B")
+                ObjectRow(6, "B.2", 4, "B")
+            |] do reader.Read(objectRow)
+        let folders = reader.ToEntity()
+        Assert.IsNotNull(folders)
+        Assert.AreEqual(4, folders.Length)
+        Assert.AreEqual(2, folders.[0].Id)
+        Assert.AreEqual("A.1", folders.[0].Name)
+        Assert.IsNull(folders.[0].ChildFolders)
+        Assert.IsNotNull(folders.[0].ParentFolder)
+        Assert.AreEqual(1, folders.[0].ParentFolder.Id)
+        Assert.AreEqual("A", folders.[0].ParentFolder.Name)
+        Assert.IsNull(folders.[0].ParentFolder.ParentFolder)
+        Assert.IsNull(folders.[0].ParentFolder.ChildFolders)
