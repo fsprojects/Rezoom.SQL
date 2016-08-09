@@ -39,7 +39,7 @@ type private PrimitiveColumnGenerator(builder, column, primitive : Primitive) =
             let! skip = deflabel
             yield dup
             yield ldfld found
-            yield brtrue's skipOnes
+            yield brtrue skipOnes
             yield dup
             yield ldfld colInfo
             yield ldfld ColumnInfo.IndexField
