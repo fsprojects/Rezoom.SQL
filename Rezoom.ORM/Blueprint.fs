@@ -47,6 +47,11 @@ and Composite =
         /// Indexed by name, case insensitive.
         Columns : IReadOnlyDictionary<string, Column>
     }
+    member this.ColumnByGetter(mem : MemberInfo) =
+        this.Columns.Values |> Seq.tryFind (fun col ->
+            match col.Getter with
+            | None -> false
+            | Some getter -> getter.MemberInfo = mem)
     member this.TableName = this.Output.Name
     member this.ReferencesQueryParent =
         this.Columns.Values
