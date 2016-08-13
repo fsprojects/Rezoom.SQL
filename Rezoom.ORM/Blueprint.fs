@@ -47,6 +47,7 @@ and Composite =
         /// Indexed by name, case insensitive.
         Columns : IReadOnlyDictionary<string, Column>
     }
+    member this.TableName = this.Output.Name
     member this.ReferencesQueryParent =
         this.Columns.Values
         |> Seq.exists (fun c -> c.ReverseRelationship.Value |> Option.isSome)
