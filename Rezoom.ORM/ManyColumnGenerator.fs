@@ -38,7 +38,7 @@ type private ManyColumnGenerator
         match elementId.Blueprint.Value.Cardinality with
         | One { Shape = Primitive prim } ->
             prim.Converter
-        | One _ -> failwith "Composite keys are not supported"
+        | One  { Shape = Composite _ } -> failwith "Composite types as keys are not supported"
         | Many _ -> failwith "Collections as keys are not supported"
     let requiresSelf = composite.ReferencesQueryParent
     let mutable entDict = null
