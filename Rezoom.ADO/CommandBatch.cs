@@ -13,48 +13,26 @@ namespace Rezoom.ADO
     /// </summary>
     internal class CommandBatch : IDisposable
     {
-        /// <summary>
-        /// We put this after each command to terminate it.
-        /// The extra characters are intended to guard against accidental issues like
-        /// unclosed string literals or block comments spilling into the next command.
-        /// </summary>
-        private const string CommandTerminator = ";--'*/;";
-
-        private readonly IDbTypeRecognizer _typeRecognizer;
-        private readonly DbCommand _command;
+        private readonly MultiCommandBuilder _builder;
+        private readonly DbConnection _connection;
         private readonly List<Command> _commands = new List<Command>();
-        private readonly List<string> _sql = new List<string>();
+        private DbCommand _command;
 
         private Task<ResultSetProcessor[]> _executing;
 
         public CommandBatch(DbConnection connection, IDbTypeRecognizer typeRecognizer)
         {
-            _typeRecognizer = typeRecognizer;
-            _command = connection.CreateCommand();
-            _command.Connection = connection;
+            _connection = connection;
+            _builder = new MultiCommandBuilder(typeRecognizer);
         }
 
         public Func<Task<T>> Prepare<T>(Command<T> command)
         {
             if (_executing != null)
                 throw new InvalidOperationException("Command is already executing");
-            var parameterValues = command.Text.GetArguments();
-            var parameterNames = new object[parameterValues.Length];
-            for (var i = 0; i < parameterValues.Length; i++)
-            {
-                var dbParamName = $"@DRBATCHPARAM_{_command.Parameters.Count}";
-                var dbParam = _command.CreateParameter();
-                dbParam.ParameterName = dbParamName;
-                dbParam.Value = parameterValues[i];
-                dbParam.DbType = _typeRecognizer.GetDbType(parameterValues[i]);
-                _command.Parameters.Add(dbParam);
-                parameterNames[i] = dbParamName;
-            }
-            var sqlReferencingParams = string.Format(command.Text.Format, parameterNames);
-
             var commandIndex = _commands.Count;
+            _builder.AppendCommand(command.Text);
             _commands.Add(command);
-            _sql.Add(sqlReferencingParams);
             return async () =>
             {
                 var proc = await GetResultSet(commandIndex);
@@ -64,20 +42,8 @@ namespace Rezoom.ADO
 
         private async Task<ResultSetProcessor[]> GetAllResultSets()
         {
-            var separators = new List<string>();
-            var gluedText = new StringBuilder();
-            foreach (var sql in _sql)
-            {
-                if (gluedText.Length > 0)
-                {
-                    var sep = $"DRSEP_{Guid.NewGuid():N}";
-                    gluedText.AppendLine(CommandTerminator);
-                    gluedText.AppendLine($"SELECT NULL as {sep};");
-                    separators.Add(sep);
-                }
-                gluedText.AppendLine(sql);
-            }
-            _command.CommandText = gluedText.ToString();
+            var separators = _builder.Separators;
+            _command = _builder.CreateCommand(_connection);
             using (var reader = await _command.ExecuteReaderAsync().ConfigureAwait(false))
             {
                 var index = 0;
@@ -124,6 +90,6 @@ namespace Rezoom.ADO
             return results[index];
         }
 
-        public void Dispose() => _command.Dispose();
+        public void Dispose() => _command?.Dispose();
     }
 }

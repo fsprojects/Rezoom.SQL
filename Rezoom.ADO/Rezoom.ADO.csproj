@@ -44,6 +44,9 @@
     <Compile Include="Command.cs" />
     <Compile Include="CommandBatch.cs" />
     <Compile Include="CommandErrand.cs" />
+    <Compile Include="Local.cs" />
+    <Compile Include="MultiCommandBuilder.cs" />
+    <Compile Include="MultiCommandParameter.cs" />
     <Compile Include="RawCommand.cs" />
     <Compile Include="RawResultSet.cs" />
     <Compile Include="ReaderCommand.cs" />
