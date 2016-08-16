@@ -63,3 +63,6 @@ type TestPrimitiveReaders() =
 
     [<TestMethod>]
     member __.TestReadDateTime() = test DateTime.UtcNow ColumnType.DateTime
+
+    [<TestMethod>]
+    member __.TestReadEnum() = test DateTimeKind.Local ColumnType.Int32

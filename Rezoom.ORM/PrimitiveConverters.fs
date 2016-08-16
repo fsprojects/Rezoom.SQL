@@ -135,15 +135,17 @@ let private convertersByType =
 let private columnIndexField = typeof<ColumnInfo>.GetField("Index")
 let private rowIsNullMethod = typeof<Row>.GetMethod("IsNull")
 
-let converter (ty : Type) : RowConversionMethod option =
+let rec converter (ty : Type) : RowConversionMethod option =
     let succ, meth = convertersByType.TryGetValue(ty)
     if succ then
         Some (Ops.call2 meth)
+    elif ty.IsEnum then converter (ty.GetEnumUnderlyingType())
     elif ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ Nullable> then
         match ty.GetGenericArguments() with
         | [| nTy |] ->
-            let succ, meth = convertersByType.TryGetValue(nTy)
-            if not succ then None else
+            match converter nTy with
+            | None -> None
+            | Some innerConverter ->
             cil {
                 let! colInfo = tmplocal typeof<ColumnInfo>
                 let! ncase = deflabel
@@ -156,7 +158,7 @@ let converter (ty : Type) : RowConversionMethod option =
                 yield brtrue's ncase
                 yield cil {
                     yield ldloc colInfo
-                    yield Ops.call2 meth
+                    yield innerConverter
                     yield newobj1 (ty.GetConstructor([| nTy |]))
                     yield br's exit
                 }
