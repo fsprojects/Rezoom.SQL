@@ -65,4 +65,48 @@ type TestPrimitiveReaders() =
     member __.TestReadDateTime() = test DateTime.UtcNow ColumnType.DateTime
 
     [<TestMethod>]
+    member __.TestEnumTryParser() =
+        let mutable e = DateTimeKind.Unspecified
+        let succ = PrimitiveConverters.EnumTryParser<DateTimeKind>.TryParse("Local", &e)
+        Assert.IsTrue(succ)
+        Assert.AreEqual(DateTimeKind.Local, e)
+        let succ = PrimitiveConverters.EnumTryParser<DateTimeKind>.TryParse("Test", &e)
+        Assert.IsFalse(succ)
+
+    [<TestMethod>]
     member __.TestReadEnum() = test DateTimeKind.Local ColumnType.Int32
+
+    [<TestMethod>]
+    member __.TestReadEnumString() =
+        let happy (expected : 'a) (str : string) =
+            let colMap =
+                [|
+                    Guid.NewGuid().ToString("N"), ColumnType.String
+                |] |> ColumnMap.Parse
+            let row = ObjectRow(str :> obj)
+            let reader = ReaderTemplate<'a>.Template().CreateReader()
+            reader.ProcessColumns(colMap)
+            reader.Read(row)
+            let mat = reader.ToEntity()
+            Assert.AreEqual(expected :> obj, mat :> obj)
+        let sad (example : 'a) (str : string) =
+            let colMap =
+                [|
+                    Guid.NewGuid().ToString("N"), ColumnType.String
+                |] |> ColumnMap.Parse
+            let row = ObjectRow(str :> obj)
+            let reader = ReaderTemplate<'a>.Template().CreateReader()
+            reader.ProcessColumns(colMap)
+            Assert.IsTrue <|
+            try
+                reader.Read(row)
+                ignore <| reader.ToEntity()
+                false
+            with
+            | exn -> true
+
+        happy DateTimeKind.Local "Local"
+        happy DateTimeKind.Utc "Utc"
+        happy StringComparison.InvariantCultureIgnoreCase "InvariantCultureIgnoreCase"
+        sad DateTimeKind.Unspecified "Something"
+        sad StringComparison.CurrentCulture ""

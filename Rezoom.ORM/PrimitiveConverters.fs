@@ -4,6 +4,7 @@ open LicenseToCIL.Ops
 open System
 open System.Collections.Generic
 open System.Reflection
+open System.Reflection.Emit
 
 let inline private toNumeric
     (row : Row)
@@ -133,13 +134,106 @@ let private convertersByType =
     |> dict
 
 let private columnIndexField = typeof<ColumnInfo>.GetField("Index")
+let private columnTypeField = typeof<ColumnInfo>.GetField("Type")
 let private rowIsNullMethod = typeof<Row>.GetMethod("IsNull")
+let private rowGetStringMethod = typeof<Row>.GetMethod("GetString")
+let private stringTrimMethod = typeof<string>.GetMethod("Trim", Type.EmptyTypes)
+
+let private storeInstructions=
+    [
+        typeof<byte>, stind'i1
+        typeof<sbyte>, stind'i1
+        typeof<uint16>, stind'i2
+        typeof<int16>, stind'i2
+        typeof<uint32>, stind'i4
+        typeof<int32>, stind'i4
+        typeof<uint64>, stind'i8
+        typeof<int64>, stind'i8
+    ] |> dict
+
+let private enumTryParser (delTy) (enumTy : Type) =
+    let underlying = enumTy.GetEnumUnderlyingType()
+    let loadValue =
+        if obj.ReferenceEquals(underlying, typeof<int64>) then fun o -> ldc'i8 (Unchecked.unbox o)
+        elif obj.ReferenceEquals(underlying, typeof<uint64>) then fun o -> ldc'i8 (int64 (Unchecked.unbox o : uint64))
+        elif obj.ReferenceEquals(underlying, typeof<uint32>) then fun o -> ldc'i4 (int (Unchecked.unbox o : uint32))
+        else fun (o : obj) -> ldc'i4 (Convert.ToInt32(o))
+    let storeValue = storeInstructions.[underlying]
+    let names = Enum.GetNames(enumTy)
+    let values = Enum.GetValues(enumTy)
+    let pairs =
+        seq {
+            for i = 0 to names.Length - 1 do
+                yield names.[i], values.GetValue(i)
+        }
+    let dynamicMethod = 
+        DynamicMethod
+            ( "TryParse" + enumTy.Name
+            , typeof<bool>
+            , [| typeof<string>; enumTy.MakeByRefType() |]
+            , typeof<Converters>
+            )
+    (cil {
+        yield ldarg 0
+        yield call1 stringTrimMethod
+        yield StringSwitch.insensitive
+            [| for name, value in pairs ->
+                name,
+                    cil {
+                        yield ldarg 1
+                        yield loadValue value
+                        yield storeValue
+                        yield ldc'i4 1
+                        yield ret
+                    }
+            |] zero
+        yield ldc'i4 0
+        yield ret
+    }) null (IL(dynamicMethod.GetILGenerator())) |> ignore
+    dynamicMethod.CreateDelegate(delTy)
+
+type EnumTryParserDelegate<'enum> = delegate of string * 'enum byref -> bool
+
+type EnumTryParser<'enum>() =
+    static let parser =
+        enumTryParser typeof<EnumTryParserDelegate<'enum>> typeof<'enum>
+        |> Unchecked.unbox : EnumTryParserDelegate<'enum>
+    static member TryParse(str : string, enum : 'enum byref) =
+        parser.Invoke(str, &enum)
 
 let rec converter (ty : Type) : RowConversionMethod option =
     let succ, meth = convertersByType.TryGetValue(ty)
     if succ then
         Some (Ops.call2 meth)
-    elif ty.IsEnum then converter (ty.GetEnumUnderlyingType())
+    elif ty.IsEnum then
+        match converter (ty.GetEnumUnderlyingType()) with
+        | None -> None
+        | Some converter ->
+            cil {
+                let! colInfo = tmplocal typeof<ColumnInfo>
+                let! parsed = tmplocal ty
+                let! skipParse = deflabel
+                let! exit = deflabel
+                yield dup // row, col, col
+                yield stloc colInfo // row, col
+                yield ldfld columnTypeField // row, type
+                yield ldc'i4 (int ColumnType.String) // row, type, string
+                yield bne'un's skipParse // row
+                yield dup // row, row
+                yield ldloc colInfo // row, row, col
+                yield ldfld columnIndexField // row, row, i
+                yield callvirt2 rowGetStringMethod // row, string
+                yield ldloca parsed // row, string, &parsed
+                yield call2 <| typedefof<_ EnumTryParser>.MakeGenericType(ty).GetMethod("TryParse") // row, succ
+                yield brfalse's skipParse // row
+                yield pop
+                yield ldloc parsed
+                yield br's exit
+                yield mark skipParse
+                yield ldloc colInfo
+                yield converter
+                yield mark exit
+            } |> Some
     elif ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ Nullable> then
         match ty.GetGenericArguments() with
         | [| nTy |] ->
