@@ -13,6 +13,36 @@ type ManyColumnGeneratorCode<'a> =
         for reader in collection do
             reader.SetReverse(columnId, parent)
 
+[<CustomEquality>]
+[<CustomComparison>]
+type FastTuple<'a, 'b>(item1 : 'a, item2 : 'b) =
+    struct
+        static let equalityA = EqualityComparer<'a>.Default
+        static let equalityB = EqualityComparer<'b>.Default
+        static let comparerA = Comparer<'a>.Default
+        static let comparerB = Comparer<'b>.Default
+        member __.Item1 = item1
+        member __.Item2 = item2
+        member this.Equals(other : FastTuple<'a, 'b>) =
+            equalityA.Equals(item1, other.Item1)
+            && equalityB.Equals(item2, other.Item2)
+        member this.CompareTo(other : FastTuple<'a, 'b>) =
+            let a = comparerA.Compare(item1, other.Item1)
+            if a <> 0 then a
+            else comparerB.Compare(item2, other.Item2)
+        override this.Equals(other : obj) =
+            match other with
+            | :? FastTuple<'a, 'b> as other -> this.Equals(other)
+            | _ -> false
+        override this.GetHashCode() =
+            let h1 = equalityA.GetHashCode(item1)
+            ((h1 <<< 5) + h1) ^^^ equalityB.GetHashCode(item2)
+        interface IEquatable<FastTuple<'a, 'b>> with
+            member this.Equals(other) = this.Equals(other)
+        interface IComparable<FastTuple<'a, 'b>> with
+            member this.CompareTo(other) = this.CompareTo(other)
+    end
+
 type private KeyColumns =
     {
         Type : Type
@@ -31,7 +61,7 @@ type private KeyColumns =
                 + " Consider using KeyAttribute on multiple primitive columns instead."
     static member TupleTypeDef(length : int) =
         match length with
-        | 2 -> typedefof<_ * _>
+        | 2 -> typedefof<FastTuple<_, _>>
         | 3 -> typedefof<_ * _ * _>
         | 4 -> typedefof<_ * _ * _ * _>
         | 5 -> typedefof<_ * _ * _ * _ * _>
