@@ -1,4 +1,6 @@
 ﻿namespace Rezoom.ORM.Test.CompositeReaders
+open System
+open System.ComponentModel.DataAnnotations
 open Rezoom.ORM
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
@@ -19,6 +21,15 @@ type Person =
         PersonId : int
         Name : string
         Parent : Person
+    }
+
+type CompositeKeyType =
+    {
+        [<Key>]
+        FooId : int
+        [<Key>]
+        BarId : int
+        MapName : string
     }
 
 [<TestClass>]
@@ -128,4 +139,28 @@ type TestCompositeReaders() =
         Assert.IsNotNull(person.Parent)
         Assert.AreEqual(2, person.Parent.PersonId)
         Assert.AreEqual("pat", person.Parent.Name)
+
+    [<TestMethod>]
+    member __.TestCompositeKey() =
+        let colMap =
+            [|
+                "FooId", ColumnType.Int32
+                "BarId", ColumnType.Int32
+                "MapName", ColumnType.String
+            |] |> ColumnMap.Parse
+        let reader = ReaderTemplate<CompositeKeyType list>.Template().CreateReader()
+        reader.ProcessColumns(colMap)
+        reader.Read(ObjectRow(1, 1, "a"))
+        reader.Read(ObjectRow(1, 1, "b")) // should be ignored
+        reader.Read(ObjectRow(1, 2, "c"))
+        reader.Read(ObjectRow(2, 1, "d"))
+        reader.Read(ObjectRow(2, 2, "e"))
+        let composites = reader.ToEntity()
+        Assert.AreEqual
+            ([
+                { FooId = 1; BarId = 1; MapName = "a" }
+                { FooId = 1; BarId = 2; MapName = "c" }
+                { FooId = 2; BarId = 1; MapName = "d" }
+                { FooId = 2; BarId = 2; MapName = "e" }
+            ], composites)
             

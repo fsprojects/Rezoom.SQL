@@ -106,7 +106,7 @@ let private pickReverseRelationship (ty : Type) (columnName : string) (neighbor 
 let rec private compositeShapeOfType ty =
     let ctor, pars = pickConstructor ty
     let props =
-        ty.GetProperties() |> Array.filter (fun p -> p.CanRead && p.CanWrite)
+        ty.GetProperties() |> Array.filter (fun p -> p.CanRead)
     let fields =
         ty.GetFields()
     let gettersByName =
@@ -121,7 +121,8 @@ let rec private compositeShapeOfType ty =
             for field in fields do
                 yield field.Name, (field.FieldType, SetField field)
             for prop in props do
-                yield prop.Name, (prop.PropertyType, SetProperty prop)
+                if prop.CanWrite then
+                    yield prop.Name, (prop.PropertyType, SetProperty prop)
             for par in pars do
                 yield par.Name, (par.ParameterType, SetConstructorParameter par)
         } |> ciDictionary

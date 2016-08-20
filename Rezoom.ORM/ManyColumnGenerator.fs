@@ -21,15 +21,26 @@ type private KeyColumns =
         ImpartToNext : obj -> Op<E S S, E S> // this, that -> this
         Read : Local -> Label<E S> -> obj -> Op<E S, E S>
     }
+    static member private GetPrimitiveConverter(column : Column) =
+        match column.Blueprint.Value.Cardinality with
+        | Many _ -> failwith "Collection types are not supported as keys"
+        | One { Shape = Primitive prim } -> prim.Converter
+        | One { Shape = Composite _ } ->
+            failwith <|
+                "Composite types are not supported as keys."
+                + " Consider using KeyAttribute on multiple primitive columns instead."
+    static member TupleTypeDef(length : int) =
+        match length with
+        | 2 -> typedefof<_ * _>
+        | 3 -> typedefof<_ * _ * _>
+        | 4 -> typedefof<_ * _ * _ * _>
+        | 5 -> typedefof<_ * _ * _ * _ * _>
+        | 6 -> typedefof<_ * _ * _ * _ * _ * _>
+        | 7 -> typedefof<_ * _ * _ * _ * _ * _ * _>
+        | 8 -> typedefof<_ * _ * _ * _ * _ * _ * _ * _>
+        | 9 -> typedefof<_ * _ * _ * _ * _ * _ * _ * _ * _>
+        | length -> failwithf "Unsupported length: can't use %d columns as identity" length
     static member Of(column : Column) =
-        let converter =
-            match column.Blueprint.Value.Cardinality with
-            | Many _ -> failwith "Many columns are not supported as keys"
-            | One { Shape = Primitive prim } -> prim.Converter
-            | One { Shape = Composite _ } ->
-                failwith <|
-                    "Composite types are not supported as keys."
-                    + " Consider using KeyAttribute on multiple primitive columns instead."
         {   Type = column.Blueprint.Value.Output
             ColumnInfoFields = fun builder name ->
                 builder.DefineField("_m_key_" + name, typeof<ColumnInfo>, FieldAttributes.Private) |> box
@@ -49,28 +60,81 @@ type private KeyColumns =
                     yield stfld infoField
                 }
             Read = fun keyLocal skip infoFields ->
+                let converter = KeyColumns.GetPrimitiveConverter(column)
                 let infoField = infoFields |> Unchecked.unbox : FieldInfo
                 cil {
                     yield ldarg 1 // row
                     yield ldarg 0 // row, this
-
                     yield ldfld infoField // row, colinfo
                     yield ldfld (typeof<ColumnInfo>.GetField("Index")) // row, index
                     yield callvirt2 (typeof<Row>.GetMethod("IsNull")) // isnull
                     yield brtrue skip
-                
                     yield ldarg 1 // row
                     yield ldarg 0 // row, this
                     yield ldfld infoField // row, colinfo
                     yield generalize2 converter // id
-                
                     yield stloc keyLocal
                 }
         }
     static member Of(columns : Column IReadOnlyList) =
-        if columns.Count = 1 then
-            KeyColumns.Of(columns.[0])
-        else failwith ""
+        if columns.Count < 1 then failwith "Collections of types without identity are not supported"
+        if columns.Count = 1 then KeyColumns.Of(columns.[0]) else
+        let types = [| for column in columns -> column.Output |]
+        let tupleType = KeyColumns.TupleTypeDef(columns.Count).MakeGenericType(types)
+        let ctor = tupleType.GetConstructor(types)
+        {   Type = tupleType
+            ColumnInfoFields = fun builder name ->
+                [|  for column in columns ->
+                        builder.DefineField
+                            ("_m_key_" + name + "_" + column.Name, typeof<ColumnInfo>, FieldAttributes.Private)
+                |] |> box
+            ProcessColumns = fun subMap infoFields ->
+                let infoFields = infoFields |> Unchecked.unbox : FieldInfo array
+                cil {
+                    for column, infoField in Seq.zip columns infoFields do
+                        yield dup
+                        yield ldloc subMap // this, col map
+                        yield ldstr column.Name
+                        yield call2 ColumnMap.ColumnMethod
+                        yield stfld infoField
+                    yield pop
+                }
+            ImpartToNext = fun infoFields ->
+                let infoFields = infoFields |> Unchecked.unbox : FieldInfo array
+                cil {
+                    for infoField in infoFields do
+                        yield dup
+                        yield ldarg 0
+                        yield ldfld infoField
+                        yield stfld infoField
+                    yield pop
+                }
+            Read = fun keyLocal skip infoFields ->
+                let infoFields = infoFields |> Unchecked.unbox : FieldInfo array
+                cil {
+                    let locals = new ResizeArray<_>()
+                    for column, infoField in Seq.zip columns infoFields do
+                        let! local = deflocal column.Output
+                        locals.Add(local)
+                        let converter = KeyColumns.GetPrimitiveConverter(column)
+                        yield ldarg 1 // row
+                        yield ldarg 0 // row, this
+                        yield ldfld infoField // row, colinfo
+                        yield ldfld (typeof<ColumnInfo>.GetField("Index")) // row, index
+                        yield callvirt2 (typeof<Row>.GetMethod("IsNull")) // isnull
+                        yield brtrue skip
+                        yield ldarg 1 // row
+                        yield ldarg 0 // row, this
+                        yield ldfld infoField // row, colinfo
+                        yield generalize2 converter // id
+                        yield stloc local
+                    for local in locals do
+                        yield ldloc local
+                        yield pretend
+                    yield newobj'x ctor
+                    yield stloc keyLocal
+                }
+        }
 
 type private ManyColumnGenerator
     ( builder

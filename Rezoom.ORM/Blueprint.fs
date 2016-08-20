@@ -34,6 +34,7 @@ type Column =
         /// The column on this column's type that points to this.
         ReverseRelationship : Column option Lazy
     }
+    member this.Output = this.Blueprint.Value.Output
 
 and Composite =
     {
