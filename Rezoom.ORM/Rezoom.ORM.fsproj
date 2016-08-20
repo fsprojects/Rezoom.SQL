@@ -71,7 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="LicenseToCIL">
-      <HintPath>..\packages\LicenseToCIL.0.1.4\lib\net46\LicenseToCIL.dll</HintPath>
+      <HintPath>..\packages\LicenseToCIL.0.2.1\lib\net46\LicenseToCIL.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
