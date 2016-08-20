@@ -3,6 +3,22 @@ open Rezoom.ORM
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
+type Enum16 =
+    | One16 = 1s
+    | Two16 = 32767s
+
+type Enum32U =
+    | One32U = 1u
+    | Two32U = 4294967295u
+
+type Enum64 =
+    | One64 = 1L
+    | Two64 = 9223372036854775807L
+
+type Enum64U =
+    | One64U = 1UL
+    | Two64U = 18446744073709551615UL
+
 [<TestClass>]
 type TestPrimitiveReaders() =
     let testCore (expected : 'a) ctype =
@@ -72,6 +88,34 @@ type TestPrimitiveReaders() =
         Assert.AreEqual(DateTimeKind.Local, e)
         let succ = PrimitiveConverters.EnumTryParser<DateTimeKind>.TryParse("Test", &e)
         Assert.IsFalse(succ)
+
+    [<TestMethod>]
+    member __.TestEnumTryParser16() =
+        let mutable e = Enum16.One16
+        let succ = PrimitiveConverters.EnumTryParser<Enum16>.TryParse("Two16", &e)
+        Assert.IsTrue(succ)
+        Assert.AreEqual(Enum16.Two16, e)
+
+    [<TestMethod>]
+    member __.TestEnumTryParser32U() =
+        let mutable e = Enum32U.One32U
+        let succ = PrimitiveConverters.EnumTryParser<Enum32U>.TryParse("Two32U", &e)
+        Assert.IsTrue(succ)
+        Assert.AreEqual(Enum32U.Two32U, e)
+
+    [<TestMethod>]
+    member __.TestEnumTryParser64() =
+        let mutable e = Enum64.One64
+        let succ = PrimitiveConverters.EnumTryParser<Enum64>.TryParse("Two64", &e)
+        Assert.IsTrue(succ)
+        Assert.AreEqual(Enum64.Two64, e)
+
+    [<TestMethod>]
+    member __.TestEnumTryParser64U() =
+        let mutable e = Enum64U.One64U
+        let succ = PrimitiveConverters.EnumTryParser<Enum64U>.TryParse("Two64U", &e)
+        Assert.IsTrue(succ)
+        Assert.AreEqual(Enum64U.Two64U, e)
 
     [<TestMethod>]
     member __.TestReadEnum() = test DateTimeKind.Local ColumnType.Int32
