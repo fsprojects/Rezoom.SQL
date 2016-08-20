@@ -41,8 +41,8 @@ and Composite =
         /// The constructor to use when instantiating this composite type.
         /// All parameters must be supplied by columns.
         Constructor : ConstructorInfo
-        /// The identity column for this composite type, if any.
-        Identity : Column option
+        /// The identity columns for this composite type, if any.
+        Identity : Column IReadOnlyList
         /// All the columns of this composite type (including the identity, if any).
         /// Indexed by name, case insensitive.
         Columns : IReadOnlyDictionary<string, Column>

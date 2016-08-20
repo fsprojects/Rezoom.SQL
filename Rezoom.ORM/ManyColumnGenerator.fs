@@ -13,6 +13,65 @@ type ManyColumnGeneratorCode<'a> =
         for reader in collection do
             reader.SetReverse(columnId, parent)
 
+type private KeyColumns =
+    {
+        Type : Type
+        ColumnInfoFields : TypeBuilder -> string -> obj
+        ProcessColumns : Local -> obj -> Op<E S S, E S> // this, this -> this
+        ImpartToNext : obj -> Op<E S S, E S> // this, that -> this
+        Read : Local -> Label<E S> -> obj -> Op<E S, E S>
+    }
+    static member Of(column : Column) =
+        let converter =
+            match column.Blueprint.Value.Cardinality with
+            | Many _ -> failwith "Many columns are not supported as keys"
+            | One { Shape = Primitive prim } -> prim.Converter
+            | One { Shape = Composite _ } ->
+                failwith <|
+                    "Composite types are not supported as keys."
+                    + " Consider using KeyAttribute on multiple primitive columns instead."
+        {   Type = column.Blueprint.Value.Output
+            ColumnInfoFields = fun builder name ->
+                builder.DefineField("_m_key_" + name, typeof<ColumnInfo>, FieldAttributes.Private) |> box
+            ProcessColumns = fun subMap infoFields ->
+                let infoField = infoFields |> Unchecked.unbox : FieldInfo
+                cil {
+                    yield ldloc subMap // this, col map
+                    yield ldstr column.Name
+                    yield call2 ColumnMap.ColumnMethod
+                    yield stfld infoField
+                }
+            ImpartToNext = fun infoFields ->
+                let infoField = infoFields |> Unchecked.unbox : FieldInfo
+                cil {
+                    yield ldarg 0
+                    yield ldfld infoField
+                    yield stfld infoField
+                }
+            Read = fun keyLocal skip infoFields ->
+                let infoField = infoFields |> Unchecked.unbox : FieldInfo
+                cil {
+                    yield ldarg 1 // row
+                    yield ldarg 0 // row, this
+
+                    yield ldfld infoField // row, colinfo
+                    yield ldfld (typeof<ColumnInfo>.GetField("Index")) // row, index
+                    yield callvirt2 (typeof<Row>.GetMethod("IsNull")) // isnull
+                    yield brtrue skip
+                
+                    yield ldarg 1 // row
+                    yield ldarg 0 // row, this
+                    yield ldfld infoField // row, colinfo
+                    yield generalize2 converter // id
+                
+                    yield stloc keyLocal
+                }
+        }
+    static member Of(columns : Column IReadOnlyList) =
+        if columns.Count = 1 then
+            KeyColumns.Of(columns.[0])
+        else failwith ""
+
 type private ManyColumnGenerator
     ( builder
     , column : Column option
@@ -24,50 +83,37 @@ type private ManyColumnGenerator
         match element.Shape with
         | Composite c -> c
         | Primitive _ -> failwith "Collections of primitives are not supported"
-    let elementId =
-        match composite.Identity with
-        | None -> failwith "Collections of composite types without identity are not supported"
-        | Some id -> id
+    let keyColumns = KeyColumns.Of(composite.Identity)
     let elemTy = element.Output
     let staticTemplate = Generation.readerTemplateGeneric.MakeGenericType(elemTy)
     let entTemplate = typedefof<_ EntityReaderTemplate>.MakeGenericType(elemTy)
     let elemReaderTy = typedefof<_ EntityReader>.MakeGenericType(elemTy)
-    let dictTy = typedefof<Dictionary<_, _>>.MakeGenericType(elementId.Blueprint.Value.Output, elemReaderTy)
-    let idTy = elementId.Blueprint.Value.Output
-    let idConverter =
-        match elementId.Blueprint.Value.Cardinality with
-        | One { Shape = Primitive prim } ->
-            prim.Converter
-        | One  { Shape = Composite _ } -> failwith "Composite types as keys are not supported"
-        | Many _ -> failwith "Collections as keys are not supported"
+    let dictTy = typedefof<Dictionary<_, _>>.MakeGenericType(keyColumns.Type, elemReaderTy)
     let requiresSelf = composite.ReferencesQueryParent
     let mutable entDict = null
     let mutable refReader = null
-    let mutable idInfo = null
+    let mutable keyInfo = null
     override __.DefineConstructor() =
         let name = defaultArg (column |> Option.map (fun c -> c.Name)) "self"
-        idInfo <- builder.DefineField("_m_i_" + name, typeof<ColumnInfo>, FieldAttributes.Private)
+        keyInfo <- keyColumns.ColumnInfoFields builder name
         entDict <- builder.DefineField("_m_d_" + name, dictTy, FieldAttributes.Private)
         refReader <- builder.DefineField("_m_r_" + name, elemReaderTy, FieldAttributes.Private)
         zero // don't initialize dictionary yet
     override __.DefineProcessColumns() =
         cil {
             let! skip = deflabel
-            yield ldarg 1 // column map
+            yield ldarg 1 // col map
             match column with
             | Some column ->
                 yield ldstr column.Name
                 yield call2 ColumnMap.SubMapMethod
             | None -> ()
             let! sub = tmplocal typeof<ColumnMap>
-            yield stloc sub
-            yield ldloc sub
-            yield brfalse's skip
             yield dup
-            yield ldloc sub
-            yield ldstr elementId.Name
-            yield call2 ColumnMap.ColumnMethod
-            yield stfld idInfo
+            yield stloc sub // col map
+            yield brfalse's skip
+            yield dup // this
+            yield keyColumns.ProcessColumns sub keyInfo
             yield cil {
                 yield dup // this
                 yield call0 (staticTemplate.GetMethod("Template")) // this, template
@@ -83,9 +129,7 @@ type private ManyColumnGenerator
         cil {
             yield ldarg 1
             yield castclass builder
-            yield ldarg 0
-            yield ldfld idInfo
-            yield stfld idInfo
+            yield keyColumns.ImpartToNext keyInfo
 
             let! nread = deflabel
             let! exit = deflabel
@@ -123,20 +167,9 @@ type private ManyColumnGenerator
             yield ldfld refReader
             yield brfalse skip
             yield cil {
-                yield ldarg 1 // row
-                yield ldarg 0 // row, this
-                yield ldfld idInfo // row, colinfo
-                yield ldfld (typeof<ColumnInfo>.GetField("Index")) // row, index
-                yield callvirt2 (typeof<Row>.GetMethod("IsNull")) // isnull
-                yield brtrue skip
-                
-                yield ldarg 1 // row
-                yield ldarg 0 // row, this
-                yield ldfld idInfo // row, colinfo
-                yield generalize2 idConverter // id
-                
-                let! id = tmplocal idTy
-                yield stloc id
+                let! keyLocal = tmplocal keyColumns.Type
+                yield keyColumns.Read keyLocal skip keyInfo
+
                 let! entReader = tmplocal elemReaderTy
                 yield dup
                 yield ldfld entDict
@@ -150,7 +183,7 @@ type private ManyColumnGenerator
                 yield dup
                 yield ldfld entDict
                 yield mark hasDict
-                yield ldloc id
+                yield ldloc keyLocal
                 yield ldloca entReader
                 yield call3 (dictTy.GetMethod("TryGetValue"))
                 let! readRow = deflabel
@@ -158,12 +191,12 @@ type private ManyColumnGenerator
                 
                 yield dup
                 yield ldfld entDict
-                yield ldloc id
+                yield ldloc keyLocal
                 yield call0 (staticTemplate.GetMethod("Template"))
                 yield callvirt1 (entTemplate.GetMethod("CreateReader"))
                 yield dup
                 yield stloc entReader
-                yield call3'void (dictTy.GetMethod("Add", [| idTy; elemReaderTy |]))
+                yield call3'void (dictTy.GetMethod("Add", [| keyColumns.Type; elemReaderTy |]))
                 yield dup
                 yield ldfld refReader
                 yield ldloc entReader

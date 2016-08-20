@@ -57,20 +57,15 @@ let private pickIdentity (ty : Type) (cols : IReadOnlyDictionary<string, Column>
                 | Some getter ->
                     let attr = getter.MemberInfo.GetCustomAttribute<DataAnnotations.KeyAttribute>()
                     if not (isNull attr) then yield col
-        } |> Seq.truncate 2 |> Seq.toList
+        } |> Seq.toArray
     match attributed with
-    | [] ->
+    | [||] ->
         let succ, id = cols.TryGetValue("ID")
-        if succ then Some id else
+        if succ then [| id |] else
         let succ, id = cols.TryGetValue(ty.Name + "ID")
-        if succ then Some id else
-        None
-    | [col] -> Some col
-    | multiple ->
-        failwithf
-            "Type %O has %d columns with [<Key>] applied. Cannot disambiguate key (composite keys are not supported)."
-            ty
-            (List.length multiple)
+        if succ then [| id |] else
+        [||]
+    | identity -> identity
 
 let private swapParentChild (me : string) (them : string) (name : string) =
     let swapper (m : Match) =
