@@ -133,6 +133,18 @@ type TestPrimitiveReaders() =
             reader.Read(row)
             let mat = reader.ToEntity()
             Assert.AreEqual(expected :> obj, mat :> obj)
+
+            let reader = ReaderTemplate<'a Nullable>.Template().CreateReader()
+            reader.ProcessColumns(colMap)
+            reader.Read(row)
+            let mat = reader.ToEntity()
+            Assert.AreEqual(expected :> obj, mat :> obj)
+
+            let reader = ReaderTemplate<'a Nullable>.Template().CreateReader()
+            reader.ProcessColumns(colMap)
+            reader.Read(ObjectRow(null : obj))
+            let mat = reader.ToEntity()
+            Assert.IsNull(mat)
         let sad (example : 'a) (str : string) =
             let colMap =
                 [|
@@ -152,5 +164,6 @@ type TestPrimitiveReaders() =
         happy DateTimeKind.Local "Local"
         happy DateTimeKind.Utc "Utc"
         happy StringComparison.InvariantCultureIgnoreCase "InvariantCultureIgnoreCase"
+        happy Enum64U.Two64U "Two64U"
         sad DateTimeKind.Unspecified "Something"
         sad StringComparison.CurrentCulture ""
