@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Text;
 
@@ -29,7 +30,8 @@ namespace Rezoom.ADO
         private string GetParameter(object arg)
         {
             var name = $"@RZPARAM{_parameters.Count}";
-            var dbType = _recognizer.GetDbType(arg);
+            DbType dbType;
+            _recognizer.GetDbType(ref arg, out dbType);
             var parameter = new MultiCommandParameter(name, dbType, arg);
             _parameters.Add(parameter);
             return name;

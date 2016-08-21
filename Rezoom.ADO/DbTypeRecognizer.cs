@@ -6,7 +6,7 @@ namespace Rezoom.ADO
 {
     public class DbTypeRecognizer : IDbTypeRecognizer
     {
-        public virtual DbType StringType => DbType.AnsiString;
+        public virtual DbType StringType => DbType.String;
         public virtual DbType DateTimeType => DbType.DateTime2;
         private static readonly Dictionary<Type, DbType> Primitives = new Dictionary<Type, DbType>
         {
@@ -28,15 +28,14 @@ namespace Rezoom.ADO
 
             { typeof(Guid), DbType.Guid },
         };
-        public DbType GetDbType(object value)
+        public virtual void GetDbType(ref object value, out DbType dbType)
         {
-            if (value == null) return DbType.Object;
-            if (value is string) return StringType;
-            if (value is DateTime) return DateTimeType;
-            var type = value.GetType();
-            DbType result;
-            if (Primitives.TryGetValue(type, out result)) return result;
-            throw new NotSupportedException($"The type {type} is not supported for a database parameter");
+            if (value == null) { dbType = DbType.Object; return; }
+            if (value is string) { dbType = StringType; return; }
+            if (value is DateTime) { dbType = DateTimeType; return; }
+            var ty = value.GetType();
+            if (Primitives.TryGetValue(ty, out dbType)) return;
+            throw new NotSupportedException($"The type {dbType} is not supported for a database parameter");
         }
     }
 }
