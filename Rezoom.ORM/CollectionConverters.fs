@@ -1,4 +1,5 @@
-﻿module Rezoom.ORM.CollectionConverters
+﻿module Rezoom.ORM.CodeGeneration.CollectionConverters
+open Rezoom.ORM
 open LicenseToCIL
 open System
 open System.Collections.Generic

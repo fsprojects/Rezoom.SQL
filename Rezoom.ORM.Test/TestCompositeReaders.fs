@@ -1,4 +1,5 @@
 ﻿namespace Rezoom.ORM.Test.CompositeReaders
+open Rezoom.ORM.CodeGeneration
 open System
 open System.ComponentModel.DataAnnotations
 open Rezoom.ORM

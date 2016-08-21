@@ -1,5 +1,5 @@
 ﻿[<AutoOpen>]
-module private Rezoom.ORM.CILHelpers
+module private Rezoom.ORM.CodeGeneration.CILHelpers
 open LicenseToCIL
 open LicenseToCIL.Stack
 open LicenseToCIL.Ops

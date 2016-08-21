@@ -1,4 +1,5 @@
-﻿module Rezoom.ORM.PrimitiveConverters
+﻿module Rezoom.ORM.CodeGeneration.PrimitiveConverters
+open Rezoom.ORM
 open LicenseToCIL
 open LicenseToCIL.Ops
 open System

@@ -1,5 +1,6 @@
 ﻿[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Rezoom.ORM.Blueprint
+open Rezoom.ORM.CodeGeneration
 open LicenseToCIL
 open System
 open System.Collections

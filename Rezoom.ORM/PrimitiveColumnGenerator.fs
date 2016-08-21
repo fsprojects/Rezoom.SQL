@@ -1,4 +1,5 @@
-﻿namespace Rezoom.ORM
+﻿namespace Rezoom.ORM.CodeGeneration
+open Rezoom.ORM
 open LicenseToCIL
 open LicenseToCIL.Stack
 open LicenseToCIL.Ops

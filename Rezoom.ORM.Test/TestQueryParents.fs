@@ -1,5 +1,6 @@
 ﻿namespace Rezoom.ORM.Test.QueryParents
 open Rezoom.ORM
+open Rezoom.ORM.CodeGeneration
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
 type RecordFolder =

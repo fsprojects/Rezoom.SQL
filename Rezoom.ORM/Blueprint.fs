@@ -1,4 +1,5 @@
 ﻿namespace Rezoom.ORM
+open Rezoom.ORM.CodeGeneration
 open System
 open System.Collections.Generic
 open System.Reflection

@@ -1,5 +1,6 @@
 ﻿namespace Rezoom.ORM.Test.PrimitiveReaders
 open Rezoom.ORM
+open Rezoom.ORM.CodeGeneration
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 

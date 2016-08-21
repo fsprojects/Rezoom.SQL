@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using Rezoom.ORM;
+using Rezoom.ORM.CodeGeneration;
 
 namespace Rezoom.ADO
 {
