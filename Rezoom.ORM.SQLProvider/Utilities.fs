@@ -1,0 +1,11 @@
+﻿[<AutoOpen>]
+module private Rezoom.ORM.SQLProvider.Utilities
+open System
+open System.Collections.Generic
+
+let ciDictBy key values =
+    let d = new Dictionary<string, _>(StringComparer.OrdinalIgnoreCase)
+    for value in values do
+        d.[key value] <- value
+    d :> IReadOnlyDictionary<_, _>
+
