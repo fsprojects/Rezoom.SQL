@@ -164,13 +164,15 @@ and InSet =
     | InSelect of SelectStmt
     | InTable of TableInvocation
 
-and SelectStmt =
+and SelectStmtCore =
     {
         With : WithClause option
         Compound : CompoundExpr
         OrderBy : OrderingTerm ResizeArray option
         Limit : Limit option
     }
+
+and SelectStmt = SelectStmtCore WithSource
 
 and WithClause =
     {

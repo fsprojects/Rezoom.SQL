@@ -13,6 +13,12 @@ type Result<'x, 'err> =
     | Ok of 'x
     | Error of 'err
 
+let inferred (columnType : ColumnType) =
+    {
+        Inferred = ExactlyType columnType.Type
+        Nullable = Some columnType.Nullable
+    }
+
 let rec allQueryVariables (scope : Scope) =
     seq {
         yield! scope.QueryVariables
@@ -71,4 +77,129 @@ let resolveColumnName (scope : Scope) (name : ColumnName) =
             if succ then Ok col else
             Error <| sprintf "No such column in %O: ``%s``" queryName name.ColumnName
 
+let literalType (literal : Literal) =
+    match literal with
+    | NullLiteral -> { Nullable = Some true; Inferred = AnyType }
+    | CurrentTimeLiteral
+    | CurrentDateLiteral
+    | CurrentTimestampLiteral
+    | StringLiteral _ -> { Nullable = Some false; Inferred = ExactlyType StringType }
+    | BlobLiteral _ -> { Nullable = Some false; Inferred = ExactlyType BlobType }
+    | NumericLiteral (IntegerLiteral _) -> { Nullable = Some false; Inferred = ExactlyType IntegerType }
+    | NumericLiteral (FloatLiteral _) -> { Nullable = Some false; Inferred = ExactlyType FloatType }
 
+/// Matches SQLite rules for determining the type affinity of a free-form type name.
+let private typeAffinityRules =
+    [|
+        "INT", IntegerType
+        "CHAR", StringType
+        "CLOB", StringType
+        "TEXT", StringType
+        "BLOB", BlobType
+        "REAL", FloatType
+        "FLOA", FloatType
+        "DOUB", FloatType
+    |]
+let typeAffinity (typeName : TypeName) =
+    let names = String.concat " " typeName.TypeName
+    let byRules =
+        seq {
+            for substr, affinity in typeAffinityRules do
+                if ciContains substr names then yield affinity
+        } |> Seq.tryHead
+    match byRules with
+    | Some affinity -> affinity
+    | None -> FloatType // "numeric" affinity
+
+type IParameterTypeInferrer =
+    abstract member ConstrainParameter : BindParameter * InferredType -> unit
+
+type Inferrer(scope : Scope, parameters : IParameterTypeInferrer) =
+    member this.InferCommonExprType(exprs : Expr seq, expected : InferredType) =
+        let mutable inferred = expected
+        for expr in exprs do
+            inferred <- this.InferExprTypeStrict(expr, inferred)
+        for expr in exprs do // 2nd pass to add parameter constraints to exprs based on later restricted type
+            // TODO: can we get rid of the need to do this?
+            ignore <| this.InferExprTypeStrict(expr, inferred)
+        inferred
+    member this.InferExprTypeStrict(expr : Expr, expected : InferredType) =
+        let inferred = this.InferExprType(expr, expected)
+        match inferred =^= expected with
+        | Some actual -> actual
+        | None ->
+            failAt expr.Source <|
+            sprintf "Expression was expected to have type %O, but its type was inferred to be %O"
+                expected inferred
+    member this.InferScalarSubqueryType(subquery : SelectStmt, expected : InferredType) =
+        failwith "Not supported -- need to support fancy query table-oriented stuff"
+    member this.InferScalarSubqueryTypeStrict(subquery : SelectStmt, expected : InferredType) =
+        let inferred = this.InferScalarSubqueryType(subquery, expected)
+        match inferred =^= expected with
+        | Some actual -> actual
+        | None ->
+            failAt subquery.Source <|
+            sprintf "Subquery was expected to have scalar type %O, but its type was inferred to be %O"
+                expected inferred
+    member this.InferExprType(expr : Expr, expected : InferredType) =
+        match expr.Value with
+        | LiteralExpr lit -> literalType lit
+        | BindParameterExpr par ->
+            parameters.ConstrainParameter(par, expected)
+            expected
+        | ColumnNameExpr name ->
+            let column = resolveColumnName scope name
+            match column with
+            | Error err -> failAt expr.Source err
+            | Ok column -> inferred column.ColumnType
+        | CastExpr cast ->
+            let exprType = this.InferExprType(cast.Expression, InferredType.Any)
+            let toType = typeAffinity cast.AsType
+            {
+                Nullable = exprType.Nullable
+                Inferred = ExactlyType toType
+            }
+        | CollateExpr (subExpr, collation) ->
+            ignore <| this.InferExprTypeStrict(subExpr, InferredType.String)
+            InferredType.String
+        | FunctionInvocationExpr funcInvoke ->
+            failwith "Not supported -- need to make list of built-in SQLite functions"
+        | SimilarityExpr (op, input, pattern, escape) ->
+            let inputType = this.InferExprTypeStrict(input, InferredType.String)
+            let patternType = this.InferExprTypeStrict(pattern, InferredType.String)
+            match escape with
+            | None -> ()
+            | Some escape -> ignore <| this.InferExprTypeStrict(escape, InferredType.String)
+            let nullable =
+                match inputType =^= patternType with
+                | Some unified -> unified.Nullable
+                | None -> None
+            { InferredType.Boolean with Nullable = nullable }
+        | BinaryExpr (binop, left, right) ->
+            failwith "Not supported -- need to define method to handle the whole zoo of binary operators"
+        | UnaryExpr (unop, operand) ->
+            failwith "Not supported -- need to define method to handle the whole zoo of unary operators"
+        | BetweenExpr (input, low, high)
+        | NotBetweenExpr (input, low, high) ->
+            let commonType = this.InferCommonExprType([ input; low; high ], InferredType.Any)
+            InferredType.Boolean
+        | InExpr (input, set)
+        | NotInExpr (input, set) ->
+            let inputType = this.InferExprType(input, InferredType.Any)
+            let setType =
+                match set with
+                | InExpressions exprs ->
+                    ignore <| this.InferCommonExprType(exprs, inputType)
+                | InSelect select ->
+                    ignore <| this.InferScalarSubqueryType(select, inputType)
+                | InTable table ->
+                    failwith "Not supported -- need to figure out how to deal with table invocations"
+            InferredType.Boolean   
+        | ExistsExpr select ->
+            failwith "Not supported -- need to analyze subquery for validity"
+            InferredType.Boolean
+        | CaseExpr cases ->
+            failwith "Not supported -- need to check cases for boolean-ness"
+        | ScalarSubqueryExpr subquery ->
+            this.InferScalarSubqueryType(subquery, expected)
+        | RaiseExpr _ -> InferredType.Any

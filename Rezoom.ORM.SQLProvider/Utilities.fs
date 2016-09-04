@@ -9,3 +9,12 @@ let ciDictBy key values =
         d.[key value] <- value
     d :> IReadOnlyDictionary<_, _>
 
+let ciContains needle (haystack : string) =
+    haystack.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0
+
+type SourceException(info : SourceInfo, msg) =
+    inherit Exception(msg)
+    member this.Info = info
+
+let inline failAt (source : SourceInfo) (msg : string) =
+    raise (SourceException(source, msg))

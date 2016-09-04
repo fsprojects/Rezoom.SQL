@@ -3,9 +3,10 @@ open System
 open System.Collections.Generic
 
 type CoreColumnType =
+    | BooleanType
     | StringType
     | IntegerType
-    | RealType
+    | FloatType
     | BlobType
 
 type ColumnType =
