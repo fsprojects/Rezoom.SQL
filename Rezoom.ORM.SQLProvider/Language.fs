@@ -51,5 +51,6 @@ type Parameter =
 type ILanguageStatement =
     abstract member ModelChange : IModel option
     abstract member ResultSets : ISchemaQuery IReadOnlyList
-    abstract member TablesModified : ISchemaTable IReadOnlyList
+    abstract member TablesRead : ISchemaTable IReadOnlyList
+    abstract member TablesWritten : ISchemaTable IReadOnlyList
     abstract member Parameters : Parameter IReadOnlyList

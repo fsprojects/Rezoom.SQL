@@ -182,8 +182,8 @@ and WithClause =
 
 and CommonTableExpression =
     {
-        Name : ObjectName
-        ColumnNames : Name ResizeArray option
+        Name : Name
+        ColumnNames : Name ResizeArray WithSource option
         AsSelect : SelectStmt
     }
 
@@ -264,10 +264,12 @@ and JoinConstraint =
     | JoinUsing of ColumnName list
     | JoinUnconstrained
 
-and TableExpr =
+and TableExprCore =
     | TableOrSubquery of TableOrSubquery
     | AliasedTableExpr of TableExpr * Alias
     | Join of JoinType *  TableExpr * TableExpr * JoinConstraint
+
+and TableExpr = TableExprCore WithSource
 
 type ConflictClause =
     | Rollback
