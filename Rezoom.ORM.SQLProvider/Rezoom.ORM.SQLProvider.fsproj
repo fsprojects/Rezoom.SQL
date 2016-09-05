@@ -54,8 +54,9 @@
     <Compile Include="SourceTypes.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="Schema.fs" />
-    <Compile Include="Language.fs" />
     <Compile Include="AST.fs" />
+    <Compile Include="Language.fs" />
+    <Compile Include="InferredTypes.fs" />
     <Compile Include="TypeChecker.fs" />
     <Content Include="packages.config" />
   </ItemGroup>

@@ -3,6 +3,7 @@ open System
 open System.Collections.Generic
 
 type CoreColumnType =
+    | AnyType
     | BooleanType
     | StringType
     | IntegerType

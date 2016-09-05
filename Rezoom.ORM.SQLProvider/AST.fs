@@ -231,7 +231,7 @@ and GroupBy =
 and ResultColumns =
     {
         Distinct : DistinctColumns option
-        Columns : ResultColumn ResizeArray
+        Columns : ResultColumn WithSource ResizeArray
     }
 
 and ResultColumn =
