@@ -23,18 +23,31 @@ type SingleCIDictionary<'a>(key : string, value : 'a) =
             with get (k) =
                 if key.Equals(k, StringComparison.OrdinalIgnoreCase) then value
                 else raise <| KeyNotFoundException()
-        member this.Keys = upcast [| key |]
         member this.TryGetValue(k, v) =
             if key.Equals(k, StringComparison.OrdinalIgnoreCase) then
                 v <- value
                 true
             else false
+        member this.Keys = upcast [| key |]
         member this.Values = upcast [| value |]
 
 let ciSingle key value = SingleCIDictionary(key, value)   
 
 let toReadOnlyList (values : 'a seq) =
     ResizeArray(values) :> IReadOnlyList<_>
+
+[<GeneralizableValue>]
+let emptyDictionary<'k, 'v> =
+    { new IReadOnlyDictionary<'k, 'v> with
+        member __.ContainsKey(_) = false
+        member __.Count = 0
+        member __.GetEnumerator() : IEnumerator<KeyValuePair<'k, 'v>> = Seq.empty.GetEnumerator()
+        member __.GetEnumerator() : IEnumerator = upcast Seq.empty.GetEnumerator()
+        member __.Item with get(k) = raise <| KeyNotFoundException()
+        member __.TryGetValue(k, v) = false
+        member __.Keys = Seq.empty
+        member __.Values = Seq.empty
+    }
 
 type SourceException(info : SourceInfo, msg) =
     inherit Exception(msg)

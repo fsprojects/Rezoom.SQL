@@ -19,6 +19,35 @@ let inferred (columnType : ColumnType) =
         Nullable = Some columnType.Nullable
     }
 
+let joinQueryResults (left : ISchemaQuery) (right : ISchemaQuery) =
+    let mutable newQuery = Unchecked.defaultof<ISchemaQuery>
+    let reparentColumn (column : ISchemaQueryColumn) =
+        { new ISchemaQueryColumn with
+            member __.Query = newQuery
+            member __.ColumnName = column.ColumnName
+            member __.ColumnType = column.ColumnType
+            member __.SourceColumn = column.SourceColumn
+        }
+    let columns =
+        lazy (seq {
+            for col in left.Columns -> reparentColumn col
+            for col in right.Columns -> reparentColumn col
+        } |> toReadOnlyList)
+    let dictionary =
+        lazy (columns.Value |> ciDictBy (fun c -> c.ColumnName))
+    let referenced =
+        lazy (
+            Seq.append left.ReferencedTables.Values right.ReferencedTables.Values
+            |> ciDictBy (fun t -> t.TableName)
+        )
+    newQuery <-
+        { new ISchemaQuery with
+            member __.Columns = columns.Value
+            member __.ColumnsByName = dictionary.Value
+            member __.ReferencedTables = referenced.Value
+        }
+    newQuery
+
 let renameColumns (source : SourceInfo) (query : ISchemaQuery) (names : Name IReadOnlyList) =
     if names.Count <> query.Columns.Count then
         failAt source <|
@@ -36,11 +65,13 @@ let renameColumns (source : SourceInfo) (query : ISchemaQuery) (names : Name IRe
             (names, query.Columns) ||> Seq.map2 renameColumn |> toReadOnlyList
         let dictionary =
             lazy (columns |> ciDictBy (fun c -> c.ColumnName))
-        { new ISchemaQuery with
-            member __.Columns = columns
-            member __.ColumnsByName = dictionary.Value
-            member __.ReferencedTables = query.ReferencedTables
-        }
+        newQuery <-
+            { new ISchemaQuery with
+                member __.Columns = columns
+                member __.ColumnsByName = dictionary.Value
+                member __.ReferencedTables = query.ReferencedTables
+            }
+        newQuery
 
 let rec allQueryVariables (scope : Scope) =
     seq {
@@ -148,6 +179,7 @@ type Inferrer(scope : Scope, stmtInfo : IStatementInfoBuilder) =
             | Ok query -> query
         | Some args ->
             failAt source "Table invocations with arguments are not supported"
+
     member this.InferCommonExprType(exprs : Expr seq, expected : InferredType) =
         let mutable inferred = expected
         for expr in exprs do
@@ -156,6 +188,7 @@ type Inferrer(scope : Scope, stmtInfo : IStatementInfoBuilder) =
             // TODO: can we get rid of the need to do this?
             ignore <| this.InferExprTypeStrict(expr, inferred)
         inferred
+
     member this.InferExprTypeStrict(expr : Expr, expected : InferredType) =
         let inferred = this.InferExprType(expr, expected)
         match inferred =^= expected with
@@ -164,8 +197,10 @@ type Inferrer(scope : Scope, stmtInfo : IStatementInfoBuilder) =
             failAt expr.Source <|
             sprintf "Expression was expected to have type %O, but its type was inferred to be %O"
                 expected inferred
+
     member this.InferScalarSubqueryType(subquery : SelectStmt, expected : InferredType) =
         failwith "Not supported -- need to support fancy query table-oriented stuff"
+
     member this.InferScalarSubqueryTypeStrict(subquery : SelectStmt, expected : InferredType) =
         let inferred = this.InferScalarSubqueryType(subquery, expected)
         match inferred =^= expected with
@@ -174,6 +209,7 @@ type Inferrer(scope : Scope, stmtInfo : IStatementInfoBuilder) =
             failAt subquery.Source <|
             sprintf "Subquery was expected to have scalar type %O, but its type was inferred to be %O"
                 expected inferred
+
     member this.InferSimilarityExprType(op, input, pattern, escape) =
         let inputType = this.InferExprTypeStrict(input, InferredType.String)
         let patternType = this.InferExprTypeStrict(pattern, InferredType.String)
@@ -185,6 +221,7 @@ type Inferrer(scope : Scope, stmtInfo : IStatementInfoBuilder) =
             | Some unified -> unified.Nullable
             | None -> None
         { InferredType.Boolean with Nullable = nullable }
+
     member this.InferInExprType(input, set) =
         let inputType = this.InferExprType(input, InferredType.Any)
         let setType =
@@ -195,7 +232,8 @@ type Inferrer(scope : Scope, stmtInfo : IStatementInfoBuilder) =
                 ignore <| this.InferScalarSubqueryType(select, inputType)
             | InTable table ->
                 failwith "Not supported -- need to figure out how to deal with table invocations"
-        InferredType.Boolean   
+        InferredType.Boolean
+
     member this.InferExprType(expr : Expr, expected : InferredType) =
         match expr.Value with
         | LiteralExpr lit -> literalType lit
@@ -238,6 +276,7 @@ type Inferrer(scope : Scope, stmtInfo : IStatementInfoBuilder) =
         | ScalarSubqueryExpr subquery ->
             this.InferScalarSubqueryType(subquery, expected)
         | RaiseExpr _ -> InferredType.Any
+
     member this.CteScope(withClause) =
         match withClause with
         | None -> scope
@@ -251,6 +290,7 @@ type Inferrer(scope : Scope, stmtInfo : IStatementInfoBuilder) =
                     ParentScope = Some scope
                     QueryVariables = ciSingle cte.Name cteQuery
                 }) scope
+
     member this.TableExprScope(dict : Dictionary<string, _>, tableExpr : TableExpr) =
         let add name query =
             if dict.ContainsKey(name) then
@@ -262,27 +302,65 @@ type Inferrer(scope : Scope, stmtInfo : IStatementInfoBuilder) =
             let tbl = this.ResolveTableInvocation(tableExpr.Source, invoc)
             let name = defaultArg alias invoc.Table.ObjectName
             add name tbl
+            tbl
         | TableOrSubquery (Subquery (select, alias)) ->
             let sub = this.InferQueryType(select)
             match alias with
             | Some alias -> add alias sub
             | None -> ()
+            sub
         | AliasedTableExpr (expr, alias) ->
-            ignore <| this.TableExprScope(dict, expr)
-            // TODO: we have to add the notion of ordered default columns to scope,
-            // both for aliasing the result of this and for "select *" to work.
-            failwith "Not implemented"
+            let sub = this.TableExprScope(dict, expr)
+            match alias with
+            | Some alias -> add alias sub
+            | None -> ()
+            sub
         | Join (_, left, right, _) ->
-            ignore <| this.TableExprScope(dict, left)
-            ignore <| this.TableExprScope(dict, right)
+            let left = this.TableExprScope(dict, left)
+            let right = this.TableExprScope(dict, right)
+            joinQueryResults left right
+
     member this.TableExprScope(tableExpr : TableExpr) =
         let dict = Dictionary(StringComparer.OrdinalIgnoreCase)
-        this.TableExprScope(dict, tableExpr)
+        let wildcardQuery = this.TableExprScope(dict, tableExpr)
         { scope with
             ParentScope = Some scope
             QueryVariables = dict
-        }
+        }, Some wildcardQuery
+
     member this.InferSelectCoreType(select : SelectCore) =
+        let fromScope, fromWildcard =
+            match select.From with
+            | None -> { scope with QueryVariables = emptyDictionary }, None
+            | Some tableExpr ->
+                this.TableExprScope(tableExpr)
+        let from = Inferrer(fromScope, stmtInfo)
+        let resultColumns =
+            seq {
+              for col in select.Columns.Columns do
+                match col with
+                | ColumnsWildcard ->
+                    match fromWildcard with
+                    | None -> failAt (failwith "Where?") "Can't use wildcard without a `from` clause"
+                    | Some q -> yield! q.Columns
+                | TableColumnsWildcard objectName ->
+                    match resolveQueryName fromScope objectName with
+                    | Error err -> failAt (failwith "Where?") err
+                    | Ok q -> yield! q.Columns
+                | Column (expr, alias) ->
+                    let inferred = from.InferExprType(expr, InferredType.Any)
+                    yield
+                        { new ISchemaQueryColumn with
+                            member __.Query = Unchecked.defaultof<ISchemaQuery>
+                            member __.ColumnName =
+                                match alias with
+                                | None -> failAt expr.Source "An expression-valued column should have an alias"
+                                | Some name -> name
+                            member __.ColumnType =
+                                failwith "Figure out how to translate inferred to real types!"
+                            member __.SourceColumn = None
+                        }
+            }
         failwith "" : ISchemaQuery
     member this.InferQueryType(select : SelectStmt) =
         let scope = this.CteScope(select.Value.With)
