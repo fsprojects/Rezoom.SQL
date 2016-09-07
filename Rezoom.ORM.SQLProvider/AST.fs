@@ -261,13 +261,21 @@ and JoinType =
 
 and JoinConstraint =
     | JoinOn of Expr
-    | JoinUsing of ColumnName list
+    | JoinUsing of Name ResizeArray
     | JoinUnconstrained
+
+and Join =
+    {
+        JoinType : JoinType
+        LeftTable : TableExpr
+        RightTable : TableExpr
+        Constraint : JoinConstraint
+    }
 
 and TableExprCore =
     | TableOrSubquery of TableOrSubquery
     | AliasedTableExpr of TableExpr * Alias
-    | Join of JoinType *  TableExpr * TableExpr * JoinConstraint
+    | Join of Join
 
 and TableExpr = TableExprCore WithSource
 

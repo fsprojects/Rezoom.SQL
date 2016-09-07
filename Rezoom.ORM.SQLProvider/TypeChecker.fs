@@ -55,6 +55,12 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
             return DependentlyNullType(setType, BooleanType)
         }
 
+    member this.RequireExprType(expr : Expr, mustMatch : CoreColumnType) =
+        let inferred = this.InferExprType(expr)
+        cxt.Unify(inferred, mustMatch)
+        |> resultAt expr.Source
+        |> ignore
+
     member this.InferExprType(expr : Expr) : InferredType =
         match expr.Value with
         | LiteralExpr lit -> InferredType.OfLiteral(lit)
@@ -132,42 +138,80 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
             | Some alias -> add alias sub
             | None -> ()
             sub
-        | Join (_, left, right, _) ->
-            let left = this.TableExprScope(dict, left)
-            let right = this.TableExprScope(dict, right)
+        | Join join ->
+            let left = this.TableExprScope(dict, join.LeftTable)
+            let right = this.TableExprScope(dict, join.RightTable)
             left.Append(right)
 
     member this.TableExprScope(tableExpr : TableExpr) =
         let dict = Dictionary(StringComparer.OrdinalIgnoreCase)
         let wildcard = this.TableExprScope(dict, tableExpr)
-        { scope with
-            FromClause = Some { FromVariables = dict; Wildcard = wildcard }
-        }
+        { FromVariables = dict; Wildcard = wildcard }
+
+    member this.ValidateTableExprConstraints(tableExpr : TableExpr) =
+        match tableExpr.Value with
+        | TableOrSubquery _ -> ()
+        | AliasedTableExpr (ex, _) -> this.ValidateTableExprConstraints(ex)
+        | Join join ->
+            this.ValidateTableExprConstraints(join.LeftTable)
+            this.ValidateTableExprConstraints(join.RightTable)
+            match join.JoinType, join.Constraint with
+            | Natural _, JoinUnconstrained ->
+                let columnSet texpr = 
+                    this.TableExprScope(texpr).Wildcard.Columns
+                    |> Seq.map (fun c -> c.ColumnName.ToUpperInvariant())
+                    |> Set.ofSeq
+                let intersection = Set.intersect (columnSet join.LeftTable) (columnSet join.RightTable)
+                if Set.isEmpty intersection then
+                    failAt tableExpr.Source
+                        "The left and right sides of a NATURAL JOIN must have at least one column name in common"
+            | Natural _, _ -> failAt tableExpr.Source "A NATURAL JOIN cannot have an ON or USING clause"
+            | _, JoinOn ex -> this.RequireExprType(ex, BooleanType)
+            | _, JoinUsing names ->
+                let leftColumns = this.TableExprScope(join.LeftTable).Wildcard
+                let rightColumns = this.TableExprScope(join.RightTable).Wildcard
+                for name in names do
+                    leftColumns.ColumnByName(name) |> foundAt tableExpr.Source |> ignore
+                    rightColumns.ColumnByName(name) |> foundAt tableExpr.Source |> ignore
+            | _, JoinUnconstrained -> ()
 
     member this.InferSelectCoreType(select : SelectCore) : InferredQuery =
-        let fromScope =
+        let this, scope =
             match select.From with
-            | None -> scope
-            | Some tableExpr -> this.TableExprScope(tableExpr)
-        let fromInferrer = Inferrer(cxt, fromScope)
+            | None -> this, scope
+            | Some tableExpr ->
+                let fromScope = { scope with FromClause = this.TableExprScope(tableExpr) |> Some }
+                let fromInferrer = Inferrer(cxt, fromScope)
+                fromInferrer.ValidateTableExprConstraints(tableExpr)
+                fromInferrer, fromScope
+        match select.Where with
+        | None -> ()
+        | Some whereExpr -> this.RequireExprType(whereExpr, BooleanType)
+        match select.GroupBy with
+        | None -> ()
+        | Some groupBy ->
+            for expr in groupBy.By do this.RequireExprType(expr, AnyType)
+            match groupBy.Having with
+            | None -> ()
+            | Some havingExpr -> this.RequireExprType(havingExpr, BooleanType)
         let resultColumns =
             seq {
               for col in select.Columns.Columns do
                 match col.Value with
                 | ColumnsWildcard ->
-                    match fromScope.FromClause with
+                    match scope.FromClause with
                     | None -> failAt col.Source "Can't use wildcard without a FROM clause"
                     | Some from -> yield! from.Wildcard.Columns
                 | TableColumnsWildcard objectName ->
-                    match fromScope.FromClause with
+                    match scope.FromClause with
                     | None ->
                         failAt col.Source <|
-                            sprintf "Can't use wildcard on table ``%O`` without a FROM clause" objectName
+                            sprintf "Can't use wildcard ``%O.*`` without a FROM clause" objectName
                     | Some from ->
                         let table = from.ResolveTable(objectName) |> foundAt col.Source
                         yield! table.Columns
                 | Column (expr, alias) ->
-                    let inferred = fromInferrer.InferExprType(expr)
+                    let inferred = this.InferExprType(expr)
                     let name, fromAlias =
                         match alias with
                         | None ->
@@ -177,8 +221,11 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
                         | Some name -> name, None
                     yield
                         { ColumnName = name; InferredType = inferred; FromAlias = fromAlias }
-            }
-        failwith ""
+            } |> toReadOnlyList
+        {
+            Columns = resultColumns
+        }
     member this.InferQueryType(select : SelectStmt) : InferredQuery =
         let scope = this.CTEScope(select.Value.With)
+        let this = Inferrer(cxt, scope)
         failwith ""
