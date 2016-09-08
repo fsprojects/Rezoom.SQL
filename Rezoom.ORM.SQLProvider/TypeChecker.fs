@@ -27,7 +27,13 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
             failAt source "Table invocations with arguments are not supported"
 
     member this.InferScalarSubqueryType(subquery : SelectStmt) : InferredType =
-        failwith "Not supported -- need to support fancy query table-oriented stuff"
+        let queryType = this.InferQueryType(subquery)
+        if queryType.Columns.Count = 1 then
+            queryType.Columns.[0].InferredType
+        else
+            failAt subquery.Source <|
+                sprintf "A scalar subquery must have exactly 1 result column (found %d columns)"
+                    queryType.Columns.Count
 
     member this.InferSimilarityExprType(op, input, pattern, escape) =
         result {
