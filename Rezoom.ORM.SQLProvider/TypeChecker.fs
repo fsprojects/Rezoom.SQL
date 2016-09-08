@@ -80,6 +80,37 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
         | Some els ->
             cxt.Unify(this.InferExprType(els), outputType) |> resultAt els.Source
 
+    member this.InferBinaryExprType(op, left, right) =
+        let leftType, rightType = this.InferExprType(left), this.InferExprType(right)
+        match op with
+        | Concatenate -> cxt.Unify([ leftType; rightType; InferredType.String ])
+        | Multiply
+        | Divide
+        | Add
+        | Subtract // TODO: operators below here require integers. How can we enforce this?
+        | Modulo
+        | BitShiftLeft
+        | BitShiftRight
+        | BitAnd
+        | BitOr -> cxt.Unify([ leftType; rightType; InferredType.Number ])
+        | LessThan
+        | LessThanOrEqual
+        | GreaterThan
+        | GreaterThanOrEqual
+        | Equal
+        | NotEqual
+        | Is
+        | IsNot -> cxt.Unify(leftType, rightType)
+        | And
+        | Or -> cxt.Unify([ leftType; rightType; InferredType.Boolean ])
+
+    member this.InferUnaryExprType(unop, operand) =
+        let operandType = this.InferExprType(operand)
+        match unop with
+        | Negative
+        | BitNot -> cxt.Unify(operandType, InferredType.Number)
+        | Not -> cxt.Unify(operandType, InferredType.Boolean)
+
     member this.RequireExprType(expr : Expr, mustMatch : CoreColumnType) =
         let inferred = this.InferExprType(expr)
         cxt.Unify(inferred, mustMatch)
@@ -104,9 +135,11 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
             this.InferSimilarityExprType(op, input, pattern, escape)
             |> resultAt expr.Source
         | BinaryExpr (binop, left, right) ->
-            failwith "Not supported -- need to define method to handle the whole zoo of binary operators"
+            this.InferBinaryExprType(binop, left, right)
+            |> resultAt expr.Source
         | UnaryExpr (unop, operand) ->
-            failwith "Not supported -- need to define method to handle the whole zoo of unary operators"
+            this.InferUnaryExprType(unop, operand)
+            |> resultAt expr.Source
         | BetweenExpr (input, low, high)
         | NotBetweenExpr (input, low, high) ->
             result {

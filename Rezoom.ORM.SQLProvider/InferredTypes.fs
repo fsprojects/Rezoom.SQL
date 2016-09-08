@@ -22,6 +22,8 @@ type InferredType =
     /// A type whose nullability depends on that of another type.
     | DependentlyNullType of InferredType * CoreColumnType
     | TypeVariable of TypeVariableId
+    static member Number = ConcreteType { Nullable = false; Type = IntegerType }
+    static member String = ConcreteType { Nullable = false; Type = StringType }
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
     static member Any = ConcreteType { Nullable = false; Type = AnyType }
     static member OfLiteral(literal : Literal) =
