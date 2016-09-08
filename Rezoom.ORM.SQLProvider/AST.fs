@@ -146,7 +146,7 @@ and CaseExpr =
     {
         Input : Expr option
         Cases : (Expr * Expr) ResizeArray
-        Else : Expr option
+        Else : Expr option WithSource
     }
 
 and Distinct = | Distinct
@@ -203,16 +203,20 @@ and Limit =
         Offset : Expr option
     }
 
-and CompoundExpr =
+and CompoundExprCore =
     | CompoundTerm of CompoundTerm
     | Union of CompoundExpr * CompoundTerm
     | UnionAll of CompoundExpr * CompoundTerm
     | Intersect of CompoundExpr * CompoundTerm
     | Except of CompoundExpr * CompoundTerm
 
-and CompoundTerm =
-    | Values of Expr ResizeArray ResizeArray
+and CompoundExpr = CompoundExprCore WithSource
+
+and CompoundTermCore =
+    | Values of Expr ResizeArray WithSource ResizeArray
     | Select of SelectCore
+
+and CompoundTerm = CompoundTermCore WithSource
 
 and SelectCore =
     {

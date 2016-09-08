@@ -55,6 +55,25 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
             return DependentlyNullType(setType, BooleanType)
         }
 
+    member this.InferCaseExprType(cases : CaseExpr) =
+        let mutable outputType = InferredType.Any
+        match cases.Input with
+        | None ->
+            for condition, output in cases.Cases do
+                this.RequireExprType(condition, BooleanType)
+                outputType <- cxt.Unify(this.InferExprType(output), outputType) |> resultAt output.Source
+        | Some input ->
+            let mutable inputType = this.InferExprType(input)
+            for input, output in cases.Cases do
+                inputType <- cxt.Unify(this.InferExprType(input), inputType) |> resultAt input.Source
+                outputType <- cxt.Unify(this.InferExprType(output), outputType) |> resultAt output.Source
+        match cases.Else.Value with
+        | None -> // require nullable
+            cxt.Unify(outputType, ConcreteType { Nullable = true; Type = AnyType })
+            |> resultAt cases.Else.Source
+        | Some els ->
+            cxt.Unify(this.InferExprType(els), outputType) |> resultAt els.Source
+
     member this.RequireExprType(expr : Expr, mustMatch : CoreColumnType) =
         let inferred = this.InferExprType(expr)
         cxt.Unify(inferred, mustMatch)
@@ -93,9 +112,9 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
             this.InferInExprType(input, set)
             |> resultAt expr.Source
         | ExistsExpr select ->
-            failwith "Not supported -- need to analyze subquery for validity"
-        | CaseExpr cases ->
-            failwith "Not supported -- need to check cases for boolean-ness"
+            ignore <| this.InferQueryType(select)
+            InferredType.Boolean
+        | CaseExpr cases -> this.InferCaseExprType(cases)
         | ScalarSubqueryExpr subquery -> this.InferScalarSubqueryType(subquery)
         | RaiseExpr _ -> InferredType.Any
 
@@ -187,6 +206,8 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
         match select.Where with
         | None -> ()
         | Some whereExpr -> this.RequireExprType(whereExpr, BooleanType)
+        // TODO: we need to figure out what to do about aggregates.
+        // How can we cleanly prevent bogus queries like `select *, count(*) from tbl`?
         match select.GroupBy with
         | None -> ()
         | Some groupBy ->
@@ -225,7 +246,67 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
         {
             Columns = resultColumns
         }
+
+    member this.InferCompoundTermType(compound : CompoundTerm) : InferredQuery =
+        match compound.Value with
+        | Values rows ->
+            if rows.Count < 1 then failAt compound.Source "VALUES clause must contain at least one row"
+            let rowType =
+                [| for col in rows.[0].Value -> this.InferExprType(col) |]
+            for row in rows |> Seq.skip 1 do
+                if row.Value.Count <> rowType.Length then
+                    failAt row.Source <|
+                        sprintf "Row in VALUES clause has too %s values (expected %d, got %d)"
+                            (if row.Value.Count > rowType.Length then "many" else "few")
+                            rowType.Length row.Value.Count
+                for i, col in row.Value |> Seq.indexed do
+                    let inferred = this.InferExprType(col)
+                    rowType.[i] <- cxt.Unify(inferred, rowType.[i]) |> resultAt col.Source
+            { Columns =
+                [| for inferred in rowType -> { InferredType = inferred; FromAlias = None; ColumnName = "" } |]
+            }
+        | Select core -> this.InferSelectCoreType(core)
+
+    member this.InferCompoundExprType(compound : CompoundExpr) : InferredQuery =
+        match compound.Value with
+        | CompoundTerm term -> this.InferCompoundTermType(term)
+        | Union (top, bottom)
+        | UnionAll (top, bottom)
+        | Intersect (top, bottom)
+        | Except (top, bottom) ->
+            let topType = this.InferCompoundExprType(top)
+            let bottomType = this.InferCompoundTermType(bottom)
+            if topType.Columns.Count <> bottomType.Columns.Count then
+                failAt bottom.Source <|
+                    sprintf "Mismatched number of columns in compound expression (%d on top, %d on bottom)"
+                        topType.Columns.Count bottomType.Columns.Count
+            else
+                { topType with
+                    Columns =
+                        [| for topCol, botCol in Seq.zip topType.Columns bottomType.Columns ->
+                            { topCol with
+                                InferredType =
+                                    cxt.Unify(topCol.InferredType, botCol.InferredType)
+                                    |> resultAt bottom.Source
+                            }
+                        |]
+                }
     member this.InferQueryType(select : SelectStmt) : InferredQuery =
-        let scope = this.CTEScope(select.Value.With)
-        let this = Inferrer(cxt, scope)
-        failwith ""
+        let innerScope = this.CTEScope(select.Value.With)
+        let inner = Inferrer(cxt, scope)
+        let compoundExprType = inner.InferCompoundExprType(select.Value.Compound)
+        // At this point we know the expression type, we just need to validate the
+        // other optional bits of the query.
+        match select.Value.OrderBy with
+        | None -> ()
+        | Some orderTerms ->
+            // TODO: We should check that only selected expressions are ordered by.
+            for term in orderTerms do inner.RequireExprType(term.By, AnyType)
+        match select.Value.Limit with
+        | None -> ()
+        | Some limit -> // Limit expressions can use the current scope, not the inner scope.
+            this.RequireExprType(limit.Limit, IntegerType)
+            match limit.Offset with
+            | None -> ()
+            | Some offset -> this.RequireExprType(offset, IntegerType)
+        compoundExprType
