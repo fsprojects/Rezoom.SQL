@@ -18,7 +18,7 @@ module private InferenceExtensions =
                 (Ok InferredType.Any)
 open InferenceExtensions
 
-type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
+type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.ResolveTableInvocation(source : SourceInfo, tableInvocation : TableInvocation) =
         match tableInvocation.Arguments with
         | None ->
@@ -244,7 +244,7 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
             | None -> this, scope
             | Some tableExpr ->
                 let fromScope = { scope with FromClause = this.TableExprScope(tableExpr) |> Some }
-                let fromInferrer = Inferrer(cxt, fromScope)
+                let fromInferrer = TypeChecker(cxt, fromScope)
                 fromInferrer.ValidateTableExprConstraints(tableExpr)
                 fromInferrer, fromScope
         match select.Where with
@@ -337,7 +337,7 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
                 }
     member this.InferQueryType(select : SelectStmt) : InferredQuery =
         let innerScope = this.CTEScope(select.Value.With)
-        let inner = Inferrer(cxt, scope)
+        let inner = TypeChecker(cxt, scope)
         let compoundExprType = inner.InferCompoundExprType(select.Value.Compound)
         // At this point we know the expression type, we just need to validate the
         // other optional bits of the query.

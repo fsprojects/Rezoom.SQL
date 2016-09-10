@@ -55,6 +55,8 @@ type InferredType =
         | TypeVariable _ as tv
         | DependentlyNullType (_ as tv, _) ->
             DependentlyNullType (tv, affinity) // preserve nullability of input
+        | OneOfTypes tys ->
+            ConcreteType { Type = affinity; Nullable = tys |> List.exists (fun t -> t.Nullable) }
         | ConcreteType ty ->
             ConcreteType { ty with Type = affinity }
 
