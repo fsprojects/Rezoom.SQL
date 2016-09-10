@@ -115,8 +115,8 @@ type ExprType =
     | UnaryExpr of UnaryOperator * Expr
     | BetweenExpr of Expr * Expr * Expr
     | NotBetweenExpr of Expr * Expr * Expr
-    | InExpr of Expr * InSet
-    | NotInExpr of Expr * InSet
+    | InExpr of Expr * InSet WithSource
+    | NotInExpr of Expr * InSet WithSource
     | ExistsExpr of SelectStmt
     | CaseExpr of CaseExpr
     | ScalarSubqueryExpr of SelectStmt

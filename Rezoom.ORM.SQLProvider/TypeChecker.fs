@@ -46,18 +46,23 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
             return DependentlyNullType(unified, BooleanType)
         }
 
-    member this.InferInExprType(input, set) =
+    member this.InferInExprType(input, set : InSet WithSource) =
         let inputType = this.InferExprType(input)
         result {
             let! setType =
-                match set with
+                match set.Value with
                 | InExpressions exprs ->
                     let commonType = cxt.Unify(exprs |> Seq.map this.InferExprType)
                     cxt.Unify(inputType, commonType)
                 | InSelect select ->
                     cxt.Unify(inputType, this.InferScalarSubqueryType(select))
                 | InTable table ->
-                    failwith "Not supported -- need to figure out how to deal with table invocations"
+                    let query = this.ResolveTableInvocation(set.Source, table)
+                    if query.Columns.Count <> 1 then
+                        failAt set.Source <|
+                            sprintf "Right side of IN operator must have exactly one column (this one has %d)"
+                                query.Columns.Count
+                    else cxt.Unify(inputType, query.Columns.[0].InferredType)
             return DependentlyNullType(setType, BooleanType)
         }
 
