@@ -105,7 +105,11 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         | Equal
         | NotEqual
         | Is
-        | IsNot -> cxt.Unify(leftType, rightType)
+        | IsNot ->
+            result {
+                let! operandType = cxt.Unify(leftType, rightType)
+                return DependentlyNullType(operandType, BooleanType)
+            }
         | And
         | Or -> cxt.Unify([ leftType; rightType; InferredType.Boolean ])
 
