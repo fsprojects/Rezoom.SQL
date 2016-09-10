@@ -3,26 +3,35 @@ open System
 open System.Collections.Generic
 open Rezoom.ORM.SQLProvider.InferredTypes
 
-module private InferenceExtensions =
-    type ITypeInferenceContext with
-        member this.Unify(inferredType, coreType : CoreColumnType) =
-            this.Unify(inferredType, DependentlyNullType(inferredType, coreType))
-        member this.Unify(inferredType, resultType : Result<InferredType, string>) =
-            match resultType with
-            | Ok t -> this.Unify(inferredType, t)
-            | Error _ as e -> e
-        member this.Unify(types : InferredType seq) =
-            types
-            |> Seq.fold
-                (function | Ok s -> (fun t -> this.Unify(s, t)) | Error _ as e -> (fun _ -> e))
-                (Ok InferredType.Any)
-open InferenceExtensions
+type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
+    let comparer =
+        { new IEqualityComparer<ISchemaTable> with
+            member __.Equals(t1, t2) = t1.TableName = t2.TableName && t1.Schema.SchemaName = t2.Schema.SchemaName
+            member __.GetHashCode(t) = (t.TableName, t.Schema.SchemaName).GetHashCode()
+        }
+    let referenced = HashSet<ISchemaTable>(comparer)
+    let written = HashSet<ISchemaTable>(comparer)
+    member __.Reference(table : ISchemaTable) = ignore <| referenced.Add(table)
+    member __.Write(table : ISchemaTable) = ignore <| written.Add(table)
+    member __.Variable(parameter) = typeInference.Variable(parameter)
+    member __.Unify(left, right) = typeInference.Unify(left, right)
+    member __.Unify(inferredType, coreType : CoreColumnType) =
+        typeInference.Unify(inferredType, DependentlyNullType(inferredType, coreType))
+    member __.Unify(inferredType, resultType : Result<InferredType, string>) =
+        match resultType with
+        | Ok t -> typeInference.Unify(inferredType, t)
+        | Error _ as e -> e
+    member __.Unify(types : InferredType seq) =
+        types
+        |> Seq.fold
+            (function | Ok s -> (fun t -> typeInference.Unify(s, t)) | Error _ as e -> (fun _ -> e))
+            (Ok InferredType.Any)
 
-type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
+type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) =
     member this.ResolveTableInvocation(source : SourceInfo, tableInvocation : TableInvocation) =
         match tableInvocation.Arguments with
         | None ->
-            foundAt source (scope.ResolveTableReference(tableInvocation.Table))
+            foundAt source (scope.ResolveTableReference(tableInvocation.Table, cxt.Reference))
         | Some args ->
             failAt source "Table invocations with arguments are not supported"
 

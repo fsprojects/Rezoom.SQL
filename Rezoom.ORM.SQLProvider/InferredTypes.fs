@@ -196,29 +196,35 @@ and InferredSelectScope =
             SelectClause = None
         }
 
-    member private this.ResolveTableReferenceBySchema(schema : ISchema, name : string) =
+    member private this.ResolveTableReferenceBySchema(schema : ISchema, name : string, refTable : ISchemaTable -> unit) =
         let succ, tbl = schema.Tables.TryGetValue(name)
-        if succ then Found (InferredQuery.OfTable(tbl)) else
-        let succ, view = schema.Views.TryGetValue(name)
-        if succ then Found (InferredQuery.OfView(view)) else
-        NotFound <| sprintf "No such table in schema %s: ``%s``" schema.SchemaName name
+        if succ then
+            refTable tbl
+            Found (InferredQuery.OfTable(tbl))
+        else
+            let succ, view = schema.Views.TryGetValue(name)
+            if succ then
+                for tbl in view.Query.ReferencedTables do refTable tbl
+                Found (InferredQuery.OfView(view))
+            else
+                NotFound <| sprintf "No such table in schema %s: ``%s``" schema.SchemaName name
 
     /// Resolve a reference to a table which may occur as part of a TableExpr.
     /// This will resolve against the database model and CTEs, but not table aliases defined in the FROM clause.
-    member this.ResolveTableReference(name : ObjectName) =
+    member this.ResolveTableReference(name : ObjectName, refTable : ISchemaTable -> unit) =
         match name.SchemaName with
         | None ->
             let succ, cte = this.CTEVariables.TryGetValue(name.ObjectName)
             if succ then Found cte else
             match this.ParentScope with
             | Some parent ->
-                parent.ResolveTableReference(name)
+                parent.ResolveTableReference(name, refTable)
             | None ->
                 let schema = this.Model.Schemas.[this.Model.DefaultSchema]
-                this.ResolveTableReferenceBySchema(schema, name.ObjectName)
+                this.ResolveTableReferenceBySchema(schema, name.ObjectName, refTable)
         | Some schema ->
             let schema = this.Model.Schemas.[schema]
-            this.ResolveTableReferenceBySchema(schema, name.ObjectName)
+            this.ResolveTableReferenceBySchema(schema, name.ObjectName, refTable)
 
     /// Resolve a column reference, which may be qualified with a table alias.
     /// This resolves against the tables referenced in the FROM clause, and the columns explicitly named
