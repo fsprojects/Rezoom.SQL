@@ -187,6 +187,15 @@ and InferredSelectScope =
         SelectClause : InferredQuery option
     }
 
+    static member Root(model) =
+        {
+            ParentScope = None
+            Model = model
+            CTEVariables = emptyDictionary
+            FromClause = None
+            SelectClause = None
+        }
+
     member private this.ResolveTableReferenceBySchema(schema : ISchema, name : string) =
         let succ, tbl = schema.Tables.TryGetValue(name)
         if succ then Found (InferredQuery.OfTable(tbl)) else

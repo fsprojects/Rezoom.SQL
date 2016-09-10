@@ -55,10 +55,10 @@
     <Compile Include="Utilities.fs" />
     <Compile Include="Schema.fs" />
     <Compile Include="AST.fs" />
-    <Compile Include="Language.fs" />
     <Compile Include="InferredTypes.fs" />
     <Compile Include="TypeInferenceContext.fs" />
     <Compile Include="TypeChecker.fs" />
+    <Compile Include="Language.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

@@ -48,7 +48,7 @@ and ISchemaView =
 and ISchemaQuery =
     abstract member Columns : IReadOnlyList<ISchemaQueryColumn>
     abstract member ColumnsByName : IReadOnlyDictionary<string, ISchemaQueryColumn>
-    abstract member ReferencedTables : IReadOnlyDictionary<string, ISchemaTable>
+    abstract member ReferencedTables : ISchemaTable seq
 
 and ISchemaQueryColumn =
     abstract member Query : ISchemaQuery
@@ -72,4 +72,4 @@ type TableQuery(table : ISchemaTable) as query =
     interface ISchemaQuery with
         member __.Columns = upcast columns
         member __.ColumnsByName = byName
-        member __.ReferencedTables = [ table ] |> ciDictBy (fun c -> c.TableName)
+        member __.ReferencedTables = Seq.singleton table
