@@ -54,9 +54,6 @@ and ISchemaQueryColumn =
     abstract member Query : ISchemaQuery
     abstract member ColumnName : string
     abstract member ColumnType : ColumnType
-    /// If this column is pulled straight from a table, this is the referenced column.
-    /// Useful for determining identity.
-    abstract member SourceColumn : ISchemaColumn option
 
 type TableQuery(table : ISchemaTable) as query =
     let columns =
@@ -65,7 +62,6 @@ type TableQuery(table : ISchemaTable) as query =
                 member __.Query = query :> ISchemaQuery
                 member __.ColumnName = col.ColumnName
                 member __.ColumnType = col.ColumnType
-                member __.SourceColumn = Some col
             }
         |]
     let byName = columns |> ciDictBy (fun c -> c.ColumnName)

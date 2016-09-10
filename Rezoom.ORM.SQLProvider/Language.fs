@@ -1,24 +1,56 @@
 ﻿module Rezoom.ORM.SQLProvider.Language
 open System
 open System.Collections.Generic
+open Rezoom.ORM.SQLProvider.InferredTypes
 
-type ILanguageStatement =
-    abstract member ModelChange : IModel option
-    abstract member ResultSets : ISchemaQuery IReadOnlyList
-    abstract member TablesRead : ISchemaTable IReadOnlyList
-    abstract member TablesWritten : ISchemaTable IReadOnlyList
-    abstract member Parameters : (BindParameter * ColumnType) IReadOnlyList
-
-let nullStatement =
-    { new ILanguageStatement with
-        member __.ModelChange = None
-        member __.ResultSets = upcast [||]
-        member __.TablesRead = upcast [||]
-        member __.TablesWritten = upcast [||]
-        member __.Parameters = upcast [||]
+type LanguageStatement =
+    {
+        ModelChange : IModel option
+        ResultSets : ISchemaQuery IReadOnlyList
+        TablesRead : ISchemaTable IReadOnlyList
+        TablesWritten : ISchemaTable IReadOnlyList
+        Parameters : (BindParameter * ColumnType) IReadOnlyList
     }
 
-let languageStatement (input : IModel) (stmt : Stmt) =
+
+let nullStatement =
+    {
+        ModelChange = None
+        ResultSets = [||] :> _ IReadOnlyList
+        TablesRead = [||] :> _ IReadOnlyList
+        TablesWritten = [||] :> _ IReadOnlyList
+        Parameters = [||] :> _ IReadOnlyList
+    }
+
+let selectStatement model select = // TODO: primary key-ness
+    let cxt = TypeCheckerContext()
+    let checker = TypeChecker(cxt, InferredSelectScope.Root(model))
+    let query = checker.InferQueryType(select)
+    let tables = cxt.References |> toReadOnlyList
+    let mutable query = Unchecked.defaultof<ISchemaQuery>
+    let columns =
+        seq {
+            for col in query.Columns ->
+                { new ISchemaQueryColumn with
+                    member __.Query = query
+                    member __.ColumnName = col.ColumnName
+                    member __.ColumnType = col.ColumnType
+                }
+        } |> toReadOnlyList
+    let columnsByName = lazy (columns |> ciDictBy (fun c -> c.ColumnName))
+    query <-
+        { new ISchemaQuery with
+            member __.Columns = columns
+            member __.ColumnsByName = columnsByName.Value
+            member __.ReferencedTables = upcast tables
+        }
+    { nullStatement with
+        TablesRead = tables
+        Parameters = cxt.Parameters |> toReadOnlyList
+        ResultSets = [| query |] :> _ IReadOnlyList
+    }
+
+let languageStatement (model : IModel) (stmt : Stmt) =
     match stmt with
     | AlterTableStmt alter -> failwith "not implemented"
     | AnalyzeStmt objectName -> nullStatement
@@ -39,7 +71,7 @@ let languageStatement (input : IModel) (stmt : Stmt) =
     | ReleaseStmt name -> nullStatement
     | RollbackStmt rollback -> nullStatement
     | SavepointStmt name -> nullStatement
-    | SelectStmt select -> failwith "not implemented"
+    | SelectStmt select -> selectStatement model select
     | ExplainStmt stmt -> nullStatement
     | UpdateStmt update -> failwith "not implemented"
     | VacuumStmt -> nullStatement

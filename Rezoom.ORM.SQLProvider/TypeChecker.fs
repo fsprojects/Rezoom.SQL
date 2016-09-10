@@ -11,8 +11,10 @@ type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
         }
     let referenced = HashSet<ISchemaTable>(comparer)
     let written = HashSet<ISchemaTable>(comparer)
+    new() = TypeCheckerContext(TypeInferenceContext())
     member __.Reference(table : ISchemaTable) = ignore <| referenced.Add(table)
     member __.Write(table : ISchemaTable) = ignore <| written.Add(table)
+    member __.References = referenced :> _ seq
     member __.Variable(parameter) = typeInference.Variable(parameter)
     member __.Unify(left, right) = typeInference.Unify(left, right)
     member __.Unify(inferredType, coreType : CoreColumnType) =
@@ -26,6 +28,11 @@ type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
         |> Seq.fold
             (function | Ok s -> (fun t -> typeInference.Unify(s, t)) | Error _ as e -> (fun _ -> e))
             (Ok InferredType.Any)
+    member __.Parameters =
+        seq {
+            for parameter in typeInference.Parameters ->
+                parameter, typeInference.Concrete(typeInference.Variable(parameter))
+        }
 
 type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) =
     member this.ResolveTableInvocation(source : SourceInfo, tableInvocation : TableInvocation) =

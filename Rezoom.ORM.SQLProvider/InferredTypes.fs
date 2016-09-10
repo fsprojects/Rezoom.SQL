@@ -66,6 +66,7 @@ type ITypeInferenceContext =
     /// and produce the most specific type.
     abstract member Unify : InferredType * InferredType -> Result<InferredType, string>
     abstract member Concrete : InferredType -> ColumnType
+    abstract member Parameters : BindParameter seq
 
 type InferredQueryColumn =
     {

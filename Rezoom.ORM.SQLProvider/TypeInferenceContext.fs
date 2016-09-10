@@ -110,6 +110,8 @@ type private TypeInferenceContext() =
         member this.Variable(parameter) = this.Variable(parameter)
         member this.Unify(left, right) = this.Unify(left, right)
         member this.Concrete(inferred) = this.Concrete(inferred)
+        member __.Parameters = variablesByParameter.Keys :> _ seq
+            
 
 
 
