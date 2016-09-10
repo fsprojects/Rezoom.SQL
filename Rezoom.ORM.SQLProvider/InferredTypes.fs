@@ -19,24 +19,27 @@ let private typeAffinityRules =
 
 type InferredType =
     | ConcreteType of ColumnType
+    | OneOfTypes of ColumnType list
     /// A type whose nullability depends on that of another type.
     | DependentlyNullType of InferredType * CoreColumnType
     | TypeVariable of TypeVariableId
-    static member Number = ConcreteType { Nullable = false; Type = IntegerType }
+    static member Float = ConcreteType { Nullable = false; Type = FloatType }
+    static member Integer = ConcreteType { Nullable = false; Type = IntegerType }
+    static member Number = OneOfTypes [{ Nullable = false; Type = IntegerType }; { Nullable = false; Type = FloatType }]
     static member String = ConcreteType { Nullable = false; Type = StringType }
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
+    static member Blob = ConcreteType { Nullable = false; Type = BlobType }
     static member Any = ConcreteType { Nullable = false; Type = AnyType }
     static member OfLiteral(literal : Literal) =
-        ConcreteType <|
-            match literal with
-            | NullLiteral -> { Nullable = true; Type = AnyType }
-            | CurrentTimeLiteral
-            | CurrentDateLiteral
-            | CurrentTimestampLiteral
-            | StringLiteral _ -> { Nullable = false; Type = StringType }
-            | BlobLiteral _ -> { Nullable = false; Type = BlobType }
-            | NumericLiteral (IntegerLiteral _) -> { Nullable = false; Type = IntegerType }
-            | NumericLiteral (FloatLiteral _) -> { Nullable = false; Type = FloatType }
+        match literal with
+        | NullLiteral -> ConcreteType { Nullable = true; Type = AnyType }
+        | CurrentTimeLiteral
+        | CurrentDateLiteral
+        | CurrentTimestampLiteral
+        | StringLiteral _ -> InferredType.String
+        | BlobLiteral _ -> InferredType.Blob
+        | NumericLiteral (IntegerLiteral _) -> InferredType.Number
+        | NumericLiteral (FloatLiteral _) -> InferredType.Float
     static member OfTypeName(typeName : TypeName, inputType : InferredType) =
         let names = String.concat " " typeName.TypeName
         let byRules =

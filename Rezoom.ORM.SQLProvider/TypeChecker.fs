@@ -92,12 +92,12 @@ type private Inferrer(cxt : ITypeInferenceContext, scope : InferredSelectScope) 
         | Multiply
         | Divide
         | Add
-        | Subtract // TODO: operators below here require integers. How can we enforce this?
+        | Subtract -> cxt.Unify([ leftType; rightType; InferredType.Number ])
         | Modulo
         | BitShiftLeft
         | BitShiftRight
         | BitAnd
-        | BitOr -> cxt.Unify([ leftType; rightType; InferredType.Number ])
+        | BitOr -> cxt.Unify([ leftType; rightType; InferredType.Integer ])
         | LessThan
         | LessThanOrEqual
         | GreaterThan
