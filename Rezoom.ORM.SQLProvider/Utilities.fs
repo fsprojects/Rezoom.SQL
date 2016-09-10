@@ -56,6 +56,8 @@ type SourceException(info : SourceInfo, msg) =
     inherit Exception(msg)
     member this.Info = info
 
+let inline bug msg = failwith msg
+
 let inline failAt (source : SourceInfo) (msg : string) =
     raise (SourceException(source, msg))
 
@@ -74,6 +76,7 @@ type ResultBuilder() =
         | Error err -> Error err
         | Ok _ -> next()
     member inline this.Return(x) = Ok x
+    member inline this.ReturnFrom(x : Result<_, _>) = x
     member inline __.Delay(x : unit -> 'x) = x
     member inline __.Run(x : unit -> 'x) = x()
 

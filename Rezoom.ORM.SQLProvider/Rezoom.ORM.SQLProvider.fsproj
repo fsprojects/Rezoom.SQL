@@ -57,6 +57,7 @@
     <Compile Include="AST.fs" />
     <Compile Include="Language.fs" />
     <Compile Include="InferredTypes.fs" />
+    <Compile Include="TypeInferenceContext.fs" />
     <Compile Include="TypeChecker.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
