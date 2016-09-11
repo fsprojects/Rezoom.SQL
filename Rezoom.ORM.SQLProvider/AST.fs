@@ -396,7 +396,7 @@ type CreateTableStmt =
     {
         Temporary : bool
         IfNotExists : bool
-        Name : ObjectName
+        Name : ObjectName WithSource
         As : CreateTableAs
     }
 

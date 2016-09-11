@@ -40,17 +40,18 @@ type InferredType =
         | BlobLiteral _ -> InferredType.Blob
         | NumericLiteral (IntegerLiteral _) -> InferredType.Number
         | NumericLiteral (FloatLiteral _) -> InferredType.Float
-    static member OfTypeName(typeName : TypeName, inputType : InferredType) =
+    static member Affinity(typeName : TypeName) =
         let names = String.concat " " typeName.TypeName
         let byRules =
             seq {
                 for substr, affinity in typeAffinityRules do
                     if ciContains substr names then yield affinity
             } |> Seq.tryHead
-        let affinity =
-            match byRules with
-            | Some affinity -> affinity
-            | None -> FloatType // "numeric" affinity
+        match byRules with
+        | Some affinity -> affinity
+        | None -> FloatType // "numeric" affinity
+    static member OfTypeName(typeName : TypeName, inputType : InferredType) =
+        let affinity = InferredType.Affinity(typeName)
         match inputType with
         | TypeVariable _ as tv
         | DependentlyNullType (_ as tv, _) ->

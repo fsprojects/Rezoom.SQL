@@ -6,8 +6,8 @@ open Rezoom.ORM.SQLProvider.InferredTypes
 type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
     let comparer =
         { new IEqualityComparer<ISchemaTable> with
-            member __.Equals(t1, t2) = t1.TableName = t2.TableName && t1.Schema.SchemaName = t2.Schema.SchemaName
-            member __.GetHashCode(t) = (t.TableName, t.Schema.SchemaName).GetHashCode()
+            member __.Equals(t1, t2) = t1.TableName = t2.TableName && t1.SchemaName = t2.SchemaName
+            member __.GetHashCode(t) = (t.TableName, t.SchemaName).GetHashCode()
         }
     let referenced = HashSet<ISchemaTable>(comparer)
     let written = HashSet<ISchemaTable>(comparer)

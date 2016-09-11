@@ -19,6 +19,7 @@ type ColumnType =
 type IModel =
     abstract member Schemas : IReadOnlyDictionary<string, ISchema>
     abstract member DefaultSchema : string
+    abstract member TemporarySchema : string
 
 and ISchema =
     abstract member SchemaName : string
@@ -26,7 +27,7 @@ and ISchema =
     abstract member Views : IReadOnlyDictionary<string, ISchemaView>
 
 and ISchemaTable =
-    abstract member Schema : ISchema
+    abstract member SchemaName : string
     abstract member TableName : string
     abstract member Columns : IReadOnlyList<ISchemaColumn>
     abstract member ColumnsByName : IReadOnlyDictionary<string, ISchemaColumn>
