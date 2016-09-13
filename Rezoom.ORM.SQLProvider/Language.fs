@@ -5,10 +5,10 @@ open Rezoom.ORM.SQLProvider.InferredTypes
 
 type LanguageStatement =
     {
-        ModelChange : IModel option
-        ResultSets : ISchemaQuery IReadOnlyList
-        TablesRead : ISchemaTable IReadOnlyList
-        TablesWritten : ISchemaTable IReadOnlyList
+        ModelChange : Model option
+        ResultSets : SchemaQuery IReadOnlyList
+        TablesRead : SchemaTable IReadOnlyList
+        TablesWritten : SchemaTable IReadOnlyList
         Parameters : (BindParameter * ColumnType) IReadOnlyList
     }
 
@@ -27,22 +27,18 @@ let selectStatement model select = // TODO: primary key-ness
     let checker = TypeChecker(cxt, InferredSelectScope.Root(model))
     let query = checker.InferQueryType(select)
     let tables = cxt.References |> toReadOnlyList
-    let mutable query = Unchecked.defaultof<ISchemaQuery>
     let columns =
         seq {
             for col in query.Columns ->
-                { new ISchemaQueryColumn with
-                    member __.Query = query
-                    member __.ColumnName = col.ColumnName
-                    member __.ColumnType = col.ColumnType
+                {
+                    ColumnType = cxt.Concrete(col.InferredType)
+                    ColumnName = col.ColumnName
                 }
         } |> toReadOnlyList
-    let columnsByName = lazy (columns |> ciDictBy (fun c -> c.ColumnName))
-    query <-
-        { new ISchemaQuery with
-            member __.Columns = columns
-            member __.ColumnsByName = columnsByName.Value
-            member __.ReferencedTables = upcast tables
+    let query =
+        {
+            Columns = columns
+            ReferencedTables = tables
         }
     { nullStatement with
         TablesRead = tables
@@ -50,7 +46,7 @@ let selectStatement model select = // TODO: primary key-ness
         ResultSets = [| query |] :> _ IReadOnlyList
     }
 
-let createTableStatement (model : IModel) (create : CreateTableStmt) =
+let createTableStatement (model : Model) (create : CreateTableStmt) =
     let defaultSchema = if create.Temporary then model.TemporarySchema else model.DefaultSchema
     let schema = defaultArg create.Name.Value.SchemaName defaultSchema
     let schema = model.Schemas.[schema] // TODO nice error if schema doesn't exist
@@ -58,17 +54,17 @@ let createTableStatement (model : IModel) (create : CreateTableStmt) =
         if create.IfNotExists then nullStatement
         else failAt create.Name.Source <| sprintf "Table ``%O`` already exists" create.Name.Value
     else
-        let mutable table = Unchecked.defaultof<ISchemaTable>
         let columns =
             match create.As with
             | CreateAsSelect select ->
                 let results = (selectStatement model select).ResultSets.[0] // TODO nice error if no results
                 [| for column in results.Columns ->
-                    { new ISchemaColumn with
-                        member __.Table = table
-                        member __.PrimaryKey = false
-                        member __.ColumnName = column.ColumnName
-                        member __.ColumnType = column.ColumnType
+                    {
+                        SchemaName = schema.SchemaName
+                        TableName = create.Name.Value.ObjectName
+                        ColumnName = column.ColumnName
+                        PrimaryKey = false
+                        ColumnType = column.ColumnType
                     }
                 |]
             | CreateAsDefinition def ->
@@ -82,7 +78,7 @@ let createTableStatement (model : IModel) (create : CreateTableStmt) =
                                     | ColumnNameExpr name -> yield name.ColumnName
                                     | _ -> ()
                             | _ -> ()
-                    } |> ciDictBy id
+                    } |> Set.ofSeq
                 [| for column in def.Columns ->
                     let affinity =
                         match column.Type with
@@ -92,36 +88,33 @@ let createTableStatement (model : IModel) (create : CreateTableStmt) =
                         column.Constraints
                         |> Seq.exists(function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
                     let isPrimaryKey =
-                        tablePkColumns.ContainsKey(column.Name)
+                        tablePkColumns.Contains(column.Name)
                         || column.Constraints |> Seq.exists(function
                             | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true
                             | _ -> false)
-                    { new ISchemaColumn with
-                        member __.Table = table
-                        member __.PrimaryKey = isPrimaryKey
-                        member __.ColumnName = column.Name
-                        member __.ColumnType =
+                    {
+                        SchemaName = schema.SchemaName
+                        TableName = create.Name.Value.ObjectName
+                        PrimaryKey = isPrimaryKey
+                        ColumnName = column.Name
+                        ColumnType =
                             {
                                 Type = affinity
                                 Nullable = not hasNotNullConstraint
                             }
                     }
                 |]
-        let columnsByName = lazy (columns |> ciDictBy (fun c -> c.ColumnName))
-        let query = lazy (TableQuery(table) :> ISchemaQuery)
-        table <-
-            { new ISchemaTable with
-                member __.SchemaName = schema.SchemaName
-                member __.TableName = create.Name.Value.ObjectName
-                member __.Columns = upcast columns
-                member __.ColumnsByName = columnsByName.Value
-                member __.Query = query.Value
+        let table =
+            {
+                SchemaName = schema.SchemaName
+                TableName = create.Name.Value.ObjectName
+                Columns = columns :> _ IReadOnlyList
             }
         { nullStatement with
             ModelChange = None // TODO update model
         }
 
-let languageStatement (model : IModel) (stmt : Stmt) =
+let languageStatement (model : Model) (stmt : Stmt) =
     match stmt with
     | AlterTableStmt alter -> failwith "not implemented"
     | AnalyzeStmt objectName -> nullStatement

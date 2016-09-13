@@ -5,15 +5,15 @@ open Rezoom.ORM.SQLProvider.InferredTypes
 
 type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
     let comparer =
-        { new IEqualityComparer<ISchemaTable> with
+        { new IEqualityComparer<SchemaTable> with
             member __.Equals(t1, t2) = t1.TableName = t2.TableName && t1.SchemaName = t2.SchemaName
             member __.GetHashCode(t) = (t.TableName, t.SchemaName).GetHashCode()
         }
-    let referenced = HashSet<ISchemaTable>(comparer)
-    let written = HashSet<ISchemaTable>(comparer)
+    let referenced = HashSet<SchemaTable>(comparer)
+    let written = HashSet<SchemaTable>(comparer)
     new() = TypeCheckerContext(TypeInferenceContext())
-    member __.Reference(table : ISchemaTable) = ignore <| referenced.Add(table)
-    member __.Write(table : ISchemaTable) = ignore <| written.Add(table)
+    member __.Reference(table : SchemaTable) = ignore <| referenced.Add(table)
+    member __.Write(table : SchemaTable) = ignore <| written.Add(table)
     member __.References = referenced :> _ seq
     member __.Variable(parameter) = typeInference.Variable(parameter)
     member __.Unify(left, right) = typeInference.Unify(left, right)
@@ -33,6 +33,7 @@ type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
             for parameter in typeInference.Parameters ->
                 parameter, typeInference.Concrete(typeInference.Variable(parameter))
         }
+    member __.Concrete(inferred) = typeInference.Concrete(inferred)
 
 type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) =
     member this.ResolveTableInvocation(source : SourceInfo, tableInvocation : TableInvocation) =
@@ -194,13 +195,13 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
                         this.InferQueryType(cte.AsSelect).RenameColumns(names.Value)
                         |> resultAt names.Source
                 { scope with
-                    CTEVariables = appendDicts scope.CTEVariables (ciSingle cte.Name cteQuery)
+                    CTEVariables = scope.CTEVariables |> Map.add cte.Name cteQuery
                 }) scope
 
-    member private this.TableExprScope(dict : Dictionary<string, _>, tableExpr : TableExpr) =
+    member private this.TableExprScope(dict : Dictionary<Name, _>, tableExpr : TableExpr) =
         let add name query =
             if dict.ContainsKey(name) then
-                failAt tableExpr.Source <| sprintf "Table name already in scope: ``%s``" name
+                failAt tableExpr.Source <| sprintf "Table name already in scope: ``%O``" name
             else
                 dict.Add(name, query)
         match tableExpr.Value with
@@ -227,7 +228,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
             left.Append(right)
 
     member this.TableExprScope(tableExpr : TableExpr) =
-        let dict = Dictionary(StringComparer.OrdinalIgnoreCase)
+        let dict = Dictionary()
         let wildcard = this.TableExprScope(dict, tableExpr)
         { FromVariables = dict; Wildcard = wildcard }
 
@@ -242,7 +243,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
             | Natural _, JoinUnconstrained ->
                 let columnSet texpr = 
                     this.TableExprScope(texpr).Wildcard.Columns
-                    |> Seq.map (fun c -> c.ColumnName.ToUpperInvariant())
+                    |> Seq.map (fun c -> c.ColumnName)
                     |> Set.ofSeq
                 let intersection = Set.intersect (columnSet join.LeftTable) (columnSet join.RightTable)
                 if Set.isEmpty intersection then
@@ -327,7 +328,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
                     let inferred = this.InferExprType(col)
                     rowType.[i] <- cxt.Unify(inferred, rowType.[i]) |> resultAt col.Source
             { Columns =
-                [| for inferred in rowType -> { InferredType = inferred; FromAlias = None; ColumnName = "" } |]
+                [| for inferred in rowType -> { InferredType = inferred; FromAlias = None; ColumnName = Name("") } |]
             }
         | Select core -> this.InferSelectCoreType(core)
 

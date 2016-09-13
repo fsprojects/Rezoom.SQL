@@ -22,8 +22,6 @@ type Literal =
     | BlobLiteral of byte array
     | NumericLiteral of NumericLiteral
 
-type Name = string
-
 type SavepointName = Name
 
 type Alias = Name option
@@ -46,6 +44,7 @@ type ObjectName =
         ObjectName : Name
     }
     override this.ToString() =
+        string <|
         match this.SchemaName with
         | None -> this.ObjectName
         | Some schema -> schema + "." + this.ObjectName
@@ -56,6 +55,7 @@ type ColumnName =
         ColumnName : Name
     }
     override this.ToString() =
+        string <|
         match this.Table with
         | None -> this.ColumnName
         | Some tbl -> string tbl + "." + this.ColumnName

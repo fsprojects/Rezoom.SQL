@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="SourceTypes.fs" />
+    <Compile Include="Name.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="Schema.fs" />
     <Compile Include="AST.fs" />
