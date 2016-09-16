@@ -110,8 +110,10 @@ let createTableStatement (model : Model) (create : CreateTableStmt) =
                 TableName = create.Name.Value.ObjectName
                 Columns = columns :> _ IReadOnlyList
             }
+        let schema =
+            { schema with Tables = schema.Tables |> Map.add table.TableName table }
         { nullStatement with
-            ModelChange = None // TODO update model
+            ModelChange = Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
         }
 
 let languageStatement (model : Model) (stmt : Stmt) =
