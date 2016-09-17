@@ -61,7 +61,7 @@ type ColumnName =
         | Some tbl -> string tbl + "." + this.ColumnName
 
 type BindParameter =
-    | NamedParameter of char * string // char is the prefix: ':', '@', or '$'
+    | NamedParameter of char * Name // char is the prefix: ':', '@', or '$'
     | PositionalParameter of uint32 option
     
 type BinaryOperator =
@@ -90,6 +90,8 @@ type UnaryOperator =
     | Negative
     | Not
     | BitNot
+    | NotNull
+    | IsNull
 
 type SimilarityOperator =
     | Like
@@ -111,6 +113,7 @@ type ExprType =
     | CollateExpr of Expr * Name
     | FunctionInvocationExpr of FunctionInvocationExpr
     | SimilarityExpr of SimilarityOperator * Expr * Expr * Expr option // optional ESCAPE clause
+    | NotSimilarityExpr of SimilarityOperator * Expr * Expr * Expr option
     | BinaryExpr of BinaryOperator * Expr * Expr
     | UnaryExpr of UnaryOperator * Expr
     | BetweenExpr of Expr * Expr * Expr

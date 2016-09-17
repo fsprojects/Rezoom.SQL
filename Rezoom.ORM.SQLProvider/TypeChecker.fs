@@ -136,6 +136,8 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
         | Negative
         | BitNot -> cxt.Unify(operandType, InferredType.Number)
         | Not -> cxt.Unify(operandType, InferredType.Boolean)
+        | IsNull
+        | NotNull -> result { return InferredType.Boolean }
 
     member this.RequireExprType(expr : Expr, mustMatch : CoreColumnType) =
         let inferred = this.InferExprType(expr)
@@ -157,6 +159,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
             |> resultAt expr.Source
         | FunctionInvocationExpr funcInvoke ->
             failwith "Not supported -- need to make list of built-in SQLite functions"
+        | NotSimilarityExpr (op, input, pattern, escape)
         | SimilarityExpr (op, input, pattern, escape) ->
             this.InferSimilarityExprType(op, input, pattern, escape)
             |> resultAt expr.Source

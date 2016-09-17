@@ -25,6 +25,11 @@ type SourceInfo =
             ( int this.StartPosition.Index
             , int (this.EndPosition.Index - this.StartPosition.Index)
             )
+    static member Between(left : SourceInfo, right : SourceInfo) =
+        {
+            StartPosition = min left.EndPosition right.EndPosition
+            EndPosition = max left.StartPosition right.StartPosition
+        }
 
 /// `'a` with the positions in source that it spanned.
 type WithSource<'a> =
