@@ -1,4 +1,4 @@
-﻿module private Rezoom.ORM.SQLProvider.InferredTypes
+﻿module private SQLow.InferredTypes
 open SQLow
 open System
 open System.Collections.Generic
@@ -48,7 +48,7 @@ type InferredType =
         let byRules =
             seq {
                 for substr, affinity in typeAffinityRules do
-                    if ciContains substr names then yield affinity
+                    if names.IndexOf(substr, StringComparison.OrdinalIgnoreCase) >= 0 then yield affinity
             } |> Seq.tryHead
         match byRules with
         | Some affinity -> affinity

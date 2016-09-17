@@ -1,8 +1,7 @@
-﻿namespace Rezoom.ORM.SQLProvider
-open SQLow
+﻿namespace SQLow
 open System
 open System.Collections.Generic
-open Rezoom.ORM.SQLProvider.InferredTypes
+open SQLow.InferredTypes
 
 type private TypeInferenceContext() =
     let variablesByParameter = Dictionary<BindParameter, InferredType>()

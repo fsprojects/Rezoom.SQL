@@ -1,11 +1,10 @@
 ﻿/// A command is a series of SQL statements.
 /// This module analyzes the effects of commands, including the tables they update, the changes they make to the model,
 /// and the result sets they output.
-module Rezoom.ORM.SQLProvider.Command
-open SQLow
+module SQLow.Command
 open System
 open System.Collections.Generic
-open Rezoom.ORM.SQLProvider.InferredTypes
+open SQLow.InferredTypes
 
 type CommandEffect =
     {
@@ -31,7 +30,7 @@ type private StatementEffect =
     | WriteTable of SchemaTable
     | ResultSet of StatementResultSet // note: we keep query types inferred until the whole command has been processed
 
-type CommandEffectBuilder() =
+type private CommandEffectBuilder() =
     // shared throughout the whole command, since parameters are too.
     let inference = TypeInferenceContext() :> ITypeInferenceContext
     member this.CommandEffect(model : Model, statements : Stmt seq) =
@@ -171,3 +170,8 @@ type CommandEffectBuilder() =
         | ExplainStmt stmt -> None
         | UpdateStmt update -> failwith "not implemented"
         | VacuumStmt -> None
+
+let ofSql str model =
+    let statements = Parser.parseStatements "(anonymous)" str
+    let builder = CommandEffectBuilder()
+    builder.CommandEffect(model, statements)

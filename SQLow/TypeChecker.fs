@@ -1,8 +1,7 @@
-﻿namespace Rezoom.ORM.SQLProvider
-open SQLow
+﻿namespace SQLow
 open System
 open System.Collections.Generic
-open Rezoom.ORM.SQLProvider.InferredTypes
+open SQLow.InferredTypes
 
 type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
     let comparer =
@@ -181,7 +180,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
         | ScalarSubqueryExpr subquery -> this.InferScalarSubqueryType(subquery)
         | RaiseExpr _ -> InferredType.Any
 
-    member this.CTEScope(withClause) =
+    member this.CTEScope(withClause : WithClause option) =
         match withClause with
         | None -> scope
         | Some ctes ->

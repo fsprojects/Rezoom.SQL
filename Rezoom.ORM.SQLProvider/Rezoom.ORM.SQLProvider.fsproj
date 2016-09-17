@@ -51,12 +51,6 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Utilities.fs" />
-    <Compile Include="Schema.fs" />
-    <Compile Include="InferredTypes.fs" />
-    <Compile Include="TypeInferenceContext.fs" />
-    <Compile Include="TypeChecker.fs" />
-    <Compile Include="Command.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
