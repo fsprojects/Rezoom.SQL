@@ -1,4 +1,5 @@
 ﻿module private Rezoom.ORM.SQLProvider.InferredTypes
+open SQLow
 open System
 open System.Collections.Generic
 

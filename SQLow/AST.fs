@@ -1,4 +1,4 @@
-﻿namespace Rezoom.ORM.SQLProvider
+﻿namespace SQLow
 open System
 open System.Collections.Generic
 open System.Globalization

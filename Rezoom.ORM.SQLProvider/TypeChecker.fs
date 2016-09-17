@@ -1,4 +1,5 @@
 ﻿namespace Rezoom.ORM.SQLProvider
+open SQLow
 open System
 open System.Collections.Generic
 open Rezoom.ORM.SQLProvider.InferredTypes
@@ -11,7 +12,6 @@ type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
         }
     let referenced = HashSet<SchemaTable>(comparer)
     let written = HashSet<SchemaTable>(comparer)
-    new() = TypeCheckerContext(TypeInferenceContext())
     member __.Reference(table : SchemaTable) = ignore <| referenced.Add(table)
     member __.Write(table : SchemaTable) = ignore <| written.Add(table)
     member __.References = referenced :> _ seq

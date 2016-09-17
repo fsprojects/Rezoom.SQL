@@ -1,4 +1,4 @@
-﻿namespace Rezoom.ORM.SQLProvider
+﻿namespace SQLow
 open System
 
 /// The position in the source query that a syntactic element appeared.

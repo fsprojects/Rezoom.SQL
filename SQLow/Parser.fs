@@ -1,4 +1,4 @@
-﻿module private Rezoom.ORM.SQLProvider.Parser
+﻿module private SQLow.Parser
 open System
 open System.Collections.Generic
 open System.Globalization

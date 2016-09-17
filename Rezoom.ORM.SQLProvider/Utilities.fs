@@ -1,8 +1,11 @@
 ﻿[<AutoOpen>]
 module private Rezoom.ORM.SQLProvider.Utilities
+open SQLow
 open System
 open System.Collections
 open System.Collections.Generic
+
+let inline (|?) opt def = defaultArg opt def
 
 let inline (=~=) (str1 : string) (str2 : string) = str1.Equals(str2, StringComparison.OrdinalIgnoreCase)
 let inline (<~>) str1 str2 = not (str1 =~= str2)
