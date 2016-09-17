@@ -54,10 +54,11 @@ type private TypeInferenceContext() =
                 return unified
             | DependentlyNullType (onType, colType), right ->
                 // pretend like it's not null for unification purposes
-                // TODO: more nuanced approach that adapts to finding out it's null later
-                return! this.Unify(ConcreteType { Nullable = false; Type = colType }, right)
+                let! colType = this.Unify(colType, right)
+                return DependentlyNullType(onType, colType)
             | left, DependentlyNullType (onType, colType) ->
-                return! this.Unify(left, ConcreteType { Nullable = false; Type = colType })
+                let! colType = this.Unify(left, colType)
+                return DependentlyNullType(onType, colType)
             | OneOfTypes left, OneOfTypes right ->
                 let leftTypes = left |> Seq.map (fun t -> t.Type) |> Set.ofSeq
                 let rightTypes = right |> Seq.map (fun t -> t.Type) |> Set.ofSeq
@@ -104,8 +105,9 @@ type private TypeInferenceContext() =
         | TypeVariable id ->
             this.Concrete(getVar id)
         | DependentlyNullType (onType, colType) ->
-            let onType = this.Concrete(onType)
-            { onType with Type = colType }
+            let ifType = this.Concrete(onType)
+            let thenType = this.Concrete(colType)
+            { thenType with Nullable = ifType.Nullable }
     interface ITypeInferenceContext with
         member this.Variable(parameter) = this.Variable(parameter)
         member this.Unify(left, right) = this.Unify(left, right)

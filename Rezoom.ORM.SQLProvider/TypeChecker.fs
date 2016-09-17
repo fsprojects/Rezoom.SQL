@@ -18,7 +18,7 @@ type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
     member __.Variable(parameter) = typeInference.Variable(parameter)
     member __.Unify(left, right) = typeInference.Unify(left, right)
     member __.Unify(inferredType, coreType : CoreColumnType) =
-        typeInference.Unify(inferredType, DependentlyNullType(inferredType, coreType))
+        typeInference.Unify(inferredType, InferredType.Dependent(inferredType, coreType))
     member __.Unify(inferredType, resultType : Result<InferredType, string>) =
         match resultType with
         | Ok t -> typeInference.Unify(inferredType, t)
@@ -60,7 +60,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
             | None -> ()
             | Some escape -> ignore <| cxt.Unify(this.InferExprType(escape), StringType)
             let! unified = cxt.Unify(inputType, patternType)
-            return DependentlyNullType(unified, BooleanType)
+            return InferredType.Dependent(unified, BooleanType)
         }
 
     member this.InferInExprType(input, set : InSet WithSource) =
@@ -80,7 +80,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
                             sprintf "Right side of IN operator must have exactly one column (this one has %d)"
                                 query.Columns.Count
                     else cxt.Unify(inputType, query.Columns.[0].InferredType)
-            return DependentlyNullType(setType, BooleanType)
+            return InferredType.Dependent(inputType, BooleanType)
         }
 
     member this.InferCaseExprType(cases : CaseExpr) =
@@ -125,7 +125,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
         | IsNot ->
             result {
                 let! operandType = cxt.Unify(leftType, rightType)
-                return DependentlyNullType(operandType, BooleanType)
+                return InferredType.Dependent(operandType, BooleanType)
             }
         | And
         | Or -> cxt.Unify([ leftType; rightType; InferredType.Boolean ])
@@ -153,7 +153,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
         | CastExpr cast -> InferredType.OfTypeName(cast.AsType, this.InferExprType(cast.Expression))
         | CollateExpr (subExpr, collation) ->
             let inferred = this.InferExprType(subExpr)
-            cxt.Unify(inferred, DependentlyNullType(inferred, StringType))
+            cxt.Unify(inferred, InferredType.String)
             |> resultAt expr.Source
         | FunctionInvocationExpr funcInvoke ->
             failwith "Not supported -- need to make list of built-in SQLite functions"
@@ -170,7 +170,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
         | NotBetweenExpr (input, low, high) ->
             result {
                 let! unified = cxt.Unify([ input; low; high ] |> Seq.map this.InferExprType)
-                return DependentlyNullType(unified, BooleanType)
+                return InferredType.Dependent(unified, BooleanType)
             } |> resultAt expr.Source
         | InExpr (input, set)
         | NotInExpr (input, set) ->

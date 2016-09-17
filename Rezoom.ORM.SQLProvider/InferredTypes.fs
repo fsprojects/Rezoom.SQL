@@ -21,7 +21,7 @@ type InferredType =
     | ConcreteType of ColumnType
     | OneOfTypes of ColumnType list
     /// A type whose nullability depends on that of another type.
-    | DependentlyNullType of InferredType * CoreColumnType
+    | DependentlyNullType of ifNull: InferredType * thenNull: InferredType
     | TypeVariable of TypeVariableId
     static member Float = ConcreteType { Nullable = false; Type = FloatType }
     static member Integer = ConcreteType { Nullable = false; Type = IntegerType }
@@ -30,6 +30,8 @@ type InferredType =
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
     static member Blob = ConcreteType { Nullable = false; Type = BlobType }
     static member Any = ConcreteType { Nullable = false; Type = AnyType }
+    static member Dependent(ifNull : InferredType, outputType : CoreColumnType) =
+        DependentlyNullType(ifNull, ConcreteType { Nullable = false; Type = outputType })
     static member OfLiteral(literal : Literal) =
         match literal with
         | NullLiteral -> ConcreteType { Nullable = true; Type = AnyType }
@@ -41,7 +43,7 @@ type InferredType =
         | NumericLiteral (IntegerLiteral _) -> InferredType.Number
         | NumericLiteral (FloatLiteral _) -> InferredType.Float
     static member Affinity(typeName : TypeName) =
-        let names = String.concat " " (typeName.TypeName |> Seq.map string)
+        let names = typeName.TypeName |> Seq.map string |> String.concat " "
         let byRules =
             seq {
                 for substr, affinity in typeAffinityRules do
@@ -54,8 +56,7 @@ type InferredType =
         let affinity = InferredType.Affinity(typeName)
         match inputType with
         | TypeVariable _ as tv
-        | DependentlyNullType (_ as tv, _) ->
-            DependentlyNullType (tv, affinity) // preserve nullability of input
+        | DependentlyNullType (_ as tv, _) -> InferredType.Dependent(tv, affinity)
         | OneOfTypes tys ->
             ConcreteType { Type = affinity; Nullable = tys |> List.exists (fun t -> t.Nullable) }
         | ConcreteType ty ->
