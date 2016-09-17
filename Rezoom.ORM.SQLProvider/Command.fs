@@ -33,9 +33,49 @@ type private StatementEffect =
     | WriteTable of SchemaTable
     | ResultSet of StatementResultSet // note: we keep query types inferred until the whole command has been processed
 
-type CommandEffectBuilder(model : Model) =
-    let inference = TypeInferenceContext() // shared throughout the whole command, since parameters are too
-    member private this.ResultSet(select : SelectStmt) =
+type CommandEffectBuilder() =
+    // shared throughout the whole command, since parameters are too.
+    let inference = TypeInferenceContext() :> ITypeInferenceContext
+    member this.CommandEffect(model : Model, statements : Stmt seq) =
+        let mutable newModel = None
+        let writeTables = ResizeArray()
+        let resultSets = ResizeArray()
+        for stmt in statements do
+            let effect = this.StatementEffect(newModel |? model, stmt)
+            match effect with
+            | Some effect ->
+                match effect with
+                | ChangeModel m -> newModel <- Some m
+                | WriteTable t -> writeTables.Add(t)
+                | ResultSet r -> resultSets.Add(r)
+            | None -> ()
+        let parameters =
+            [| for parameter in inference.Parameters ->
+                parameter, inference.Concrete(inference.Variable(parameter))
+            |]
+        let resultSets =
+            [| for resultSet in resultSets ->
+                this.ResultSetToSchemaQuery(resultSet)
+            |]
+        {
+            ModelChange = newModel
+            ResultSets = resultSets :> _ IReadOnlyList
+            TablesWritten = writeTables :> _ IReadOnlyCollection
+            Parameters = parameters :> _ IReadOnlyList
+        }
+
+    member private this.ResultSetToSchemaQuery(resultSet : StatementResultSet) =
+        let columns =
+            [| for col in resultSet.Query.Columns ->
+                {   SchemaQueryColumn.ColumnName = col.ColumnName
+                    SchemaQueryColumn.ColumnType = inference.Concrete(col.InferredType)
+                }
+            |]
+        {   Columns = columns :> _ IReadOnlyList
+            ReferencedTables = resultSet.ReferencedTables
+        }
+
+    member private this.ResultSet(model, select : SelectStmt) =
         let checkerContext = TypeCheckerContext(inference)
         let checker = TypeChecker(checkerContext, InferredSelectScope.Root(model))
         let query = checker.InferQueryType(select)
@@ -43,8 +83,9 @@ type CommandEffectBuilder(model : Model) =
             Query = query // TODO: track primary key-ness
             ReferencedTables = checkerContext.References |> toReadOnlyList
         }
-    member private this.Effect(select : SelectStmt) =
-        this.ResultSet(select) |> ResultSet |> Some
+    member private this.Effect(model, select : SelectStmt) =
+        this.ResultSet(model, select) |> ResultSet |> Some
+
     member private this.CreateTableColumns(schemaName : Name, tableName : Name, def : CreateTableDefinition) =
         let tablePkColumns =
             seq {
@@ -74,8 +115,8 @@ type CommandEffectBuilder(model : Model) =
                 ColumnType = { Type = affinity; Nullable = not hasNotNullConstraint }
             }
         |]
-    member private this.CreateTableColumns(schemaName : Name, tableName : Name, asSelect : SelectStmt) =
-        let query = this.ResultSet(asSelect).Query
+    member private this.CreateTableColumns(model, schemaName : Name, tableName : Name, asSelect : SelectStmt) =
+        let query = this.ResultSet(model, asSelect).Query
         [| for column in query.Columns ->
             {
                 SchemaName = schemaName
@@ -85,7 +126,7 @@ type CommandEffectBuilder(model : Model) =
                 ColumnType = inference.Concrete(column.InferredType) // unfortunate but necessary
             }
         |]
-    member private this.Effect(create : CreateTableStmt) =
+    member private this.Effect(model, create : CreateTableStmt) =
         let defaultSchema = if create.Temporary then model.TemporarySchema else model.DefaultSchema
         let schema = defaultArg create.Name.Value.SchemaName defaultSchema
         let schema = model.Schemas.[schema] // TODO nice error if schema doesn't exist
@@ -96,7 +137,7 @@ type CommandEffectBuilder(model : Model) =
         else
             let columns =
                 match create.As with
-                | CreateAsSelect select -> this.CreateTableColumns(schema.SchemaName, tableName, select)
+                | CreateAsSelect select -> this.CreateTableColumns(model, schema.SchemaName, tableName, select)
                 | CreateAsDefinition def -> this.CreateTableColumns(schema.SchemaName, tableName, def)  
             let table =
                 {
@@ -107,7 +148,8 @@ type CommandEffectBuilder(model : Model) =
             let schema =
                 { schema with Tables = schema.Tables |> Map.add table.TableName table }
             Some (ChangeModel { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema })
-    member private this.Effect(stmt : Stmt) =
+
+    member private this.StatementEffect(model, stmt : Stmt) =
         match stmt with
         | AlterTableStmt alter -> failwith "not implemented"
         | AnalyzeStmt objectName -> None
@@ -115,7 +157,7 @@ type CommandEffectBuilder(model : Model) =
         | BeginStmt transaction -> None
         | CommitStmt -> None
         | CreateIndexStmt create -> failwith "not implemented"
-        | CreateTableStmt create -> this.Effect(create)
+        | CreateTableStmt create -> this.Effect(model, create)
         | CreateTriggerStmt create -> failwith "not implemented"
         | CreateViewStmt create -> failwith "not implemented"
         | CreateVirtualTableStmt _ -> None
@@ -128,7 +170,7 @@ type CommandEffectBuilder(model : Model) =
         | ReleaseStmt name -> None
         | RollbackStmt rollback -> None
         | SavepointStmt name -> None
-        | SelectStmt select -> this.Effect(select)
+        | SelectStmt select -> this.Effect(model, select)
         | ExplainStmt stmt -> None
         | UpdateStmt update -> failwith "not implemented"
         | VacuumStmt -> None

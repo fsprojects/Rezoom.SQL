@@ -28,11 +28,6 @@ type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
         |> Seq.fold
             (function | Ok s -> (fun t -> typeInference.Unify(s, t)) | Error _ as e -> (fun _ -> e))
             (Ok InferredType.Any)
-    member __.Parameters =
-        seq {
-            for parameter in typeInference.Parameters ->
-                parameter, typeInference.Concrete(typeInference.Variable(parameter))
-        }
     member __.Concrete(inferred) = typeInference.Concrete(inferred)
 
 type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) =
