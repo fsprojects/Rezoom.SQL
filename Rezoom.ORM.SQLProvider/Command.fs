@@ -15,16 +15,14 @@ type CommandEffect =
         Parameters : (BindParameter * ColumnType) IReadOnlyList
     }
     static member None =
-        {
-            ModelChange = None
+        {   ModelChange = None
             ResultSets = [||] :> _ IReadOnlyList
             TablesWritten = [||] :> _ IReadOnlyList
             Parameters = [||] :> _ IReadOnlyList
         }
 
 type private StatementResultSet =
-    {
-        Query : InferredQuery
+    {   Query : InferredQuery
         ReferencedTables : SchemaTable IReadOnlyCollection
     }
 
@@ -57,8 +55,7 @@ type CommandEffectBuilder() =
             [| for resultSet in resultSets ->
                 this.ResultSetToSchemaQuery(resultSet)
             |]
-        {
-            ModelChange = newModel
+        {   ModelChange = newModel
             ResultSets = resultSets :> _ IReadOnlyList
             TablesWritten = writeTables :> _ IReadOnlyCollection
             Parameters = parameters :> _ IReadOnlyList
@@ -68,7 +65,8 @@ type CommandEffectBuilder() =
         let columns =
             [| for col in resultSet.Query.Columns ->
                 {   SchemaQueryColumn.ColumnName = col.ColumnName
-                    SchemaQueryColumn.ColumnType = inference.Concrete(col.InferredType)
+                    ColumnType = inference.Concrete(col.InferredType)
+                    PrimaryKey = col.PrimaryKey
                 }
             |]
         {   Columns = columns :> _ IReadOnlyList
@@ -79,8 +77,7 @@ type CommandEffectBuilder() =
         let checkerContext = TypeCheckerContext(inference)
         let checker = TypeChecker(checkerContext, InferredSelectScope.Root(model))
         let query = checker.InferQueryType(select)
-        {
-            Query = query // TODO: track primary key-ness
+        {   Query = query
             ReferencedTables = checkerContext.References |> toReadOnlyList
         }
     member private this.Effect(model, select : SelectStmt) =
@@ -118,36 +115,36 @@ type CommandEffectBuilder() =
     member private this.CreateTableColumns(model, schemaName : Name, tableName : Name, asSelect : SelectStmt) =
         let query = this.ResultSet(model, asSelect).Query
         [| for column in query.Columns ->
-            {
-                SchemaName = schemaName
+            {   SchemaName = schemaName
                 TableName = tableName
                 ColumnName = column.ColumnName
-                PrimaryKey = false // TODO get from inferred query
+                PrimaryKey = column.PrimaryKey // is this really desirable? at least it makes sense for temp...
                 ColumnType = inference.Concrete(column.InferredType) // unfortunate but necessary
             }
         |]
     member private this.Effect(model, create : CreateTableStmt) =
         let defaultSchema = if create.Temporary then model.TemporarySchema else model.DefaultSchema
-        let schema = defaultArg create.Name.Value.SchemaName defaultSchema
-        let schema = model.Schemas.[schema] // TODO nice error if schema doesn't exist
-        let tableName = create.Name.Value.ObjectName
-        if schema.Tables.ContainsKey(tableName) then
-            if create.IfNotExists then None
-            else failAt create.Name.Source <| sprintf "Table ``%O`` already exists" create.Name.Value
-        else
-            let columns =
-                match create.As with
-                | CreateAsSelect select -> this.CreateTableColumns(model, schema.SchemaName, tableName, select)
-                | CreateAsDefinition def -> this.CreateTableColumns(schema.SchemaName, tableName, def)  
-            let table =
-                {
-                    SchemaName = schema.SchemaName
-                    TableName = create.Name.Value.ObjectName
-                    Columns = columns :> _ IReadOnlyList
-                }
-            let schema =
-                { schema with Tables = schema.Tables |> Map.add table.TableName table }
-            Some (ChangeModel { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema })
+        let schema = create.Name.Value.SchemaName |? defaultSchema
+        match model.Schemas.TryFind(schema) with
+        | None -> failAt create.Name.Source <| sprintf "No such schema: ``%O``" schema
+        | Some schema ->
+            let tableName = create.Name.Value.ObjectName
+            if schema.Tables.ContainsKey(tableName) then
+                if create.IfNotExists then None
+                else failAt create.Name.Source <| sprintf "Table ``%O`` already exists" create.Name.Value
+            else
+                let columns =
+                    match create.As with
+                    | CreateAsSelect select -> this.CreateTableColumns(model, schema.SchemaName, tableName, select)
+                    | CreateAsDefinition def -> this.CreateTableColumns(schema.SchemaName, tableName, def)  
+                let table =
+                    {   SchemaName = schema.SchemaName
+                        TableName = create.Name.Value.ObjectName
+                        Columns = columns :> _ IReadOnlyList
+                    }
+                let schema =
+                    { schema with Tables = schema.Tables |> Map.add table.TableName table }
+                Some (ChangeModel { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema })
 
     member private this.StatementEffect(model, stmt : Stmt) =
         match stmt with

@@ -67,4 +67,6 @@ and SchemaQueryColumn =
     {
         ColumnName : Name
         ColumnType : ColumnType
+        /// True if this column is part of *any* table's primary key.
+        PrimaryKey : bool
     }

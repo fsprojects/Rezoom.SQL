@@ -76,18 +76,21 @@ type InferredQueryColumn =
         FromAlias : Name option
         ColumnName : Name
         InferredType : InferredType
+        PrimaryKey : bool // whether this column is part of the primary key of any table
     }
     static member OfTableColumn(column : SchemaColumn) =
         {
             FromAlias = Some column.TableName
             ColumnName = column.ColumnName
             InferredType = ConcreteType column.ColumnType
+            PrimaryKey = column.PrimaryKey
         }
     static member OfQueryColumn(alias, column : SchemaQueryColumn) =
         {
             FromAlias = alias
             ColumnName = column.ColumnName
             InferredType = ConcreteType column.ColumnType
+            PrimaryKey = column.PrimaryKey
         }
 
 let resultAt source result =

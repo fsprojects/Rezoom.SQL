@@ -295,7 +295,12 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
                         let table = from.ResolveTable(objectName) |> foundAt col.Source
                         yield! table.Columns
                 | Column (expr, alias) ->
-                    let inferred = this.InferExprType(expr)
+                    let inferred, pk = 
+                        match expr.Value with
+                        | ColumnNameExpr name ->
+                            let column = scope.ResolveColumnReference(name) |> foundAt expr.Source
+                            column.InferredType, column.PrimaryKey
+                        | _ -> this.InferExprType(expr), false
                     let name, fromAlias =
                         match alias with
                         | None ->
@@ -304,7 +309,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
                             | _ -> failAt expr.Source "An expression-valued column must have an alias"
                         | Some name -> name, None
                     yield
-                        { ColumnName = name; InferredType = inferred; FromAlias = fromAlias }
+                        { ColumnName = name; InferredType = inferred; FromAlias = fromAlias; PrimaryKey = pk }
             } |> toReadOnlyList
         {
             Columns = resultColumns
@@ -326,7 +331,8 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
                     let inferred = this.InferExprType(col)
                     rowType.[i] <- cxt.Unify(inferred, rowType.[i]) |> resultAt col.Source
             { Columns =
-                [| for inferred in rowType -> { InferredType = inferred; FromAlias = None; ColumnName = Name("") } |]
+                [| for inferred in rowType ->
+                    { InferredType = inferred; FromAlias = None; ColumnName = Name(""); PrimaryKey = false } |]
             }
         | Select core -> this.InferSelectCoreType(core)
 
