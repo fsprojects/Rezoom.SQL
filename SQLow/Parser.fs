@@ -1382,7 +1382,7 @@ let private anyStmt = %[ explainStmt; almostAnyStmt ]
 let private stmtsAtLeast min =
     %% ws
     -- +.(qty.[min..] /. tws ';' * tws anyStmt)
-    -|> List.ofSeq
+    -|> id
 
 let private stmts = stmtsAtLeast 0
 

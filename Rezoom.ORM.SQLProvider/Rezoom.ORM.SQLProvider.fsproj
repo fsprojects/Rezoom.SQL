@@ -51,6 +51,13 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Backend.fs" />
+    <Compile Include="UserModel.fs" />
+    <None Include="ProvidedTypes-LICENSE.md" />
+    <Compile Include="ProvidedTypes.fsi" />
+    <Compile Include="ProvidedTypes.fs" />
+    <Compile Include="TypeGeneration.fs" />
+    <Compile Include="Provider.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -60,8 +67,11 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\Rezoom.ORM\Rezoom.ORM.fsproj">
+      <Name>Rezoom.ORM</Name>
+      <Project>{6b6a06c5-157a-4fe3-8b4c-2a1ae6a15333}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\SQLow\SQLow.fsproj">
       <Name>SQLow</Name>
       <Project>{87fcd04a-1f90-4d53-a428-cf5f5c532a22}</Project>

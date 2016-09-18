@@ -171,7 +171,17 @@ type private CommandEffectBuilder() =
         | UpdateStmt update -> failwith "not implemented"
         | VacuumStmt -> None
 
-let ofSql str model =
-    let statements = Parser.parseStatements "(anonymous)" str
-    let builder = CommandEffectBuilder()
-    builder.CommandEffect(model, statements)
+type CommandWithEffect =
+    {
+        Statements : Stmt IReadOnlyList
+        Effect : CommandEffect
+    }
+    static member Parse(model, sourceName, sourceText) =
+        let statements = Parser.parseStatements sourceName sourceText
+        let builder = CommandEffectBuilder()
+        {   Statements = statements :> _ IReadOnlyList
+            Effect = builder.CommandEffect(model, statements)
+        }
+
+
+let ofSql str model = CommandWithEffect.Parse(model, "(anonymous)", str).Effect
