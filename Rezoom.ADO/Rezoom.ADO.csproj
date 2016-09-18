@@ -65,10 +65,6 @@
       <Project>{d98acbeb-a039-4340-a7c5-6ed2b677268b}</Project>
       <Name>Rezoom</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Rezoom.Execution\Rezoom.Execution.csproj">
-      <Project>{9db721d3-da97-4be3-b60b-9b7a682e803e}</Project>
-      <Name>Rezoom.Execution</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

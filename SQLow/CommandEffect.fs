@@ -1,7 +1,7 @@
 ﻿/// A command is a series of SQL statements.
 /// This module analyzes the effects of commands, including the tables they update, the changes they make to the model,
 /// and the result sets they output.
-module SQLow.Command
+module SQLow.CommandEffect
 open System
 open System.Collections.Generic
 open SQLow.InferredTypes

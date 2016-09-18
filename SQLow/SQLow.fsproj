@@ -50,6 +50,7 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
+    <Content Include="packages.config" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="SourceTypes.fs" />
     <Compile Include="Name.fs" />
@@ -60,8 +61,7 @@
     <Compile Include="InferredTypes.fs" />
     <Compile Include="TypeInferenceContext.fs" />
     <Compile Include="TypeChecker.fs" />
-    <Compile Include="Command.fs" />
-    <Content Include="packages.config" />
+    <Compile Include="CommandEffect.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">

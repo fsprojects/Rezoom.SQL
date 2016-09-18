@@ -50,6 +50,7 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
+    <Content Include="packages.config" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CILHelpers.fs" />
     <Compile Include="Row.fs" />
@@ -67,7 +68,7 @@
     <Compile Include="CompositeColumnGenerator.fs" />
     <Compile Include="ManyColumnGenerator.fs" />
     <Compile Include="StaticEntityReaderTemplate.fs" />
-    <Content Include="packages.config" />
+    <Compile Include="Command.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="LicenseToCIL">

@@ -3,11 +3,15 @@
 type ColumnId = int
 
 [<AbstractClass>]
-type EntityReader<'ent>() =
-    abstract member ImpartKnowledgeToNext : EntityReader<'ent> -> unit
+type EntityReader() =
     abstract member ProcessColumns : ColumnMap -> unit
     abstract member Read : Row -> unit
     abstract member SetReverse : ColumnId * obj -> unit
+
+[<AbstractClass>]
+type EntityReader<'ent>() =
+    inherit EntityReader()
+    abstract member ImpartKnowledgeToNext : EntityReader<'ent> -> unit
     abstract member ToEntity : unit -> 'ent
 
 type ObjectEntityReader<'ent>(ent : 'ent) =

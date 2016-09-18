@@ -19,7 +19,7 @@ type TestTypeInference() =
         }
     [<TestMethod>]
     member __.TestSimpleSelect() =
-        let cmd = zeroModel |> Command.ofSql @"
+        let cmd = zeroModel |> CommandEffect.ofSql @"
             create table Users(id int primary key, name nvarchar(128), email nvarchar(128));
             select * from Users
         "
@@ -39,7 +39,7 @@ type TestTypeInference() =
 
     [<TestMethod>]
     member __.TestSimpleSelectWithParameter() =
-        let cmd = zeroModel |> Command.ofSql @"
+        let cmd = zeroModel |> CommandEffect.ofSql @"
             create table Users(id int primary key, name nvarchar(128), email nvarchar(128));
             select * from Users u
             where u.id = @id
@@ -63,7 +63,7 @@ type TestTypeInference() =
 
     [<TestMethod>]
     member __.TestSimpleSelectWithParameterNotNull() =
-        let cmd = zeroModel |> Command.ofSql @"
+        let cmd = zeroModel |> CommandEffect.ofSql @"
             create table Users(id int primary key not null, name nvarchar(128), email nvarchar(128));
             select * from Users u
             where u.id = @id
