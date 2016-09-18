@@ -15,9 +15,9 @@ type CommandFragment =
     | Parameter of int
 
 [<AbstractClass>]
-type Command() =
-    abstract member Fragments : CommandFragment IReadOnlyList
-    abstract member Parameters : obj IReadOnlyList
+type Command(fragments : CommandFragment IReadOnlyList, parameters : obj IReadOnlyList) =
+    member __.Fragments = fragments
+    member __.Parameters = parameters
     
     abstract member BeginResultSet : IDataReader -> unit
     abstract member ProcessRow : unit -> unit
@@ -45,17 +45,22 @@ type ResultSets<'a, 'b, 'c>(a : 'a, b : 'b, c : 'c) =
 
 /// A command which can be expected to produce `'output` when run.
 [<AbstractClass>]
-type Command<'output>() =
-    inherit Command()
+type Command<'output>(fragments, parameters) =
+    inherit Command(fragments, parameters)
     abstract member GetResult : unit -> 'output
 
+type Command0<'a>(fragments, parameters) =
+    inherit Command<'a>(fragments, parameters)
+    override __.BeginResultSet(_) = ()
+    override __.ProcessRow() = ()
+    override __.GetResultObject() = upcast Unchecked.defaultof<'a>
+    override __.GetResult() = Unchecked.defaultof<'a>
+
 type Command1<'a>(fragments, parameters) =
-    inherit Command<'a>()
+    inherit Command<'a>(fragments, parameters)
     let reader = ReaderTemplate<'a>.Template().CreateReader()
     let mutable row = Unchecked.defaultof<Row>
     let result = lazy reader.ToEntity()
-    override __.Fragments = fragments
-    override __.Parameters = parameters
     override __.BeginResultSet(dataReader) =
         reader.ProcessColumns(DataReader.columnMap(dataReader))
         row <- DataReader.DataReaderRow(dataReader)
@@ -65,7 +70,7 @@ type Command1<'a>(fragments, parameters) =
     override __.GetResult() = result.Value
 
 type Command2<'a, 'b>(fragments, parameters) =
-    inherit Command<ResultSets<'a, 'b>>()
+    inherit Command<ResultSets<'a, 'b>>(fragments, parameters)
     let aReader = ReaderTemplate<'a>.Template().CreateReader()
     let bReader = ReaderTemplate<'b>.Template().CreateReader()
     let mutable row = Unchecked.defaultof<Row>
@@ -76,8 +81,6 @@ type Command2<'a, 'b>(fragments, parameters) =
             bReader :> EntityReader
         ]
     let result = lazy ResultSets<'a, 'b>(aReader.ToEntity(), bReader.ToEntity())
-    override __.Fragments = fragments
-    override __.Parameters = parameters
     override __.BeginResultSet(dataReader) =
         readers <- List.tail readers
         (List.head readers).ProcessColumns(DataReader.columnMap(dataReader))
@@ -88,7 +91,7 @@ type Command2<'a, 'b>(fragments, parameters) =
     override __.GetResult() = result.Value
 
 type Command3<'a, 'b, 'c>(fragments, parameters) =
-    inherit Command<ResultSets<'a, 'b, 'c>>()
+    inherit Command<ResultSets<'a, 'b, 'c>>(fragments, parameters)
     let aReader = ReaderTemplate<'a>.Template().CreateReader()
     let bReader = ReaderTemplate<'b>.Template().CreateReader()
     let cReader = ReaderTemplate<'c>.Template().CreateReader()
@@ -101,8 +104,6 @@ type Command3<'a, 'b, 'c>(fragments, parameters) =
             cReader :> EntityReader
         ]
     let result = lazy ResultSets<'a, 'b, 'c>(aReader.ToEntity(), bReader.ToEntity(), cReader.ToEntity())
-    override __.Fragments = fragments
-    override __.Parameters = parameters
     override __.BeginResultSet(dataReader) =
         readers <- List.tail readers
         (List.head readers).ProcessColumns(DataReader.columnMap(dataReader))
