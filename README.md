@@ -11,26 +11,30 @@ This is similar in effect to Haskell's Haxl.
 
 ## What's done so far
 
-* Core library Data.Resumption
+* Core library Rezoom
 
-  * The fundamental types `Plan<T>` and `IDataEnumerable<T>`.
+  * The fundamental types `Plan<'a>` and `Errand<'a>`.
 
   * Operations like monadic bind, apply, map, etc. on those types.
 
-  * `ExecutionContext` for running `Plan<T>`s as `Task<T>`s with
-    all the caching/deduplication goodness.
+  * Exception handling for plans.
+
+  * The `plan` computation expression builder that allows writing plans like plain F# code.
 
   * Mostly XML-commented, but no "big picture" documentation yet.
 
-* F# library Data.Resumption.Workflows
+  * Compatibility wrappers to help implement errands from C#.
 
-  * F# idiomatic wrappers around the extension methods in Data.Resumption.
+  * Note: errand API is still unstable.
 
-  * Computation expression builders `datatask` and `dataseq`. These
-    are by far the best way to write `Plan<T>`s and
-    `IDataEnumerable<T>`s.
+* Execution library Rezoom.Execution
 
-* Test library Data.Resumption.Test
+  * Executes Rezoom `Plan` as a `System.Threading.Task`, deduplicating errands.
+
+  * End users could swap this library out for their own custom
+    execution logic, for example to customize how caching works.
+
+* Test library Rezoom.Test
 
   * Unit tests against a hypothetical data source that just echos strings.
 
@@ -40,27 +44,51 @@ This is similar in effect to Haskell's Haxl.
   * Very few tests so far. Contributions in this area would of course
     be welcomed, even in this early stage of the project.
 
-* Example integration: Data.Resumption.IPGeo
+* Example integration: Rezoom.IPGeo
 
   * C# library demonstrating how to integrate an existing API
-    (ip-api.com) with DataRes.
+    (ip-api.com) with Rezoom.
 
-* Example integration test: Data.Resumption.IPGeo.Test
+* Example integration test: Rezoom.IPGeo.Test
 
   * Demonstrates how the example integration can be used.
 
-* Example integration: Data.Resumption.EF
+* Micro-ORM Rezoom.ORM
 
-  * C# library demonstrating how to integrate with Entity Framework.
+  * Not really dependent or inherently integrated with the rest of Rezoom, but designed to work well with it.
 
-  * Uses EntityFramework.Extended to support batching queries.
+  * Automatically materializes the results of a SQL query (`IDataReader`) as CLR objects e.g. `User list`.
 
-## What's still to come
+  * Works with F# record types and other immutable (constructor-initialized) types.
 
-* SQL integration with a micro-ORM
+  * Generates IL for fast materilization.
 
-  * Should be comparable to Dapper/OrmLite/pals but work with DataRes
-    for batching.
+  * Uses column naming convention to materialize nested structures, e.g. a list of Groups each with a nested list of Users.
+
+* Integration Rezoom.ADO
+
+  * Implements Rezoom errands for running SQL queries and getting the
+    results either as raw object arrays or materialized using
+    `Rezoom.ORM`.
+
+## What's planned (but doesn't exist yet)
+
+* SQL type provider
+
+  * Understands SQLow, a "lowest comman denominator" dialect of SQL (basically SQLite's syntax with a few extensions)
+
+  * Can output it to various backends - SQLite, T-SQL, Postgres, etc.
+    Goal is not to let you change backends transparently but just to
+    let you use the same _syntax_ to write queries for any of them.
+    For example, the built-in functions available to you will depend
+    on which backend you select.
+
+  * Reads migration scripts from a "model" folder to build a virtual
+    model of your database. Validates queries against this model.
+
+  * Infers the types of parameters used in your query.
+
+  * Generates statically typed query objects with materialization handled by Rezoom.ORM.
 
 * Documentation
 
@@ -74,11 +102,6 @@ This is similar in effect to Haskell's Haxl.
 
   * Something like a TODO list app that runs in Azure.
 
-  * Ideally, would have two or three versions of the backend
-    implementation:
+  * Can demo with two execution implementations to show the difference
+    in round-trips achieved by automatic batching/caching.
 
-    * A naive version (no batching)
-
-    * A version with manually coded batching
-
-    * A DataRes version
