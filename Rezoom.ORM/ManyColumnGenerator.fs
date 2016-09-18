@@ -215,7 +215,7 @@ type private ManyColumnGenerator
                 yield callvirt1 (entTemplate.GetMethod("CreateReader")) // this, reader
                 yield dup // this, reader, reader
                 yield ldloc sub // this, reader, reader, submap
-                yield callvirt2'void (elemReaderTy.GetMethod("ProcessColumns")) // this, reader
+                yield callvirt2'void Generation.processColumnsMethod // this, reader
                 yield stfld refReader // _
             }
             yield mark skip
@@ -300,7 +300,7 @@ type private ManyColumnGenerator
                 yield mark readRow
                 yield ldloc entReader
                 yield ldarg 1 // row
-                yield callvirt2'void (elemReaderTy.GetMethod("Read"))
+                yield callvirt2'void Generation.readMethod
             }
             yield mark skip
         }

@@ -35,7 +35,7 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
                 yield callvirt1 (entTemplate.GetMethod("CreateReader"))
                 yield dup
                 yield ldloc sub
-                yield callvirt2'void (entReaderType.GetMethod("ProcessColumns"))
+                yield callvirt2'void Generation.processColumnsMethod
                 yield stfld entReader
             }
             yield mark ncase
@@ -72,7 +72,7 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
                 yield dup
                 yield ldfld entReader
                 yield ldarg 1
-                yield callvirt2'void (entReaderType.GetMethod("Read"))
+                yield callvirt2'void Generation.readMethod
             }
             yield mark ncase
         }
@@ -108,7 +108,7 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
                     yield ldc'i4 rev.ColumnId
                     yield ldloc self
                     if output.IsValueType then yield box'val output
-                    yield callvirt3'void (entReaderType.GetMethod("SetReverse"))
+                    yield callvirt3'void Generation.setReverseMethod
                 yield callvirt1 (entReaderType.GetMethod("ToEntity"))
             }
             yield mark ncase

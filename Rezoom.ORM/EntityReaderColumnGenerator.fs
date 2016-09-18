@@ -28,4 +28,10 @@ module private Generation =
     // but don't want to use typedefof<_> and introduce explicit mutual recursion because
     // that would require that we put all the implementations in one file. D:
     let readerTemplateGeneric =
-        Assembly.GetExecutingAssembly().GetType("Rezoom.ORM.ReaderTemplate`1")
+        Assembly.GetExecutingAssembly().GetType("Rezoom.ORM.CodeGeneration.ReaderTemplate`1")
+    let processColumnsMethod =
+        typeof<EntityReader>.GetMethod("ProcessColumns")
+    let readMethod =
+        typeof<EntityReader>.GetMethod("Read")
+    let setReverseMethod =
+        typeof<EntityReader>.GetMethod("SetReverse")
