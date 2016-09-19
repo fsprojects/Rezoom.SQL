@@ -16,6 +16,7 @@ type TestTypeInference() =
                 ] |> List.map (fun s -> s.SchemaName, s) |> Map.ofList
             DefaultSchema = Name("main")
             TemporarySchema = Name("temp")
+            Builtin = { Functions = Map.empty }
         }
     [<TestMethod>]
     member __.TestSimpleSelect() =

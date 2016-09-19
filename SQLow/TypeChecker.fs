@@ -14,6 +14,7 @@ type private TypeCheckerContext(typeInference : ITypeInferenceContext) =
     member __.Reference(table : SchemaTable) = ignore <| referenced.Add(table)
     member __.Write(table : SchemaTable) = ignore <| written.Add(table)
     member __.References = referenced :> _ seq
+    member __.AnonymousVariable() = typeInference.AnonymousVariable()
     member __.Variable(parameter) = typeInference.Variable(parameter)
     member __.Unify(left, right) = typeInference.Unify(left, right)
     member __.Unify(inferredType, coreType : CoreColumnType) =
@@ -133,6 +134,52 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
         | IsNull
         | NotNull -> result { return InferredType.Boolean }
 
+    member this.InferFunctionType(source, func : FunctionInvocationExpr) =
+        match scope.Model.Builtin.Functions.TryFind(func.FunctionName) with
+        | None -> failAt source <| sprintf "No such function: ``%O``" func.FunctionName
+        | Some funcType ->
+            let functionVars = Dictionary()
+            let toInferred (ty : ArgumentType) =
+                match ty with
+                | ArgumentConcrete t -> ConcreteType t
+                | ArgumentTypeVariable name ->
+                    let succ, tvar = functionVars.TryGetValue(name)
+                    if succ then tvar else
+                    let avar = cxt.AnonymousVariable()
+                    functionVars.[name] <- avar
+                    avar
+            match func.Arguments with
+            | ArgumentWildcard ->
+                if funcType.AllowWildcard then toInferred funcType.Output
+                else failAt source <| sprintf "Function does not permit wildcards: ``%O``" func.FunctionName
+            | ArgumentList (distinct, args) ->
+                if Option.isSome distinct && not funcType.AllowDistinct then
+                    failAt source <| sprintf "Function does not permit DISTINCT keyword: ``%O``" func.FunctionName
+                else
+                    let mutable lastIndex = 0
+                    for i, expectedTy in funcType.FixedArguments |> Seq.indexed do
+                        if i >= args.Count then
+                            failAt source <|
+                                sprintf "Function %O expects at least %d arguments but given only %d"
+                                    func.FunctionName
+                                    funcType.FixedArguments.Count
+                                    args.Count
+                        else
+                            let argTy = this.InferExprType(args.[i])
+                            ignore <| (cxt.Unify(toInferred expectedTy, argTy) |> resultAt args.[i].Source)
+                        lastIndex <- i
+                    for i = lastIndex + 1 to args.Count - 1 do
+                        match funcType.VariableArgument with
+                        | None ->
+                            failAt args.[i].Source <|
+                                sprintf "Function %O does not accept more than %d arguments"
+                                    func.FunctionName
+                                    funcType.FixedArguments.Count
+                        | Some varArg ->
+                            let varArg = toInferred varArg
+                            ignore <| (cxt.Unify(this.InferExprType(args.[i]), varArg) |> resultAt args.[i].Source)
+                    toInferred funcType.Output
+
     member this.RequireExprType(expr : Expr, mustMatch : CoreColumnType) =
         let inferred = this.InferExprType(expr)
         cxt.Unify(inferred, mustMatch)
@@ -151,8 +198,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
             let inferred = this.InferExprType(subExpr)
             cxt.Unify(inferred, InferredType.String)
             |> resultAt expr.Source
-        | FunctionInvocationExpr funcInvoke ->
-            failwith "Not supported -- need to make list of built-in SQLite functions"
+        | FunctionInvocationExpr funcInvoke -> this.InferFunctionType(expr.Source, funcInvoke)
         | NotSimilarityExpr (op, input, pattern, escape)
         | SimilarityExpr (op, input, pattern, escape) ->
             this.InferSimilarityExprType(op, input, pattern, escape)

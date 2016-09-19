@@ -27,6 +27,12 @@ type private TypeInferenceContext() =
                 Nullable = nullable
                 Type = ty
             } |> Ok
+    member this.AnonymousVariable() =
+        let id = nextVariableId
+        let var = TypeVariable id
+        nextVariableId <- nextVariableId + 1
+        variablesById.Add(id, InferredType.Any)
+        var
     member this.Variable(bindParameter) =
         let succ, v = variablesByParameter.TryGetValue(bindParameter)
         if succ then v else
@@ -109,6 +115,7 @@ type private TypeInferenceContext() =
             let thenType = this.Concrete(colType)
             { thenType with Nullable = ifType.Nullable }
     interface ITypeInferenceContext with
+        member this.AnonymousVariable() = this.AnonymousVariable()
         member this.Variable(parameter) = this.Variable(parameter)
         member this.Unify(left, right) = this.Unify(left, right)
         member this.Concrete(inferred) = this.Concrete(inferred)

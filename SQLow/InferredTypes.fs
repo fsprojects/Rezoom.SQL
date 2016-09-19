@@ -64,6 +64,7 @@ type InferredType =
             ConcreteType { ty with Type = affinity }
 
 type ITypeInferenceContext =
+    abstract member AnonymousVariable : unit -> InferredType
     abstract member Variable : BindParameter -> InferredType
     /// Unify the two types (ensure they are compatible and add constraints)
     /// and produce the most specific type.

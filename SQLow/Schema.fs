@@ -16,11 +16,31 @@ type ColumnType =
         Nullable : bool
     }
 
+type ArgumentType =
+    | ArgumentConcrete of ColumnType
+    | ArgumentTypeVariable of Name
+
+type FunctionType =
+    {
+        FixedArguments : ArgumentType IReadOnlyList
+        VariableArgument : ArgumentType option
+        Output : ArgumentType
+        AllowWildcard : bool
+        AllowDistinct : bool
+        Aggregate : bool
+    }
+
+type DatabaseBuiltin =
+    {
+        Functions : Map<Name, FunctionType>
+    }
+
 type Model =
     {
         Schemas : Map<Name, Schema>
         DefaultSchema : Name
         TemporarySchema : Name
+        Builtin : DatabaseBuiltin
     }
 
 and Schema =
