@@ -61,7 +61,7 @@ This is similar in effect to Haskell's Haxl.
 
   * Works with F# record types and other immutable (constructor-initialized) types.
 
-  * Generates IL for fast materilization.
+  * Generates IL for fast object construction.
 
   * Uses column naming convention to materialize nested structures, e.g. a list of Groups each with a nested list of Users.
 
