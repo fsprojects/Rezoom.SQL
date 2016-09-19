@@ -75,7 +75,7 @@ This is similar in effect to Haskell's Haxl.
 
 * SQL type provider
 
-  * Understands SQLow, a "lowest comman denominator" dialect of SQL (basically SQLite's syntax with a few extensions)
+  * Understands SQLow, a "lowest common denominator" dialect of SQL (basically SQLite's syntax with a few extensions)
 
   * Can output it to various backends - SQLite, T-SQL, Postgres, etc.
     Goal is not to let you change backends transparently but just to
