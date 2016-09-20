@@ -27,18 +27,36 @@ type ColumnInfo =
 
     static member IndexField = typeof<ColumnInfo>.GetField("Index")
     static member TypeField = typeof<ColumnInfo>.GetField("Type")
+    member this.CLRType =
+        match this.Type with
+        | ColumnType.Invalid -> typeof<unit>
+        | ColumnType.Object -> typeof<obj>
+        | ColumnType.String -> typeof<string>
+        | ColumnType.Byte -> typeof<byte>
+        | ColumnType.Int16 -> typeof<int16>
+        | ColumnType.Int32 -> typeof<int32>
+        | ColumnType.Int64 -> typeof<int64>
+        | ColumnType.SByte -> typeof<sbyte>
+        | ColumnType.UInt16 -> typeof<uint16>
+        | ColumnType.UInt32 -> typeof<uint32>
+        | ColumnType.UInt64 -> typeof<uint64>
+        | ColumnType.Single -> typeof<single>
+        | ColumnType.Double -> typeof<double>
+        | ColumnType.Decimal -> typeof<decimal>
+        | ColumnType.DateTime -> typeof<DateTime>
+        | _  -> invalidArg "type" "Unknown column type"
 
 [<AllowNullLiteral>]
 type ColumnMap() =
-    let columns = new Dictionary<string, ColumnInfo>(StringComparer.OrdinalIgnoreCase)
-    let subMaps = new Dictionary<string, ColumnMap>(StringComparer.OrdinalIgnoreCase)
+    let columns = Dictionary<string, ColumnInfo>(StringComparer.OrdinalIgnoreCase)
+    let subMaps = Dictionary<string, ColumnMap>(StringComparer.OrdinalIgnoreCase)
     static let columnMethod = typeof<ColumnMap>.GetMethod("Column")
     static let primaryColumnMethod = typeof<ColumnMap>.GetMethod("PrimaryColumn")
     static let subMapMethod = typeof<ColumnMap>.GetMethod("SubMap")
     member private this.GetOrCreateSubMap(name) =
         let succ, sub = subMaps.TryGetValue(name)
         if succ then sub else
-        let sub = new ColumnMap()
+        let sub = ColumnMap()
         subMaps.[name] <- sub
         sub
     member private this.SetColumn(name, info) =
@@ -62,8 +80,10 @@ type ColumnMap() =
     member this.SubMap(name) =
         let succ, map = subMaps.TryGetValue(name)
         if succ then map else null
+    member this.SubMaps = subMaps :> _ seq
+    member this.Columns = columns :> _ seq
     static member Parse(columnNames) =
-        let map = new ColumnMap()
+        let map = ColumnMap()
         map.Load(columnNames)
         map
 

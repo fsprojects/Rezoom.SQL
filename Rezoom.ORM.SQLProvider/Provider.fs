@@ -8,6 +8,7 @@ open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes
 open SQLow
 open SQLow.CommandEffect
+open Rezoom.ORM.SQLProvider.TypeGeneration
 
 [<TypeProvider>]
 type public NamerProvider(cfg : TypeProviderConfig) as this =
@@ -30,7 +31,13 @@ type public NamerProvider(cfg : TypeProviderConfig) as this =
         | [| :? string as model; :? string as sql |] ->
             let model = UserModel.Load(model)
             let parsed = CommandWithEffect.Parse(model.Model, typeName, sql)
-            let ty = TypeGeneration.generateType thisAssembly rootNamespace typeName parsed
+            let ty =
+                {   Assembly = thisAssembly
+                    Namespace = rootNamespace
+                    TypeName = typeName
+                    UserModel = model
+                    Command = parsed
+                } |> generateType
             tmpAssembly.AddTypes([ty])
             ty
         | _ -> failwith "Invalid parameters (expected 2 strings: model, sql)"

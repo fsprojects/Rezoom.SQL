@@ -8,6 +8,7 @@ type Name(str : string) =
         str.Equals(other.String, StringComparison.OrdinalIgnoreCase)
     member inline private __.InlineCompareTo(other : Name) =
         String.Compare(str, other.String, StringComparison.OrdinalIgnoreCase)
+    member this.Value = str
     member this.Equals(other) = this.InlineEquals(other)
     member this.CompareTo(other) = this.InlineCompareTo(other)
     override __.ToString() = str
