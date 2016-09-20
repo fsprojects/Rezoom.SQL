@@ -7,8 +7,7 @@ open System.Collections.Generic
 open SQLow.InferredTypes
 
 type CommandEffect =
-    {
-        ModelChange : Model option
+    {   ModelChange : Model option
         ResultSets : SchemaQuery IReadOnlyList
         TablesWritten : SchemaTable IReadOnlyCollection
         Parameters : (BindParameter * ColumnType) IReadOnlyList
@@ -172,8 +171,7 @@ type private CommandEffectBuilder() =
         | VacuumStmt -> None
 
 type CommandWithEffect =
-    {
-        Statements : Stmt IReadOnlyList
+    {   Statements : Stmt IReadOnlyList
         Effect : CommandEffect
     }
     static member Parse(model, sourceName, sourceText) =

@@ -192,18 +192,11 @@ let private qualifiedColumnName =
     <?> "qualified-column-name"
 
 let private namedBindParameter =
-    %% +.['@'; ':'; '$']
+    %% '@'
     -- +.unquotedNameOrKeyword
-    -|> fun prefix name -> NamedParameter (prefix, name)
+    -|> fun name -> NamedParameter name
 
-let private positionalBindParameter =
-    %% '?'
-    -- +.(p<uint32> * zeroOrOne)
-    -|> PositionalParameter
-
-let private bindParameter =
-    %[ namedBindParameter; positionalBindParameter ]
-    <?> "bind-parameter"
+let private bindParameter = namedBindParameter <?> "bind-parameter"
 
 let private kw str =
     %% ci str

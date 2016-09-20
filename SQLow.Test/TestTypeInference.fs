@@ -48,7 +48,7 @@ type TestTypeInference() =
         printfn "%A" cmd
         Assert.AreEqual(1, cmd.Parameters.Count)
         Assert.AreEqual
-            ( (NamedParameter ('@', Name("id")), { Nullable = true; Type = IntegerType })
+            ( (NamedParameter (Name("id")), { Nullable = true; Type = IntegerType })
             , cmd.Parameters.[0])
         Assert.AreEqual(1, cmd.ResultSets.Count)
         let cs = cmd.ResultSets.[0].Columns
@@ -72,7 +72,7 @@ type TestTypeInference() =
         printfn "%A" cmd
         Assert.AreEqual(1, cmd.Parameters.Count)
         Assert.AreEqual
-            ( (NamedParameter ('@', Name("id")), { Nullable = false; Type = IntegerType })
+            ( (NamedParameter (Name("id")), { Nullable = false; Type = IntegerType })
             , cmd.Parameters.[0])
         Assert.AreEqual(1, cmd.ResultSets.Count)
         let cs = cmd.ResultSets.[0].Columns

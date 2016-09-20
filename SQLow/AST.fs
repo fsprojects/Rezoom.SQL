@@ -61,8 +61,7 @@ type ColumnName =
         | Some tbl -> string tbl + "." + this.ColumnName
 
 type BindParameter =
-    | NamedParameter of char * Name // char is the prefix: ':', '@', or '$'
-    | PositionalParameter of uint32 option
+    | NamedParameter of Name // prefix character : or $ or @ is ignored
     
 type BinaryOperator =
     | Concatenate
