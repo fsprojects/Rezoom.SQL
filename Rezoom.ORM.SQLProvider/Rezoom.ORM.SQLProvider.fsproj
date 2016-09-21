@@ -52,6 +52,8 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Backend.fs" />
+    <Compile Include="BackendUtilities.fs" />
+    <Compile Include="Backend.SQLite.fs" />
     <Compile Include="UserModel.fs" />
     <Compile Include="CompileTimeColumnMap.fs" />
     <None Include="ProvidedTypes-LICENSE.md" />

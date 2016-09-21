@@ -13,6 +13,8 @@ type CommandFragment =
     | CommandText of string
     /// References parameter by index.
     | Parameter of int
+    /// At least one unit of whitespace.
+    | Whitespace
 
 [<AbstractClass>]
 type Command(fragments : CommandFragment IReadOnlyList, parameters : obj IReadOnlyList) =
