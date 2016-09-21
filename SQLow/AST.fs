@@ -280,7 +280,6 @@ and Join =
 
 and TableExprCore =
     | TableOrSubquery of TableOrSubquery
-    | AliasedTableExpr of TableExpr * Alias
     | Join of Join
 
 and TableExpr = TableExprCore WithSource

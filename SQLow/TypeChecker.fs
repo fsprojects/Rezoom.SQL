@@ -259,12 +259,6 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
             | Some alias -> add alias sub
             | None -> ()
             sub
-        | AliasedTableExpr (expr, alias) ->
-            let sub = this.TableExprScope(dict, expr)
-            match alias with
-            | Some alias -> add alias sub
-            | None -> ()
-            sub
         | Join join ->
             let left = this.TableExprScope(dict, join.LeftTable)
             let right = this.TableExprScope(dict, join.RightTable)
@@ -278,7 +272,6 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
     member this.ValidateTableExprConstraints(tableExpr : TableExpr) =
         match tableExpr.Value with
         | TableOrSubquery _ -> ()
-        | AliasedTableExpr (ex, _) -> this.ValidateTableExprConstraints(ex)
         | Join join ->
             this.ValidateTableExprConstraints(join.LeftTable)
             this.ValidateTableExprConstraints(join.RightTable)
