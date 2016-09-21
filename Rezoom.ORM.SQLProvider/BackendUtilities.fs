@@ -303,6 +303,9 @@ type StatementTranslator() =
         match stmt with
         | SelectStmt select -> this.Select(select)
         | _ -> failwith "Not implemented"
+    abstract member Statements : Stmt seq -> Fragments
+    default this.Statements(stmts) =
+        stmts |> Seq.map this.Statement |> join ";"
 
 and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : IParameterIndexer) =
     abstract member Literal : LiteralTranslator
