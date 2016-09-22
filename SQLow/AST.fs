@@ -38,10 +38,11 @@ type TypeName =
         Bounds : TypeBounds option
     }
 
-type ObjectName =
+type ObjectName<'t> =
     {
         SchemaName : Name option
         ObjectName : Name
+        Info : 't
     }
     override this.ToString() =
         string <|
@@ -49,9 +50,9 @@ type ObjectName =
         | None -> this.ObjectName
         | Some schema -> schema + "." + this.ObjectName
 
-type ColumnName =
+type ColumnName<'t> =
     {
-        Table : ObjectName option
+        Table : ObjectName<'t> option
         ColumnName : Name
     }
     override this.ToString() =
@@ -104,51 +105,56 @@ type Raise =
     | RaiseAbort of string
     | RaiseFail of string
 
-type ExprType =
+type ExprType<'t, 'e> =
     | LiteralExpr of Literal
     | BindParameterExpr of BindParameter
-    | ColumnNameExpr of ColumnName
-    | CastExpr of CastExpr
-    | CollateExpr of Expr * Name
-    | FunctionInvocationExpr of FunctionInvocationExpr
-    | SimilarityExpr of SimilarityOperator * Expr * Expr * Expr option // optional ESCAPE clause
-    | NotSimilarityExpr of SimilarityOperator * Expr * Expr * Expr option
-    | BinaryExpr of BinaryOperator * Expr * Expr
-    | UnaryExpr of UnaryOperator * Expr
-    | BetweenExpr of Expr * Expr * Expr
-    | NotBetweenExpr of Expr * Expr * Expr
-    | InExpr of Expr * InSet WithSource
-    | NotInExpr of Expr * InSet WithSource
-    | ExistsExpr of SelectStmt
-    | CaseExpr of CaseExpr
-    | ScalarSubqueryExpr of SelectStmt
+    | ColumnNameExpr of ColumnName<'t>
+    | CastExpr of CastExpr<'t, 'e>
+    | CollateExpr of Expr<'t, 'e> * Name
+    | FunctionInvocationExpr of FunctionInvocationExpr<'t, 'e>
+    | SimilarityExpr of SimilarityOperator * Expr<'t, 'e> * Expr<'t, 'e> * Expr<'t, 'e> option // optional ESCAPE clause
+    | NotSimilarityExpr of SimilarityOperator * Expr<'t, 'e> * Expr<'t, 'e> * Expr<'t, 'e> option
+    | BinaryExpr of BinaryOperator * Expr<'t, 'e> * Expr<'t, 'e>
+    | UnaryExpr of UnaryOperator * Expr<'t, 'e>
+    | BetweenExpr of Expr<'t, 'e> * Expr<'t, 'e> * Expr<'t, 'e>
+    | NotBetweenExpr of Expr<'t, 'e> * Expr<'t, 'e> * Expr<'t, 'e>
+    | InExpr of Expr<'t, 'e> * InSet<'t, 'e> WithSource
+    | NotInExpr of Expr<'t, 'e> * InSet<'t, 'e> WithSource
+    | ExistsExpr of SelectStmt<'t, 'e>
+    | CaseExpr of CaseExpr<'t, 'e>
+    | ScalarSubqueryExpr of SelectStmt<'t, 'e>
     | RaiseExpr of Raise
 
-and Expr = ExprType WithSource
-
-and CastExpr =
+and Expr<'t, 'e> =
     {
-        Expression : Expr
+        Value : ExprType<'t, 'e>
+        Info : 'e
+        Source : SourceInfo
+    }
+
+and CastExpr<'t, 'e> =
+    {
+        Expression : Expr<'t, 'e>
         AsType : TypeName
     }
  
-and TableInvocation =
+and TableInvocation<'t, 'e> =
     {
-        Table : ObjectName
-        Arguments : Expr ResizeArray option // we use an option to distinguish between schema.table and schema.table()
+        Table : ObjectName<'t>
+        Arguments : Expr<'t, 'e> ResizeArray option // we use an option to distinguish between schema.table and schema.table()
     }
 
-and FunctionInvocationExpr =
+and FunctionInvocationExpr<'t, 'e> =
     {
         FunctionName : Name
-        Arguments : FunctionArguments
+        Arguments : FunctionArguments<'t, 'e>
     }
 
-and CaseExpr =
+and CaseExpr<'t, 'e> =
     {
-        Input : Expr option
-        Cases : (Expr * Expr) ResizeArray
-        Else : Expr option WithSource
+        Input : Expr<'t, 'e> option
+        Cases : (Expr<'t, 'e> * Expr<'t, 'e>) ResizeArray
+        Else : Expr<'t, 'e> option WithSource
     }
 
 and Distinct = | Distinct
@@ -157,107 +163,107 @@ and DistinctColumns =
     | DistinctColumns
     | AllColumns
 
-and FunctionArguments =
+and FunctionArguments<'t, 'e> =
     | ArgumentWildcard
-    | ArgumentList of (Distinct option * Expr ResizeArray)
+    | ArgumentList of (Distinct option * Expr<'t, 'e> ResizeArray)
 
-and InSet =
-    | InExpressions of Expr ResizeArray
-    | InSelect of SelectStmt
-    | InTable of TableInvocation
+and InSet<'t, 'e> =
+    | InExpressions of Expr<'t, 'e> ResizeArray
+    | InSelect of SelectStmt<'t, 'e>
+    | InTable of TableInvocation<'t, 'e>
 
-and SelectStmtCore =
+and SelectStmtCore<'t, 'e> =
     {
-        With : WithClause option
-        Compound : CompoundExpr
-        OrderBy : OrderingTerm ResizeArray option
-        Limit : Limit option
+        With : WithClause<'t, 'e> option
+        Compound : CompoundExpr<'t, 'e>
+        OrderBy : OrderingTerm<'t, 'e> ResizeArray option
+        Limit : Limit<'t, 'e> option
     }
 
-and SelectStmt = SelectStmtCore WithSource
+and SelectStmt<'t, 'e> = SelectStmtCore<'t, 'e> WithSource
 
-and WithClause =
+and WithClause<'t, 'e> =
     {
         Recursive : bool
-        Tables : CommonTableExpression ResizeArray
+        Tables : CommonTableExpression<'t, 'e> ResizeArray
     }
 
-and CommonTableExpression =
+and CommonTableExpression<'t, 'e> =
     {
         Name : Name
         ColumnNames : Name ResizeArray WithSource option
-        AsSelect : SelectStmt
+        AsSelect : SelectStmt<'t, 'e>
     }
 
 and OrderDirection =
     | Ascending
     | Descending
 
-and OrderingTerm =
+and OrderingTerm<'t, 'e> =
     {
-        By : Expr
+        By : Expr<'t, 'e>
         Direction : OrderDirection
     }
 
-and Limit =
+and Limit<'t, 'e> =
     {
-        Limit : Expr
-        Offset : Expr option
+        Limit : Expr<'t, 'e>
+        Offset : Expr<'t, 'e> option
     }
 
-and CompoundExprCore =
-    | CompoundTerm of CompoundTerm
-    | Union of CompoundExpr * CompoundTerm
-    | UnionAll of CompoundExpr * CompoundTerm
-    | Intersect of CompoundExpr * CompoundTerm
-    | Except of CompoundExpr * CompoundTerm
+and CompoundExprCore<'t, 'e> =
+    | CompoundTerm of CompoundTerm<'t, 'e>
+    | Union of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
+    | UnionAll of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
+    | Intersect of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
+    | Except of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
 
-and CompoundExpr = CompoundExprCore WithSource
+and CompoundExpr<'t, 'e> = CompoundExprCore<'t, 'e> WithSource
 
-and CompoundTermCore =
-    | Values of Expr ResizeArray WithSource ResizeArray
-    | Select of SelectCore
+and CompoundTermCore<'t, 'e> =
+    | Values of Expr<'t, 'e> ResizeArray WithSource ResizeArray
+    | Select of SelectCore<'t, 'e>
 
-and CompoundTerm = CompoundTermCore WithSource
+and CompoundTerm<'t, 'e> = CompoundTermCore<'t, 'e> WithSource
 
-and SelectCore =
+and SelectCore<'t, 'e> =
     {
-        Columns : ResultColumns
-        From : TableExpr option
-        Where : Expr option
-        GroupBy : GroupBy option
+        Columns : ResultColumns<'t, 'e>
+        From : TableExpr<'t, 'e> option
+        Where : Expr<'t, 'e> option
+        GroupBy : GroupBy<'t, 'e> option
     }
 
-and GroupBy =
+and GroupBy<'t, 'e> =
     {
-        By : Expr ResizeArray
-        Having : Expr option
+        By : Expr<'t, 'e> ResizeArray
+        Having : Expr<'t, 'e> option
     }
 
-and ResultColumns =
+and ResultColumns<'t, 'e> =
     {
         Distinct : DistinctColumns option
-        Columns : ResultColumn WithSource ResizeArray
+        Columns : ResultColumn<'t, 'e> WithSource ResizeArray
     }
 
-and ResultColumn =
+and ResultColumn<'t, 'e> =
     | ColumnsWildcard
-    | TableColumnsWildcard of ObjectName
-    | Column of Expr * Alias
+    | TableColumnsWildcard of ObjectName<'t>
+    | Column of Expr<'t, 'e> * Alias
 
 and IndexHint =
     | IndexedBy of Name
     | NotIndexed
 
-and QualifiedTableName =
+and QualifiedTableName<'t> =
     {
-        TableName : ObjectName
+        TableName : ObjectName<'t>
         IndexHint : IndexHint option
     }
 
-and TableOrSubquery =
-    | Table of TableInvocation * Alias * IndexHint option // note: an index hint is invalid if the table has args
-    | Subquery of SelectStmt * Alias
+and TableOrSubquery<'t, 'e> =
+    | Table of TableInvocation<'t, 'e> * Alias * IndexHint option // note: an index hint is invalid if the table has args
+    | Subquery of SelectStmt<'t, 'e> * Alias
 
 and JoinType =
     | Inner
@@ -265,24 +271,24 @@ and JoinType =
     | Cross
     | Natural of JoinType
 
-and JoinConstraint =
-    | JoinOn of Expr
+and JoinConstraint<'t, 'e> =
+    | JoinOn of Expr<'t, 'e>
     | JoinUsing of Name ResizeArray
     | JoinUnconstrained
 
-and Join =
+and Join<'t, 'e> =
     {
         JoinType : JoinType
-        LeftTable : TableExpr
-        RightTable : TableExpr
-        Constraint : JoinConstraint
+        LeftTable : TableExpr<'t, 'e>
+        RightTable : TableExpr<'t, 'e>
+        Constraint : JoinConstraint<'t, 'e>
     }
 
-and TableExprCore =
-    | TableOrSubquery of TableOrSubquery
-    | Join of Join
+and TableExprCore<'t, 'e> =
+    | TableOrSubquery of TableOrSubquery<'t, 'e>
+    | Join of Join<'t, 'e>
 
-and TableExpr = TableExprCore WithSource
+and TableExpr<'t, 'e> = TableExprCore<'t, 'e> WithSource
 
 type ConflictClause =
     | Rollback
@@ -312,9 +318,9 @@ type ForeignKeyDeferClause =
         InitiallyDeferred : bool option
     }
 
-type ForeignKeyClause =
+type ForeignKeyClause<'t> =
     {
-        ReferencesTable : ObjectName
+        ReferencesTable : ObjectName<'t>
         ReferencesColumns : Name ResizeArray option
         Rules : ForeignKeyRule ResizeArray
         Defer : ForeignKeyDeferClause option
@@ -327,78 +333,78 @@ type PrimaryKeyClause =
         AutoIncrement : bool
     }
 
-type ColumnConstraintType =
+type ColumnConstraintType<'t, 'e> =
     | NullableConstraint
     | PrimaryKeyConstraint of PrimaryKeyClause
     | NotNullConstraint of ConflictClause option
     | UniqueConstraint of ConflictClause option
-    | CheckConstraint of Expr
-    | DefaultConstraint of Expr
+    | CheckConstraint of Expr<'t, 'e>
+    | DefaultConstraint of Expr<'t, 'e>
     | CollateConstraint of Name
-    | ForeignKeyConstraint of ForeignKeyClause
+    | ForeignKeyConstraint of ForeignKeyClause<'t>
 
-type ColumnConstraint =
+type ColumnConstraint<'t, 'e> =
     {
         Name : Name option
-        ColumnConstraintType : ColumnConstraintType
+        ColumnConstraintType : ColumnConstraintType<'t, 'e>
     }
 
-type ColumnDef =
+type ColumnDef<'t, 'e> =
     {
         Name : Name
         Type : TypeName option
-        Constraints : ColumnConstraint ResizeArray
+        Constraints : ColumnConstraint<'t, 'e> ResizeArray
     }
 
-type AlterTableAlteration =
+type AlterTableAlteration<'t, 'e> =
     | RenameTo of Name
-    | AddColumn of ColumnDef
+    | AddColumn of ColumnDef<'t, 'e>
 
-type AlterTableStmt =
+type AlterTableStmt<'t, 'e> =
     {
-        Table : ObjectName
-        Alteration : AlterTableAlteration
+        Table : ObjectName<'t>
+        Alteration : AlterTableAlteration<'t, 'e>
     }
 
 type TableIndexConstraintType =
     | PrimaryKey
     | Unique
 
-type TableIndexConstraintClause =
+type TableIndexConstraintClause<'t, 'e> =
     {
         Type : TableIndexConstraintType
-        IndexedColumns : (Expr * OrderDirection) ResizeArray
+        IndexedColumns : (Expr<'t, 'e> * OrderDirection) ResizeArray
         ConflictClause : ConflictClause option
     }
 
-type TableConstraintType =
-    | TableIndexConstraint of TableIndexConstraintClause
-    | TableForeignKeyConstraint of Name ResizeArray * ForeignKeyClause
-    | TableCheckConstraint of Expr
+type TableConstraintType<'t, 'e> =
+    | TableIndexConstraint of TableIndexConstraintClause<'t, 'e>
+    | TableForeignKeyConstraint of Name ResizeArray * ForeignKeyClause<'t>
+    | TableCheckConstraint of Expr<'t, 'e>
 
-type TableConstraint =
+type TableConstraint<'t, 'e> =
     {
         Name : Name option
-        TableConstraintType : TableConstraintType
+        TableConstraintType : TableConstraintType<'t, 'e>
     }
 
-type CreateTableDefinition =
+type CreateTableDefinition<'t, 'e> =
     {
-        Columns : ColumnDef ResizeArray
-        Constraints : TableConstraint ResizeArray
+        Columns : ColumnDef<'t, 'e> ResizeArray
+        Constraints : TableConstraint<'t, 'e> ResizeArray
         WithoutRowId : bool
     }
 
-type CreateTableAs =
-    | CreateAsDefinition of CreateTableDefinition
-    | CreateAsSelect of SelectStmt
+type CreateTableAs<'t, 'e> =
+    | CreateAsDefinition of CreateTableDefinition<'t, 'e>
+    | CreateAsSelect of SelectStmt<'t, 'e>
 
-type CreateTableStmt =
+type CreateTableStmt<'t, 'e> =
     {
         Temporary : bool
         IfNotExists : bool
-        Name : ObjectName WithSource
-        As : CreateTableAs
+        Name : ObjectName<'t> WithSource
+        As : CreateTableAs<'t, 'e>
     }
 
 type TransactionType =
@@ -406,23 +412,23 @@ type TransactionType =
     | Immediate
     | Exclusive
 
-type CreateIndexStmt =
+type CreateIndexStmt<'t, 'e> =
     {
         Unique : bool
         IfNotExists : bool
-        IndexName : ObjectName
-        TableName : ObjectName
-        IndexedColumns : (Expr * OrderDirection) ResizeArray
-        Where : Expr option
+        IndexName : ObjectName<'t>
+        TableName : ObjectName<'t>
+        IndexedColumns : (Expr<'t, 'e> * OrderDirection) ResizeArray
+        Where : Expr<'t, 'e> option
     }
 
-type DeleteStmt =
+type DeleteStmt<'t, 'e> =
     {
-        With : WithClause option
-        DeleteFrom : QualifiedTableName
-        Where : Expr option
-        OrderBy : OrderingTerm ResizeArray option
-        Limit : Limit option
+        With : WithClause<'t, 'e> option
+        DeleteFrom : QualifiedTableName<'t>
+        Where : Expr<'t, 'e> option
+        OrderBy : OrderingTerm<'t, 'e> ResizeArray option
+        Limit : Limit<'t, 'e> option
     }
 
 type UpdateOr =
@@ -432,15 +438,15 @@ type UpdateOr =
     | UpdateOrFail
     | UpdateOrIgnore
 
-type UpdateStmt =
+type UpdateStmt<'t, 'e> =
     {
-        With : WithClause option
-        UpdateTable : QualifiedTableName
+        With : WithClause<'t, 'e> option
+        UpdateTable : QualifiedTableName<'t>
         Or : UpdateOr option
-        Set : (Name * Expr) ResizeArray
-        Where : Expr option
-        OrderBy : OrderingTerm ResizeArray option
-        Limit : Limit option
+        Set : (Name * Expr<'t, 'e>) ResizeArray
+        Where : Expr<'t, 'e> option
+        OrderBy : OrderingTerm<'t, 'e> ResizeArray option
+        Limit : Limit<'t, 'e> option
     }
 
 type InsertOr =
@@ -450,13 +456,13 @@ type InsertOr =
     | InsertOrFail
     | InsertOrIgnore
 
-type InsertStmt =
+type InsertStmt<'t, 'e> =
     {
-        With : WithClause option
+        With : WithClause<'t, 'e> option
         Or : InsertOr option
-        InsertInto : ObjectName
+        InsertInto : ObjectName<'t>
         Columns : Name ResizeArray option
-        Data : SelectStmt option // either select/values, or "default values" if none
+        Data : SelectStmt<'t, 'e> option // either select/values, or "default values" if none
     }
 
 type TriggerSchedule =
@@ -469,31 +475,31 @@ type TriggerCause =
     | InsertOn
     | UpdateOn of Name ResizeArray option
 
-type TriggerAction =
-    | TriggerUpdate of UpdateStmt
-    | TriggerInsert of InsertStmt
-    | TriggerDelete of DeleteStmt
-    | TriggerSelect of SelectStmt
+type TriggerAction<'t, 'e> =
+    | TriggerUpdate of UpdateStmt<'t, 'e>
+    | TriggerInsert of InsertStmt<'t, 'e>
+    | TriggerDelete of DeleteStmt<'t, 'e>
+    | TriggerSelect of SelectStmt<'t, 'e>
 
-type CreateTriggerStmt =
+type CreateTriggerStmt<'t, 'e> =
     {
         Temporary : bool
         IfNotExists : bool
-        TriggerName : ObjectName
-        TableName : ObjectName
+        TriggerName : ObjectName<'t>
+        TableName : ObjectName<'t>
         Schedule : TriggerSchedule
         Cause : TriggerCause
-        Condition : Expr option
-        Actions : TriggerAction ResizeArray
+        Condition : Expr<'t, 'e> option
+        Actions : TriggerAction<'t, 'e> ResizeArray
     }
 
-type CreateViewStmt =
+type CreateViewStmt<'t, 'e> =
     {
         Temporary : bool
         IfNotExists : bool
-        ViewName : ObjectName
+        ViewName : ObjectName<'t>
         ColumnNames : Name ResizeArray option
-        AsSelect : SelectStmt
+        AsSelect : SelectStmt<'t, 'e>
     }
 
 type DropObjectType =
@@ -502,20 +508,20 @@ type DropObjectType =
     | DropTrigger
     | DropView
 
-type DropObjectStmt =
+type DropObjectStmt<'t> =
     {
         Drop : DropObjectType
         IfExists : bool
-        IndexName : ObjectName
+        IndexName : ObjectName<'t>
     }
 
 type PragmaValue =
     | StringPragmaValue of string
     | NumericPragmaValue of SignedNumericLiteral
 
-type PragmaStmt =
+type PragmaStmt<'t> =
     {
-        Pragma : ObjectName
+        Pragma : ObjectName<'t>
         Value : PragmaValue option
     }
 
@@ -524,35 +530,65 @@ type RollbackStmt =
     | RollbackTransactionByName of Name
     | RollbackTransaction
 
-type CreateVirtualTableStmt =
+type CreateVirtualTableStmt<'t> =
     {
         IfNotExists : bool
-        VirtualTable : ObjectName
+        VirtualTable : ObjectName<'t>
         UsingModule : Name
         WithModuleArguments : string ResizeArray
     }
 
-type Stmt =
-    | AlterTableStmt of AlterTableStmt
-    | AnalyzeStmt of ObjectName option
-    | AttachStmt of Expr * Name
+type Stmt<'t, 'e> =
+    | AlterTableStmt of AlterTableStmt<'t, 'e>
+    | AnalyzeStmt of ObjectName<'t> option
+    | AttachStmt of Expr<'t, 'e> * Name
     | BeginStmt of TransactionType
     | CommitStmt
-    | CreateIndexStmt of CreateIndexStmt
-    | CreateTableStmt of CreateTableStmt
-    | CreateTriggerStmt of CreateTriggerStmt
-    | CreateViewStmt of CreateViewStmt
-    | CreateVirtualTableStmt of CreateVirtualTableStmt
-    | DeleteStmt of DeleteStmt
+    | CreateIndexStmt of CreateIndexStmt<'t, 'e>
+    | CreateTableStmt of CreateTableStmt<'t, 'e>
+    | CreateTriggerStmt of CreateTriggerStmt<'t, 'e>
+    | CreateViewStmt of CreateViewStmt<'t, 'e>
+    | CreateVirtualTableStmt of CreateVirtualTableStmt<'t>
+    | DeleteStmt of DeleteStmt<'t, 'e>
     | DetachStmt of Name
-    | DropObjectStmt of DropObjectStmt
-    | InsertStmt of InsertStmt
-    | PragmaStmt of PragmaStmt
-    | ReindexStmt of ObjectName option
+    | DropObjectStmt of DropObjectStmt<'t>
+    | InsertStmt of InsertStmt<'t, 'e>
+    | PragmaStmt of PragmaStmt<'t>
+    | ReindexStmt of ObjectName<'t> option
     | ReleaseStmt of Name
     | RollbackStmt of RollbackStmt
     | SavepointStmt of SavepointName
-    | SelectStmt of SelectStmt
-    | ExplainStmt of Stmt
-    | UpdateStmt of UpdateStmt
+    | SelectStmt of SelectStmt<'t, 'e>
+    | ExplainStmt of Stmt<'t, 'e>
+    | UpdateStmt of UpdateStmt<'t, 'e>
     | VacuumStmt
+
+type ExprType = ExprType<unit, unit>
+type Expr = Expr<unit, unit>
+type ObjectName = ObjectName<unit>
+type ColumnName = ColumnName<unit>
+type InSet = InSet<unit, unit>
+type CaseExpr = CaseExpr<unit, unit>
+type CastExpr = CastExpr<unit, unit>
+type FunctionInvocationExpr = FunctionInvocationExpr<unit, unit>
+    
+type WithClause = WithClause<unit, unit>
+type CommonTableExpression = CommonTableExpression<unit, unit>
+type CompoundExprCore = CompoundExprCore<unit, unit>
+type CompoundExpr = CompoundExpr<unit, unit>
+type CompoundTermCore = CompoundTermCore<unit, unit>
+type CompoundTerm = CompoundTerm<unit, unit>
+type CreateTableDefinition = CreateTableDefinition<unit, unit>
+type CreateTableStmt = CreateTableStmt<unit, unit>
+type SelectCore = SelectCore<unit, unit>
+type Join = Join<unit, unit>
+type Limit = Limit<unit, unit>
+type OrderingTerm = OrderingTerm<unit, unit>
+type ResultColumn = ResultColumn<unit, unit>
+type ResultColumns = ResultColumns<unit, unit>
+type TableOrSubquery = TableOrSubquery<unit, unit>
+type TableExprCore = TableExprCore<unit, unit>
+type TableExpr = TableExpr<unit, unit>
+type TableInvocation = TableInvocation<unit, unit>
+type SelectStmt = SelectStmt<unit, unit>
+type Stmt = Stmt<unit, unit>

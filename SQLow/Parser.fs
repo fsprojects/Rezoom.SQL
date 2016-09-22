@@ -21,7 +21,7 @@ let private withSource (parser : Parser<'a, unit>) =
     -- +.sourcePosition
     -%> fun startPos value endPos ->
         {
-            Source = { StartPosition = startPos; EndPosition = endPos }
+            WithSource.Source = { StartPosition = startPos; EndPosition = endPos }
             Value = value
         }
 
@@ -164,17 +164,23 @@ let private objectName =
     -- +.(zeroOrOne * (%% '.' -- ws -? +.nameOrKeyword -- ws -|> id))
     -|> fun name name2 ->
         match name2 with
-        | None -> { SchemaName = None; ObjectName = name }
-        | Some name2 -> { SchemaName = Some name; ObjectName = name2 })
-    <?> "table-name"
+        | None -> { SchemaName = None; ObjectName = name; Info = () }
+        | Some name2 -> { SchemaName = Some name; ObjectName = name2; Info = () })
+    <?> "object-name"
 
 let private columnName =
     (qty.[1..3] / tws '.' * tws name
     |>> fun names ->
         match names.Count with
         | 1 -> { Table = None; ColumnName = names.[0] }
-        | 2 -> { Table = Some { SchemaName = None; ObjectName = names.[0] }; ColumnName = names.[1] }
-        | 3 -> { Table = Some { SchemaName = Some names.[0]; ObjectName = names.[1] }; ColumnName = names.[2] }
+        | 2 ->
+            {   Table = Some { SchemaName = None; ObjectName = names.[0]; Info = () }
+                ColumnName = names.[1]
+            }
+        | 3 ->
+            {   Table = Some { SchemaName = Some names.[0]; ObjectName = names.[1]; Info = () }
+                ColumnName = names.[2]
+            }
         | _ -> failwith "Unreachable")
     <?> "column-name"
 
@@ -186,8 +192,14 @@ let private qualifiedColumnName =
     -|> fun initial rest ->
         match rest.Count with
         | 0 -> { Table = None; ColumnName = initial }
-        | 1 -> { Table = Some { SchemaName = None; ObjectName = initial }; ColumnName = rest.[0] }
-        | 2 -> { Table = Some { SchemaName = Some initial; ObjectName = rest.[0] }; ColumnName = rest.[1] }
+        | 1 ->
+            {   Table = Some { SchemaName = None; ObjectName = initial; Info = () }
+                ColumnName = rest.[0]
+            }
+        | 2 ->
+            {   Table = Some { SchemaName = Some initial; ObjectName = rest.[0]; Info = () }
+                ColumnName = rest.[1]
+            }
         | _ -> failwith "Unreachable")
     <?> "qualified-column-name"
 
@@ -293,7 +305,7 @@ let private cast expr =
     -- ')'
     -|> fun ex typeName -> { Expression = ex; AsType = typeName }
 
-let private functionArguments (expr : Parser<Expr, unit>) =
+let private functionArguments (expr : Parser<Expr<unit, unit>, unit>) =
     %[
         %% '*' -- ws -|> ArgumentWildcard
         %% +.((%% kw "DISTINCT" -- ws -|> Distinct) * zeroOrOne)
@@ -334,19 +346,21 @@ let private case expr =
     -- +.[ whenForm; ofForm ]
     -|> id
 
-let private expr, private exprImpl = createParserForwardedToRef<Expr, unit>()
-let private selectStmt, private selectStmtImpl = createParserForwardedToRef<SelectStmt, unit>()
+let private expr, private exprImpl = createParserForwardedToRef<Expr<unit, unit>, unit>()
+let private selectStmt, private selectStmtImpl = createParserForwardedToRef<SelectStmt<unit, unit>, unit>()
 
 let private binary op e1 e2 =
     {
-        Value = BinaryExpr (op, e1, e2)
+        Expr.Value = BinaryExpr (op, e1, e2)
         Source = SourceInfo.Between(e1.Source, e2.Source)
+        Info = ()
     }    
 
 let private unary op e1 =
     {
-        Value = UnaryExpr (op, e1)
+        Expr.Value = UnaryExpr (op, e1)
         Source = e1.Source
+        Info = ()
     }
 
 let private tableInvocation =
@@ -364,6 +378,7 @@ let private collateOperator =
         {
             Value = CollateExpr (expr, collation.Value)
             Source = collation.Source
+            Info = ()
         }
 
 let private isOperator =
@@ -390,8 +405,8 @@ let private inOperator =
                 %% +.tableInvocation -|> InTable
             ]
     -|> function
-    | Some () -> fun op inSet left -> { Source = op.Source; Value = NotInExpr (left, inSet) }
-    | None -> fun op inSet left -> { Source = op.Source; Value = InExpr (left, inSet) }
+    | Some () -> fun op inSet left -> { Source = op.Source; Value = NotInExpr (left, inSet); Info = () }
+    | None -> fun op inSet left -> { Source = op.Source; Value = InExpr (left, inSet); Info = () }
 
 let private similarityOperator =
     let op =
@@ -405,9 +420,9 @@ let private similarityOperator =
     -? +.op
     -|> function
     | Some () -> fun op left right escape ->
-        { Source = op.Source; Value = NotSimilarityExpr (op.Value, left, right, escape) }
+        { Source = op.Source; Value = NotSimilarityExpr (op.Value, left, right, escape); Info = () }
     | None -> fun op left right escape ->
-        { Source = op.Source; Value = SimilarityExpr (op.Value, left, right, escape) }
+        { Source = op.Source; Value = SimilarityExpr (op.Value, left, right, escape); Info = () }
 
 let private notNullOperator =
     %[
@@ -415,16 +430,16 @@ let private notNullOperator =
         %% kw "NOT" -? kw "NULL" -|> ()
     ]
     |> withSource
-    |>> fun op left -> { Source = op.Source; Value = UnaryExpr(NotNull, left) }
+    |>> fun op left -> { Source = op.Source; Value = UnaryExpr(NotNull, left); Info = () }
 
 let private betweenOperator =
     %% +.(zeroOrOne * kw "NOT")
     -? +.withSource (kw "BETWEEN")
     -|> function
     | Some () -> fun op input low high ->
-        { Source = op.Source; Value = NotBetweenExpr (input, low, high) }
+        { Source = op.Source; Value = NotBetweenExpr (input, low, high); Info = () }
     | None -> fun op input low high ->
-        { Source = op.Source; Value = BetweenExpr (input, low, high) }
+        { Source = op.Source; Value = BetweenExpr (input, low, high); Info = () }
 
 let private raiseTrigger =
     %% kw "RAISE"
@@ -439,24 +454,31 @@ let private raiseTrigger =
     -- ')'
     -|> RaiseExpr
 
-let private term (expr : Parser<Expr, unit>) =
+let private term (expr : Parser<Expr<unit, unit>, unit>) =
     let parenthesized =
         %[
             %% +.selectStmt -|> ScalarSubqueryExpr
             %% +.expr -|> fun e -> e.Value
         ]
-    %[
-        %% '(' -- ws -- +.parenthesized -- ')' -|> id
-        %% kw "EXISTS" -- ws -- '(' -- ws -- +.selectStmt -- ')' -|> ExistsExpr
-        %% +.qualifiedColumnName -|> ColumnNameExpr
-        %% +.literal -|> LiteralExpr
-        %% +.bindParameter -|> BindParameterExpr
-        %% +.cast expr -|> CastExpr
-        %% +.case expr -|> CaseExpr
-        raiseTrigger
-        %% +.functionInvocation expr -|> FunctionInvocationExpr
-        %% +.columnName -|> ColumnNameExpr
-    ] |> withSource
+    %% +.sourcePosition
+    -- +.[
+            %% '(' -- ws -- +.parenthesized -- ')' -|> id
+            %% kw "EXISTS" -- ws -- '(' -- ws -- +.selectStmt -- ')' -|> ExistsExpr
+            %% +.qualifiedColumnName -|> ColumnNameExpr
+            %% +.literal -|> LiteralExpr
+            %% +.bindParameter -|> BindParameterExpr
+            %% +.cast expr -|> CastExpr
+            %% +.case expr -|> CaseExpr
+            raiseTrigger
+            %% +.functionInvocation expr -|> FunctionInvocationExpr
+            %% +.columnName -|> ColumnNameExpr
+        ]
+    -- +.sourcePosition
+    -%> fun startPos value endPos ->
+        {   Expr.Value = value
+            Source = { StartPosition = startPos; EndPosition = endPos }
+            Info = ()
+        }
 
 let private operators = [
     [
@@ -575,7 +597,7 @@ let private indexHint =
         %% kw "NOT" -- kw "INDEXED" -|> NotIndexed
     ]
 
-let private tableOrSubquery (tableExpr : Parser<TableExpr, unit>) =
+let private tableOrSubquery (tableExpr : Parser<TableExpr<unit, unit>, unit>) =
     let subterm =
         %% +.selectStmt -|> fun select alias -> TableOrSubquery (Subquery (select, alias))
     let by =
@@ -634,7 +656,7 @@ let private tableExpr =
             -- +.term
             -- ws
             -- +.joinConstraint
-            -|> fun f joinTo joinOn left -> { Source = f.Source; Value = f.Value left joinTo joinOn }
+            -|> fun f joinTo joinOn left -> { TableExpr.Source = f.Source; Value = f.Value left joinTo joinOn }
         %% +.term
         -- ws
         -- +.(join * qty.[0..])
@@ -708,8 +730,8 @@ let private compoundExpr =
     let compoundNext =
         %% +.compoundOperation
         -- +.compoundTerm
-        -|> fun f right left -> { Source = f.Source; Value = f.Value left right }
-    %% +.(compoundTerm |>> fun t -> { Source = t.Source; Value = CompoundTerm t })
+        -|> fun f right left -> { CompoundExpr.Source = f.Source; Value = f.Value left right }
+    %% +.(compoundTerm |>> fun t -> { CompoundExpr.Source = t.Source; Value = CompoundTerm t })
     -- +.(compoundNext * qty.[0..])
     -|> Seq.fold (|>)
 
@@ -840,17 +862,18 @@ let private primaryKeyClause =
 let private constraintType =
     let signedToExpr (signed : SignedNumericLiteral WithSource) =
         let expr = signed.Value.Value |> NumericLiteral |> LiteralExpr
-        let expr = { Source = signed.Source; Value = expr }
-        if signed.Value.Sign < 0 then { Source = expr.Source; Value = UnaryExpr (Negative, expr)} 
+        let expr = { Source = signed.Source; Value = expr; Info = () }
+        if signed.Value.Sign < 0 then { Source = expr.Source; Value = UnaryExpr (Negative, expr); Info = () } 
         else expr
     let defaultValue =
         %[
             %% +.withSource signedNumericLiteral -|> signedToExpr
-            %% +.withSource literal -|> fun lit -> { Source = lit.Source; Value = LiteralExpr lit.Value }
+            %% +.withSource literal -|> fun lit -> { Source = lit.Source; Value = LiteralExpr lit.Value; Info = () }
             %% '(' -- ws -- +.expr -- ')' -|> id
             // docs don't mention this, but it works
             %% +.withSource name
-                -|> fun name -> { Source = name.Source; Value = name.Value.ToString() |> StringLiteral |> LiteralExpr }
+                -|> fun name ->
+                    { Source = name.Source; Value = name.Value.ToString() |> StringLiteral |> LiteralExpr; Info = () }
         ]
     %[
         %% +.primaryKeyClause -|> PrimaryKeyConstraint
