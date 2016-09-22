@@ -112,12 +112,12 @@ type ExprType<'t, 'e> =
     | CastExpr of CastExpr<'t, 'e>
     | CollateExpr of Expr<'t, 'e> * Name
     | FunctionInvocationExpr of FunctionInvocationExpr<'t, 'e>
-    | SimilarityExpr of SimilarityOperator * Expr<'t, 'e> * Expr<'t, 'e> * Expr<'t, 'e> option // optional ESCAPE clause
-    | NotSimilarityExpr of SimilarityOperator * Expr<'t, 'e> * Expr<'t, 'e> * Expr<'t, 'e> option
-    | BinaryExpr of BinaryOperator * Expr<'t, 'e> * Expr<'t, 'e>
-    | UnaryExpr of UnaryOperator * Expr<'t, 'e>
-    | BetweenExpr of Expr<'t, 'e> * Expr<'t, 'e> * Expr<'t, 'e>
-    | NotBetweenExpr of Expr<'t, 'e> * Expr<'t, 'e> * Expr<'t, 'e>
+    | SimilarityExpr of SimilarityExpr<'t, 'e>
+    | NotSimilarityExpr of SimilarityExpr<'t, 'e>
+    | BinaryExpr of BinaryExpr<'t, 'e>
+    | UnaryExpr of UnaryExpr<'t, 'e>
+    | BetweenExpr of BetweenExpr<'t, 'e>
+    | NotBetweenExpr of BetweenExpr<'t, 'e>
     | InExpr of Expr<'t, 'e> * InSet<'t, 'e> WithSource
     | NotInExpr of Expr<'t, 'e> * InSet<'t, 'e> WithSource
     | ExistsExpr of SelectStmt<'t, 'e>
@@ -130,6 +130,34 @@ and Expr<'t, 'e> =
         Value : ExprType<'t, 'e>
         Info : 'e
         Source : SourceInfo
+    }
+
+and BinaryExpr<'t, 'e> =
+    {
+        Left : Expr<'t, 'e>
+        Operator : BinaryOperator
+        Right : Expr<'t, 'e>
+    }
+
+and UnaryExpr<'t, 'e> =
+    {
+        Operator : UnaryOperator
+        Operand : Expr<'t, 'e>
+    }
+
+and SimilarityExpr<'t, 'e> =
+    {
+        Operator : SimilarityOperator
+        Input : Expr<'t, 'e>
+        Pattern : Expr<'t, 'e>
+        Escape : Expr<'t, 'e> option
+    }
+
+and BetweenExpr<'t, 'e> =
+    {
+        Input : Expr<'t, 'e>
+        Low : Expr<'t, 'e>
+        High : Expr<'t, 'e>
     }
 
 and CastExpr<'t, 'e> =
@@ -565,6 +593,10 @@ type Stmt<'t, 'e> =
 
 type ExprType = ExprType<unit, unit>
 type Expr = Expr<unit, unit>
+type BetweenExpr = BetweenExpr<unit, unit>
+type SimilarityExpr = SimilarityExpr<unit, unit>
+type BinaryExpr = BinaryExpr<unit, unit>
+type UnaryExpr = UnaryExpr<unit, unit>
 type ObjectName = ObjectName<unit>
 type ColumnName = ColumnName<unit>
 type InSet = InSet<unit, unit>

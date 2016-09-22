@@ -284,8 +284,8 @@ let private typeBounds =
     -- ws
     -|> fun bounds ->
         match bounds.Count with
-        | 1 -> { Low = bounds.[0]; High = None }
-        | 2 -> { Low = bounds.[0]; High = Some bounds.[1] }
+        | 1 -> { TypeBounds.Low = bounds.[0]; High = None }
+        | 2 -> { TypeBounds.Low = bounds.[0]; High = Some bounds.[1] }
         | _ -> failwith "Unreachable"
 
 let private typeName =
@@ -351,14 +351,14 @@ let private selectStmt, private selectStmtImpl = createParserForwardedToRef<Sele
 
 let private binary op e1 e2 =
     {
-        Expr.Value = BinaryExpr (op, e1, e2)
+        Expr.Value = BinaryExpr { BinaryExpr.Operator = op; Left = e1; Right = e2 }
         Source = SourceInfo.Between(e1.Source, e2.Source)
         Info = ()
     }    
 
 let private unary op e1 =
     {
-        Expr.Value = UnaryExpr (op, e1)
+        Expr.Value = UnaryExpr { UnaryExpr.Operator = op; Operand = e1 }
         Source = e1.Source
         Info = ()
     }
@@ -409,6 +409,12 @@ let private inOperator =
     | None -> fun op inSet left -> { Source = op.Source; Value = InExpr (left, inSet); Info = () }
 
 let private similarityOperator =
+    let similar (op : SimilarityOperator WithSource) left right escape =
+        {   Operator = op.Value
+            Input = left
+            Pattern = right
+            Escape = escape
+        }
     let op =
         %[
             %% kw "LIKE" -|> Like
@@ -420,9 +426,9 @@ let private similarityOperator =
     -? +.op
     -|> function
     | Some () -> fun op left right escape ->
-        { Source = op.Source; Value = NotSimilarityExpr (op.Value, left, right, escape); Info = () }
+        { Source = op.Source; Value = NotSimilarityExpr (similar op left right escape); Info = () }
     | None -> fun op left right escape ->
-        { Source = op.Source; Value = SimilarityExpr (op.Value, left, right, escape); Info = () }
+        { Source = op.Source; Value = SimilarityExpr (similar op left right escape); Info = () }
 
 let private notNullOperator =
     %[
@@ -430,16 +436,21 @@ let private notNullOperator =
         %% kw "NOT" -? kw "NULL" -|> ()
     ]
     |> withSource
-    |>> fun op left -> { Source = op.Source; Value = UnaryExpr(NotNull, left); Info = () }
+    |>> fun op left -> { Source = op.Source; Value = UnaryExpr { Operator = NotNull; Operand = left }; Info = () }
 
 let private betweenOperator =
+    let between input low high =
+        {   Input = input
+            Low = low
+            High = high
+        }
     %% +.(zeroOrOne * kw "NOT")
     -? +.withSource (kw "BETWEEN")
     -|> function
     | Some () -> fun op input low high ->
-        { Source = op.Source; Value = NotBetweenExpr (input, low, high); Info = () }
+        { Source = op.Source; Value = NotBetweenExpr (between input low high); Info = () }
     | None -> fun op input low high ->
-        { Source = op.Source; Value = BetweenExpr (input, low, high); Info = () }
+        { Source = op.Source; Value = BetweenExpr (between input low high); Info = () }
 
 let private raiseTrigger =
     %% kw "RAISE"
@@ -863,7 +874,8 @@ let private constraintType =
     let signedToExpr (signed : SignedNumericLiteral WithSource) =
         let expr = signed.Value.Value |> NumericLiteral |> LiteralExpr
         let expr = { Source = signed.Source; Value = expr; Info = () }
-        if signed.Value.Sign < 0 then { Source = expr.Source; Value = UnaryExpr (Negative, expr); Info = () } 
+        if signed.Value.Sign < 0 then
+            { Source = expr.Source; Value = UnaryExpr { Operator = Negative; Operand = expr }; Info = () } 
         else expr
     let defaultValue =
         %[

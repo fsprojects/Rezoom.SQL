@@ -424,24 +424,18 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 yield! args |> Seq.map this.Expr |> join ","
             yield text ")"
         }
-    abstract member Similarity
-        : invert : bool
-        * op : SimilarityOperator
-        * input : Expr
-        * pattern : Expr
-        * escape : Expr option
-        -> Fragments
-    default this.Similarity(invert, op, input, pattern, escape) =
+    abstract member Similarity : invert : bool * sim : SimilarityExpr -> Fragments
+    default this.Similarity(invert, sim : SimilarityExpr) =
         seq {
-            yield! this.Expr(input)
+            yield! this.Expr(sim.Input)
             yield ws
             if invert then
                 yield text "NOT"
                 yield ws
-            yield this.SimilarityOperator(op)
+            yield this.SimilarityOperator(sim.Operator)
             yield ws
-            yield! this.Expr(pattern)
-            match escape with
+            yield! this.Expr(sim.Pattern)
+            match sim.Escape with
             | None -> ()
             | Some escape ->
                 yield ws
@@ -449,53 +443,48 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 yield ws
                 yield! this.Expr(escape)
         }
-    abstract member Binary : op : BinaryOperator * left : Expr * right : Expr -> Fragments
-    default this.Binary(op, left, right) =
+    abstract member Binary : bin : BinaryExpr -> Fragments
+    default this.Binary(bin) =
         seq {
-            yield! this.Expr(left)
+            yield! this.Expr(bin.Left)
             yield ws
-            yield this.BinaryOperator(op)
+            yield this.BinaryOperator(bin.Operator)
             yield ws
-            yield! this.Expr(right)
+            yield! this.Expr(bin.Right)
         }
-    abstract member Unary : op : UnaryOperator * expr : Expr -> Fragments
-    default this.Unary(op, expr) =
-        match op with
+    abstract member Unary : un : UnaryExpr -> Fragments
+    default this.Unary(un) =
+        match un.Operator with
         | Negative
         | Not
         | BitNot ->
             seq {
-                yield this.UnaryOperator(op)
+                yield this.UnaryOperator(un.Operator)
                 yield ws
-                yield! this.Expr(expr)
+                yield! this.Expr(un.Operand)
             }
         | NotNull
         | IsNull ->
             seq {
-                yield! this.Expr(expr)
+                yield! this.Expr(un.Operand)
                 yield ws
-                yield this.UnaryOperator(op)
+                yield this.UnaryOperator(un.Operator)
             }
-    abstract member Between
-        : invert : bool
-        * input : Expr
-        * low : Expr
-        * high : Expr
-        -> Fragments
-    default this.Between(invert, input, low, high) =
+    abstract member Between : invert : bool * between : BetweenExpr -> Fragments
+    default this.Between(invert, between) =
         seq {
-            yield! this.Expr(input)
+            yield! this.Expr(between.Input)
             yield ws
             if invert then
                 yield text "NOT"
                 yield ws
             yield text "BETWEEN"
             yield ws
-            yield! this.Expr(low)
+            yield! this.Expr(between.Low)
             yield ws
             yield text "AND"
             yield ws
-            yield! this.Expr(high)
+            yield! this.Expr(between.High)
         }
     abstract member Table : TableInvocation -> Fragments
     default this.Table(tbl) =
@@ -614,12 +603,12 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 | CastExpr cast -> this.Cast(cast)
                 | CollateExpr (expr, input) -> this.Collate(expr, input)
                 | FunctionInvocationExpr func -> this.Invoke(func)
-                | SimilarityExpr (op, input, pattern, escape) -> this.Similarity(false, op, input, pattern, escape)
-                | NotSimilarityExpr (op, input, pattern, escape) -> this.Similarity(true, op, input, pattern, escape)
-                | BinaryExpr (op, left, right) -> this.Binary(op, left, right)
-                | UnaryExpr (op, expr) -> this.Unary(op, expr)
-                | BetweenExpr (input, low, high) -> this.Between(false, input, low, high)
-                | NotBetweenExpr (input, low, high) -> this.Between(true, input, low, high)
+                | SimilarityExpr sim -> this.Similarity(false, sim)
+                | NotSimilarityExpr sim -> this.Similarity(true, sim)
+                | BinaryExpr bin -> this.Binary(bin)
+                | UnaryExpr un -> this.Unary(un)
+                | BetweenExpr between -> this.Between(false, between)
+                | NotBetweenExpr between -> this.Between(true, between)
                 | InExpr (expr, inset) -> this.In(false, expr, inset.Value)
                 | NotInExpr (expr, inset) -> this.In(true, expr, inset.Value)
                 | ExistsExpr select -> this.Exists(select)

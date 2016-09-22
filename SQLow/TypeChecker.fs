@@ -47,11 +47,11 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
                 sprintf "A scalar subquery must have exactly 1 result column (found %d columns)"
                     queryType.Columns.Count
 
-    member this.InferSimilarityExprType(op, input, pattern, escape) =
+    member this.InferSimilarityExprType(sim : SimilarityExpr) =
         result {
-            let! inputType = cxt.Unify(this.InferExprType(input), StringType)
-            let! patternType = cxt.Unify(this.InferExprType(input), StringType)
-            match escape with
+            let! inputType = cxt.Unify(this.InferExprType(sim.Input), StringType)
+            let! patternType = cxt.Unify(this.InferExprType(sim.Pattern), StringType)
+            match sim.Escape with
             | None -> ()
             | Some escape -> ignore <| cxt.Unify(this.InferExprType(escape), StringType)
             let! unified = cxt.Unify(inputType, patternType)
@@ -97,7 +97,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
         | Some els ->
             cxt.Unify(this.InferExprType(els), outputType) |> resultAt els.Source
 
-    member this.InferBinaryExprType(op, left, right) =
+    member this.InferBinaryExprType({ Operator = op; Left = left; Right = right }) =
         let leftType, rightType = this.InferExprType(left), this.InferExprType(right)
         match op with
         | Concatenate -> cxt.Unify([ leftType; rightType; InferredType.String ])
@@ -125,7 +125,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
         | And
         | Or -> cxt.Unify([ leftType; rightType; InferredType.Boolean ])
 
-    member this.InferUnaryExprType(unop, operand) =
+    member this.InferUnaryExprType({ Operator = unop; Operand = operand }) =
         let operandType = this.InferExprType(operand)
         match unop with
         | Negative
@@ -199,18 +199,18 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
             cxt.Unify(inferred, InferredType.String)
             |> resultAt expr.Source
         | FunctionInvocationExpr funcInvoke -> this.InferFunctionType(expr.Source, funcInvoke)
-        | NotSimilarityExpr (op, input, pattern, escape)
-        | SimilarityExpr (op, input, pattern, escape) ->
-            this.InferSimilarityExprType(op, input, pattern, escape)
+        | NotSimilarityExpr sim
+        | SimilarityExpr sim ->
+            this.InferSimilarityExprType(sim)
             |> resultAt expr.Source
-        | BinaryExpr (binop, left, right) ->
-            this.InferBinaryExprType(binop, left, right)
+        | BinaryExpr bin ->
+            this.InferBinaryExprType(bin)
             |> resultAt expr.Source
-        | UnaryExpr (unop, operand) ->
-            this.InferUnaryExprType(unop, operand)
+        | UnaryExpr un ->
+            this.InferUnaryExprType(un)
             |> resultAt expr.Source
-        | BetweenExpr (input, low, high)
-        | NotBetweenExpr (input, low, high) ->
+        | BetweenExpr { Input = input; Low = low; High = high }
+        | NotBetweenExpr { Input = input; Low = low; High = high } ->
             result {
                 let! unified = cxt.Unify([ input; low; high ] |> Seq.map this.InferExprType)
                 return InferredType.Dependent(unified, BooleanType)
