@@ -110,7 +110,7 @@ type ExprType<'t, 'e> =
     | BindParameterExpr of BindParameter
     | ColumnNameExpr of ColumnName<'t>
     | CastExpr of CastExpr<'t, 'e>
-    | CollateExpr of Expr<'t, 'e> * Name
+    | CollateExpr of CollationExpr<'t, 'e>
     | FunctionInvocationExpr of FunctionInvocationExpr<'t, 'e>
     | SimilarityExpr of SimilarityExpr<'t, 'e>
     | NotSimilarityExpr of SimilarityExpr<'t, 'e>
@@ -118,8 +118,8 @@ type ExprType<'t, 'e> =
     | UnaryExpr of UnaryExpr<'t, 'e>
     | BetweenExpr of BetweenExpr<'t, 'e>
     | NotBetweenExpr of BetweenExpr<'t, 'e>
-    | InExpr of Expr<'t, 'e> * InSet<'t, 'e> WithSource
-    | NotInExpr of Expr<'t, 'e> * InSet<'t, 'e> WithSource
+    | InExpr of InExpr<'t, 'e>
+    | NotInExpr of InExpr<'t, 'e>
     | ExistsExpr of SelectStmt<'t, 'e>
     | CaseExpr of CaseExpr<'t, 'e>
     | ScalarSubqueryExpr of SelectStmt<'t, 'e>
@@ -130,6 +130,18 @@ and Expr<'t, 'e> =
         Value : ExprType<'t, 'e>
         Info : 'e
         Source : SourceInfo
+    }
+
+and InExpr<'t, 'e> =
+    {
+        Input : Expr<'t, 'e>
+        Set : InSet<'t, 'e> WithSource
+    }
+
+and CollationExpr<'t, 'e> =
+    {
+        Input : Expr<'t, 'e>
+        Collation : Name
     }
 
 and BinaryExpr<'t, 'e> =
@@ -593,6 +605,8 @@ type Stmt<'t, 'e> =
 
 type ExprType = ExprType<unit, unit>
 type Expr = Expr<unit, unit>
+type InExpr = InExpr<unit, unit>
+type CollationExpr = CollationExpr<unit, unit>
 type BetweenExpr = BetweenExpr<unit, unit>
 type SimilarityExpr = SimilarityExpr<unit, unit>
 type BinaryExpr = BinaryExpr<unit, unit>

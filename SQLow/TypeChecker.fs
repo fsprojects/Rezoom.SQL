@@ -194,7 +194,7 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
             let column = scope.ResolveColumnReference(name) |> foundAt expr.Source
             column.InferredType
         | CastExpr cast -> InferredType.OfTypeName(cast.AsType, this.InferExprType(cast.Expression))
-        | CollateExpr (subExpr, collation) ->
+        | CollateExpr { Input = subExpr; Collation = collation } ->
             let inferred = this.InferExprType(subExpr)
             cxt.Unify(inferred, InferredType.String)
             |> resultAt expr.Source
@@ -215,8 +215,8 @@ type private TypeChecker(cxt : TypeCheckerContext, scope : InferredSelectScope) 
                 let! unified = cxt.Unify([ input; low; high ] |> Seq.map this.InferExprType)
                 return InferredType.Dependent(unified, BooleanType)
             } |> resultAt expr.Source
-        | InExpr (input, set)
-        | NotInExpr (input, set) ->
+        | InExpr { Input = input; Set = set }
+        | NotInExpr { Input = input; Set = set } ->
             this.InferInExprType(input, set)
             |> resultAt expr.Source
         | ExistsExpr select ->

@@ -497,21 +497,17 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 yield! args |> Seq.map this.Expr |> join ","
                 yield text ")"
         }
-    abstract member In
-        : invert : bool
-        * input : Expr
-        * set : InSet
-        -> Fragments
-    default this.In(invert, input, set) =
+    abstract member In : invert : bool * inex : InExpr -> Fragments
+    default this.In(invert, inex) =
         seq {
-            yield! this.Expr(input)
+            yield! this.Expr(inex.Input)
             yield ws
             if invert then
                 yield text "NOT"
                 yield ws
             yield text "IN"
             yield ws
-            match set with
+            match inex.Set.Value with
             | InExpressions exprs ->
                 yield text "("
                 yield! exprs |> Seq.map this.Expr |> join ","
@@ -601,7 +597,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 | BindParameterExpr bind -> this.BindParameter(bind) |> Seq.singleton
                 | ColumnNameExpr name -> this.ColumnName(name)
                 | CastExpr cast -> this.Cast(cast)
-                | CollateExpr (expr, input) -> this.Collate(expr, input)
+                | CollateExpr { Input = expr; Collation = collation } -> this.Collate(expr, collation)
                 | FunctionInvocationExpr func -> this.Invoke(func)
                 | SimilarityExpr sim -> this.Similarity(false, sim)
                 | NotSimilarityExpr sim -> this.Similarity(true, sim)
@@ -609,8 +605,8 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 | UnaryExpr un -> this.Unary(un)
                 | BetweenExpr between -> this.Between(false, between)
                 | NotBetweenExpr between -> this.Between(true, between)
-                | InExpr (expr, inset) -> this.In(false, expr, inset.Value)
-                | NotInExpr (expr, inset) -> this.In(true, expr, inset.Value)
+                | InExpr inex -> this.In(false, inex)
+                | NotInExpr inex -> this.In(true, inex)
                 | ExistsExpr select -> this.Exists(select)
                 | CaseExpr case -> this.Case(case)
                 | ScalarSubqueryExpr subquery -> this.ScalarSubquery(subquery)

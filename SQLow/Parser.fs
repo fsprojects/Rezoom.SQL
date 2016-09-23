@@ -376,7 +376,7 @@ let private collateOperator =
     -- +.withSource name
     -|> fun collation expr ->
         {
-            Value = CollateExpr (expr, collation.Value)
+            Value = CollateExpr { Input = expr; Collation = collation.Value }
             Source = collation.Source
             Info = ()
         }
@@ -405,8 +405,10 @@ let private inOperator =
                 %% +.tableInvocation -|> InTable
             ]
     -|> function
-    | Some () -> fun op inSet left -> { Source = op.Source; Value = NotInExpr (left, inSet); Info = () }
-    | None -> fun op inSet left -> { Source = op.Source; Value = InExpr (left, inSet); Info = () }
+    | Some () -> fun op inSet left ->
+        { Source = op.Source; Value = NotInExpr { Input = left; Set = inSet }; Info = () }
+    | None -> fun op inSet left ->
+        { Source = op.Source; Value = InExpr { Input = left; Set = inSet }; Info = () }
 
 let private similarityOperator =
     let similar (op : SimilarityOperator WithSource) left right escape =
