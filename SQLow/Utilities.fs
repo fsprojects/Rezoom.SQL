@@ -1,5 +1,5 @@
 ﻿[<AutoOpen>]
-module private SQLow.Utilities
+module SQLow.Utilities
 open System
 open System.Collections
 open System.Collections.Generic

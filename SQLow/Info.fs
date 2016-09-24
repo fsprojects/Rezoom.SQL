@@ -2,6 +2,11 @@
 open System
 open System.Collections.Generic
 
+type NameResolution<'a> =
+    | Found of 'a
+    | NotFound of string
+    | Ambiguous of string
+
 type ExprInfo<'t> =
     {   /// The inferred type of this expression.
         Type : 't
@@ -12,16 +17,46 @@ type ExprInfo<'t> =
         /// If this expression accesses a column of a table in the schema, the column's information.
         Column : SchemaColumn option
     }
+    static member OfType(t : 't) =
+        {   Type = t
+            Aggregate = false
+            Function = None
+            Column = None
+        }
 
 type ColumnExprInfo<'t> =
     {   Expr : Expr<'t ObjectInfo, 't ExprInfo>
+        FromAlias : Name option // table alias this was selected from, if any
         ColumnName : Name
     }
 
 and QueryExprInfo<'t> =
-    {   Columns : 't ColumnExprInfo IReadOnlyList
-        ReferencedTables : SchemaTable seq
-    }
+    { Columns : 't ColumnExprInfo IReadOnlyList }
+    member this.ColumnByName(name) =
+        let matches =
+            this.Columns
+            |> Seq.filter (fun c -> c.ColumnName = name)
+            |> Seq.truncate 2
+            |> Seq.toList
+        match matches with
+        | [] -> NotFound <| sprintf "No such column: ``%O``" name
+        | [ single ] -> Found single
+        | { FromAlias = Some a1 } :: { FromAlias = Some a2 } :: _ when a1 <> a2 ->
+            Ambiguous <|
+                sprintf "Ambiguous columm: ``%O`` (may refer to %O.%O or %O.%O)"
+                    name a1 name a2 name
+        | _ -> Ambiguous <| sprintf "Ambigous column: ``%O``" name
+    member this.RenameColumns(names : Name IReadOnlyList) =
+        if names.Count <> this.Columns.Count then
+            Error <| sprintf "%d columns named for a query with %d columns" names.Count this.Columns.Count
+        else
+            let newColumns =
+                (this.Columns, names)
+                ||> Seq.map2 (fun col newName -> { col with ColumnName = newName })
+                |> toReadOnlyList
+            Ok { Columns = newColumns }
+    member this.Append(right : 't QueryExprInfo) =
+        { Columns = appendLists this.Columns right.Columns }
 
 and TableReference =
     | TableReference of SchemaTable

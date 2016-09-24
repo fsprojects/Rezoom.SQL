@@ -7,6 +7,11 @@ type SourcePosition =
         Line : int64
         Column : int64
     }
+    static member Zero =
+        {   Index = 0L
+            Line = 0L
+            Column = 0L
+        }
 
 type ParsingException(msg, pos : SourcePosition) =
     inherit Exception(msg)
@@ -18,6 +23,10 @@ type SourceInfo =
     {   StartPosition : SourcePosition
         EndPosition : SourcePosition
     }
+    static member Zero =
+        {   StartPosition = SourcePosition.Zero
+            EndPosition = SourcePosition.Zero
+        }
     member this.ShowInSource(source : string) =
         source.Substring
             ( int this.StartPosition.Index

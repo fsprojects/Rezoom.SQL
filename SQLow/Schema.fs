@@ -54,7 +54,7 @@ and SchemaTable =
     {
         SchemaName : Name
         TableName : Name
-        Columns : IReadOnlyList<SchemaColumn>
+        Columns : SchemaColumn IReadOnlyList
     }
 
 
@@ -73,19 +73,6 @@ and SchemaView =
     {
         SchemaName : Name
         ViewName : Name
-        Query : SchemaQuery
-    }
-
-and SchemaQuery =
-    {
-        Columns : IReadOnlyList<SchemaQueryColumn>
-        ReferencedTables : SchemaTable seq
-    }
-
-and SchemaQueryColumn =
-    {
-        ColumnName : Name
-        ColumnType : ColumnType
-        /// True if this column is part of *any* table's primary key.
-        PrimaryKey : bool
+        Columns : SchemaColumn IReadOnlyList
+        ReferencedTables : SchemaTable IReadOnlyList
     }

@@ -108,26 +108,15 @@ type ITypeInferenceContext =
     abstract member Concrete : InferredType -> ColumnType
     abstract member Parameters : BindParameter seq
 
-type InferredQueryColumn =
-    {
-        FromAlias : Name option
-        ColumnName : Name
-        InferredType : InferredType
-        PrimaryKey : bool // whether this column is part of the primary key of any table
-    }
-    static member OfTableColumn(column : SchemaColumn) =
-        {
-            FromAlias = Some column.TableName
+type InferredQueryColumn() =
+    static member OfColumn(fromAlias : Name option, column : SchemaColumn) =
+        {   Expr =
+                {   Source = SourceInfo.Zero
+                    Info = { ExprInfo<_>.OfType(ConcreteType column.ColumnType) with Column = Some column }
+                    Value = ColumnNameExpr { ColumnName = column.ColumnName; Table = None }
+                }
             ColumnName = column.ColumnName
-            InferredType = ConcreteType column.ColumnType
-            PrimaryKey = column.PrimaryKey
-        }
-    static member OfQueryColumn(alias, column : SchemaQueryColumn) =
-        {
-            FromAlias = alias
-            ColumnName = column.ColumnName
-            InferredType = ConcreteType column.ColumnType
-            PrimaryKey = column.PrimaryKey
+            FromAlias = fromAlias
         }
 
 let resultAt source result =
@@ -135,68 +124,34 @@ let resultAt source result =
     | Ok x -> x
     | Error err -> failAt source err
 
-type NameResolution<'a> =
-    | Found of 'a
-    | NotFound of string
-    | Ambiguous of string
-
 let foundAt source nameResolution =
     match nameResolution with
     | Found x -> x
     | NotFound err
     | Ambiguous err -> failAt source err
 
-type InferredQuery =
-    {
-        Columns : InferredQueryColumn IReadOnlyList
-    }
+type InferredQuery() =
     static member OfTable(table : SchemaTable) =
-        {
-            Columns = table.Columns |> Seq.map InferredQueryColumn.OfTableColumn |> toReadOnlyList
+        {   Columns =
+                table.Columns
+                |> Seq.map (fun c -> InferredQueryColumn.OfColumn(Some table.TableName, c))
+                |> toReadOnlyList
         }
     static member OfView(view : SchemaView) =
-        let viewName = Some view.ViewName
-        let column col =
-            InferredQueryColumn.OfQueryColumn(viewName, col)
-        {
-            Columns = view.Query.Columns |> Seq.map column |> toReadOnlyList
-        }
-    member this.ColumnByName(name) =
-        let matches =
-            this.Columns
-            |> Seq.filter (fun c -> c.ColumnName = name)
-            |> Seq.truncate 2
-            |> Seq.toList
-        match matches with
-        | [] -> NotFound <| sprintf "No such column: ``%O``" name
-        | [ single ] -> Found single
-        | { FromAlias = Some a1 } :: { FromAlias = Some a2 } :: _ when a1 <> a2 ->
-            Ambiguous <|
-                sprintf "Ambiguous columm: ``%O`` (may refer to %O.%O or %O.%O)"
-                    name a1 name a2 name
-        | _ -> Ambiguous <| sprintf "Ambigous column: ``%O``" name
-    member this.RenameColumns(names : Name IReadOnlyList) =
-        if names.Count <> this.Columns.Count then
-            Error <| sprintf "%d columns named for a query with %d columns" names.Count this.Columns.Count
-        else
-            let newColumns =
-                (this.Columns, names)
-                ||> Seq.map2 (fun col newName -> { col with ColumnName = newName })
+        {   Columns =
+                view.Columns
+                |> Seq.map (fun c -> InferredQueryColumn.OfColumn(Some view.ViewName, c))
                 |> toReadOnlyList
-            Ok { Columns = newColumns }
-    member this.Append(right : InferredQuery) =
-        {
-            Columns = appendLists this.Columns right.Columns
         }
 
 type InferredFromClause =
     {
         /// The tables named in the "from" clause of the query, if any.
         /// These are keyed on the alias of the table, if any, or the table name.
-        FromVariables : IReadOnlyDictionary<Name, InferredQuery>
+        FromVariables : IReadOnlyDictionary<Name, InferredType QueryExprInfo>
         /// The implicit set of columns derived from the "from" clause.
         /// These are the columns you get if you "select *".
-        Wildcard : InferredQuery
+        Wildcard : InferredType QueryExprInfo
     }
     member this.ResolveTable(tableName : ObjectName) =
         match tableName.SchemaName with
@@ -226,9 +181,9 @@ and InferredSelectScope =
         Model : Model
         /// Any CTEs defined by the query.
         /// These may be referenced in the "from" clause of the query.
-        CTEVariables : Map<Name, InferredQuery>
+        CTEVariables : Map<Name, InferredType QueryExprInfo>
         FromClause : InferredFromClause option
-        SelectClause : InferredQuery option
+        SelectClause : InferredType QueryExprInfo option
     }
 
     static member Root(model) =
@@ -240,22 +195,20 @@ and InferredSelectScope =
             SelectClause = None
         }
 
-    member private this.ResolveTableReferenceBySchema(schema : Schema, name : Name, refTable : SchemaTable -> unit) =
+    member private this.ResolveTableReferenceBySchema(schema : Schema, name : Name) =
         match schema.Tables.TryFind(name) with
         |  Some tbl ->
-            refTable tbl
             Found (InferredQuery.OfTable(tbl))
         | None ->
             match schema.Views.TryFind(name) with
             | Some view ->
-                for tbl in view.Query.ReferencedTables do refTable tbl
                 Found (InferredQuery.OfView(view))
             | None ->
                 NotFound <| sprintf "No such table in schema %O: ``%O``" schema.SchemaName name
 
     /// Resolve a reference to a table which may occur as part of a TableExpr.
     /// This will resolve against the database model and CTEs, but not table aliases defined in the FROM clause.
-    member this.ResolveTableReference(name : ObjectName, refTable : SchemaTable -> unit) =
+    member this.ResolveTableReference(name : ObjectName) =
         match name.SchemaName with
         | None ->
             match this.CTEVariables.TryFind(name.ObjectName) with
@@ -263,13 +216,13 @@ and InferredSelectScope =
             | None ->
                 match this.ParentScope with
                 | Some parent ->
-                    parent.ResolveTableReference(name, refTable)
+                    parent.ResolveTableReference(name)
                 | None ->
                     let schema = this.Model.Schemas.[this.Model.DefaultSchema]
-                    this.ResolveTableReferenceBySchema(schema, name.ObjectName, refTable)
+                    this.ResolveTableReferenceBySchema(schema, name.ObjectName)
         | Some schema ->
             let schema = this.Model.Schemas.[schema]
-            this.ResolveTableReferenceBySchema(schema, name.ObjectName, refTable)
+            this.ResolveTableReferenceBySchema(schema, name.ObjectName)
 
     /// Resolve a column reference, which may be qualified with a table alias.
     /// This resolves against the tables referenced in the FROM clause, and the columns explicitly named
