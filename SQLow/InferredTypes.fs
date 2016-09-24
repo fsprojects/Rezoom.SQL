@@ -63,6 +63,42 @@ type InferredType =
         | ConcreteType ty ->
             ConcreteType { ty with Type = affinity }
 
+type InfExprType = ExprType<InferredType ObjectInfo, InferredType ExprInfo>
+type InfExpr = Expr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfInExpr = InExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCollationExpr = CollationExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfBetweenExpr = BetweenExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfSimilarityExpr = SimilarityExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfBinaryExpr = BinaryExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfUnaryExpr = UnaryExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfObjectName = ObjectName<InferredType ObjectInfo>
+type InfColumnName = ColumnName<InferredType ObjectInfo>
+type InfInSet = InSet<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCaseExpr = CaseExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCastExpr = CastExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfFunctionInvocationExpr = FunctionInvocationExpr<InferredType ObjectInfo, InferredType ExprInfo>
+    
+type InfWithClause = WithClause<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCommonTableExpression = CommonTableExpression<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCompoundExprCore = CompoundExprCore<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCompoundExpr = CompoundExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCompoundTermCore = CompoundTermCore<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCompoundTerm = CompoundTerm<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCreateTableDefinition = CreateTableDefinition<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCreateTableStmt = CreateTableStmt<InferredType ObjectInfo, InferredType ExprInfo>
+type InfSelectCore = SelectCore<InferredType ObjectInfo, InferredType ExprInfo>
+type InfJoin = Join<InferredType ObjectInfo, InferredType ExprInfo>
+type InfLimit = Limit<InferredType ObjectInfo, InferredType ExprInfo>
+type InfOrderingTerm = OrderingTerm<InferredType ObjectInfo, InferredType ExprInfo>
+type InfResultColumn = ResultColumn<InferredType ObjectInfo, InferredType ExprInfo>
+type InfResultColumns = ResultColumns<InferredType ObjectInfo, InferredType ExprInfo>
+type InfTableOrSubquery = TableOrSubquery<InferredType ObjectInfo, InferredType ExprInfo>
+type InfTableExprCore = TableExprCore<InferredType ObjectInfo, InferredType ExprInfo>
+type InfTableExpr = TableExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfTableInvocation = TableInvocation<InferredType ObjectInfo, InferredType ExprInfo>
+type InfSelectStmt = SelectStmt<InferredType ObjectInfo, InferredType ExprInfo>
+type InfStmt = Stmt<InferredType ObjectInfo, InferredType ExprInfo>
+
 type ITypeInferenceContext =
     abstract member AnonymousVariable : unit -> InferredType
     abstract member Variable : BindParameter -> InferredType
