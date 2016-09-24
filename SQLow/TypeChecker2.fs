@@ -51,6 +51,7 @@ type ITypeInferenceContext with
         | NotNull -> result { return InferredType.Boolean }
 
 type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
+    member this.Scope = scope
     member this.ObjectName(objectName : ObjectName) : InfObjectName =
         {   SchemaName = objectName.SchemaName
             ObjectName = objectName.ObjectName
@@ -348,19 +349,152 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         let expr = this.Expr(expr)
         cxt.Unify(expr.Info.Type, ty) |> resultOk expr.Source
         expr
+
+    member private this.TableOrSubqueryScope(tsub : TableOrSubquery) =
+        match tsub.Table with
+        | Table (tinvoc, index) ->
+            tsub.Alias |? tinvoc.Table.ObjectName, this.ObjectName(tinvoc.Table).Info.Table.Query
+        | Subquery select ->
+            match tsub.Alias with
+            | None -> failAt select.Source "Subquery requires an alias"
+            | Some alias ->
+                alias, this.Select(select).Value.Info.Table.Query
+
+    member private this.TableExprScope(dict : Dictionary<Name, InferredType QueryExprInfo>, texpr : TableExpr) =
+        let add name query =
+            if dict.ContainsKey(name) then
+                failAt texpr.Source <| sprintf "Table name already in scope: ``%O``" name
+            else
+                dict.Add(name, query)
+        match texpr.Value with
+        | TableOrSubquery tsub ->
+            let alias, query = this.TableOrSubqueryScope(tsub)
+            add alias query
+            query
+        | Join join ->
+            let left = this.TableExprScope(dict, join.LeftTable)
+            let right = this.TableExprScope(dict, join.RightTable)
+            left.Append(right)
+    member private this.TableExprScope(texpr : TableExpr) =
+        let dict = Dictionary()
+        { FromVariables = dict; Wildcard = this.TableExprScope(dict, texpr) }
+
     member this.TableInvocation(table : TableInvocation) =
         {   Table = this.ObjectName(table.Table)
             Arguments = table.Arguments |> Option.map (rmap this.Expr)
         }
+
+    member private this.TableOrSubquery(tsub : TableOrSubquery) =
+        let tbl, info =
+            match tsub.Table with
+            | Table (tinvoc, index) ->
+                let invoke = this.TableInvocation(tinvoc)
+                Table (invoke, index), invoke.Table.Info
+            | Subquery select ->
+                let select = this.Select(select)
+                Subquery select, select.Value.Info
+        {   Table = tbl
+            Alias = tsub.Alias
+            Info = info
+        }
+
+    member private this.TableExpr(constraintChecker : TypeChecker2, texpr : TableExpr) =
+        {   TableExpr.Source = texpr.Source
+            Value =
+                match texpr.Value with
+                | TableOrSubquery tsub -> TableOrSubquery <| this.TableOrSubquery(tsub)
+                | Join join ->
+                    {   JoinType = join.JoinType
+                        LeftTable = this.TableExpr(constraintChecker, join.LeftTable)
+                        RightTable = this.TableExpr(constraintChecker, join.RightTable)
+                        Constraint =
+                            match join.Constraint with
+                            | JoinOn e -> constraintChecker.Expr(e, BooleanType) |> JoinOn
+                            | JoinUsing names -> JoinUsing names
+                            | JoinUnconstrained -> JoinUnconstrained
+                    } |> Join
+        }
+
+    member this.TableExpr(texpr : TableExpr) =
+        let checker = TypeChecker2(cxt, { scope with FromClause = Some <| this.TableExprScope(texpr) })
+        checker, this.TableExpr(checker, texpr)
+
+    member this.ResultColumn(resultColumn : ResultColumn) =
+        match resultColumn with
+        | ColumnsWildcard -> ColumnsWildcard
+        | TableColumnsWildcard tbl -> TableColumnsWildcard (this.ObjectName(tbl)) // TODO: ensure it's from FROM
+        | Column (expr, alias) -> Column (this.Expr(expr), alias)
+    member this.ResultColumns(resultColumns : ResultColumns) =
+        {   Distinct = resultColumns.Distinct
+            Columns = resultColumns.Columns
+            |> rmap (fun { Source = source; Value = value } -> { Source = source; Value = this.ResultColumn(value) })
+        }
+    member this.GroupBy(groupBy : GroupBy) =
+        {   By = groupBy.By |> rmap this.Expr
+            Having = groupBy.Having |> Option.map this.Expr
+        }
+    member this.SelectCore(select : SelectCore) =
+        let checker, from =
+            match select.From with
+            | None -> this, None
+            | Some from ->
+                let checker, texpr = this.TableExpr(from)
+                checker, Some texpr
+        let columns = checker.ResultColumns(select.Columns)
+        let infoColumns =
+            seq {
+                for column in columns.Columns do
+                    match column.Value with
+                    | ColumnsWildcard ->
+                        match checker.Scope.FromClause with
+                        | None -> failAt column.Source "Must have a FROM clause to use `*` wildcard"
+                        | Some from -> yield! from.Wildcard.Columns
+                    | TableColumnsWildcard tbl ->
+                        yield! tbl.Info.Table.Query.Columns
+                    | Column (expr, alias) ->
+                        yield
+                            {   Expr = expr
+                                FromAlias = None
+                                ColumnName =
+                                    match alias with
+                                    | Some alias -> alias
+                                    | None ->
+                                        match expr.Info.Column with
+                                        | None -> failAt column.Source "Expression-valued column requires an alias"
+                                        | Some col -> col.ColumnName
+                            }
+            } |> toReadOnlyList
+        {   Columns = columns
+            From = from
+            Where = Option.map checker.Expr select.Where
+            GroupBy = Option.map checker.GroupBy select.GroupBy
+            Info =
+                {   Table = LocalQueryReference
+                    Query = { Columns = infoColumns }
+                } |> TableLike
+        }
     member this.CTE(cte : CommonTableExpression) =
+        let select = this.Select(cte.AsSelect)
         {   Name = cte.Name
             ColumnNames = cte.ColumnNames
-            AsSelect = this.Select(cte.AsSelect)
+            AsSelect = select
+            Info = select.Value.Info
         }
     member this.WithClause(withClause : WithClause) =
-        {   Recursive = withClause.Recursive
-            Tables = rmap this.CTE withClause.Tables
-        }
+        let mutable scope = scope
+        TypeChecker2(cxt, scope),
+            {   Recursive = withClause.Recursive
+                Tables =
+                    seq {
+                        for cte in withClause.Tables ->
+                            let cte = TypeChecker2(cxt, scope).CTE(cte)
+                            scope <-
+                                { scope with
+                                    CTEVariables = scope.CTEVariables |> Map.add cte.Name cte.Info.Table.Query
+                                }
+                            cte
+                    } |> ResizeArray
+            }
     member this.OrderingTerm(orderingTerm : OrderingTerm) =
         {   By = this.Expr(orderingTerm.By)
             Direction = orderingTerm.Direction
@@ -369,65 +503,29 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         {   Limit = this.Expr(limit.Limit, IntegerType)
             Offset = limit.Offset |> Option.map (fun e -> this.Expr(e, IntegerType))
         }
-    member this.ResultColumn(resultColumn : ResultColumn) =
-        match resultColumn with
-        | ColumnsWildcard -> ColumnsWildcard
-        | TableColumnsWildcard tbl -> TableColumnsWildcard (this.ObjectName(tbl))
-        | Column (expr, alias) -> Column (this.Expr(expr), alias)
-    member this.ResultColumns(resultColumns : ResultColumns) =
-        {   Distinct = resultColumns.Distinct
-            Columns = resultColumns.Columns
-            |> rmap (fun { Source = source; Value = value } -> { Source = source; Value = this.ResultColumn(value) })
-        }
-    member this.TableOrSubquery(table : TableOrSubquery) =
-        let tbl, info =
-            match table.Table with
-            | Table (tinvoc, index) ->
-                let invoke = this.TableInvocation(tinvoc)
-                Table (invoke, index), invoke.Table.Info
-            | Subquery select ->
-                let select = this.Select(select)
-                Subquery select, select.Value.Info
-        {   Table = tbl
-            Alias = table.Alias
-            Info = info
-        }
-    member this.JoinConstraint(constr : JoinConstraint) =  
-        match constr with
-        | JoinOn expr -> JoinOn <| this.Expr(expr)
-        | JoinUsing names -> JoinUsing names
-        | JoinUnconstrained -> JoinUnconstrained
-    member this.Join(join : Join) =
-        {   JoinType = join.JoinType
-            LeftTable = this.TableExpr(join.LeftTable)
-            RightTable = this.TableExpr(join.RightTable)
-            Constraint = this.JoinConstraint(join.Constraint)
-        }
-    member this.TableExpr(table : TableExpr) =
-        {   Source = table.Source
-            Value =
-                match table.Value with
-                | TableOrSubquery sub -> TableOrSubquery <| this.TableOrSubquery(sub)
-                | Join join -> Join <| this.Join(join)
-        }
-    member this.GroupBy(groupBy : GroupBy) =
-        {   By = groupBy.By |> rmap this.Expr
-            Having = groupBy.Having |> Option.map this.Expr
-        }
-    member this.SelectCore(select : SelectCore) =
-        {   Columns = this.ResultColumns(select.Columns)
-            From = Option.map this.TableExpr select.From
-            Where = Option.map this.Expr select.Where
-            GroupBy = Option.map this.GroupBy select.GroupBy
-        }
     member this.CompoundTerm(term : CompoundTerm) : InfCompoundTerm =
+        let info, value =
+            match term.Value with
+            | Values vals ->
+                let vals = vals |> rmap (fun w -> { WithSource.Value = rmap this.Expr w.Value; Source = w.Source })
+                let columns =
+                    seq {
+                        for value in vals.[0].Value ->
+                            {   Expr = value
+                                FromAlias = None
+                                ColumnName = Name("")
+                            }
+                    } |> toReadOnlyList
+                TableLike
+                    {   Table = LocalQueryReference
+                        Query = { Columns = columns }
+                    }, Values vals
+            | Select select ->
+                let select = this.SelectCore(select)
+                select.Info, Select select
         {   Source = term.Source
-            Value =
-                match term.Value with
-                | Values vals ->
-                    Values (vals |> rmap (fun w -> { Value = rmap this.Expr w.Value; Source = w.Source }))
-                | Select select ->
-                    Select <| this.SelectCore(select)
+            Value = value
+            Info = info
         }
     member this.Compound(compound : CompoundExpr) =
         {   CompoundExpr.Source = compound.Source
@@ -443,10 +541,18 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         {   Source = select.Source
             Value =
                 let select = select.Value
-                {   With = Option.map this.WithClause select.With
-                    Compound = this.Compound(select.Compound)
-                    OrderBy = Option.map (rmap this.OrderingTerm) select.OrderBy
-                    Limit = Option.map this.Limit select.Limit
+                let checker, withClause =
+                    match select.With with
+                    | None -> this, None
+                    | Some withClause ->
+                        let checker, withClause = this.WithClause(withClause)
+                        checker, Some withClause
+                let compound = checker.Compound(select.Compound)
+                {   With = withClause
+                    Compound = compound
+                    OrderBy = Option.map (rmap checker.OrderingTerm) select.OrderBy
+                    Limit = Option.map checker.Limit select.Limit
+                    Info = compound.Value.Info
                 }
         }
     member this.ForeignKey(foreignKey) =

@@ -105,6 +105,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         {   Name = cte.Name
             ColumnNames = cte.ColumnNames
             AsSelect = this.Select(cte.AsSelect)
+            Info = mapT cte.Info
         }
     member this.WithClause(withClause : WithClause<'t1, 'e1>) =
         {   Recursive = withClause.Recursive
@@ -166,6 +167,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             From = Option.map this.TableExpr select.From
             Where = Option.map this.Expr select.Where
             GroupBy = Option.map this.GroupBy select.GroupBy
+            Info = mapT select.Info
         }
     member this.CompoundTerm(term : CompoundTerm<'t1, 'e1>) : CompoundTerm<'t2, 'e2> =
         {   Source = term.Source
@@ -175,6 +177,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                     Values (vals |> rmap (fun w -> { Value = rmap this.Expr w.Value; Source = w.Source }))
                 | Select select ->
                     Select <| this.SelectCore(select)
+            Info = mapT term.Info
         }
     member this.Compound(compound : CompoundExpr<'t1, 'e1>) =
         {   CompoundExpr.Source = compound.Source

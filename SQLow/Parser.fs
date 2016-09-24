@@ -572,7 +572,7 @@ let private commonTableExpression =
     -- ')'
     -- ws
     -|> fun table cols asSelect ->
-        { Name = table; ColumnNames = cols; AsSelect = asSelect }
+        { Name = table; ColumnNames = cols; AsSelect = asSelect; Info = () }
 
 let private withClause =
     %% kw "WITH"
@@ -725,13 +725,21 @@ let private selectCore =
             From = table
             Where = where
             GroupBy = groupBy
+            Info = ()
         }
 
 let private compoundTerm =
-    %[
-        %% +.valuesClause -|> Values
-        %% +.selectCore -|> Select
-    ] |> withSource
+    %% +.sourcePosition
+    -- +.[
+            %% +.valuesClause -|> Values
+            %% +.selectCore -|> Select
+        ]
+    -- +.sourcePosition
+    -|> fun pos1 term pos2 ->
+        {   Source = { StartPosition = pos1; EndPosition = pos2 }
+            Value = term
+            Info = ()
+        }
 
 let private compoundExpr =
     let compoundOperation =

@@ -235,6 +235,7 @@ and CommonTableExpression<'t, 'e> =
         Name : Name
         ColumnNames : Name ResizeArray WithSource option
         AsSelect : SelectStmt<'t, 'e>
+        Info : 't
     }
 
 and OrderDirection =
@@ -259,6 +260,13 @@ and CompoundExprCore<'t, 'e> =
     | UnionAll of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
     | Intersect of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
     | Except of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
+    member this.Info =
+        match this with
+        | CompoundTerm term -> term.Info
+        | Union (ex, _)
+        | UnionAll (ex, _)
+        | Intersect (ex, _)
+        | Except (ex, _) -> ex.Value.Info
 
 and CompoundExpr<'t, 'e> = CompoundExprCore<'t, 'e> WithSource
 
@@ -266,7 +274,11 @@ and CompoundTermCore<'t, 'e> =
     | Values of Expr<'t, 'e> ResizeArray WithSource ResizeArray
     | Select of SelectCore<'t, 'e>
 
-and CompoundTerm<'t, 'e> = CompoundTermCore<'t, 'e> WithSource
+and CompoundTerm<'t, 'e> =
+    {   Value : CompoundTermCore<'t, 'e>
+        Source : SourceInfo
+        Info : 't
+    }
 
 and SelectCore<'t, 'e> =
     {
@@ -274,6 +286,7 @@ and SelectCore<'t, 'e> =
         From : TableExpr<'t, 'e> option
         Where : Expr<'t, 'e> option
         GroupBy : GroupBy<'t, 'e> option
+        Info : 't
     }
 
 and GroupBy<'t, 'e> =
