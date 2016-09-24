@@ -159,45 +159,52 @@ let private nameOrKeyword =
     ]
 
 let private objectName =
-    (%% +.nameOrKeyword
+    (%% +.sourcePosition 
+    -- +.nameOrKeyword
     -- ws
     -- +.(zeroOrOne * (%% '.' -- ws -? +.nameOrKeyword -- ws -|> id))
-    -|> fun name name2 ->
+    -- +.sourcePosition
+    -|> fun pos1 name1 name2 pos2 ->
+        let pos = { StartPosition = pos1; EndPosition = pos2 }
         match name2 with
-        | None -> { SchemaName = None; ObjectName = name; Info = () }
-        | Some name2 -> { SchemaName = Some name; ObjectName = name2; Info = () })
+        | None ->
+            { Source = pos; SchemaName = None; ObjectName = name1; Info = () }
+        | Some name2 ->
+            { Source = pos; SchemaName = Some name1; ObjectName = name2; Info = () })
     <?> "object-name"
 
 let private columnName =
     (qty.[1..3] / tws '.' * tws name
-    |>> fun names ->
+    |> withSource
+    |>> fun { Value = names; Source = src } ->
         match names.Count with
         | 1 -> { Table = None; ColumnName = names.[0] }
         | 2 ->
-            {   Table = Some { SchemaName = None; ObjectName = names.[0]; Info = () }
+            {   Table = Some { Source = src; SchemaName = None; ObjectName = names.[0]; Info = () }
                 ColumnName = names.[1]
             }
         | 3 ->
-            {   Table = Some { SchemaName = Some names.[0]; ObjectName = names.[1]; Info = () }
+            {   Table = Some { Source = src; SchemaName = Some names.[0]; ObjectName = names.[1]; Info = () }
                 ColumnName = names.[2]
             }
         | _ -> failwith "Unreachable")
     <?> "column-name"
 
 let private qualifiedColumnName =
-   (%% +.nameOrString
+   (%% +.withSource nameOrString
     -- ws
     -? '.'
     -- +.(qty.[0..2] / tws '.' * tws nameOrString)
     -|> fun initial rest ->
         match rest.Count with
-        | 0 -> { Table = None; ColumnName = initial }
+        | 0 -> { Table = None; ColumnName = initial.Value }
         | 1 ->
-            {   Table = Some { SchemaName = None; ObjectName = initial; Info = () }
+            {   Table = Some { Source = initial.Source; SchemaName = None; ObjectName = initial.Value; Info = () }
                 ColumnName = rest.[0]
             }
         | 2 ->
-            {   Table = Some { SchemaName = Some initial; ObjectName = rest.[0]; Info = () }
+            {   Table =
+                    Some { Source = initial.Source; SchemaName = Some initial.Value; ObjectName = rest.[0]; Info = () }
                 ColumnName = rest.[1]
             }
         | _ -> failwith "Unreachable")
@@ -404,15 +411,13 @@ let private inOperator =
                 -|> id
                 %% +.tableInvocation -|> InTable
             ]
-    -|> function
-    | Some () -> fun op inSet left ->
-        { Source = op.Source; Value = NotInExpr { Input = left; Set = inSet }; Info = () }
-    | None -> fun op inSet left ->
-        { Source = op.Source; Value = InExpr { Input = left; Set = inSet }; Info = () }
+    -|> fun invert op inSet left ->
+        { Source = op.Source; Value = InExpr { Invert = Option.isSome invert; Input = left; Set = inSet }; Info = () }
 
 let private similarityOperator =
-    let similar (op : SimilarityOperator WithSource) left right escape =
-        {   Operator = op.Value
+    let similar invert (op : SimilarityOperator WithSource) left right escape =
+        {   Invert = Option.isSome invert
+            Operator = op.Value
             Input = left
             Pattern = right
             Escape = escape
@@ -426,11 +431,7 @@ let private similarityOperator =
         ] |> withSource
     %% +.(zeroOrOne * kw "NOT")
     -? +.op
-    -|> function
-    | Some () -> fun op left right escape ->
-        { Source = op.Source; Value = NotSimilarityExpr (similar op left right escape); Info = () }
-    | None -> fun op left right escape ->
-        { Source = op.Source; Value = SimilarityExpr (similar op left right escape); Info = () }
+    -|> similar
 
 let private notNullOperator =
     %[
@@ -441,18 +442,16 @@ let private notNullOperator =
     |>> fun op left -> { Source = op.Source; Value = UnaryExpr { Operator = NotNull; Operand = left }; Info = () }
 
 let private betweenOperator =
-    let between input low high =
-        {   Input = input
+    let between invert input low high =
+        {   Invert = Option.isSome invert
+            Input = input
             Low = low
             High = high
         }
     %% +.(zeroOrOne * kw "NOT")
     -? +.withSource (kw "BETWEEN")
-    -|> function
-    | Some () -> fun op input low high ->
-        { Source = op.Source; Value = NotBetweenExpr (between input low high); Info = () }
-    | None -> fun op input low high ->
-        { Source = op.Source; Value = BetweenExpr (between input low high); Info = () }
+    -|> fun invert op input low high ->
+        { Source = op.Source; Value = BetweenExpr (between invert input low high); Info = () }
 
 let private raiseTrigger =
     %% kw "RAISE"
@@ -790,6 +789,7 @@ do
                     Compound = comp
                     OrderBy = orderBy
                     Limit = limit
+                    Info = ()
                 }
         ) |> withSource
 

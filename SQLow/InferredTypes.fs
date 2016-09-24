@@ -87,8 +87,10 @@ type InfCompoundTerm = CompoundTerm<InferredType ObjectInfo, InferredType ExprIn
 type InfCreateTableDefinition = CreateTableDefinition<InferredType ObjectInfo, InferredType ExprInfo>
 type InfCreateTableStmt = CreateTableStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfSelectCore = SelectCore<InferredType ObjectInfo, InferredType ExprInfo>
+type InfJoinConstraint = JoinConstraint<InferredType ObjectInfo, InferredType ExprInfo>
 type InfJoin = Join<InferredType ObjectInfo, InferredType ExprInfo>
 type InfLimit = Limit<InferredType ObjectInfo, InferredType ExprInfo>
+type InfGroupBy = GroupBy<InferredType ObjectInfo, InferredType ExprInfo>
 type InfOrderingTerm = OrderingTerm<InferredType ObjectInfo, InferredType ExprInfo>
 type InfResultColumn = ResultColumn<InferredType ObjectInfo, InferredType ExprInfo>
 type InfResultColumns = ResultColumns<InferredType ObjectInfo, InferredType ExprInfo>
@@ -97,6 +99,22 @@ type InfTableExprCore = TableExprCore<InferredType ObjectInfo, InferredType Expr
 type InfTableExpr = TableExpr<InferredType ObjectInfo, InferredType ExprInfo>
 type InfTableInvocation = TableInvocation<InferredType ObjectInfo, InferredType ExprInfo>
 type InfSelectStmt = SelectStmt<InferredType ObjectInfo, InferredType ExprInfo>
+type InfColumnConstraint = ColumnConstraint<InferredType ObjectInfo, InferredType ExprInfo>
+type InfColumnDef = ColumnDef<InferredType ObjectInfo, InferredType ExprInfo>
+type InfAlterTableAlteration = AlterTableAlteration<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCreateIndexStmt = CreateIndexStmt<InferredType ObjectInfo, InferredType ExprInfo>
+type InfTableIndexConstraintClause = TableIndexConstraintClause<InferredType ObjectInfo, InferredType ExprInfo>
+type InfTableConstraint = TableConstraint<InferredType ObjectInfo, InferredType ExprInfo>
+type InfTriggerAction = TriggerAction<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCreateTriggerStmt = CreateTriggerStmt<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCreateViewStmt = CreateViewStmt<InferredType ObjectInfo, InferredType ExprInfo>
+type InfCreateVirtualTableStmt = CreateVirtualTableStmt<InferredType ObjectInfo>
+type InfQualifiedTableName = QualifiedTableName<InferredType ObjectInfo>
+type InfDeleteStmt = DeleteStmt<InferredType ObjectInfo, InferredType ExprInfo>
+type InfDropObjectStmt = DropObjectStmt<InferredType ObjectInfo>
+type InfPragmaStmt = PragmaStmt<InferredType ObjectInfo>
+type InfUpdateStmt = UpdateStmt<InferredType ObjectInfo, InferredType ExprInfo>
+type InfInsertStmt = InsertStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfStmt = Stmt<InferredType ObjectInfo, InferredType ExprInfo>
 
 type ITypeInferenceContext =
@@ -123,6 +141,8 @@ let resultAt source result =
     match result with
     | Ok x -> x
     | Error err -> failAt source err
+
+let resultOk source result = resultAt source result |> ignore
 
 let foundAt source nameResolution =
     match nameResolution with
@@ -195,34 +215,34 @@ and InferredSelectScope =
             SelectClause = None
         }
 
-    member private this.ResolveTableReferenceBySchema(schema : Schema, name : Name) =
+    member private this.ResolveObjectReferenceBySchema(schema : Schema, name : Name) =
         match schema.Tables.TryFind(name) with
         |  Some tbl ->
-            Found (InferredQuery.OfTable(tbl))
+            { Table = TableReference tbl; Query = InferredQuery.OfTable(tbl) } |> TableLike |> Found
         | None ->
             match schema.Views.TryFind(name) with
             | Some view ->
-                Found (InferredQuery.OfView(view))
+                { Table = ViewReference view; Query = InferredQuery.OfView(view) } |> TableLike |> Found
             | None ->
                 NotFound <| sprintf "No such table in schema %O: ``%O``" schema.SchemaName name
 
     /// Resolve a reference to a table which may occur as part of a TableExpr.
     /// This will resolve against the database model and CTEs, but not table aliases defined in the FROM clause.
-    member this.ResolveTableReference(name : ObjectName) =
+    member this.ResolveObjectReference(name : ObjectName) =
         match name.SchemaName with
         | None ->
             match this.CTEVariables.TryFind(name.ObjectName) with
-            | Some cte -> Found cte
+            | Some cte -> { Table = LocalQueryReference; Query = cte } |> TableLike |> Found
             | None ->
                 match this.ParentScope with
                 | Some parent ->
-                    parent.ResolveTableReference(name)
+                    parent.ResolveObjectReference(name)
                 | None ->
                     let schema = this.Model.Schemas.[this.Model.DefaultSchema]
-                    this.ResolveTableReferenceBySchema(schema, name.ObjectName)
+                    this.ResolveObjectReferenceBySchema(schema, name.ObjectName)
         | Some schema ->
             let schema = this.Model.Schemas.[schema]
-            this.ResolveTableReferenceBySchema(schema, name.ObjectName)
+            this.ResolveObjectReferenceBySchema(schema, name.ObjectName)
 
     /// Resolve a column reference, which may be qualified with a table alias.
     /// This resolves against the tables referenced in the FROM clause, and the columns explicitly named

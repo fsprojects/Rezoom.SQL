@@ -15,6 +15,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.ObjectName(objectName : ObjectName<'t1>) =
         {   SchemaName = objectName.SchemaName
             ObjectName = objectName.ObjectName
+            Source = objectName.Source
             Info = mapT objectName.Info
         }
     member this.ColumnName(columnName : ColumnName<'t1>) =
@@ -38,18 +39,21 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                     ArgumentList (distinct, exprs |> rmap this.Expr)
         }
     member this.Similarity(sim : SimilarityExpr<'t1, 'e1>) =
-        {   Operator = sim.Operator
+        {   Invert = sim.Invert
+            Operator = sim.Operator
             Input = this.Expr(sim.Input)
             Pattern = this.Expr(sim.Pattern)
             Escape = Option.map this.Expr sim.Escape
         }
     member this.Between(between : BetweenExpr<'t1, 'e1>) =
-        {   Input = this.Expr(between.Input)
+        {   Invert = between.Invert
+            Input = this.Expr(between.Input)
             Low = this.Expr(between.Low)
             High = this.Expr(between.High)
         }
     member this.In(inex : InExpr<'t1, 'e1>) =
-        {   Input = this.Expr(inex.Input)
+        {   Invert = inex.Invert
+            Input = this.Expr(inex.Input)
             Set =
                 {   Source = inex.Set.Source
                     Value =
@@ -80,13 +84,10 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | CollateExpr collation -> CollateExpr <| this.Collation(collation)
         | FunctionInvocationExpr func -> FunctionInvocationExpr <| this.FunctionInvocation(func)
         | SimilarityExpr sim -> SimilarityExpr <| this.Similarity(sim)
-        | NotSimilarityExpr sim -> NotSimilarityExpr <| this.Similarity(sim)
         | BinaryExpr bin -> BinaryExpr <| this.Binary(bin)
         | UnaryExpr un -> UnaryExpr <| this.Unary(un)
         | BetweenExpr between -> BetweenExpr <| this.Between(between)
-        | NotBetweenExpr between -> BetweenExpr <| this.Between(between)
         | InExpr inex -> InExpr <| this.In(inex)
-        | NotInExpr inex -> NotInExpr <| this.In(inex)
         | ExistsExpr select -> ExistsExpr <| this.Select(select)
         | CaseExpr case -> CaseExpr <| this.Case(case)
         | ScalarSubqueryExpr select -> ScalarSubqueryExpr <| this.Select(select)
@@ -188,6 +189,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                     Compound = this.Compound(select.Compound)
                     OrderBy = Option.map (rmap this.OrderingTerm) select.OrderBy
                     Limit = Option.map this.Limit select.Limit
+                    Info = mapT select.Info
                 }
         }
     member this.ForeignKey(foreignKey) =

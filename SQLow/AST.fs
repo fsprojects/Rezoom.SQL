@@ -40,6 +40,7 @@ type TypeName =
 
 type ObjectName<'t> =
     {
+        Source : SourceInfo
         SchemaName : Name option
         ObjectName : Name
         Info : 't
@@ -113,13 +114,10 @@ type ExprType<'t, 'e> =
     | CollateExpr of CollationExpr<'t, 'e>
     | FunctionInvocationExpr of FunctionInvocationExpr<'t, 'e>
     | SimilarityExpr of SimilarityExpr<'t, 'e>
-    | NotSimilarityExpr of SimilarityExpr<'t, 'e>
     | BinaryExpr of BinaryExpr<'t, 'e>
     | UnaryExpr of UnaryExpr<'t, 'e>
     | BetweenExpr of BetweenExpr<'t, 'e>
-    | NotBetweenExpr of BetweenExpr<'t, 'e>
     | InExpr of InExpr<'t, 'e>
-    | NotInExpr of InExpr<'t, 'e>
     | ExistsExpr of SelectStmt<'t, 'e>
     | CaseExpr of CaseExpr<'t, 'e>
     | ScalarSubqueryExpr of SelectStmt<'t, 'e>
@@ -134,6 +132,7 @@ and Expr<'t, 'e> =
 
 and InExpr<'t, 'e> =
     {
+        Invert : bool
         Input : Expr<'t, 'e>
         Set : InSet<'t, 'e> WithSource
     }
@@ -159,6 +158,7 @@ and UnaryExpr<'t, 'e> =
 
 and SimilarityExpr<'t, 'e> =
     {
+        Invert : bool
         Operator : SimilarityOperator
         Input : Expr<'t, 'e>
         Pattern : Expr<'t, 'e>
@@ -167,6 +167,7 @@ and SimilarityExpr<'t, 'e> =
 
 and BetweenExpr<'t, 'e> =
     {
+        Invert : bool
         Input : Expr<'t, 'e>
         Low : Expr<'t, 'e>
         High : Expr<'t, 'e>
@@ -218,6 +219,7 @@ and SelectStmtCore<'t, 'e> =
         Compound : CompoundExpr<'t, 'e>
         OrderBy : OrderingTerm<'t, 'e> ResizeArray option
         Limit : Limit<'t, 'e> option
+        Info : 't
     }
 
 and SelectStmt<'t, 'e> = SelectStmtCore<'t, 'e> WithSource
@@ -628,6 +630,8 @@ type CreateTableDefinition = CreateTableDefinition<unit, unit>
 type CreateTableStmt = CreateTableStmt<unit, unit>
 type SelectCore = SelectCore<unit, unit>
 type Join = Join<unit, unit>
+type JoinConstraint = JoinConstraint<unit, unit>
+type GroupBy = GroupBy<unit, unit>
 type Limit = Limit<unit, unit>
 type OrderingTerm = OrderingTerm<unit, unit>
 type ResultColumn = ResultColumn<unit, unit>
@@ -637,4 +641,20 @@ type TableExprCore = TableExprCore<unit, unit>
 type TableExpr = TableExpr<unit, unit>
 type TableInvocation = TableInvocation<unit, unit>
 type SelectStmt = SelectStmt<unit, unit>
+type ColumnConstraint = ColumnConstraint<unit, unit>
+type ColumnDef = ColumnDef<unit, unit>
+type AlterTableAlteration = AlterTableAlteration<unit, unit>
+type CreateIndexStmt = CreateIndexStmt<unit, unit>
+type TableIndexConstraintClause = TableIndexConstraintClause<unit, unit>
+type TableConstraint = TableConstraint<unit, unit>
+type TriggerAction = TriggerAction<unit, unit>
+type CreateTriggerStmt = CreateTriggerStmt<unit, unit>
+type CreateViewStmt = CreateViewStmt<unit, unit>
+type CreateVirtualTableStmt = CreateVirtualTableStmt<unit>
+type QualifiedTableName = QualifiedTableName<unit>
+type DeleteStmt = DeleteStmt<unit, unit>
+type DropObjectStmt = DropObjectStmt<unit>
+type PragmaStmt = PragmaStmt<unit>
+type UpdateStmt = UpdateStmt<unit, unit>
+type InsertStmt = InsertStmt<unit, unit>
 type Stmt = Stmt<unit, unit>
