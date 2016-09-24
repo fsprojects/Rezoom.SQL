@@ -303,9 +303,16 @@ and QualifiedTableName<'t> =
         IndexHint : IndexHint option
     }
 
+and TableOrSubqueryType<'t, 'e> =
+    | Table of TableInvocation<'t, 'e> * IndexHint option // note: an index hint is invalid if the table has args
+    | Subquery of SelectStmt<'t, 'e>
+
 and TableOrSubquery<'t, 'e> =
-    | Table of TableInvocation<'t, 'e> * Alias * IndexHint option // note: an index hint is invalid if the table has args
-    | Subquery of SelectStmt<'t, 'e> * Alias
+    {
+        Table : TableOrSubqueryType<'t, 'e>
+        Alias : Name option
+        Info : 't
+    }
 
 and JoinType =
     | Inner

@@ -129,11 +129,16 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             |> rmap (fun { Source = source; Value = value } -> { Source = source; Value = this.ResultColumn(value) })
         }
     member this.TableOrSubquery(table : TableOrSubquery<'t1, 'e1>) =
-        match table with
-        | Table (tinvoc, alias, index) ->
-            Table (this.TableInvocation(tinvoc), alias, index)
-        | Subquery (select, alias) ->
-            Subquery (this.Select(select), alias)
+        let tbl =
+            match table.Table with
+            | Table (tinvoc, index) ->
+                Table (this.TableInvocation(tinvoc), index)
+            | Subquery select ->
+                Subquery (this.Select(select))
+        {   Table = tbl
+            Alias = table.Alias
+            Info = mapT table.Info
+        }
     member this.JoinConstraint(constr : JoinConstraint<'t1, 'e1>) =  
         match constr with
         | JoinOn expr -> JoinOn <| this.Expr(expr)

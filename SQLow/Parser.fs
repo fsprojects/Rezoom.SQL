@@ -611,12 +611,15 @@ let private indexHint =
 
 let private tableOrSubquery (tableExpr : Parser<TableExpr<unit, unit>, unit>) =
     let subterm =
-        %% +.selectStmt -|> fun select alias -> TableOrSubquery (Subquery (select, alias))
+        %% +.selectStmt
+        -|> fun select alias -> TableOrSubquery { Table = Subquery select; Alias = alias; Info = () }
     let by =
         %[
-            %% +.indexHint -|> fun indexed table -> TableOrSubquery (Table (table, None, Some indexed))
+            %% +.indexHint -|> fun indexed table ->
+                TableOrSubquery { Table = Table (table, Some indexed); Alias = None; Info = () }
             %% +.(asAlias * zeroOrOne) -- +.(indexHint * zeroOrOne)
-                -|> fun alias indexed table -> TableOrSubquery (Table (table, alias, indexed))
+                -|> fun alias indexed table ->
+                    TableOrSubquery { Table = Table (table, indexed); Alias = alias; Info = () }
         ]
 
     %[

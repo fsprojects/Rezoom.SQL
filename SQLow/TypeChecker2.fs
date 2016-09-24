@@ -344,6 +344,10 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         | CaseExpr case -> this.Case(source, case)
         | ScalarSubqueryExpr select -> this.ScalarSubquery(source, select)
         | RaiseExpr raise -> { Source = source; Value = RaiseExpr raise; Info = ExprInfo<_>.OfType(InferredType.Any) }
+    member this.Expr(expr : Expr, ty : CoreColumnType) =
+        let expr = this.Expr(expr)
+        cxt.Unify(expr.Info.Type, ty) |> resultOk expr.Source
+        expr
     member this.TableInvocation(table : TableInvocation) =
         {   Table = this.ObjectName(table.Table)
             Arguments = table.Arguments |> Option.map (rmap this.Expr)
@@ -362,8 +366,8 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             Direction = orderingTerm.Direction
         }
     member this.Limit(limit : Limit) =
-        {   Limit = this.Expr(limit.Limit)
-            Offset = Option.map this.Expr limit.Offset
+        {   Limit = this.Expr(limit.Limit, IntegerType)
+            Offset = limit.Offset |> Option.map (fun e -> this.Expr(e, IntegerType))
         }
     member this.ResultColumn(resultColumn : ResultColumn) =
         match resultColumn with
@@ -376,11 +380,18 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             |> rmap (fun { Source = source; Value = value } -> { Source = source; Value = this.ResultColumn(value) })
         }
     member this.TableOrSubquery(table : TableOrSubquery) =
-        match table with
-        | Table (tinvoc, alias, index) ->
-            Table (this.TableInvocation(tinvoc), alias, index)
-        | Subquery (select, alias) ->
-            Subquery (this.Select(select), alias)
+        let tbl, info =
+            match table.Table with
+            | Table (tinvoc, index) ->
+                let invoke = this.TableInvocation(tinvoc)
+                Table (invoke, index), invoke.Table.Info
+            | Subquery select ->
+                let select = this.Select(select)
+                Subquery select, select.Value.Info
+        {   Table = tbl
+            Alias = table.Alias
+            Info = info
+        }
     member this.JoinConstraint(constr : JoinConstraint) =  
         match constr with
         | JoinOn expr -> JoinOn <| this.Expr(expr)
