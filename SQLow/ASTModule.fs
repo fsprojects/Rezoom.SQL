@@ -100,5 +100,252 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         {   Table = this.ObjectName(table.Table)
             Arguments = table.Arguments |> Option.map (rmap this.Expr)
         }
+    member this.CTE(cte : CommonTableExpression<'t1, 'e1>) =
+        {   Name = cte.Name
+            ColumnNames = cte.ColumnNames
+            AsSelect = this.Select(cte.AsSelect)
+        }
+    member this.WithClause(withClause : WithClause<'t1, 'e1>) =
+        {   Recursive = withClause.Recursive
+            Tables = rmap this.CTE withClause.Tables
+        }
+    member this.OrderingTerm(orderingTerm : OrderingTerm<'t1, 'e1>) =
+        {   By = this.Expr(orderingTerm.By)
+            Direction = orderingTerm.Direction
+        }
+    member this.Limit(limit : Limit<'t1, 'e1>) =
+        {   Limit = this.Expr(limit.Limit)
+            Offset = Option.map this.Expr limit.Offset
+        }
+    member this.ResultColumn(resultColumn : ResultColumn<'t1, 'e1>) =
+        match resultColumn with
+        | ColumnsWildcard -> ColumnsWildcard
+        | TableColumnsWildcard tbl -> TableColumnsWildcard (this.ObjectName(tbl))
+        | Column (expr, alias) -> Column (this.Expr(expr), alias)
+    member this.ResultColumns(resultColumns : ResultColumns<'t1, 'e1>) =
+        {   Distinct = resultColumns.Distinct
+            Columns = resultColumns.Columns
+            |> rmap (fun { Source = source; Value = value } -> { Source = source; Value = this.ResultColumn(value) })
+        }
+    member this.TableOrSubquery(table : TableOrSubquery<'t1, 'e1>) =
+        match table with
+        | Table (tinvoc, alias, index) ->
+            Table (this.TableInvocation(tinvoc), alias, index)
+        | Subquery (select, alias) ->
+            Subquery (this.Select(select), alias)
+    member this.JoinConstraint(constr : JoinConstraint<'t1, 'e1>) =  
+        match constr with
+        | JoinOn expr -> JoinOn <| this.Expr(expr)
+        | JoinUsing names -> JoinUsing names
+        | JoinUnconstrained -> JoinUnconstrained
+    member this.Join(join : Join<'t1, 'e1>) =
+        {   JoinType = join.JoinType
+            LeftTable = this.TableExpr(join.LeftTable)
+            RightTable = this.TableExpr(join.RightTable)
+            Constraint = this.JoinConstraint(join.Constraint)
+        }
+    member this.TableExpr(table : TableExpr<'t1, 'e1>) =
+        {   Source = table.Source
+            Value =
+                match table.Value with
+                | TableOrSubquery sub -> TableOrSubquery <| this.TableOrSubquery(sub)
+                | Join join -> Join <| this.Join(join)
+        }
+    member this.GroupBy(groupBy : GroupBy<'t1, 'e1>) =
+        {   By = groupBy.By |> rmap this.Expr
+            Having = groupBy.Having |> Option.map this.Expr
+        }
+    member this.SelectCore(select : SelectCore<'t1, 'e1>) =
+        {   Columns = this.ResultColumns(select.Columns)
+            From = Option.map this.TableExpr select.From
+            Where = Option.map this.Expr select.Where
+            GroupBy = Option.map this.GroupBy select.GroupBy
+        }
+    member this.CompoundTerm(term : CompoundTerm<'t1, 'e1>) : CompoundTerm<'t2, 'e2> =
+        {   Source = term.Source
+            Value =
+                match term.Value with
+                | Values vals ->
+                    Values (vals |> rmap (fun w -> { Value = rmap this.Expr w.Value; Source = w.Source }))
+                | Select select ->
+                    Select <| this.SelectCore(select)
+        }
+    member this.Compound(compound : CompoundExpr<'t1, 'e1>) =
+        {   CompoundExpr.Source = compound.Source
+            Value = 
+                match compound.Value with
+                | CompoundTerm term -> CompoundTerm <| this.CompoundTerm(term)
+                | Union (expr, term) -> Union (this.Compound(expr), this.CompoundTerm(term))
+                | UnionAll (expr, term) -> UnionAll (this.Compound(expr), this.CompoundTerm(term))
+                | Intersect (expr, term) -> Intersect (this.Compound(expr), this.CompoundTerm(term))
+                | Except (expr, term) -> Except (this.Compound(expr), this.CompoundTerm(term))
+        }
     member this.Select(select : SelectStmt<'t1, 'e1>) : SelectStmt<'t2, 'e2> =
-        failwith ""
+        {   Source = select.Source
+            Value =
+                let select = select.Value
+                {   With = Option.map this.WithClause select.With
+                    Compound = this.Compound(select.Compound)
+                    OrderBy = Option.map (rmap this.OrderingTerm) select.OrderBy
+                    Limit = Option.map this.Limit select.Limit
+                }
+        }
+    member this.ForeignKey(foreignKey) =
+        {   ReferencesTable = this.ObjectName(foreignKey.ReferencesTable)
+            ReferencesColumns = foreignKey.ReferencesColumns
+            Rules = foreignKey.Rules
+            Defer = foreignKey.Defer
+        }
+    member this.ColumnConstraint(constr : ColumnConstraint<'t1, 'e1>) =
+        {   Name = constr.Name
+            ColumnConstraintType =
+                match constr.ColumnConstraintType with
+                | NullableConstraint -> NullableConstraint
+                | PrimaryKeyConstraint clause -> PrimaryKeyConstraint clause
+                | NotNullConstraint clause -> NotNullConstraint clause
+                | UniqueConstraint conflict -> UniqueConstraint conflict
+                | CheckConstraint expr -> CheckConstraint <| this.Expr(expr)
+                | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
+                | CollateConstraint name -> CollateConstraint name
+                | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey)
+        }
+    member this.ColumnDef(cdef : ColumnDef<'t1, 'e1>) =
+        {   Name = cdef.Name
+            Type = cdef.Type
+            Constraints = rmap this.ColumnConstraint cdef.Constraints
+        }
+    member this.Alteration(alteration : AlterTableAlteration<'t1, 'e1>) =
+        match alteration with
+        | RenameTo name -> RenameTo name
+        | AddColumn cdef -> AddColumn <| this.ColumnDef(cdef)
+    member this.CreateIndex(createIndex : CreateIndexStmt<'t1, 'e1>) =
+        {   Unique = createIndex.Unique
+            IfNotExists = createIndex.IfNotExists
+            IndexName = this.ObjectName(createIndex.IndexName)
+            TableName = this.ObjectName(createIndex.TableName)
+            IndexedColumns = createIndex.IndexedColumns |> rmap (fun (e, d) -> this.Expr(e), d)
+            Where = createIndex.Where |> Option.map this.Expr
+        }
+    member this.TableIndexConstraint(constr : TableIndexConstraintClause<'t1, 'e1>) =
+        {   Type = constr.Type
+            IndexedColumns = constr.IndexedColumns |> rmap (fun (e, d) -> this.Expr(e), d)
+            ConflictClause = constr.ConflictClause
+        }
+    member this.TableConstraint(constr : TableConstraint<'t1, 'e1>) =
+        {   Name = constr.Name
+            TableConstraintType =
+                match constr.TableConstraintType with
+                | TableIndexConstraint clause ->
+                    TableIndexConstraint <| this.TableIndexConstraint(clause)
+                | TableForeignKeyConstraint (names, foreignKey) ->
+                    TableForeignKeyConstraint (names, this.ForeignKey(foreignKey))
+                | TableCheckConstraint expr -> TableCheckConstraint <| this.Expr(expr)
+        }
+    member this.CreateTableDefinition(createTable : CreateTableDefinition<'t1, 'e1>) =
+        {   Columns = createTable.Columns |> rmap this.ColumnDef
+            Constraints = createTable.Constraints |> rmap this.TableConstraint
+            WithoutRowId = createTable.WithoutRowId
+        }
+    member this.CreateTable(createTable : CreateTableStmt<'t1, 'e1>) =
+        {   Temporary = createTable.Temporary
+            IfNotExists = createTable.IfNotExists
+            Name = { Source = createTable.Name.Source; Value = this.ObjectName(createTable.Name.Value) }
+            As =
+                match createTable.As with
+                | CreateAsSelect select -> CreateAsSelect <| this.Select(select)
+                | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(def)
+        }
+    member this.TriggerAction(action : TriggerAction<'t1, 'e1>) =
+        match action with
+        | TriggerUpdate update -> TriggerUpdate <| this.Update(update)
+        | TriggerInsert insert -> TriggerInsert <| this.Insert(insert)
+        | TriggerDelete delete -> TriggerDelete <| this.Delete(delete)
+        | TriggerSelect select -> TriggerSelect <| this.Select(select)
+    member this.CreateTrigger(createTrigger : CreateTriggerStmt<'t1, 'e1>) =
+        {   Temporary = createTrigger.Temporary
+            IfNotExists = createTrigger.IfNotExists
+            TriggerName = this.ObjectName(createTrigger.TriggerName)
+            TableName = this.ObjectName(createTrigger.TableName)
+            Schedule = createTrigger.Schedule
+            Cause = createTrigger.Cause
+            Condition = Option.map this.Expr createTrigger.Condition
+            Actions = rmap this.TriggerAction createTrigger.Actions
+        }
+    member this.CreateView(createView : CreateViewStmt<'t1, 'e1>) =
+        {   Temporary = createView.Temporary
+            IfNotExists = createView.IfNotExists
+            ViewName = this.ObjectName(createView.ViewName)
+            ColumnNames = createView.ColumnNames
+            AsSelect = this.Select(createView.AsSelect)
+        }
+    member this.CreateVirtualTable(createVirtual : CreateVirtualTableStmt<'t1>) =
+        {   IfNotExists = createVirtual.IfNotExists
+            VirtualTable = this.ObjectName(createVirtual.VirtualTable)
+            UsingModule = createVirtual.UsingModule
+            WithModuleArguments = createVirtual.WithModuleArguments
+        }
+    member this.QualifiedTableName(qualified : QualifiedTableName<'t1>) =
+        {   TableName = this.ObjectName(qualified.TableName)
+            IndexHint = qualified.IndexHint
+        }
+    member this.Delete(delete : DeleteStmt<'t1, 'e1>) =
+        {   With = Option.map this.WithClause delete.With
+            DeleteFrom = this.QualifiedTableName(delete.DeleteFrom)
+            Where = Option.map this.Expr delete.Where
+            OrderBy = Option.map (rmap this.OrderingTerm) delete.OrderBy
+            Limit = Option.map this.Limit delete.Limit
+        }
+    member this.DropObject(drop : DropObjectStmt<'t1>) =
+        {   Drop = drop.Drop
+            IfExists = drop.IfExists
+            IndexName = this.ObjectName(drop.IndexName)
+        }
+    member this.Insert(insert : InsertStmt<'t1, 'e1>) =
+        {   With = Option.map this.WithClause insert.With
+            Or = insert.Or
+            InsertInto = this.ObjectName(insert.InsertInto)
+            Columns = insert.Columns
+            Data = Option.map this.Select insert.Data
+        }
+    member this.Pragma(pragma : PragmaStmt<'t1>) =
+        {   Pragma = this.ObjectName(pragma.Pragma)
+            Value = pragma.Value
+        }
+    member this.Update(update : UpdateStmt<'t1, 'e1>) =
+        {   With = Option.map this.WithClause update.With
+            UpdateTable = this.QualifiedTableName(update.UpdateTable)
+            Or = update.Or
+            Set = update.Set |> rmap (fun (name, expr) -> name, this.Expr(expr))
+            Where = Option.map this.Expr update.Where
+            OrderBy = Option.map (rmap this.OrderingTerm) update.OrderBy
+            Limit = Option.map this.Limit update.Limit
+        }
+    member this.Stmt(stmt : Stmt<'t1, 'e1>) =
+        match stmt with
+        | AlterTableStmt alter ->
+            AlterTableStmt <|
+                {   Table = this.ObjectName(alter.Table)
+                    Alteration = this.Alteration(alter.Alteration)
+                }
+        | AnalyzeStmt objectName -> AnalyzeStmt <| Option.map this.ObjectName objectName
+        | AttachStmt (expr, name) -> AttachStmt (this.Expr(expr), name)
+        | BeginStmt ttype -> BeginStmt ttype
+        | CommitStmt -> CommitStmt
+        | CreateIndexStmt index -> CreateIndexStmt <| this.CreateIndex(index)
+        | CreateTableStmt createTable -> CreateTableStmt <| this.CreateTable(createTable)
+        | CreateTriggerStmt createTrigger -> CreateTriggerStmt <| this.CreateTrigger(createTrigger)
+        | CreateViewStmt createView -> CreateViewStmt <| this.CreateView(createView)
+        | CreateVirtualTableStmt createVirtual -> CreateVirtualTableStmt <| this.CreateVirtualTable(createVirtual)
+        | DeleteStmt delete -> DeleteStmt <| this.Delete(delete)
+        | DetachStmt name -> DetachStmt name
+        | DropObjectStmt drop -> DropObjectStmt <| this.DropObject(drop)
+        | InsertStmt insert -> InsertStmt <| this.Insert(insert)
+        | PragmaStmt pragma -> PragmaStmt <| this.Pragma(pragma)
+        | ReindexStmt name -> ReindexStmt <| Option.map this.ObjectName name
+        | ReleaseStmt name -> ReleaseStmt name
+        | RollbackStmt stmt -> RollbackStmt stmt
+        | SavepointStmt save -> SavepointStmt save
+        | SelectStmt select -> SelectStmt <| this.Select(select)
+        | ExplainStmt stmt -> ExplainStmt <| this.Stmt(stmt)
+        | UpdateStmt update -> UpdateStmt <| this.Update(update)
+        | VacuumStmt -> VacuumStmt
