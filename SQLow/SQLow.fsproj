@@ -56,7 +56,7 @@
     <Compile Include="Name.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="AST.fs" />
-    <Compile Include="ASTVisitor.fs" />
+    <Compile Include="ASTModule.fs" />
     <Compile Include="Parser.fs" />
     <Compile Include="Schema.fs" />
     <Compile Include="InferredTypes.fs" />
