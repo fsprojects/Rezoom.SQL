@@ -56,14 +56,13 @@
     <Compile Include="Name.fs" />
     <Compile Include="Utilities.fs" />
     <Compile Include="AST.fs" />
-    <Compile Include="ASTModule.fs" />
+    <Compile Include="ASTMapping.fs" />
     <Compile Include="Parser.fs" />
     <Compile Include="Schema.fs" />
     <Compile Include="Info.fs" />
     <Compile Include="InferredTypes.fs" />
     <Compile Include="TypeInferenceContext.fs" />
     <Compile Include="TypeChecker2.fs" />
-    <Compile Include="TypeChecker.fs" />
     <Compile Include="CommandEffect.fs" />
   </ItemGroup>
   <ItemGroup>

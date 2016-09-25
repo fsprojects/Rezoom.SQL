@@ -17,11 +17,21 @@ type ExprInfo<'t> =
         /// If this expression accesses a column of a table in the schema, the column's information.
         Column : SchemaColumn option
     }
+    member this.PrimaryKey =
+        match this.Column with
+        | None -> false
+        | Some c -> c.PrimaryKey
     static member OfType(t : 't) =
         {   Type = t
             Aggregate = false
             Function = None
             Column = None
+        }
+    member this.Map(f : 't -> _) =
+        {   Type = f this.Type
+            Aggregate = this.Aggregate
+            Function = this.Function
+            Column = this.Column
         }
 
 type ColumnExprInfo<'t> =
@@ -29,6 +39,13 @@ type ColumnExprInfo<'t> =
         FromAlias : Name option // table alias this was selected from, if any
         ColumnName : Name
     }
+    member this.Map(f : 't -> _) =
+        {   Expr =
+                let mapping = ASTMapping<'t ObjectInfo, 't ExprInfo, _, _>((fun t -> t.Map(f)), fun e -> e.Map(f))
+                mapping.Expr(this.Expr)
+            FromAlias = this.FromAlias
+            ColumnName = this.ColumnName
+        }
 
 and QueryExprInfo<'t> =
     { Columns : 't ColumnExprInfo IReadOnlyList }
@@ -57,6 +74,8 @@ and QueryExprInfo<'t> =
             Ok { Columns = newColumns }
     member this.Append(right : 't QueryExprInfo) =
         { Columns = appendLists this.Columns right.Columns }
+    member this.Map(f : 't -> _) =
+        { Columns = this.Columns |> Seq.map (fun c -> c.Map(f)) |> toReadOnlyList }
 
 and TableReference =
     | TableReference of SchemaTable
@@ -67,6 +86,10 @@ and TableLikeExprInfo<'t> =
     {   Table : TableReference
         Query : QueryExprInfo<'t>
     }
+    member this.Map(f : 't -> _) =
+        {   Table = this.Table
+            Query = this.Query.Map(f)
+        }
 
 and ObjectInfo<'t> =
     | TableLike of 't TableLikeExprInfo
@@ -76,6 +99,11 @@ and ObjectInfo<'t> =
         match this with
         | TableLike t -> t
         | other -> failwithf "Expected table, but found reference to %A" other
+    member this.Map<'t1>(f : 't -> 't1) : ObjectInfo<'t1> =
+        match this with
+        | TableLike t -> TableLike (t.Map(f))
+        | Index -> Index
+        | Trigger -> Trigger
 
 type TExprType = ExprType<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TExpr = Expr<ColumnType ObjectInfo, ColumnType ExprInfo>

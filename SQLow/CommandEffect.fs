@@ -7,81 +7,18 @@ open System.Collections.Generic
 open SQLow.InferredTypes
 
 type CommandEffect =
-    {   ModelChange : Model option
-        ResultSets : SchemaQuery IReadOnlyList
-        TablesWritten : SchemaTable IReadOnlyCollection
+    {   Statements : TStmt IReadOnlyList
         Parameters : (BindParameter * ColumnType) IReadOnlyList
+        ModelChange : Model option
     }
     static member None =
-        {   ModelChange = None
-            ResultSets = [||] :> _ IReadOnlyList
-            TablesWritten = [||] :> _ IReadOnlyList
+        {   Statements = [||] :> _ IReadOnlyList
             Parameters = [||] :> _ IReadOnlyList
+            ModelChange = None
         }
 
-type private StatementResultSet =
-    {   Query : InferredQuery
-        ReferencedTables : SchemaTable IReadOnlyCollection
-    }
-
-type private StatementEffect =
-    | ChangeModel of Model
-    | WriteTable of SchemaTable
-    | ResultSet of StatementResultSet // note: we keep query types inferred until the whole command has been processed
-
-type private CommandEffectBuilder() =
-    // shared throughout the whole command, since parameters are too.
-    let inference = TypeInferenceContext() :> ITypeInferenceContext
-    member this.CommandEffect(model : Model, statements : Stmt seq) =
-        let mutable newModel = None
-        let writeTables = ResizeArray()
-        let resultSets = ResizeArray()
-        for stmt in statements do
-            let effect = this.StatementEffect(newModel |? model, stmt)
-            match effect with
-            | Some effect ->
-                match effect with
-                | ChangeModel m -> newModel <- Some m
-                | WriteTable t -> writeTables.Add(t)
-                | ResultSet r -> resultSets.Add(r)
-            | None -> ()
-        let parameters =
-            [| for parameter in inference.Parameters ->
-                parameter, inference.Concrete(inference.Variable(parameter))
-            |]
-        let resultSets =
-            [| for resultSet in resultSets ->
-                this.ResultSetToSchemaQuery(resultSet)
-            |]
-        {   ModelChange = newModel
-            ResultSets = resultSets :> _ IReadOnlyList
-            TablesWritten = writeTables :> _ IReadOnlyCollection
-            Parameters = parameters :> _ IReadOnlyList
-        }
-
-    member private this.ResultSetToSchemaQuery(resultSet : StatementResultSet) =
-        let columns =
-            [| for col in resultSet.Query.Columns ->
-                {   SchemaQueryColumn.ColumnName = col.ColumnName
-                    ColumnType = inference.Concrete(col.InferredType)
-                    PrimaryKey = col.PrimaryKey
-                }
-            |]
-        {   Columns = columns :> _ IReadOnlyList
-            ReferencedTables = resultSet.ReferencedTables
-        }
-
-    member private this.ResultSet(model, select : SelectStmt) =
-        let checkerContext = TypeCheckerContext(inference)
-        let checker = TypeChecker(checkerContext, InferredSelectScope.Root(model))
-        let query = checker.InferQueryType(select)
-        {   Query = query
-            ReferencedTables = checkerContext.References |> toReadOnlyList
-        }
-    member private this.Effect(model, select : SelectStmt) =
-        this.ResultSet(model, select) |> ResultSet |> Some
-
-    member private this.CreateTableColumns(schemaName : Name, tableName : Name, def : CreateTableDefinition) =
+type private ModelChange(model : Model, inference : ITypeInferenceContext) =
+    member private this.CreateTableColumns(schemaName : Name, tableName : Name, def : InfCreateTableDefinition) =
         let tablePkColumns =
             seq {
                 for constr in def.Constraints do
@@ -110,17 +47,17 @@ type private CommandEffectBuilder() =
                 ColumnType = { Type = affinity; Nullable = not hasNotNullConstraint }
             }
         |]
-    member private this.CreateTableColumns(model, schemaName : Name, tableName : Name, asSelect : SelectStmt) =
-        let query = this.ResultSet(model, asSelect).Query
+    member private this.CreateTableColumns(model, schemaName : Name, tableName : Name, asSelect : InfSelectStmt) =
+        let query = asSelect.Value.Info.Table.Query
         [| for column in query.Columns ->
             {   SchemaName = schemaName
                 TableName = tableName
                 ColumnName = column.ColumnName
-                PrimaryKey = column.PrimaryKey // is this really desirable? at least it makes sense for temp...
-                ColumnType = inference.Concrete(column.InferredType) // unfortunate but necessary
+                PrimaryKey = column.Expr.Info.PrimaryKey
+                ColumnType = inference.Concrete(column.Expr.Info.Type) // unfortunate but necessary
             }
         |]
-    member private this.Effect(model, create : CreateTableStmt) =
+    member private this.CreateTable(create : InfCreateTableStmt) =
         let defaultSchema = if create.Temporary then model.TemporarySchema else model.DefaultSchema
         let schema = create.Name.Value.SchemaName |? defaultSchema
         match model.Schemas.TryFind(schema) with
@@ -142,44 +79,54 @@ type private CommandEffectBuilder() =
                     }
                 let schema =
                     { schema with Tables = schema.Tables |> Map.add table.TableName table }
-                Some (ChangeModel { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema })
-
-    member private this.StatementEffect(model, stmt : Stmt) =
+                Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
+    member this.Statment(stmt : InfStmt) =
         match stmt with
         | AlterTableStmt alter -> failwith "not implemented"
-        | AnalyzeStmt objectName -> None
         | AttachStmt (attach, name) -> failwith "not implemented"
-        | BeginStmt transaction -> None
-        | CommitStmt -> None
-        | CreateIndexStmt create -> failwith "not implemented"
-        | CreateTableStmt create -> this.Effect(model, create)
-        | CreateTriggerStmt create -> failwith "not implemented"
+        | CreateTableStmt create -> this.CreateTable(create)
         | CreateViewStmt create -> failwith "not implemented"
-        | CreateVirtualTableStmt _ -> None
-        | DeleteStmt delete -> failwith "not implemented"
-        | DetachStmt detatch -> failwith "not implemented"
-        | DropObjectStmt drop -> failwith "not implemented"
-        | InsertStmt insert -> failwith "not implemented"
-        | PragmaStmt pragma -> None
-        | ReindexStmt objectName -> failwith "not implemented"
-        | ReleaseStmt name -> None
-        | RollbackStmt rollback -> None
-        | SavepointStmt name -> None
-        | SelectStmt select -> this.Effect(model, select)
-        | ExplainStmt stmt -> None
-        | UpdateStmt update -> failwith "not implemented"
+        | CreateVirtualTableStmt create -> failwith "not implemented"
+        | CreateIndexStmt create -> failwith "not implemented"
+        | CreateTriggerStmt create -> failwith "not implemented"
+        | AnalyzeStmt _
+        | BeginStmt _
+        | CommitStmt
+        | DeleteStmt _
+        | DetachStmt _
+        | DropObjectStmt _
+        | InsertStmt _
+        | PragmaStmt _
+        | ReindexStmt _
+        | ReleaseStmt _
+        | RollbackStmt _
+        | SavepointStmt _
+        | SelectStmt _
+        | ExplainStmt _
+        | UpdateStmt _
         | VacuumStmt -> None
 
-type CommandWithEffect =
-    {   Statements : Stmt IReadOnlyList
-        Effect : CommandEffect
-    }
-    static member Parse(model, sourceName, sourceText) =
-        let statements = Parser.parseStatements sourceName sourceText
-        let builder = CommandEffectBuilder()
-        {   Statements = statements :> _ IReadOnlyList
-            Effect = builder.CommandEffect(model, statements)
+type private CommandEffectBuilder(model : Model) =
+    // shared throughout the whole command, since parameters are too.
+    let inference = TypeInferenceContext() :> ITypeInferenceContext
+    let inferredStmts = ResizeArray()
+    let mutable newModel = None
+    member this.AddStatement(stmt : Stmt) =
+        let model = newModel |? model
+        let checker = TypeChecker2(inference, InferredSelectScope.Root(model))
+        let inferredStmt = checker.Stmt(stmt)
+        inferredStmts.Add(inferredStmt)
+        newModel <- ModelChange(model, inference).Statment(inferredStmt)
+    member this.CommandEffect() =
+        let mapping =
+            ASTMapping<InferredType ObjectInfo, InferredType ExprInfo, _, _>
+                ((fun t -> t.Map(inference.Concrete)), fun e -> e.Map(inference.Concrete))
+        let stmts = inferredStmts |> Seq.map mapping.Stmt |> toReadOnlyList
+        let pars =
+            inference.Parameters
+            |> Seq.map (fun p -> p, inference.Concrete(inference.Variable(p)))
+            |> toReadOnlyList
+        {   Statements = stmts
+            ModelChange = newModel
+            Parameters = pars
         }
-
-
-let ofSql str model = CommandWithEffect.Parse(model, "(anonymous)", str).Effect

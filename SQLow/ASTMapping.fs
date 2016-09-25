@@ -1,4 +1,4 @@
-﻿module SQLow.AST
+﻿namespace SQLow
 open System
 open System.Collections.Generic
 

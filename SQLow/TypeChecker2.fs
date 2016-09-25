@@ -1,54 +1,56 @@
-﻿module SQLow.TypeChecker2
+﻿namespace SQLow
 open System
 open System.Collections.Generic
 open SQLow.InferredTypes
 
-type ITypeInferenceContext with
-    member typeInference.Unify(inferredType, coreType : CoreColumnType) =
-        typeInference.Unify(inferredType, InferredType.Dependent(inferredType, coreType))
-    member typeInference.Unify(inferredType, resultType : Result<InferredType, string>) =
-        match resultType with
-        | Ok t -> typeInference.Unify(inferredType, t)
-        | Error _ as e -> e
-    member typeInference.Unify(types : InferredType seq) =
-        types
-        |> Seq.fold
-            (function | Ok s -> (fun t -> typeInference.Unify(s, t)) | Error _ as e -> (fun _ -> e))
-            (Ok InferredType.Any)
-    member typeInference.Concrete(inferred) = typeInference.Concrete(inferred)
-    member typeInference.Binary(op, left, right) =
-        match op with
-        | Concatenate -> typeInference.Unify([ left; right; InferredType.String ])
-        | Multiply
-        | Divide
-        | Add
-        | Subtract -> typeInference.Unify([ left; right; InferredType.Number ])
-        | Modulo
-        | BitShiftLeft
-        | BitShiftRight
-        | BitAnd
-        | BitOr -> typeInference.Unify([ left; right; InferredType.Integer ])
-        | LessThan
-        | LessThanOrEqual
-        | GreaterThan
-        | GreaterThanOrEqual
-        | Equal
-        | NotEqual
-        | Is
-        | IsNot ->
-            result {
-                let! operandType = typeInference.Unify(left, right)
-                return InferredType.Dependent(operandType, BooleanType)
-            }
-        | And
-        | Or -> typeInference.Unify([ left; right; InferredType.Boolean ])
-    member typeInference.Unary(op, operandType) =
-        match op with
-        | Negative
-        | BitNot -> typeInference.Unify(operandType, InferredType.Number)
-        | Not -> typeInference.Unify(operandType, InferredType.Boolean)
-        | IsNull
-        | NotNull -> result { return InferredType.Boolean }
+module TypeInferenceExtensions =
+    type ITypeInferenceContext with
+        member typeInference.Unify(inferredType, coreType : CoreColumnType) =
+            typeInference.Unify(inferredType, InferredType.Dependent(inferredType, coreType))
+        member typeInference.Unify(inferredType, resultType : Result<InferredType, string>) =
+            match resultType with
+            | Ok t -> typeInference.Unify(inferredType, t)
+            | Error _ as e -> e
+        member typeInference.Unify(types : InferredType seq) =
+            types
+            |> Seq.fold
+                (function | Ok s -> (fun t -> typeInference.Unify(s, t)) | Error _ as e -> (fun _ -> e))
+                (Ok InferredType.Any)
+        member typeInference.Concrete(inferred) = typeInference.Concrete(inferred)
+        member typeInference.Binary(op, left, right) =
+            match op with
+            | Concatenate -> typeInference.Unify([ left; right; InferredType.String ])
+            | Multiply
+            | Divide
+            | Add
+            | Subtract -> typeInference.Unify([ left; right; InferredType.Number ])
+            | Modulo
+            | BitShiftLeft
+            | BitShiftRight
+            | BitAnd
+            | BitOr -> typeInference.Unify([ left; right; InferredType.Integer ])
+            | LessThan
+            | LessThanOrEqual
+            | GreaterThan
+            | GreaterThanOrEqual
+            | Equal
+            | NotEqual
+            | Is
+            | IsNot ->
+                result {
+                    let! operandType = typeInference.Unify(left, right)
+                    return InferredType.Dependent(operandType, BooleanType)
+                }
+            | And
+            | Or -> typeInference.Unify([ left; right; InferredType.Boolean ])
+        member typeInference.Unary(op, operandType) =
+            match op with
+            | Negative
+            | BitNot -> typeInference.Unify(operandType, InferredType.Number)
+            | Not -> typeInference.Unify(operandType, InferredType.Boolean)
+            | IsNull
+            | NotNull -> result { return InferredType.Boolean }
+open TypeInferenceExtensions
 
 type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.Scope = scope
