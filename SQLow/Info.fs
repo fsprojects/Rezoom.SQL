@@ -95,6 +95,7 @@ and ObjectInfo<'t> =
     | TableLike of 't TableLikeExprInfo
     | Index
     | Trigger
+    | Missing
     member this.Table =
         match this with
         | TableLike t -> t
@@ -104,6 +105,7 @@ and ObjectInfo<'t> =
         | TableLike t -> TableLike (t.Map(f))
         | Index -> Index
         | Trigger -> Trigger
+        | Missing -> Missing
 
 type TExprType = ExprType<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TExpr = Expr<ColumnType ObjectInfo, ColumnType ExprInfo>

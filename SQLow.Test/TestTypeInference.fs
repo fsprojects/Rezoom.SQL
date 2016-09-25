@@ -20,68 +20,71 @@ type TestTypeInference() =
         }
     [<TestMethod>]
     member __.TestSimpleSelect() =
-        let cmd = zeroModel |> CommandEffect.ofSql @"
+        let cmd = CommandEffect.OfSQL(zeroModel, "anonymous", @"
             create table Users(id int primary key, name nvarchar(128), email nvarchar(128));
             select * from Users
-        "
+        ")
         printfn "%A" cmd
         Assert.AreEqual(0, cmd.Parameters.Count)
-        Assert.AreEqual(1, cmd.ResultSets.Count)
-        let cs = cmd.ResultSets.[0].Columns
-        Assert.IsTrue(cs.[0].PrimaryKey)
+        let results = cmd.ResultSets |> toReadOnlyList
+        Assert.AreEqual(1, results.Count)
+        let cs = results.[0].Columns
+        Assert.IsTrue(cs.[0].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("id"), cs.[0].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = IntegerType }, cs.[0].ColumnType)
-        Assert.IsFalse(cs.[1].PrimaryKey)
+        Assert.AreEqual({ Nullable = true; Type = IntegerType }, cs.[0].Expr.Info.Type)
+        Assert.IsFalse(cs.[1].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("name"), cs.[1].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[1].ColumnType)
-        Assert.IsFalse(cs.[2].PrimaryKey)
+        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[1].Expr.Info.Type)
+        Assert.IsFalse(cs.[2].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("email"), cs.[2].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].ColumnType)
+        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].Expr.Info.Type)
 
     [<TestMethod>]
     member __.TestSimpleSelectWithParameter() =
-        let cmd = zeroModel |> CommandEffect.ofSql @"
+        let cmd = CommandEffect.OfSQL(zeroModel, "anonymous", @"
             create table Users(id int primary key, name nvarchar(128), email nvarchar(128));
             select * from Users u
             where u.id = @id
-        "
+        ")
         printfn "%A" cmd
         Assert.AreEqual(1, cmd.Parameters.Count)
         Assert.AreEqual
             ( (NamedParameter (Name("id")), { Nullable = true; Type = IntegerType })
             , cmd.Parameters.[0])
-        Assert.AreEqual(1, cmd.ResultSets.Count)
-        let cs = cmd.ResultSets.[0].Columns
-        Assert.IsTrue(cs.[0].PrimaryKey)
+        let results = cmd.ResultSets |> toReadOnlyList
+        Assert.AreEqual(1, results.Count)
+        let cs = results.[0].Columns
+        Assert.IsTrue(cs.[0].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("id"), cs.[0].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = IntegerType }, cs.[0].ColumnType)
-        Assert.IsFalse(cs.[1].PrimaryKey)
+        Assert.AreEqual({ Nullable = true; Type = IntegerType }, cs.[0].Expr.Info.Type)
+        Assert.IsFalse(cs.[1].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("name"), cs.[1].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[1].ColumnType)
-        Assert.IsFalse(cs.[2].PrimaryKey)
+        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[1].Expr.Info.Type)
+        Assert.IsFalse(cs.[2].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("email"), cs.[2].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].ColumnType)
+        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].Expr.Info.Type)
 
     [<TestMethod>]
     member __.TestSimpleSelectWithParameterNotNull() =
-        let cmd = zeroModel |> CommandEffect.ofSql @"
+        let cmd = CommandEffect.OfSQL(zeroModel, "anonymous", @"
             create table Users(id int primary key not null, name nvarchar(128), email nvarchar(128));
             select * from Users u
             where u.id = @id
-        "
+        ")
         printfn "%A" cmd
         Assert.AreEqual(1, cmd.Parameters.Count)
         Assert.AreEqual
             ( (NamedParameter (Name("id")), { Nullable = false; Type = IntegerType })
             , cmd.Parameters.[0])
-        Assert.AreEqual(1, cmd.ResultSets.Count)
-        let cs = cmd.ResultSets.[0].Columns
-        Assert.IsTrue(cs.[0].PrimaryKey)
+        let results = cmd.ResultSets |> toReadOnlyList
+        Assert.AreEqual(1, results.Count)
+        let cs = results.[0].Columns
+        Assert.IsTrue(cs.[0].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("id"), cs.[0].ColumnName)
-        Assert.AreEqual({ Nullable = false; Type = IntegerType }, cs.[0].ColumnType)
-        Assert.IsFalse(cs.[1].PrimaryKey)
+        Assert.AreEqual({ Nullable = false; Type = IntegerType }, cs.[0].Expr.Info.Type)
+        Assert.IsFalse(cs.[1].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("name"), cs.[1].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[1].ColumnType)
-        Assert.IsFalse(cs.[2].PrimaryKey)
+        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[1].Expr.Info.Type)
+        Assert.IsFalse(cs.[2].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("email"), cs.[2].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].ColumnType)
+        Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].Expr.Info.Type)

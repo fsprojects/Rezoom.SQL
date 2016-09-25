@@ -52,19 +52,26 @@ module TypeInferenceExtensions =
             | NotNull -> result { return InferredType.Boolean }
 open TypeInferenceExtensions
 
-type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
+type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.Scope = scope
-    member this.ObjectName(objectName : ObjectName) : InfObjectName =
+    member this.ObjectName(objectName : ObjectName) = this.ObjectName(objectName, false)
+    member this.ObjectName(objectName : ObjectName, allowNotFound) : InfObjectName =
         {   SchemaName = objectName.SchemaName
             ObjectName = objectName.ObjectName
             Source = objectName.Source
-            Info = scope.ResolveObjectReference(objectName) |> foundAt objectName.Source
+            Info =
+                match scope.ResolveObjectReference(objectName) with
+                | Ambiguous r -> failAt objectName.Source r
+                | Found f -> f
+                | NotFound r ->
+                    if not allowNotFound then failAt objectName.Source r
+                    else Missing
         }
     member this.ColumnName(source : SourceInfo, columnName : ColumnName) =
         let name = scope.ResolveColumnReference(columnName) |> foundAt source
         {   Expr.Source = source
             Value =
-                {   Table = Option.map this.ObjectName columnName.Table
+                {   Table = None // TODO: Option.map this.ObjectName columnName.Table
                     ColumnName = columnName.ColumnName
                 } |> ColumnNameExpr
             Info = name.Expr.Info
@@ -400,7 +407,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             Info = info
         }
 
-    member private this.TableExpr(constraintChecker : TypeChecker2, texpr : TableExpr) =
+    member private this.TableExpr(constraintChecker : TypeChecker, texpr : TableExpr) =
         {   TableExpr.Source = texpr.Source
             Value =
                 match texpr.Value with
@@ -418,7 +425,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         }
 
     member this.TableExpr(texpr : TableExpr) =
-        let checker = TypeChecker2(cxt, { scope with FromClause = Some <| this.TableExprScope(texpr) })
+        let checker = TypeChecker(cxt, { scope with FromClause = Some <| this.TableExprScope(texpr) })
         checker, this.TableExpr(checker, texpr)
 
     member this.ResultColumn(resultColumn : ResultColumn) =
@@ -484,12 +491,12 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         }
     member this.WithClause(withClause : WithClause) =
         let mutable scope = scope
-        TypeChecker2(cxt, scope),
+        TypeChecker(cxt, scope),
             {   Recursive = withClause.Recursive
                 Tables =
                     seq {
                         for cte in withClause.Tables ->
-                            let cte = TypeChecker2(cxt, scope).CTE(cte)
+                            let cte = TypeChecker(cxt, scope).CTE(cte)
                             scope <-
                                 { scope with
                                     CTEVariables = scope.CTEVariables |> Map.add cte.Name cte.Info.Table.Query
@@ -616,7 +623,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.CreateTable(createTable : CreateTableStmt) =
         {   Temporary = createTable.Temporary
             IfNotExists = createTable.IfNotExists
-            Name = { Source = createTable.Name.Source; Value = this.ObjectName(createTable.Name.Value) }
+            Name = { Source = createTable.Name.Source; Value = this.ObjectName(createTable.Name.Value, true) }
             As =
                 match createTable.As with
                 | CreateAsSelect select -> CreateAsSelect <| this.Select(select)
@@ -631,7 +638,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.CreateTrigger(createTrigger : CreateTriggerStmt) =
         {   Temporary = createTrigger.Temporary
             IfNotExists = createTrigger.IfNotExists
-            TriggerName = this.ObjectName(createTrigger.TriggerName)
+            TriggerName = this.ObjectName(createTrigger.TriggerName, true)
             TableName = this.ObjectName(createTrigger.TableName)
             Schedule = createTrigger.Schedule
             Cause = createTrigger.Cause
@@ -641,13 +648,13 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.CreateView(createView : CreateViewStmt) =
         {   Temporary = createView.Temporary
             IfNotExists = createView.IfNotExists
-            ViewName = this.ObjectName(createView.ViewName)
+            ViewName = this.ObjectName(createView.ViewName, true)
             ColumnNames = createView.ColumnNames
             AsSelect = this.Select(createView.AsSelect)
         }
     member this.CreateVirtualTable(createVirtual : CreateVirtualTableStmt) =
         {   IfNotExists = createVirtual.IfNotExists
-            VirtualTable = this.ObjectName(createVirtual.VirtualTable)
+            VirtualTable = this.ObjectName(createVirtual.VirtualTable, true)
             UsingModule = createVirtual.UsingModule
             WithModuleArguments = createVirtual.WithModuleArguments
         }
