@@ -1,4 +1,4 @@
-﻿module private SQLow.InferredTypes
+﻿module SQLow.InferredTypes
 open SQLow
 open System
 open System.Collections.Generic

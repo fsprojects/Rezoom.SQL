@@ -383,7 +383,7 @@ let private collateOperator =
     -- +.withSource name
     -|> fun collation expr ->
         {
-            Value = CollateExpr { Input = expr; Collation = collation.Value }
+            Expr.Value = CollateExpr { Input = expr; Collation = collation.Value }
             Source = collation.Source
             Info = ()
         }
@@ -412,15 +412,22 @@ let private inOperator =
                 %% +.tableInvocation -|> InTable
             ]
     -|> fun invert op inSet left ->
-        { Source = op.Source; Value = InExpr { Invert = Option.isSome invert; Input = left; Set = inSet }; Info = () }
+        {   Expr.Source = op.Source
+            Value = InExpr { Invert = Option.isSome invert; Input = left; Set = inSet }
+            Info = ()
+        }
 
 let private similarityOperator =
     let similar invert (op : SimilarityOperator WithSource) left right escape =
-        {   Invert = Option.isSome invert
-            Operator = op.Value
-            Input = left
-            Pattern = right
-            Escape = escape
+        {   Expr.Source = op.Source
+            Value =
+                {   Invert = Option.isSome invert
+                    Operator = op.Value
+                    Input = left
+                    Pattern = right
+                    Escape = escape
+                } |> SimilarityExpr
+            Info = ()
         }
     let op =
         %[
@@ -439,7 +446,11 @@ let private notNullOperator =
         %% kw "NOT" -? kw "NULL" -|> ()
     ]
     |> withSource
-    |>> fun op left -> { Source = op.Source; Value = UnaryExpr { Operator = NotNull; Operand = left }; Info = () }
+    |>> fun op left ->
+        {   Expr.Source = op.Source
+            Value = UnaryExpr { Operator = NotNull; Operand = left }
+            Info = ()
+        }
 
 let private betweenOperator =
     let between invert input low high =
@@ -451,7 +462,10 @@ let private betweenOperator =
     %% +.(zeroOrOne * kw "NOT")
     -? +.withSource (kw "BETWEEN")
     -|> fun invert op input low high ->
-        { Source = op.Source; Value = BetweenExpr (between invert input low high); Info = () }
+        {   Expr.Source = op.Source
+            Value = BetweenExpr (between invert input low high)
+            Info = ()
+        }
 
 let private raiseTrigger =
     %% kw "RAISE"
@@ -886,9 +900,9 @@ let private primaryKeyClause =
 let private constraintType =
     let signedToExpr (signed : SignedNumericLiteral WithSource) =
         let expr = signed.Value.Value |> NumericLiteral |> LiteralExpr
-        let expr = { Source = signed.Source; Value = expr; Info = () }
+        let expr = { Expr.Source = signed.Source; Value = expr; Info = () }
         if signed.Value.Sign < 0 then
-            { Source = expr.Source; Value = UnaryExpr { Operator = Negative; Operand = expr }; Info = () } 
+            { Expr.Source = expr.Source; Value = UnaryExpr { Operator = Negative; Operand = expr }; Info = () } 
         else expr
     let defaultValue =
         %[

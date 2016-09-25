@@ -60,7 +60,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         }
     member this.ColumnName(source : SourceInfo, columnName : ColumnName) =
         let name = scope.ResolveColumnReference(columnName) |> foundAt source
-        {   Source = source
+        {   Expr.Source = source
             Value =
                 {   Table = Option.map this.ObjectName columnName.Table
                     ColumnName = columnName.ColumnName
@@ -68,12 +68,12 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             Info = name.Expr.Info
         }
     member this.Literal(source : SourceInfo, literal : Literal) =
-        {   Source = source
+        {   Expr.Source = source
             Value = LiteralExpr literal
             Info = ExprInfo<_>.OfType(InferredType.OfLiteral(literal))
         }
     member this.BindParameter(source : SourceInfo, par : BindParameter) =
-        {   Source = source
+        {   Expr.Source = source
             Value = BindParameterExpr par
             Info = ExprInfo<_>.OfType(cxt.Variable(par))
         }
@@ -81,7 +81,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.Binary(source : SourceInfo, binary : BinaryExpr) =
         let left = this.Expr(binary.Left)
         let right = this.Expr(binary.Right)
-        {   Source = source
+        {   Expr.Source = source
             Value =
                 {   Operator = binary.Operator
                     Left = left
@@ -96,7 +96,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         }
     member this.Unary(source : SourceInfo, unary : UnaryExpr) =
         let operand = this.Expr(unary.Operand)
-        {   Source = source
+        {   Expr.Source = source
             Value =
                 {   Operator = unary.Operator
                     Operand = operand
@@ -111,7 +111,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.Cast(source : SourceInfo, cast : CastExpr) =
         let input = this.Expr(cast.Expression)
         let ty = InferredType.OfTypeName(cast.AsType, input.Info.Type)
-        {   Source = source
+        {   Expr.Source = source
             Value =
                 {   Expression = input
                     AsType = cast.AsType
@@ -126,7 +126,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.Collation(source : SourceInfo, collation : CollationExpr) =
         let input = this.Expr(collation.Input)
         cxt.Unify(input.Info.Type, InferredType.String) |> resultOk source
-        {   Source = source
+        {   Expr.Source = source
             Value = 
                 {   Input = this.Expr(collation.Input)
                     Collation = collation.Collation
@@ -189,7 +189,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                             | Some varArg ->
                                 cxt.Unify(toInferred varArg, add args.[i]) |> resultOk args.[i].Source
                         ArgumentList (distinct, outArgs), toInferred funcType.Output
-            {   Source = source
+            {   Expr.Source = source
                 Value = { FunctionName = func.FunctionName; Arguments = args } |> FunctionInvocationExpr
                 Info =
                     {   Type = output
@@ -212,7 +212,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 let! unified = cxt.Unify(inputType, patternType)
                 return InferredType.Dependent(unified, BooleanType)
             } |> resultAt source
-        {   Source = source
+        {   Expr.Source = source
             Value =
                 {   Invert = sim.Invert
                     Operator = sim.Operator
@@ -231,7 +231,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         let input = this.Expr(between.Input)
         let low = this.Expr(between.Low)
         let high = this.Expr(between.High)
-        {   Source = source
+        {   Expr.Source = source
             Value = { Invert = between.Invert; Input = input; Low = low; High = high } |> BetweenExpr
             Info =
                 {   Type = cxt.Unify([ input.Info.Type; low.Info.Type; high.Info.Type ]) |> resultAt source
@@ -253,7 +253,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 exprs |> InExpressions
             | InSelect select -> InSelect <| this.Select(select)
             | InTable table -> InTable <| this.TableInvocation(table)
-        {   Source = source
+        {   Expr.Source = source
             Value =
                 {   Invert = inex.Invert
                     Input = this.Expr(inex.Input)
@@ -293,7 +293,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 | Some input -> input.Info.Type
             for whenExpr, _ in case.Cases -> whenExpr.Info.Type
         } |> cxt.Unify |> resultOk source
-        {   Source = source
+        {   Expr.Source = source
             Value = case |> CaseExpr
             Info =
                 {   Type = outputType
@@ -314,7 +314,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 }
         }
     member this.Exists(source : SourceInfo, exists : SelectStmt) =
-        {   Source = source
+        {   Expr.Source = source
             Value = this.Select(exists) |> ExistsExpr
             Info = ExprInfo<_>.OfType(InferredType.Boolean)
         }
@@ -323,7 +323,7 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         let tbl = select.Value.Info.Table.Query
         if tbl.Columns.Count <> 1 then
             failAt source <| sprintf "Scalar subquery must have 1 column (this one has %d)" tbl.Columns.Count
-        {   Source = source
+        {   Expr.Source = source
             Value = ScalarSubqueryExpr select
             Info = tbl.Columns.[0].Expr.Info
         }
@@ -654,11 +654,17 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             IndexHint = qualified.IndexHint
         }
     member this.Delete(delete : DeleteStmt) =
-        {   With = Option.map this.WithClause delete.With
-            DeleteFrom = this.QualifiedTableName(delete.DeleteFrom)
-            Where = Option.map this.Expr delete.Where
-            OrderBy = Option.map (rmap this.OrderingTerm) delete.OrderBy
-            Limit = Option.map this.Limit delete.Limit
+        let checker, withClause =
+            match delete.With with
+            | None -> this, None
+            | Some withClause ->
+                let checker, withClause = this.WithClause(withClause)
+                checker, Some withClause
+        {   With = withClause
+            DeleteFrom = checker.QualifiedTableName(delete.DeleteFrom)
+            Where = Option.map checker.Expr delete.Where
+            OrderBy = Option.map (rmap checker.OrderingTerm) delete.OrderBy
+            Limit = Option.map checker.Limit delete.Limit
         }
     member this.DropObject(drop : DropObjectStmt) =
         {   Drop = drop.Drop
@@ -666,24 +672,36 @@ type TypeChecker2(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             IndexName = this.ObjectName(drop.IndexName)
         }
     member this.Insert(insert : InsertStmt) =
-        {   With = Option.map this.WithClause insert.With
+        let checker, withClause =
+            match insert.With with
+            | None -> this, None
+            | Some withClause ->
+                let checker, withClause = this.WithClause(withClause)
+                checker, Some withClause
+        {   With = withClause
             Or = insert.Or
-            InsertInto = this.ObjectName(insert.InsertInto)
+            InsertInto = checker.ObjectName(insert.InsertInto)
             Columns = insert.Columns
-            Data = Option.map this.Select insert.Data
+            Data = Option.map checker.Select insert.Data
         }
     member this.Pragma(pragma : PragmaStmt) =
         {   Pragma = this.ObjectName(pragma.Pragma)
             Value = pragma.Value
         }
     member this.Update(update : UpdateStmt) =
-        {   With = Option.map this.WithClause update.With
-            UpdateTable = this.QualifiedTableName(update.UpdateTable)
+        let checker, withClause =
+            match update.With with
+            | None -> this, None
+            | Some withClause ->
+                let checker, withClause = this.WithClause(withClause)
+                checker, Some withClause
+        {   With = withClause
+            UpdateTable = checker.QualifiedTableName(update.UpdateTable)
             Or = update.Or
-            Set = update.Set |> rmap (fun (name, expr) -> name, this.Expr(expr))
-            Where = Option.map this.Expr update.Where
-            OrderBy = Option.map (rmap this.OrderingTerm) update.OrderBy
-            Limit = Option.map this.Limit update.Limit
+            Set = update.Set |> rmap (fun (name, expr) -> name, checker.Expr(expr))
+            Where = Option.map checker.Expr update.Where
+            OrderBy = Option.map (rmap checker.OrderingTerm) update.OrderBy
+            Limit = Option.map checker.Limit update.Limit
         }
     member this.Stmt(stmt : Stmt) =
         match stmt with
