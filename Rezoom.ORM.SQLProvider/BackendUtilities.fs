@@ -70,7 +70,7 @@ type StatementTranslator() =
         match dir with
         | Ascending -> text "ASC"
         | Descending -> text "DESC"
-    abstract member CTE : cte : CommonTableExpression -> Fragments
+    abstract member CTE : cte : TCommonTableExpression -> Fragments
     default this.CTE(cte) =
         seq {
             yield this.Expr.Name(cte.Name)
@@ -85,7 +85,7 @@ type StatementTranslator() =
             yield! this.Select(cte.AsSelect)
             yield text ")"
         }
-    abstract member With : withClause : WithClause -> Fragments
+    abstract member With : withClause : TWithClause -> Fragments
     default this.With(withClause) =
         seq {
             yield text "WITH"
@@ -95,7 +95,7 @@ type StatementTranslator() =
                 yield ws
             yield! withClause.Tables |> Seq.map this.CTE |> join ","
         }
-    abstract member Values : vals : Expr ResizeArray WithSource ResizeArray -> Fragments
+    abstract member Values : vals : TExpr ResizeArray WithSource ResizeArray -> Fragments
     default this.Values(vals) =
         vals |> Seq.map (fun row ->
             seq {
@@ -103,7 +103,7 @@ type StatementTranslator() =
                 yield! row.Value |> Seq.map this.Expr.Expr |> join ","
                 yield text ")"
             }) |> join ","
-    abstract member ResultColumn : ResultColumn -> Fragments
+    abstract member ResultColumn : TResultColumn -> Fragments
     default this.ResultColumn(col) =
         match col with
         | ColumnsWildcard -> text "*" |> Seq.singleton
@@ -123,7 +123,7 @@ type StatementTranslator() =
                     yield ws
                     yield this.Expr.Name(alias)
             }
-    abstract member ResultColumns : ResultColumns -> Fragments
+    abstract member ResultColumns : TResultColumns -> Fragments
     default this.ResultColumns(cols) =
         seq {
             match cols.Distinct with
@@ -132,13 +132,13 @@ type StatementTranslator() =
             | Some DistinctColumns -> yield text "DISTINCT"; yield ws
             yield! cols.Columns |> Seq.map (fun c -> this.ResultColumn(c.Value)) |> join ","
         }
-    abstract member TableOrSubquery : TableOrSubquery -> Fragments
+    abstract member TableOrSubquery : TTableOrSubquery -> Fragments
     default this.TableOrSubquery(tbl) =
         seq {
-            match tbl with
-            | Table (tbl, alias, indexHint) ->
-                yield! this.Expr.Table(tbl)
-                match alias with
+            match tbl.Table with
+            | Table (table, indexHint) ->
+                yield! this.Expr.Table(table)
+                match tbl.Alias with
                 | None -> ()
                 | Some alias ->
                     yield ws
@@ -155,11 +155,11 @@ type StatementTranslator() =
                     yield text "INDEXED BY"
                     yield ws
                     yield this.Expr.Name(name)
-            | Subquery (select, alias) ->
+            | Subquery select ->
                 yield text "("
                 yield! this.Select(select)
                 yield text ")"
-                match alias with
+                match tbl.Alias with
                 | None -> ()
                 | Some alias ->
                     yield ws
@@ -167,7 +167,7 @@ type StatementTranslator() =
                     yield ws
                     yield this.Expr.Name(alias)
         }
-    abstract member TableExpr : TableExpr -> Fragments
+    abstract member TableExpr : TTableExpr -> Fragments
     default this.TableExpr(texpr) =
         match texpr.Value with
         | TableOrSubquery tbl -> this.TableOrSubquery(tbl)
@@ -181,7 +181,7 @@ type StatementTranslator() =
             | Cross -> "CROSS JOIN"
             | Natural ty -> "NATURAL " + joinText ty
         joinText join |> text
-    abstract member Join : Join -> Fragments
+    abstract member Join : TJoin -> Fragments
     default this.Join(join) =
         seq {
             yield! this.TableExpr(join.LeftTable)
@@ -204,7 +204,7 @@ type StatementTranslator() =
                 yield text ")"
             | JoinUnconstrained -> ()
         }
-    abstract member SelectCore : select : SelectCore -> Fragments
+    abstract member SelectCore : select : TSelectCore -> Fragments
     default this.SelectCore(select) =
         seq {
             yield text "SELECT"
@@ -239,14 +239,14 @@ type StatementTranslator() =
                     yield ws
                     yield! this.Expr.Expr(having)
         }
-    abstract member CompoundTerm : compound : CompoundTermCore -> Fragments
+    abstract member CompoundTerm : compound : TCompoundTermCore -> Fragments
     default this.CompoundTerm(compound) =
         match compound with
         | Values vals -> this.Values(vals)
         | Select select -> this.SelectCore(select)
-    abstract member Compound : compound : CompoundExprCore -> Fragments
+    abstract member Compound : compound : TCompoundExprCore -> Fragments
     default this.Compound(compound) =
-        let op name (expr : CompoundExpr) (term : CompoundTerm) =
+        let op name (expr : TCompoundExpr) (term : TCompoundTerm) =
             seq {
                 yield! this.Compound(expr.Value)
                 yield ws
@@ -260,7 +260,7 @@ type StatementTranslator() =
         | UnionAll (expr, term) -> op "UNION ALL" expr term
         | Intersect (expr, term) -> op "INTERSECT" expr term
         | Except (expr, term) -> op "EXCEPT" expr term
-    abstract member Limit : Limit -> Fragments
+    abstract member Limit : TLimit -> Fragments
     default this.Limit(limit) =
         seq {
             yield text "LIMIT"
@@ -274,14 +274,14 @@ type StatementTranslator() =
                 yield ws
                 yield! this.Expr.Expr(offset)
         }
-    abstract member OrderingTerm : OrderingTerm -> Fragments
+    abstract member OrderingTerm : TOrderingTerm -> Fragments
     default this.OrderingTerm(term) =
         seq {
             yield! this.Expr.Expr(term.By)
             yield ws
             yield this.OrderDirection(term.Direction)
         }
-    abstract member Select : select : SelectStmt -> Fragments
+    abstract member Select : select : TSelectStmt -> Fragments
     default this.Select(select) =
         let select = select.Value
         seq {
@@ -298,12 +298,12 @@ type StatementTranslator() =
             | None -> ()
             | Some limit -> yield! this.Limit(limit)
         }
-    abstract member Statement : Stmt -> Fragments
+    abstract member Statement : TStmt -> Fragments
     default this.Statement(stmt) =
         match stmt with
         | SelectStmt select -> this.Select(select)
         | _ -> failwith "Not implemented"
-    abstract member Statements : Stmt seq -> Fragments
+    abstract member Statements : TStmt seq -> Fragments
     default this.Statements(stmts) =
         stmts |> Seq.map this.Statement |> join ";"
 
@@ -353,7 +353,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
         | Regexp -> "REGEXP"
     abstract member BindParameter : par : BindParameter -> Fragment
     default __.BindParameter par = indexer.ParameterIndex(par) |> Parameter
-    abstract member ObjectName : name : ObjectName -> Fragments
+    abstract member ObjectName : name : TObjectName -> Fragments
     default this.ObjectName name =
         seq {
             match name.SchemaName with
@@ -362,7 +362,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
             | None -> ()
             yield this.Name(name.ObjectName) 
         }
-    abstract member ColumnName : column : ColumnName -> Fragments
+    abstract member ColumnName : column : TColumnName -> Fragments
     default this.ColumnName col =
         seq {
             match col.Table with
@@ -388,7 +388,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                     yield! this.Literal.SignedLiteral(high)
                 yield text ")"
         }
-    abstract member Cast : castExpr : CastExpr -> Fragments
+    abstract member Cast : castExpr : TCastExpr -> Fragments
     default this.Cast(castExpr) =
         seq {
             yield text "CAST("
@@ -399,7 +399,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
             yield! this.TypeName(castExpr.AsType)
             yield text ")"
         }
-    abstract member Collate : expr : Expr * collation : Name -> Fragments
+    abstract member Collate : expr : TExpr * collation : Name -> Fragments
     default this.Collate(expr, collation) =
         seq {
             yield! this.Expr(expr)
@@ -408,7 +408,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
             yield ws
             yield this.Name(collation)
         }
-    abstract member Invoke : func : FunctionInvocationExpr -> Fragments
+    abstract member Invoke : func : TFunctionInvocationExpr -> Fragments
     default this.Invoke(func) =
         seq {
             yield this.Name(func.FunctionName)
@@ -424,12 +424,12 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 yield! args |> Seq.map this.Expr |> join ","
             yield text ")"
         }
-    abstract member Similarity : invert : bool * sim : SimilarityExpr -> Fragments
-    default this.Similarity(invert, sim : SimilarityExpr) =
+    abstract member Similarity : sim : TSimilarityExpr -> Fragments
+    default this.Similarity(sim : TSimilarityExpr) =
         seq {
             yield! this.Expr(sim.Input)
             yield ws
-            if invert then
+            if sim.Invert then
                 yield text "NOT"
                 yield ws
             yield this.SimilarityOperator(sim.Operator)
@@ -443,7 +443,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 yield ws
                 yield! this.Expr(escape)
         }
-    abstract member Binary : bin : BinaryExpr -> Fragments
+    abstract member Binary : bin : TBinaryExpr -> Fragments
     default this.Binary(bin) =
         seq {
             yield! this.Expr(bin.Left)
@@ -452,7 +452,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
             yield ws
             yield! this.Expr(bin.Right)
         }
-    abstract member Unary : un : UnaryExpr -> Fragments
+    abstract member Unary : un : TUnaryExpr -> Fragments
     default this.Unary(un) =
         match un.Operator with
         | Negative
@@ -470,12 +470,12 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 yield ws
                 yield this.UnaryOperator(un.Operator)
             }
-    abstract member Between : invert : bool * between : BetweenExpr -> Fragments
-    default this.Between(invert, between) =
+    abstract member Between : between : TBetweenExpr -> Fragments
+    default this.Between(between) =
         seq {
             yield! this.Expr(between.Input)
             yield ws
-            if invert then
+            if between.Invert then
                 yield text "NOT"
                 yield ws
             yield text "BETWEEN"
@@ -486,7 +486,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
             yield ws
             yield! this.Expr(between.High)
         }
-    abstract member Table : TableInvocation -> Fragments
+    abstract member Table : TTableInvocation -> Fragments
     default this.Table(tbl) =
         seq {
             yield! this.ObjectName(tbl.Table)
@@ -497,12 +497,12 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 yield! args |> Seq.map this.Expr |> join ","
                 yield text ")"
         }
-    abstract member In : invert : bool * inex : InExpr -> Fragments
-    default this.In(invert, inex) =
+    abstract member In : inex : TInExpr -> Fragments
+    default this.In(inex) =
         seq {
             yield! this.Expr(inex.Input)
             yield ws
-            if invert then
+            if inex.Invert then
                 yield text "NOT"
                 yield ws
             yield text "IN"
@@ -519,7 +519,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
             | InTable tbl ->
                 yield! this.Table(tbl)
         }
-    abstract member Case : case : CaseExpr -> Fragments
+    abstract member Case : case : TCaseExpr -> Fragments
     default this.Case(case) =
         seq {
             yield text "CASE"
@@ -562,21 +562,21 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
         | RaiseRollback msg -> raiseMsg "ROLLBACK" msg
         | RaiseAbort msg -> raiseMsg "ABORT" msg
         | RaiseFail msg -> raiseMsg "FAIL" msg
-    abstract member Exists : subquery : SelectStmt -> Fragments
+    abstract member Exists : subquery : TSelectStmt -> Fragments
     default this.Exists(subquery) =
         seq {
             yield text "EXISTS("
             yield! statement.Select(subquery)
             yield text ")"
         }
-    abstract member ScalarSubquery : subquery : SelectStmt -> Fragments
+    abstract member ScalarSubquery : subquery : TSelectStmt -> Fragments
     default this.ScalarSubquery(subquery) =
         seq {
             yield text "("
             yield! statement.Select(subquery)
             yield text ")"
         }
-    abstract member NeedsParens : ExprType -> bool
+    abstract member NeedsParens : TExprType -> bool
     default __.NeedsParens(expr) =
         match expr with
         | LiteralExpr _
@@ -586,7 +586,7 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
         | FunctionInvocationExpr _
         | ScalarSubqueryExpr _ -> false
         | _ -> true
-    abstract member Expr : expr : Expr -> Fragments
+    abstract member Expr : expr : TExpr -> Fragments
     default this.Expr(expr) =
         let needsParens = this.NeedsParens(expr.Value)
         seq {
@@ -599,14 +599,11 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
                 | CastExpr cast -> this.Cast(cast)
                 | CollateExpr { Input = expr; Collation = collation } -> this.Collate(expr, collation)
                 | FunctionInvocationExpr func -> this.Invoke(func)
-                | SimilarityExpr sim -> this.Similarity(false, sim)
-                | NotSimilarityExpr sim -> this.Similarity(true, sim)
+                | SimilarityExpr sim -> this.Similarity(sim)
                 | BinaryExpr bin -> this.Binary(bin)
                 | UnaryExpr un -> this.Unary(un)
-                | BetweenExpr between -> this.Between(false, between)
-                | NotBetweenExpr between -> this.Between(true, between)
-                | InExpr inex -> this.In(false, inex)
-                | NotInExpr inex -> this.In(true, inex)
+                | BetweenExpr between -> this.Between(between)
+                | InExpr inex -> this.In(inex)
                 | ExistsExpr select -> this.Exists(select)
                 | CaseExpr case -> this.Case(case)
                 | ScalarSubqueryExpr subquery -> this.ScalarSubquery(subquery)

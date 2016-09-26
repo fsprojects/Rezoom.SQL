@@ -7,7 +7,6 @@ open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes
 open SQLow
-open SQLow.CommandEffect
 open Rezoom.ORM.SQLProvider.TypeGeneration
 
 [<TypeProvider>]
@@ -30,7 +29,7 @@ type public NamerProvider(cfg : TypeProviderConfig) as this =
         match parameterValues with 
         | [| :? string as model; :? string as sql |] ->
             let model = UserModel.Load(model)
-            let parsed = CommandWithEffect.Parse(model.Model, typeName, sql)
+            let parsed = CommandEffect.OfSQL(model.Model, typeName, sql)
             let ty =
                 {   Assembly = thisAssembly
                     Namespace = rootNamespace

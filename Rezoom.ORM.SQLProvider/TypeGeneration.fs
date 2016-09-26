@@ -10,7 +10,6 @@ open FSharp.Reflection
 open ProviderImplementation.ProvidedTypes
 open Rezoom.ORM
 open SQLow
-open SQLow.CommandEffect
 
 type GenerateType =
     {
@@ -18,7 +17,7 @@ type GenerateType =
         Assembly : Assembly
         Namespace : string
         TypeName : string
-        Command : CommandWithEffect
+        Command : CommandEffect
     }
 
 let private parameterIndexer (pars : BindParameter seq) =
@@ -79,7 +78,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
         ty.AddMembers [ field :> MemberInfo; getter :> _ ]
         fields.Add(camel, field)
     for KeyValue(name, (_, column)) in columnMap.Columns do
-        addField column.PrimaryKey name <| model.Backend.MapPrimitiveType(column.ColumnType)
+        addField column.Expr.Info.PrimaryKey name <| model.Backend.MapPrimitiveType(column.Expr.Info.Type)
     for KeyValue(name, subMap) in columnMap.SubMaps do
         let subTy = generateRowTypeFromColumns model (name + "Row") subMap
         ty.AddMember(subTy)
@@ -97,13 +96,13 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
     ty.AddMember(ctor)
     ty
 
-let private generateRowType (model : UserModel) (name : string) (query : SchemaQuery) =
+let private generateRowType (model : UserModel) (name : string) (query : ColumnType QueryExprInfo) =
     CompileTimeColumnMap.Parse(query.Columns)
     |> generateRowTypeFromColumns model name
 
 let private generateCtor (baseCtor : ConstructorInfo) (generate : GenerateType) =
     let backend = generate.UserModel.Backend
-    let parameters = generate.Command.Effect.Parameters
+    let parameters = generate.Command.Parameters
     let indexer = parameterIndexer (parameters |> Seq.map fst)
     let fragments = backend.ToCommandFragments(indexer, generate.Command.Statements)
     let parameters =
@@ -125,7 +124,7 @@ let private generateCtor (baseCtor : ConstructorInfo) (generate : GenerateType) 
 let generateType (generate : GenerateType) =
     let rowTypes, baseTy =
         let genRowType = generateRowType generate.UserModel
-        match generate.Command.Effect.ResultSets |> Seq.toList with
+        match generate.Command.ResultSets |> Seq.toList with
         | [] -> [], typeof<Rezoom.ORM.Command0<unit>>
         | [ resultSet ] ->
             let rowType = genRowType "Row" resultSet
@@ -142,8 +141,8 @@ let generateType (generate : GenerateType) =
             let rowType3 = genRowType "Row3" resultSet3
             [ rowType1; rowType2; rowType3 ],
                 typedefof<Rezoom.ORM.Command3<_, _, _>>.MakeGenericType(rowType1, rowType2, rowType3)
-        | _ ->
-            failwithf "Too many (%d) result sets from command." generate.Command.Effect.ResultSets.Count
+        | sets ->
+            failwithf "Too many (%d) result sets from command." (List.length sets)
     let provided =
         ProvidedTypeDefinition(generate.Assembly, generate.Namespace, generate.TypeName, Some baseTy, IsErased = false)
     provided.AddMembers rowTypes

@@ -11,4 +11,4 @@ type IBackend =
     abstract member Builtin : DatabaseBuiltin
     abstract member MapPrimitiveType : ty : ColumnType -> Type
     abstract member ToCommandFragments
-        : indexer : IParameterIndexer * stmts : Stmt IReadOnlyList -> CommandFragment IReadOnlyList
+        : indexer : IParameterIndexer * stmts : TStmt IReadOnlyList -> CommandFragment IReadOnlyList

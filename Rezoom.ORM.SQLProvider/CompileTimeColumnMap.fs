@@ -6,7 +6,7 @@ open SQLow
 /// Same mapping as Rezoom.ORM.ColumnMap, but carries more metadata about the columns
 /// known from SQLow.
 type private CompileTimeColumnMap() =
-    let columns = Dictionary<string, int16 * SchemaQueryColumn>(StringComparer.OrdinalIgnoreCase)
+    let columns = Dictionary<string, int16 * ColumnType ColumnExprInfo>(StringComparer.OrdinalIgnoreCase)
     let subMaps = Dictionary<string, CompileTimeColumnMap>(StringComparer.OrdinalIgnoreCase)
     member private this.GetOrCreateSubMap(name) =
         let succ, sub = subMaps.TryGetValue(name)
@@ -18,7 +18,7 @@ type private CompileTimeColumnMap() =
         columns.[name] <- info
     // TODO: use inline functions to have a single implementation for this load logic.
     // It's gross duplicating it between ColumnMap and CompileTimeColumnMap.
-    member private this.Load(columns : SchemaQueryColumn IReadOnlyList) =
+    member private this.Load(columns : ColumnType ColumnExprInfo IReadOnlyList) =
         let root = this
         let mutable current = this
         for i = 0 to columns.Count - 1 do
