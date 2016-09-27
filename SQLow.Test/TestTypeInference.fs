@@ -24,7 +24,6 @@ type TestTypeInference() =
             create table Users(id int primary key, name nvarchar(128), email nvarchar(128));
             select * from Users
         ")
-        printfn "%A" cmd
         Assert.AreEqual(0, cmd.Parameters.Count)
         let results = cmd.ResultSets |> toReadOnlyList
         Assert.AreEqual(1, results.Count)
@@ -46,7 +45,6 @@ type TestTypeInference() =
             select * from Users u
             where u.id = @id
         ")
-        printfn "%A" cmd
         Assert.AreEqual(1, cmd.Parameters.Count)
         Assert.AreEqual
             ( (NamedParameter (Name("id")), { Nullable = true; Type = IntegerType })
@@ -71,7 +69,6 @@ type TestTypeInference() =
             select * from Users u
             where u.id = @id
         ")
-        printfn "%A" cmd
         Assert.AreEqual(1, cmd.Parameters.Count)
         Assert.AreEqual
             ( (NamedParameter (Name("id")), { Nullable = false; Type = IntegerType })

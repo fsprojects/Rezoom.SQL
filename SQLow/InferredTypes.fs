@@ -168,10 +168,9 @@ type InferredFromClause =
     {
         /// The tables named in the "from" clause of the query, if any.
         /// These are keyed on the alias of the table, if any, or the table name.
-        FromVariables : IReadOnlyDictionary<Name, InferredType QueryExprInfo>
-        /// The implicit set of columns derived from the "from" clause.
-        /// These are the columns you get if you "select *".
-        Wildcard : InferredType QueryExprInfo
+        FromVariables : IReadOnlyDictionary<Name, InferredType ObjectInfo>
+        /// All the objects involved in the from clause in order.
+        FromObjects : (Name * InferredType ObjectInfo) seq
     }
     member this.ResolveTable(tableName : ObjectName) =
         match tableName.SchemaName with
@@ -183,10 +182,32 @@ type InferredFromClause =
             else NotFound <| sprintf "No such table in FROM clause: ``%O``" tableName.ObjectName
     member this.ResolveColumnReference(name : ColumnName) =
         match name.Table with
-        | None -> this.Wildcard.ColumnByName(name.ColumnName)
+        | None ->
+            let matches =
+                seq {
+                    for tableAlias, objectInfo in this.FromObjects do
+                        let table = objectInfo.Table
+                        match table.Query.ColumnByName(name.ColumnName) with
+                        | Found column -> yield Ok (Some tableAlias, table, column)
+                        | NotFound _ -> ()
+                        | Ambiguous err -> yield Error err
+                } |> toReadOnlyList
+            if matches.Count = 1 then
+                match matches.[0] with
+                | Ok triple -> Found triple
+                | Error e -> Ambiguous e
+            elif matches.Count <= 0 then
+                NotFound <| sprintf "No such column in FROM clause: ``%O``" name
+            else
+                Ambiguous <| sprintf "Ambiguous column: ``%O``" name
         | Some tableName ->
             match this.ResolveTable(tableName) with
-            | Found tbl -> tbl.ColumnByName(name.ColumnName)
+            | Found objectInfo ->
+                let table = objectInfo.Table
+                match table.Query.ColumnByName(name.ColumnName) with
+                | Found column -> Found (Some tableName.ObjectName, table, column)
+                | NotFound err -> NotFound err
+                | Ambiguous err -> Ambiguous err
             | NotFound err -> NotFound err
             | Ambiguous err -> Ambiguous err
 
@@ -232,7 +253,7 @@ and InferredSelectScope =
         match name.SchemaName with
         | None ->
             match this.CTEVariables.TryFind(name.ObjectName) with
-            | Some cte -> { Table = LocalQueryReference; Query = cte } |> TableLike |> Found
+            | Some cte -> { Table = CTEReference name.ObjectName; Query = cte } |> TableLike |> Found
             | None ->
                 match this.ParentScope with
                 | Some parent ->
@@ -262,8 +283,9 @@ and InferredSelectScope =
         match name.Table, this.SelectClause with
         | None, Some selected ->
             match selected.ColumnByName(name.ColumnName) with
-            | Found _ as ok -> ok
-            | Ambiguous _ as ambig -> ambig
+            | Found column ->
+                Found (None, { Table = SelectClauseReference name.ColumnName; Query = selected }, column)
+            | Ambiguous reason -> Ambiguous reason
             | NotFound _ -> findFrom()
         | _ -> findFrom()
 

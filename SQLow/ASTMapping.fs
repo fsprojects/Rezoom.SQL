@@ -122,7 +122,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.ResultColumn(resultColumn : ResultColumn<'t1, 'e1>) =
         match resultColumn with
         | ColumnsWildcard -> ColumnsWildcard
-        | TableColumnsWildcard tbl -> TableColumnsWildcard (this.ObjectName(tbl))
+        | TableColumnsWildcard tbl -> TableColumnsWildcard tbl
         | Column (expr, alias) -> Column (this.Expr(expr), alias)
     member this.ResultColumns(resultColumns : ResultColumns<'t1, 'e1>) =
         {   Distinct = resultColumns.Distinct

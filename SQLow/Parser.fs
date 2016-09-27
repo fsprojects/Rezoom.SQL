@@ -603,7 +603,7 @@ let private asAlias =
 let private resultColumn =
     %% +.[
         %% '*' -|> ColumnsWildcard
-        %% +.objectName -- '.' -? '*' -|> TableColumnsWildcard
+        %% +.name -- '.' -? '*' -|> TableColumnsWildcard
         %% +.expr -- +.(asAlias * zeroOrOne) -|> fun ex alias -> Column (ex, alias)
     ] -- ws -|> id
 

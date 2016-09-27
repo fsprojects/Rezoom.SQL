@@ -80,7 +80,11 @@ and QueryExprInfo<'t> =
 and TableReference =
     | TableReference of SchemaTable
     | ViewReference of SchemaView
-    | LocalQueryReference
+    | CTEReference of Name
+    | FromClauseReference of Name
+    | SelectClauseReference of Name
+    | SelectResults
+    | CompoundTermResults
 
 and TableLikeExprInfo<'t> =
     {   Table : TableReference

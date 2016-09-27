@@ -303,7 +303,7 @@ and ResultColumns<'t, 'e> =
 
 and ResultColumn<'t, 'e> =
     | ColumnsWildcard
-    | TableColumnsWildcard of ObjectName<'t>
+    | TableColumnsWildcard of Name
     | Column of Expr<'t, 'e> * Alias
 
 and IndexHint =

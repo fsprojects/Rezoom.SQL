@@ -109,7 +109,7 @@ type StatementTranslator() =
         | ColumnsWildcard -> text "*" |> Seq.singleton
         | TableColumnsWildcard name ->
             seq {
-                yield! this.Expr.ObjectName(name)
+                yield this.Expr.Name(name)
                 yield text ".*"
             }
         | Column (expr, alias) ->

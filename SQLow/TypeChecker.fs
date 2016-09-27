@@ -68,10 +68,18 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     else Missing
         }
     member this.ColumnName(source : SourceInfo, columnName : ColumnName) =
-        let name = scope.ResolveColumnReference(columnName) |> foundAt source
+        let tblAlias, tblInfo, name = scope.ResolveColumnReference(columnName) |> foundAt source
         {   Expr.Source = source
             Value =
-                {   Table = None // TODO: Option.map this.ObjectName columnName.Table
+                {   Table =
+                        match tblAlias with
+                        | None -> None
+                        | Some tblAlias ->
+                            {   Source = source
+                                SchemaName = None
+                                ObjectName = tblAlias
+                                Info = TableLike tblInfo
+                            } |> Some
                     ColumnName = columnName.ColumnName
                 } |> ColumnNameExpr
             Info = name.Expr.Info
@@ -362,31 +370,32 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member private this.TableOrSubqueryScope(tsub : TableOrSubquery) =
         match tsub.Table with
         | Table (tinvoc, index) ->
-            tsub.Alias |? tinvoc.Table.ObjectName, this.ObjectName(tinvoc.Table).Info.Table.Query
+            tsub.Alias |? tinvoc.Table.ObjectName, this.ObjectName(tinvoc.Table).Info
         | Subquery select ->
             match tsub.Alias with
             | None -> failAt select.Source "Subquery requires an alias"
             | Some alias ->
-                alias, this.Select(select).Value.Info.Table.Query
+                alias, this.Select(select).Value.Info
 
-    member private this.TableExprScope(dict : Dictionary<Name, InferredType QueryExprInfo>, texpr : TableExpr) =
-        let add name query =
+    member private this.TableExprScope(dict : Dictionary<Name, InferredType ObjectInfo>, texpr : TableExpr) =
+        let add name objectInfo =
             if dict.ContainsKey(name) then
                 failAt texpr.Source <| sprintf "Table name already in scope: ``%O``" name
             else
-                dict.Add(name, query)
+                dict.Add(name, objectInfo)
         match texpr.Value with
         | TableOrSubquery tsub ->
-            let alias, query = this.TableOrSubqueryScope(tsub)
-            add alias query
-            query
+            let (alias, objectInfo) as pair = this.TableOrSubqueryScope(tsub)
+            add alias objectInfo
+            Seq.singleton pair
         | Join join ->
-            let left = this.TableExprScope(dict, join.LeftTable)
-            let right = this.TableExprScope(dict, join.RightTable)
-            left.Append(right)
+            seq {
+                yield! this.TableExprScope(dict, join.LeftTable)
+                yield! this.TableExprScope(dict, join.RightTable)
+            }
     member private this.TableExprScope(texpr : TableExpr) =
         let dict = Dictionary()
-        { FromVariables = dict; Wildcard = this.TableExprScope(dict, texpr) }
+        { FromVariables = dict; FromObjects = this.TableExprScope(dict, texpr) }
 
     member this.TableInvocation(table : TableInvocation) =
         {   Table = this.ObjectName(table.Table)
@@ -428,15 +437,48 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         let checker = TypeChecker(cxt, { scope with FromClause = Some <| this.TableExprScope(texpr) })
         checker, this.TableExpr(checker, texpr)
 
-    member this.ResultColumn(resultColumn : ResultColumn) =
-        match resultColumn with
-        | ColumnsWildcard -> ColumnsWildcard
-        | TableColumnsWildcard tbl -> TableColumnsWildcard (this.ObjectName(tbl)) // TODO: ensure it's from FROM
-        | Column (expr, alias) -> Column (this.Expr(expr), alias)
+    member this.ResultColumn(resultColumn : ResultColumn WithSource) =
+        let qualify (alias : Name) fromTable (col : _ ColumnExprInfo) =
+            Column
+                ({  Source = resultColumn.Source
+                    Value =
+                        {   ColumnName = col.ColumnName
+                            Table =
+                                {   Source = resultColumn.Source
+                                    ObjectName = alias
+                                    SchemaName = None
+                                    Info = fromTable
+                                } |> Some
+                        } |> ColumnNameExpr
+                    Info = col.Expr.Info }, None)
+        match resultColumn.Value with
+        | ColumnsWildcard ->
+            match scope.FromClause with
+            | None -> failAt resultColumn.Source "Must have a FROM clause to use * wildcard"
+            | Some from ->
+                seq {
+                    for alias, fromTable in from.FromObjects do
+                    for col in fromTable.Table.Query.Columns do
+                        yield qualify alias fromTable col
+                }
+        | TableColumnsWildcard tbl ->
+            match scope.FromClause with
+            | None -> failAt resultColumn.Source <| sprintf "Must have a FROM clause to use ``%O``" tbl
+            | Some from ->
+                let succ, fromTable = from.FromVariables.TryGetValue(tbl)
+                if not succ then failAt resultColumn.Source <| sprintf "No such table: ``%O``" tbl
+                seq {
+                    for col in fromTable.Table.Query.Columns do
+                        yield qualify tbl fromTable col
+                }
+        | Column (expr, alias) -> Column (this.Expr(expr), alias) |> Seq.singleton
     member this.ResultColumns(resultColumns : ResultColumns) =
         {   Distinct = resultColumns.Distinct
-            Columns = resultColumns.Columns
-            |> rmap (fun { Source = source; Value = value } -> { Source = source; Value = this.ResultColumn(value) })
+            Columns =
+                resultColumns.Columns
+                |> Seq.collect
+                    (fun rc -> this.ResultColumn(rc) |> Seq.map (fun c -> { WithSource.Source = rc.Source; Value = c }))
+                |> ResizeArray
         }
     member this.GroupBy(groupBy : GroupBy) =
         {   By = groupBy.By |> rmap this.Expr
@@ -454,12 +496,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             seq {
                 for column in columns.Columns do
                     match column.Value with
-                    | ColumnsWildcard ->
-                        match checker.Scope.FromClause with
-                        | None -> failAt column.Source "Must have a FROM clause to use `*` wildcard"
-                        | Some from -> yield! from.Wildcard.Columns
-                    | TableColumnsWildcard tbl ->
-                        yield! tbl.Info.Table.Query.Columns
                     | Column (expr, alias) ->
                         yield
                             {   Expr = expr
@@ -472,13 +508,14 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                                         | None -> failAt column.Source "Expression-valued column requires an alias"
                                         | Some col -> col.ColumnName
                             }
+                     | _ -> failwith "All columns must be qualified" // bug if we get here
             } |> toReadOnlyList
         {   Columns = columns
             From = from
             Where = Option.map checker.Expr select.Where
             GroupBy = Option.map checker.GroupBy select.GroupBy
             Info =
-                {   Table = LocalQueryReference
+                {   Table = SelectResults
                     Query = { Columns = infoColumns }
                 } |> TableLike
         }
@@ -526,7 +563,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                             }
                     } |> toReadOnlyList
                 TableLike
-                    {   Table = LocalQueryReference
+                    {   Table = CompoundTermResults
                         Query = { Columns = columns }
                     }, Values vals
             | Select select ->
