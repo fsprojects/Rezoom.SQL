@@ -49,11 +49,11 @@ let private toFragmentArrayExpr (fragments : CommandFragment IReadOnlyList) =
 let private toCamelCase (str : string) =
     Regex.Replace(str, @"^\p{Lu}+", fun m -> m.Value.ToLowerInvariant())
 
-type private KeyType() =
+type KeyType() =
     [<ComponentModel.DataAnnotations.Key>]
     member __.DummyKeyProperty = 0
     static member AttributeData =
-        CustomAttributeData.GetCustomAttributes(typeof<KeyType>.GetProperty("DummyKey"))
+        CustomAttributeData.GetCustomAttributes(typeof<KeyType>.GetProperty("DummyKeyProperty"))
         |> Seq.find (fun a -> a.AttributeType = typeof<ComponentModel.DataAnnotations.KeyAttribute>)
 
 let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap : CompileTimeColumnMap) =

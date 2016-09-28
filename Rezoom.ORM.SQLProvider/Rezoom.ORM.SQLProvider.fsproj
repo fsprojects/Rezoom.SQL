@@ -23,6 +23,10 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>bin\Debug\Rezoom.ORM.SQLProvider.XML</DocumentationFile>
+    <StartAction>Program</StartAction>
+    <StartProgram>C:\Program Files (x86)\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe</StartProgram>
+    <StartArguments>user.fsx</StartArguments>
+    <StartWorkingDirectory>D:\src\Rezoom\Rezoom.ORM.SQLProvider\</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
