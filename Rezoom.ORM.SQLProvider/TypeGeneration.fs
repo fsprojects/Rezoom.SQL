@@ -8,6 +8,7 @@ open FSharp.Core.CompilerServices
 open FSharp.Quotations
 open FSharp.Reflection
 open ProviderImplementation.ProvidedTypes
+open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open Rezoom.ORM
 open SQLow
 
@@ -121,32 +122,54 @@ let private generateCtor (baseCtor : ConstructorInfo) (generate : GenerateType) 
     ctor.InvokeCode <- fun _ -> <@@ () @@>
     ctor
 
+let private generateCommandMethod (generate : GenerateType) (retTy : Type) (callMeth : MethodInfo) =
+    let backend = generate.UserModel.Backend
+    let parameters = generate.Command.Parameters
+    let indexer = parameterIndexer (parameters |> Seq.map fst)
+    let fragments = backend.ToCommandFragments(indexer, generate.Command.Statements)
+    let parameters =
+        [ for NamedParameter name, ty in parameters ->
+            ProvidedParameter(name.Value, generate.UserModel.Backend.MapPrimitiveType(ty))
+        ]
+    let meth = ProvidedMethod("Command", parameters, retTy)
+    meth.SetMethodAttrs(MethodAttributes.Static ||| MethodAttributes.Public)
+    meth.InvokeCode <-
+        fun args ->
+            let arr = Expr.NewArray(typeof<obj>, args |> List.map (fun e -> Expr.Coerce(e, typeof<obj>)))
+            let frags = toFragmentArrayExpr fragments
+            Expr.CallUnchecked(callMeth, [ frags; arr ])
+    meth
+
 let generateType (generate : GenerateType) =
-    let rowTypes, baseTy =
+    let commandCtor = typeof<CommandConstructor>
+    let rowTypes, commandCtorMethod, commandType =
         let genRowType = generateRowType generate.UserModel
         match generate.Command.ResultSets |> Seq.toList with
-        | [] -> [], typeof<Rezoom.ORM.Command0<unit>>
+        | [] ->
+            [], commandCtor.GetMethod("Command0"), typedefof<_ Command0>.MakeGenericType(typeof<unit>)
         | [ resultSet ] ->
             let rowType = genRowType "Row" resultSet
-            [ rowType ],
-                typedefof<Rezoom.ORM.Command1<_>>.MakeGenericType(rowType)
+            [ rowType ]
+            , commandCtor.GetMethod("Command1").MakeGenericMethod(rowType)
+            , typedefof<_ Command1>.MakeGenericType(rowType)
         | [ resultSet1; resultSet2 ] ->
             let rowType1 = genRowType "Row1" resultSet1
             let rowType2 = genRowType "Row2" resultSet2
-            [ rowType1; rowType2 ],
-                typedefof<Rezoom.ORM.Command2<_, _>>.MakeGenericType(rowType1, rowType2)
+            [ rowType1; rowType2 ]
+            , commandCtor.GetMethod("Command2").MakeGenericMethod(rowType1, rowType2)
+            , typedefof<Command2<_, _>>.MakeGenericType(rowType1, rowType2)
         | [ resultSet1; resultSet2; resultSet3 ] ->
             let rowType1 = genRowType "Row1" resultSet1
             let rowType2 = genRowType "Row2" resultSet2
             let rowType3 = genRowType "Row3" resultSet3
-            [ rowType1; rowType2; rowType3 ],
-                typedefof<Rezoom.ORM.Command3<_, _, _>>.MakeGenericType(rowType1, rowType2, rowType3)
+            [ rowType1; rowType2; rowType3 ]
+            , commandCtor.GetMethod("Command3").MakeGenericMethod(rowType1, rowType2, rowType3)
+            , typedefof<Command3<_, _, _>>.MakeGenericType(rowType1, rowType2, rowType3)
         | sets ->
             failwithf "Too many (%d) result sets from command." (List.length sets)
     let provided =
-        ProvidedTypeDefinition(generate.Assembly, generate.Namespace, generate.TypeName, Some baseTy, IsErased = false)
+        ProvidedTypeDefinition
+            (generate.Assembly, generate.Namespace, generate.TypeName, Some typeof<obj>, IsErased = false)
     provided.AddMembers rowTypes
-    let baseCtor = baseTy.GetConstructor([| typeof<CommandFragment IReadOnlyList>; typeof<obj IReadOnlyList> |])
-    if isNull baseCtor then failwith "No matching base ctor"
-    provided.AddMember <| generateCtor baseCtor generate
+    provided.AddMember <| generateCommandMethod generate commandType commandCtorMethod
     provided

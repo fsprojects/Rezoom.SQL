@@ -489,16 +489,16 @@ type QuotationSimplifier(isGenerated: bool) =
         let rec loop expr = traverse loopCore expr
         and loopCore fallback orig = 
             match orig with
-            | SpecificCall RightPipe (None, _, [operand; applicable]) ->
-                let fixedOperand = loop operand
-                match loop applicable with
-                | Lambda(arg, body) ->
-                    let v = Quotations.Var("__temp", operand.Type)
-                    let ev = Expr.Var v
-
-                    let fixedBody = loop body
-                    Expr.Let(v, fixedOperand, fixedBody.Substitute(fun v1 -> if v1 = arg then Some ev else None))
-                | fixedApplicable -> Expr.Application(fixedApplicable, fixedOperand)
+//            | SpecificCall RightPipe (None, _, [operand; applicable]) ->
+//                let fixedOperand = loop operand
+//                match loop applicable with
+//                | Lambda(arg, body) ->
+//                    let v = Quotations.Var("__temp", operand.Type)
+//                    let ev = Expr.Var v
+//
+//                    let fixedBody = loop body
+//                    Expr.Let(v, fixedOperand, fixedBody.Substitute(fun v1 -> if v1 = arg then Some ev else None))
+//                | fixedApplicable -> Expr.Application(fixedApplicable, fixedOperand)
             | x -> fallback x
         loop expr
 
@@ -802,88 +802,88 @@ type CodeGenerator(assemblyMainModule: ModuleBuilder, uniqueLambdaTypeName,
                               
             popIfEmptyExpected expectedState
 
-        | SpecificCall <@ (-) @>(None, [t1; t2; _], [a1; a2]) ->
-            assert(t1 = t2)
-            emitExpr ExpectedStackState.Value a1
-            emitExpr ExpectedStackState.Value a2
-            if t1 = typeof<decimal> then
-                ilg.Emit(OpCodes.Call, typeof<decimal>.GetMethod "op_Subtraction")
-            else
-                ilg.Emit(OpCodes.Sub)
-                emitConvIfNecessary t1
-
-            popIfEmptyExpected expectedState
-
-        | SpecificCall <@ (/) @> (None, [t1; t2; _], [a1; a2]) ->
-            assert (t1 = t2)
-            emitExpr ExpectedStackState.Value a1
-            emitExpr ExpectedStackState.Value a2
-            if t1 = typeof<decimal> then
-                ilg.Emit(OpCodes.Call, typeof<decimal>.GetMethod "op_Division")
-            else
-                match Type.GetTypeCode t1 with
-                | TypeCode.UInt32
-                | TypeCode.UInt64
-                | TypeCode.UInt16
-                | TypeCode.Byte
-                | _ when t1 = typeof<unativeint> -> ilg.Emit (OpCodes.Div_Un)
-                | _ -> ilg.Emit(OpCodes.Div)
-
-                emitConvIfNecessary t1
-
-            popIfEmptyExpected expectedState
-
-        | SpecificCall <@ int @>(None, [sourceTy], [v]) ->
-            emitExpr ExpectedStackState.Value v
-            match Type.GetTypeCode(sourceTy) with
-            | TypeCode.String -> 
-                ilg.Emit(OpCodes.Call, ParseInt32Method())
-            | TypeCode.Single
-            | TypeCode.Double
-            | TypeCode.Int64 
-            | TypeCode.UInt64
-            | TypeCode.UInt16
-            | TypeCode.Char
-            | TypeCode.Byte
-            | _ when sourceTy = typeof<nativeint> || sourceTy = typeof<unativeint> ->
-                ilg.Emit(OpCodes.Conv_I4)
-            | TypeCode.Int32
-            | TypeCode.UInt32
-            | TypeCode.Int16
-            | TypeCode.SByte -> () // no op
-            | _ -> failwith "TODO: search for op_Explicit on sourceTy"
-
-        | SpecificCall <@ LanguagePrimitives.IntrinsicFunctions.GetArray @> (None, [ty], [arr; index]) ->
-            // observable side-effect - IndexOutOfRangeException
-            emitExpr ExpectedStackState.Value arr
-            emitExpr ExpectedStackState.Value index
-            if isAddress expectedState then
-                ilg.Emit(OpCodes.Readonly)
-                ilg.Emit(OpCodes.Ldelema, transType ty)
-            else
-                ilg.Emit(OpCodes.Ldelem, transType ty)
-
-            popIfEmptyExpected expectedState
-
-        | SpecificCall <@ LanguagePrimitives.IntrinsicFunctions.GetArray2D @> (None, _ty, arr::indices)
-        | SpecificCall <@ LanguagePrimitives.IntrinsicFunctions.GetArray3D @> (None, _ty, arr::indices)
-        | SpecificCall <@ LanguagePrimitives.IntrinsicFunctions.GetArray4D @> (None, _ty, arr::indices) ->
-                              
-            let meth = 
-                let name = if isAddress expectedState then "Address" else "Get"
-                arr.Type.GetMethod(name)
-
-            // observable side-effect - IndexOutOfRangeException
-            emitExpr ExpectedStackState.Value arr
-            for index in indices do
-                emitExpr ExpectedStackState.Value index
-                              
-            if isAddress expectedState then
-                ilg.Emit(OpCodes.Readonly)
-
-            ilg.Emit(OpCodes.Call, meth)
-
-            popIfEmptyExpected expectedState
+//        | SpecificCall <@ (-) @>(None, [t1; t2; _], [a1; a2]) ->
+//            assert(t1 = t2)
+//            emitExpr ExpectedStackState.Value a1
+//            emitExpr ExpectedStackState.Value a2
+//            if t1 = typeof<decimal> then
+//                ilg.Emit(OpCodes.Call, typeof<decimal>.GetMethod "op_Subtraction")
+//            else
+//                ilg.Emit(OpCodes.Sub)
+//                emitConvIfNecessary t1
+//
+//            popIfEmptyExpected expectedState
+//
+//        | SpecificCall <@ (/) @> (None, [t1; t2; _], [a1; a2]) ->
+//            assert (t1 = t2)
+//            emitExpr ExpectedStackState.Value a1
+//            emitExpr ExpectedStackState.Value a2
+//            if t1 = typeof<decimal> then
+//                ilg.Emit(OpCodes.Call, typeof<decimal>.GetMethod "op_Division")
+//            else
+//                match Type.GetTypeCode t1 with
+//                | TypeCode.UInt32
+//                | TypeCode.UInt64
+//                | TypeCode.UInt16
+//                | TypeCode.Byte
+//                | _ when t1 = typeof<unativeint> -> ilg.Emit (OpCodes.Div_Un)
+//                | _ -> ilg.Emit(OpCodes.Div)
+//
+//                emitConvIfNecessary t1
+//
+//            popIfEmptyExpected expectedState
+//
+//        | SpecificCall <@ int @>(None, [sourceTy], [v]) ->
+//            emitExpr ExpectedStackState.Value v
+//            match Type.GetTypeCode(sourceTy) with
+//            | TypeCode.String -> 
+//                ilg.Emit(OpCodes.Call, ParseInt32Method())
+//            | TypeCode.Single
+//            | TypeCode.Double
+//            | TypeCode.Int64 
+//            | TypeCode.UInt64
+//            | TypeCode.UInt16
+//            | TypeCode.Char
+//            | TypeCode.Byte
+//            | _ when sourceTy = typeof<nativeint> || sourceTy = typeof<unativeint> ->
+//                ilg.Emit(OpCodes.Conv_I4)
+//            | TypeCode.Int32
+//            | TypeCode.UInt32
+//            | TypeCode.Int16
+//            | TypeCode.SByte -> () // no op
+//            | _ -> failwith "TODO: search for op_Explicit on sourceTy"
+//
+//        | SpecificCall <@ LanguagePrimitives.IntrinsicFunctions.GetArray @> (None, [ty], [arr; index]) ->
+//            // observable side-effect - IndexOutOfRangeException
+//            emitExpr ExpectedStackState.Value arr
+//            emitExpr ExpectedStackState.Value index
+//            if isAddress expectedState then
+//                ilg.Emit(OpCodes.Readonly)
+//                ilg.Emit(OpCodes.Ldelema, transType ty)
+//            else
+//                ilg.Emit(OpCodes.Ldelem, transType ty)
+//
+//            popIfEmptyExpected expectedState
+//
+//        | SpecificCall <@ LanguagePrimitives.IntrinsicFunctions.GetArray2D @> (None, _ty, arr::indices)
+//        | SpecificCall <@ LanguagePrimitives.IntrinsicFunctions.GetArray3D @> (None, _ty, arr::indices)
+//        | SpecificCall <@ LanguagePrimitives.IntrinsicFunctions.GetArray4D @> (None, _ty, arr::indices) ->
+//                              
+//            let meth = 
+//                let name = if isAddress expectedState then "Address" else "Get"
+//                arr.Type.GetMethod(name)
+//
+//            // observable side-effect - IndexOutOfRangeException
+//            emitExpr ExpectedStackState.Value arr
+//            for index in indices do
+//                emitExpr ExpectedStackState.Value index
+//                              
+//            if isAddress expectedState then
+//                ilg.Emit(OpCodes.Readonly)
+//
+//            ilg.Emit(OpCodes.Call, meth)
+//
+//            popIfEmptyExpected expectedState
 
 
         | FieldGet (None,field) when isLiteralEnumField field ->

@@ -302,6 +302,7 @@ type StatementTranslator() =
     default this.Statement(stmt) =
         match stmt with
         | SelectStmt select -> this.Select(select)
+        | CreateTableStmt createTable -> Seq.empty // TODO
         | _ -> failwith "Not implemented"
     abstract member Statements : TStmt seq -> Fragments
     default this.Statements(stmts) =

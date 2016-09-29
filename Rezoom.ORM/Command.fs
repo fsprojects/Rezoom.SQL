@@ -114,3 +114,8 @@ type Command3<'a, 'b, 'c>(fragments, parameters) =
         (List.head readers).Read(row)
     override __.GetResultObject() = upcast result.Value
     override __.GetResult() = result.Value
+
+type CommandConstructor() =
+    static member Command0(fragments, parameters) = new Command0<unit>(fragments, parameters)
+    static member Command1<'a>(fragments, parameters) = new Command1<'a>(fragments, parameters)
+    static member Command2<'a, 'b>(fragments, parameters) = new Command2<'a, 'b>(fragments, parameters)
