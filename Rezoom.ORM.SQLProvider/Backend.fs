@@ -8,7 +8,7 @@ type IParameterIndexer =
     abstract member ParameterIndex : parameter : BindParameter -> int
 
 type IBackend =
-    abstract member Builtin : DatabaseBuiltin
+    abstract member InitialModel : Model
     abstract member MapPrimitiveType : ty : ColumnType -> Type
     abstract member ToCommandFragments
         : indexer : IParameterIndexer * stmts : TStmt IReadOnlyList -> CommandFragment IReadOnlyList

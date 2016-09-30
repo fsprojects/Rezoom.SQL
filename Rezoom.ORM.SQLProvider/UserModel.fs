@@ -12,19 +12,5 @@ type UserModel(backend : IBackend, model : Model) =
         let backend = SQLiteBackend() :> IBackend
         UserModel
             ( backend = backend
-            , model =
-                {   Schemas =
-                        [   {   SchemaName = Name("main")
-                                Tables = Map.empty
-                                Views = Map.empty
-                            }
-                            {   SchemaName = Name("temp")
-                                Tables = Map.empty
-                                Views = Map.empty
-                            }
-                        ] |> List.map (fun s -> s.SchemaName, s) |> Map.ofList
-                    DefaultSchema = Name("main")
-                    TemporarySchema = Name("temp")
-                    Builtin = backend.Builtin
-                }
+            , model = backend.InitialModel
             )

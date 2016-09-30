@@ -30,10 +30,26 @@ type SQLiteStatement(indexer : IParameterIndexer) as this =
     override __.Expr = upcast expr
 
 type SQLiteBackend() =
+    static let initialModel =
+        let main, temp = Name("main"), Name("temp")
+        {   Schemas =
+                [   {   SchemaName = main
+                        Tables = Map.empty
+                        Views = Map.empty
+                    }
+                    {   SchemaName = temp
+                        Tables = Map.empty
+                        Views = Map.empty
+                    }
+                ] |> List.map (fun s -> s.SchemaName, s) |> Map.ofList
+            DefaultSchema = main
+            TemporarySchema = temp
+            Builtin =
+                {   Functions = Map.empty
+                }
+        }
     interface IBackend with
-        member this.Builtin =
-            {   Functions = Map.empty
-            }
+        member this.InitialModel = initialModel
         member this.MapPrimitiveType(ty) =
             match ty.Type with
             | IntegerType -> if ty.Nullable then typeof<Nullable<int64>> else typeof<int64>
