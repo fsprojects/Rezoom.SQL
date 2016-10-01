@@ -114,11 +114,35 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                             }
                         let schema = { schema with Tables = schema.Tables |> Map.add tbl.TableName newTbl }
                         Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
+    member this.CreateView(create : InfCreateViewStmt) =
+        let schemaName = create.ViewName.SchemaName |? model.DefaultSchema
+        match model.Schemas |> Map.tryFind schemaName with
+        | None -> failAt create.ViewName.Source <| sprintf "No such schema: ``%O``" create.ViewName
+        | Some schema ->
+            if schema.ContainsObject(create.ViewName.ObjectName) then
+                failAt create.ViewName.Source <| sprintf "Object already exists: ``%O``" create.ViewName
+            else
+                let view =
+                    {   SchemaName = schema.SchemaName
+                        ViewName = create.ViewName.ObjectName
+                        Columns =
+                            [| for column in create.AsSelect.Value.Info.Table.Query.Columns ->
+                                {   SchemaName = schemaName
+                                    TableName = create.ViewName.ObjectName
+                                    ColumnName = column.ColumnName
+                                    PrimaryKey = column.Expr.Info.PrimaryKey
+                                    ColumnType = inference.Concrete(column.Expr.Info.Type)
+                                }
+                            |]
+                        ReferencedTables = Seq.empty |> toReadOnlyList // TODO
+                    }
+                let schema = { schema with Views = schema.Views |> Map.add create.ViewName.ObjectName view }
+                Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
     member this.Statment(stmt : InfStmt) =
         match stmt with
         | AlterTableStmt alter -> this.AlterTable(alter)
         | CreateTableStmt create -> this.CreateTable(create)
-        | CreateViewStmt create -> failwith "not implemented"
+        | CreateViewStmt create -> this.CreateView(create)
         | CreateVirtualTableStmt create -> failwith "not implemented"
         | CreateIndexStmt create -> failwith "not implemented"
         | CreateTriggerStmt create -> failwith "not implemented"

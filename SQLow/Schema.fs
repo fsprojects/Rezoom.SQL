@@ -67,6 +67,9 @@ and Schema =
         Tables : Map<Name, SchemaTable>
         Views : Map<Name, SchemaView>
     }
+    member this.ContainsObject(name : Name) =
+        this.Tables.ContainsKey(name)
+        || this.Views.ContainsKey(name)
 
 and SchemaTable =
     {
