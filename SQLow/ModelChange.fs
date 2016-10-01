@@ -66,9 +66,57 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 let schema =
                     { schema with Tables = schema.Tables |> Map.add table.TableName table }
                 Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
+    member this.AlterTable(alter : InfAlterTableStmt) =
+        let schemaName = alter.Table.SchemaName |? model.DefaultSchema
+        match model.Schemas |> Map.tryFind schemaName with
+        | None -> failAt alter.Table.Source <| sprintf "No such schema: ``%O``" alter.Table
+        | Some schema ->
+            let tblName = alter.Table.ObjectName
+            match schema.Tables |> Map.tryFind tblName with
+            | None -> failAt alter.Table.Source <| sprintf "No such table: ``%O``" alter.Table
+            | Some tbl ->
+                match alter.Alteration with
+                | RenameTo newName ->
+                    match schema.Tables |> Map.tryFind newName with
+                    | None ->
+                        let tables =
+                            schema.Tables |> Map.remove tblName |> Map.add newName tbl
+                        let schema = { schema with Tables = tables }
+                        Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
+                    | Some existing ->
+                        failAt alter.Table.Source <| sprintf "Table ``%O`` already exists" existing
+                | AddColumn col ->
+                    match tbl.Columns |> Seq.tryFind (fun c -> c.ColumnName = col.Name) with
+                    | Some _ -> failAt alter.Table.Source <| sprintf "Column ``%O`` already exists" col.Name
+                    | None ->
+                        let affinity = col.Type |> Option.map InferredType.Affinity |? AnyType
+                        let hasNotNullConstraint =
+                            col.Constraints
+                            |> Seq.exists(
+                                function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
+                        let isPrimaryKey =
+                            col.Constraints
+                            |> Seq.exists(
+                                function | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true | _ -> false)
+                        let newCol =
+                            {   SchemaName = schemaName
+                                TableName = tblName
+                                PrimaryKey = isPrimaryKey
+                                ColumnName = col.Name
+                                ColumnType = { Type = affinity; Nullable = not hasNotNullConstraint }
+                            }
+                        let newTbl =
+                            { tbl with
+                                Columns =
+                                    tbl.Columns
+                                    |> Seq.append [ newCol ]
+                                    |> toReadOnlyList
+                            }
+                        let schema = { schema with Tables = schema.Tables |> Map.add tbl.TableName newTbl }
+                        Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
     member this.Statment(stmt : InfStmt) =
         match stmt with
-        | AlterTableStmt alter -> failwith "not implemented"
+        | AlterTableStmt alter -> this.AlterTable(alter)
         | CreateTableStmt create -> this.CreateTable(create)
         | CreateViewStmt create -> failwith "not implemented"
         | CreateVirtualTableStmt create -> failwith "not implemented"

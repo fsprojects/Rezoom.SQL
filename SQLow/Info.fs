@@ -149,6 +149,7 @@ type TTableInvocation = TableInvocation<ColumnType ObjectInfo, ColumnType ExprIn
 type TSelectStmt = SelectStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TColumnConstraint = ColumnConstraint<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TColumnDef = ColumnDef<ColumnType ObjectInfo, ColumnType ExprInfo>
+type TAlterTableStmt = AlterTableStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TAlterTableAlteration = AlterTableAlteration<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TCreateIndexStmt = CreateIndexStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TTableIndexConstraintClause = TableIndexConstraintClause<ColumnType ObjectInfo, ColumnType ExprInfo>

@@ -642,6 +642,7 @@ type TableInvocation = TableInvocation<unit, unit>
 type SelectStmt = SelectStmt<unit, unit>
 type ColumnConstraint = ColumnConstraint<unit, unit>
 type ColumnDef = ColumnDef<unit, unit>
+type AlterTableStmt = AlterTableStmt<unit, unit>
 type AlterTableAlteration = AlterTableAlteration<unit, unit>
 type CreateIndexStmt = CreateIndexStmt<unit, unit>
 type TableIndexConstraintClause = TableIndexConstraintClause<unit, unit>

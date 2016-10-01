@@ -89,6 +89,7 @@ type InfTableInvocation = TableInvocation<InferredType ObjectInfo, InferredType 
 type InfSelectStmt = SelectStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfColumnConstraint = ColumnConstraint<InferredType ObjectInfo, InferredType ExprInfo>
 type InfColumnDef = ColumnDef<InferredType ObjectInfo, InferredType ExprInfo>
+type InfAlterTableStmt = AlterTableStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfAlterTableAlteration = AlterTableAlteration<InferredType ObjectInfo, InferredType ExprInfo>
 type InfCreateIndexStmt = CreateIndexStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfTableIndexConstraintClause = TableIndexConstraintClause<InferredType ObjectInfo, InferredType ExprInfo>
