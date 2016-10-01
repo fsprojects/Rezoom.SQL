@@ -160,7 +160,6 @@ type TCreateVirtualTableStmt = CreateVirtualTableStmt<ColumnType ObjectInfo>
 type TQualifiedTableName = QualifiedTableName<ColumnType ObjectInfo>
 type TDeleteStmt = DeleteStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TDropObjectStmt = DropObjectStmt<ColumnType ObjectInfo>
-type TPragmaStmt = PragmaStmt<ColumnType ObjectInfo>
 type TUpdateStmt = UpdateStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TInsertStmt = InsertStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TStmt = Stmt<ColumnType ObjectInfo, ColumnType ExprInfo>

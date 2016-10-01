@@ -317,10 +317,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             Columns = insert.Columns
             Data = Option.map this.Select insert.Data
         }
-    member this.Pragma(pragma : PragmaStmt<'t1>) =
-        {   Pragma = this.ObjectName(pragma.Pragma)
-            Value = pragma.Value
-        }
     member this.Update(update : UpdateStmt<'t1, 'e1>) =
         {   With = Option.map this.WithClause update.With
             UpdateTable = this.QualifiedTableName(update.UpdateTable)
@@ -337,25 +333,16 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                 {   Table = this.ObjectName(alter.Table)
                     Alteration = this.Alteration(alter.Alteration)
                 }
-        | AnalyzeStmt objectName -> AnalyzeStmt <| Option.map this.ObjectName objectName
-        | AttachStmt (expr, name) -> AttachStmt (this.Expr(expr), name)
-        | BeginStmt ttype -> BeginStmt ttype
-        | CommitStmt -> CommitStmt
         | CreateIndexStmt index -> CreateIndexStmt <| this.CreateIndex(index)
         | CreateTableStmt createTable -> CreateTableStmt <| this.CreateTable(createTable)
         | CreateTriggerStmt createTrigger -> CreateTriggerStmt <| this.CreateTrigger(createTrigger)
         | CreateViewStmt createView -> CreateViewStmt <| this.CreateView(createView)
         | CreateVirtualTableStmt createVirtual -> CreateVirtualTableStmt <| this.CreateVirtualTable(createVirtual)
         | DeleteStmt delete -> DeleteStmt <| this.Delete(delete)
-        | DetachStmt name -> DetachStmt name
         | DropObjectStmt drop -> DropObjectStmt <| this.DropObject(drop)
         | InsertStmt insert -> InsertStmt <| this.Insert(insert)
-        | PragmaStmt pragma -> PragmaStmt <| this.Pragma(pragma)
-        | ReindexStmt name -> ReindexStmt <| Option.map this.ObjectName name
-        | ReleaseStmt name -> ReleaseStmt name
-        | RollbackStmt stmt -> RollbackStmt stmt
-        | SavepointStmt save -> SavepointStmt save
         | SelectStmt select -> SelectStmt <| this.Select(select)
-        | ExplainStmt stmt -> ExplainStmt <| this.Stmt(stmt)
         | UpdateStmt update -> UpdateStmt <| this.Update(update)
-        | VacuumStmt -> VacuumStmt
+        | BeginStmt -> BeginStmt
+        | CommitStmt -> CommitStmt
+        | RollbackStmt -> RollbackStmt

@@ -100,7 +100,6 @@ type InfCreateVirtualTableStmt = CreateVirtualTableStmt<InferredType ObjectInfo>
 type InfQualifiedTableName = QualifiedTableName<InferredType ObjectInfo>
 type InfDeleteStmt = DeleteStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfDropObjectStmt = DropObjectStmt<InferredType ObjectInfo>
-type InfPragmaStmt = PragmaStmt<InferredType ObjectInfo>
 type InfUpdateStmt = UpdateStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfInsertStmt = InsertStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfStmt = Stmt<InferredType ObjectInfo, InferredType ExprInfo>

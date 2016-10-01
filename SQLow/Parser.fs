@@ -1058,19 +1058,9 @@ let private attachStmt =
     -- +.nameOrKeyword
     -|> fun ex schemaName -> ex, schemaName
 
-let private transactionType =
-    %[
-        %% kw "DEFERRED" -|> Deferred
-        %% kw "IMMEDIATE" -|> Immediate
-        %% kw "EXCLUSIVE" -|> Exclusive
-        preturn Deferred
-    ]
-
 let private beginStmt =
     %% kw "BEGIN"
-    -- +.transactionType
     -- zeroOrOne * kw "TRANSACTION"
-    -- zeroOrOne * nameOrString // optional ignored name
     -|> BeginStmt
 
 let private commitStmt =
@@ -1079,20 +1069,8 @@ let private commitStmt =
     -|> CommitStmt
 
 let private rollbackStmt =
-    let toPoint =
-        %% kw "TO"
-        -- zeroOrOne * kw "SAVEPOINT"
-        -- +.name
-        -|> RollbackToSavepoint
-    let tx =
-        %% +.nameOrString -|> RollbackTransactionByName
     %% kw "ROLLBACK"
     -- zeroOrOne * kw "TRANSACTION"
-    -- +.[
-            toPoint
-            tx
-            preturn RollbackTransaction
-        ]
     -|> RollbackStmt
 
 let private createIndexStmt =
@@ -1327,12 +1305,6 @@ let private createVirtualTableStmt =
             WithModuleArguments = defaultArg withArgs (new ResizeArray<_>())
         }
 
-let private detachStmt =
-    %% kw "DETACH"
-    -- zeroOrOne * kw "DATABASE"
-    -- +.nameOrKeyword
-    -|> DetachStmt
-
 let private ifExists =
     %[
         %% kw "IF" -- kw "EXISTS" -|> true
@@ -1355,84 +1327,27 @@ let private dropObjectStmt =
     -|> fun dropType ifExists name ->
         { Drop = dropType; IfExists = ifExists; IndexName = name }
 
-let private pragmaValue =
-    let interiorValue =
-        %[
-            %% +.nameOrKeyword -|> fun n -> StringPragmaValue (n.ToString())
-            %% +.signedNumericLiteral -|> NumericPragmaValue
-        ]
-    %[
-        %% '(' -- ws -- +.interiorValue -- ws -- ')' -|> id
-        %% '=' -- ws -- +.interiorValue -|> id
-    ]
-
-let private pragmaStmt =
-    %% kw "PRAGMA"
-    -- +.objectName
-    -- +.(zeroOrOne * pragmaValue)
-    -|> fun name value ->
-        {
-            Pragma = name
-            Value = value
-        }
-
-let private reindexStmt =
-    %% kw "REINDEX"
-    -- +.(zeroOrOne * objectName)
-    -|> ReindexStmt
-
-let private releaseStmt =
-    %% kw "RELEASE"
-    -- zeroOrOne * kw "SAVEPOINT"
-    -- +.name
-    -|> ReleaseStmt
-
-let private savepointStmt =
-    %% kw "SAVEPOINT"
-    -- +.name
-    -|> SavepointStmt
-
-let private vacuumStmt =
-    %% kw "VACUUM"
-    -|> VacuumStmt
-
-let private almostAnyStmt =
+let private stmt =
     %[
         %% +.alterTableStmt -|> AlterTableStmt
-        %% +.analyzeStmt -|> AnalyzeStmt
-        %% +.attachStmt -|> AttachStmt
-        beginStmt
-        commitStmt
         %% +.createIndexStmt -|> CreateIndexStmt
         %% +.createTableStmt -|> CreateTableStmt
         %% +.createTriggerStmt -|> CreateTriggerStmt
         %% +.createViewStmt -|> CreateViewStmt
         %% +.createVirtualTableStmt -|> CreateVirtualTableStmt
         %% +.deleteStmt -|> DeleteStmt
-        detachStmt
         %% +.dropObjectStmt -|> DropObjectStmt
         %% +.insertStmt -|> InsertStmt
-        %% +.pragmaStmt -|> PragmaStmt
-        reindexStmt
-        releaseStmt
-        rollbackStmt
-        savepointStmt
         %% +.selectStmt -|> SelectStmt
         %% +.updateStmt -|> UpdateStmt
-        vacuumStmt
+        beginStmt
+        commitStmt
+        rollbackStmt
     ]
-
-let private explainStmt =
-    %% kw "EXPLAIN"
-    -- (zeroOrOne * (%% kw "QUERY" -- kw "PLAN" -|> ()))
-    -- +.almostAnyStmt
-    -|> ExplainStmt
-
-let private anyStmt = %[ explainStmt; almostAnyStmt ]
 
 let private stmtsAtLeast min =
     %% ws
-    -- +.(qty.[min..] /. tws ';' * tws anyStmt)
+    -- +.(qty.[min..] /. tws ';' * tws stmt)
     -|> id
 
 let private stmts = stmtsAtLeast 0

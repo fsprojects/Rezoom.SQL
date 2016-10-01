@@ -477,11 +477,6 @@ type CreateTableStmt<'t, 'e> =
         As : CreateTableAs<'t, 'e>
     }
 
-type TransactionType =
-    | Deferred
-    | Immediate
-    | Exclusive
-
 type CreateIndexStmt<'t, 'e> =
     {
         Unique : bool
@@ -585,21 +580,6 @@ type DropObjectStmt<'t> =
         IndexName : ObjectName<'t>
     }
 
-type PragmaValue =
-    | StringPragmaValue of string
-    | NumericPragmaValue of SignedNumericLiteral
-
-type PragmaStmt<'t> =
-    {
-        Pragma : ObjectName<'t>
-        Value : PragmaValue option
-    }
-
-type RollbackStmt =
-    | RollbackToSavepoint of SavepointName
-    | RollbackTransactionByName of Name
-    | RollbackTransaction
-
 type CreateVirtualTableStmt<'t> =
     {
         IfNotExists : bool
@@ -610,28 +590,19 @@ type CreateVirtualTableStmt<'t> =
 
 type Stmt<'t, 'e> =
     | AlterTableStmt of AlterTableStmt<'t, 'e>
-    | AnalyzeStmt of ObjectName<'t> option
-    | AttachStmt of Expr<'t, 'e> * Name
-    | BeginStmt of TransactionType
-    | CommitStmt
     | CreateIndexStmt of CreateIndexStmt<'t, 'e>
     | CreateTableStmt of CreateTableStmt<'t, 'e>
     | CreateTriggerStmt of CreateTriggerStmt<'t, 'e>
     | CreateViewStmt of CreateViewStmt<'t, 'e>
     | CreateVirtualTableStmt of CreateVirtualTableStmt<'t>
     | DeleteStmt of DeleteStmt<'t, 'e>
-    | DetachStmt of Name
     | DropObjectStmt of DropObjectStmt<'t>
     | InsertStmt of InsertStmt<'t, 'e>
-    | PragmaStmt of PragmaStmt<'t>
-    | ReindexStmt of ObjectName<'t> option
-    | ReleaseStmt of Name
-    | RollbackStmt of RollbackStmt
-    | SavepointStmt of SavepointName
     | SelectStmt of SelectStmt<'t, 'e>
-    | ExplainStmt of Stmt<'t, 'e>
     | UpdateStmt of UpdateStmt<'t, 'e>
-    | VacuumStmt
+    | BeginStmt
+    | CommitStmt
+    | RollbackStmt
 
 type ExprType = ExprType<unit, unit>
 type Expr = Expr<unit, unit>
@@ -682,7 +653,6 @@ type CreateVirtualTableStmt = CreateVirtualTableStmt<unit>
 type QualifiedTableName = QualifiedTableName<unit>
 type DeleteStmt = DeleteStmt<unit, unit>
 type DropObjectStmt = DropObjectStmt<unit>
-type PragmaStmt = PragmaStmt<unit>
 type UpdateStmt = UpdateStmt<unit, unit>
 type InsertStmt = InsertStmt<unit, unit>
 type Stmt = Stmt<unit, unit>

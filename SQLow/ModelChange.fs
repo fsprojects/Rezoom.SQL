@@ -69,26 +69,17 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
     member this.Statment(stmt : InfStmt) =
         match stmt with
         | AlterTableStmt alter -> failwith "not implemented"
-        | AttachStmt (attach, name) -> failwith "not implemented"
         | CreateTableStmt create -> this.CreateTable(create)
         | CreateViewStmt create -> failwith "not implemented"
         | CreateVirtualTableStmt create -> failwith "not implemented"
         | CreateIndexStmt create -> failwith "not implemented"
         | CreateTriggerStmt create -> failwith "not implemented"
-        | AnalyzeStmt _
-        | BeginStmt _
+        | BeginStmt
         | CommitStmt
         | DeleteStmt _
-        | DetachStmt _
         | DropObjectStmt _
         | InsertStmt _
-        | PragmaStmt _
-        | ReindexStmt _
-        | ReleaseStmt _
-        | RollbackStmt _
-        | SavepointStmt _
+        | RollbackStmt
         | SelectStmt _
-        | ExplainStmt _
-        | UpdateStmt _
-        | VacuumStmt -> None
+        | UpdateStmt _ -> None
 
