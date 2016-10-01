@@ -580,21 +580,12 @@ type DropObjectStmt<'t> =
         IndexName : ObjectName<'t>
     }
 
-type CreateVirtualTableStmt<'t> =
-    {
-        IfNotExists : bool
-        VirtualTable : ObjectName<'t>
-        UsingModule : Name
-        WithModuleArguments : string ResizeArray
-    }
-
 type Stmt<'t, 'e> =
     | AlterTableStmt of AlterTableStmt<'t, 'e>
     | CreateIndexStmt of CreateIndexStmt<'t, 'e>
     | CreateTableStmt of CreateTableStmt<'t, 'e>
     | CreateTriggerStmt of CreateTriggerStmt<'t, 'e>
     | CreateViewStmt of CreateViewStmt<'t, 'e>
-    | CreateVirtualTableStmt of CreateVirtualTableStmt<'t>
     | DeleteStmt of DeleteStmt<'t, 'e>
     | DropObjectStmt of DropObjectStmt<'t>
     | InsertStmt of InsertStmt<'t, 'e>
@@ -650,7 +641,6 @@ type TableConstraint = TableConstraint<unit, unit>
 type TriggerAction = TriggerAction<unit, unit>
 type CreateTriggerStmt = CreateTriggerStmt<unit, unit>
 type CreateViewStmt = CreateViewStmt<unit, unit>
-type CreateVirtualTableStmt = CreateVirtualTableStmt<unit>
 type QualifiedTableName = QualifiedTableName<unit>
 type DeleteStmt = DeleteStmt<unit, unit>
 type DropObjectStmt = DropObjectStmt<unit>

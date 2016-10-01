@@ -288,12 +288,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             ColumnNames = createView.ColumnNames
             AsSelect = this.Select(createView.AsSelect)
         }
-    member this.CreateVirtualTable(createVirtual : CreateVirtualTableStmt<'t1>) =
-        {   IfNotExists = createVirtual.IfNotExists
-            VirtualTable = this.ObjectName(createVirtual.VirtualTable)
-            UsingModule = createVirtual.UsingModule
-            WithModuleArguments = createVirtual.WithModuleArguments
-        }
     member this.QualifiedTableName(qualified : QualifiedTableName<'t1>) =
         {   TableName = this.ObjectName(qualified.TableName)
             IndexHint = qualified.IndexHint
@@ -337,7 +331,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | CreateTableStmt createTable -> CreateTableStmt <| this.CreateTable(createTable)
         | CreateTriggerStmt createTrigger -> CreateTriggerStmt <| this.CreateTrigger(createTrigger)
         | CreateViewStmt createView -> CreateViewStmt <| this.CreateView(createView)
-        | CreateVirtualTableStmt createVirtual -> CreateVirtualTableStmt <| this.CreateVirtualTable(createVirtual)
         | DeleteStmt delete -> DeleteStmt <| this.Delete(delete)
         | DropObjectStmt drop -> DropObjectStmt <| this.DropObject(drop)
         | InsertStmt insert -> InsertStmt <| this.Insert(insert)

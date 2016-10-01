@@ -97,7 +97,6 @@ type InfTableConstraint = TableConstraint<InferredType ObjectInfo, InferredType 
 type InfTriggerAction = TriggerAction<InferredType ObjectInfo, InferredType ExprInfo>
 type InfCreateTriggerStmt = CreateTriggerStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfCreateViewStmt = CreateViewStmt<InferredType ObjectInfo, InferredType ExprInfo>
-type InfCreateVirtualTableStmt = CreateVirtualTableStmt<InferredType ObjectInfo>
 type InfQualifiedTableName = QualifiedTableName<InferredType ObjectInfo>
 type InfDeleteStmt = DeleteStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfDropObjectStmt = DropObjectStmt<InferredType ObjectInfo>

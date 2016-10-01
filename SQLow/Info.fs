@@ -157,7 +157,6 @@ type TTableConstraint = TableConstraint<ColumnType ObjectInfo, ColumnType ExprIn
 type TTriggerAction = TriggerAction<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TCreateTriggerStmt = CreateTriggerStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TCreateViewStmt = CreateViewStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
-type TCreateVirtualTableStmt = CreateVirtualTableStmt<ColumnType ObjectInfo>
 type TQualifiedTableName = QualifiedTableName<ColumnType ObjectInfo>
 type TDeleteStmt = DeleteStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TDropObjectStmt = DropObjectStmt<ColumnType ObjectInfo>

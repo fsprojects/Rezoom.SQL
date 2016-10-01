@@ -689,12 +689,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             ColumnNames = createView.ColumnNames
             AsSelect = this.Select(createView.AsSelect)
         }
-    member this.CreateVirtualTable(createVirtual : CreateVirtualTableStmt) =
-        {   IfNotExists = createVirtual.IfNotExists
-            VirtualTable = this.ObjectName(createVirtual.VirtualTable, true)
-            UsingModule = createVirtual.UsingModule
-            WithModuleArguments = createVirtual.WithModuleArguments
-        }
     member this.QualifiedTableName(qualified : QualifiedTableName) =
         {   TableName = this.ObjectName(qualified.TableName)
             IndexHint = qualified.IndexHint
@@ -756,7 +750,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         | CreateTableStmt createTable -> CreateTableStmt <| this.CreateTable(createTable)
         | CreateTriggerStmt createTrigger -> CreateTriggerStmt <| this.CreateTrigger(createTrigger)
         | CreateViewStmt createView -> CreateViewStmt <| this.CreateView(createView)
-        | CreateVirtualTableStmt createVirtual -> CreateVirtualTableStmt <| this.CreateVirtualTable(createVirtual)
         | DeleteStmt delete -> DeleteStmt <| this.Delete(delete)
         | DropObjectStmt drop -> DropObjectStmt <| this.DropObject(drop)
         | InsertStmt insert -> InsertStmt <| this.Insert(insert)

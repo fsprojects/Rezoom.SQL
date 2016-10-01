@@ -1267,44 +1267,6 @@ let private createViewStmt =
             AsSelect = asSelect
         }
 
-let private createVirtualTableStmt =
-    let moduleArgumentTopChunk =
-        many1Satisfy (fun c -> c <> '(' && c <> ')' && c <> ',')
-    let moduleArgumentInnerChunk =
-        many1Satisfy (fun c -> c <> '(' && c <> ')')
-    let moduleArgumentNest =
-        precursive <| fun moduleArgumentNest ->
-            let chunk = moduleArgumentNest <|> moduleArgumentInnerChunk
-            %% '('
-            -- +.manyStrings chunk
-            -- ')'
-            -|> fun s -> "(" + s + ")"
-    let moduleArgument =
-        let chunk = moduleArgumentNest <|> moduleArgumentTopChunk
-        manyStrings chunk
-    let moduleArguments =
-        %% '('
-        -- ws
-        -- +.(qty.[0..] / ',' * moduleArgument)
-        -- ')'
-        -|> id
-    %% kw "CREATE"
-    -? kw "VIRTUAL"
-    -- kw "TABLE"
-    -- +.ifNotExists
-    -- +.objectName
-    -- kw "USING"
-    -- +.name
-    -- ws
-    -- +.(zeroOrOne * moduleArguments)
-    -|> fun ifNotExists vTableName usingModule withArgs ->
-        {
-            IfNotExists = Option.isSome ifNotExists
-            VirtualTable = vTableName
-            UsingModule = usingModule
-            WithModuleArguments = defaultArg withArgs (new ResizeArray<_>())
-        }
-
 let private ifExists =
     %[
         %% kw "IF" -- kw "EXISTS" -|> true
@@ -1334,7 +1296,6 @@ let private stmt =
         %% +.createTableStmt -|> CreateTableStmt
         %% +.createTriggerStmt -|> CreateTriggerStmt
         %% +.createViewStmt -|> CreateViewStmt
-        %% +.createVirtualTableStmt -|> CreateVirtualTableStmt
         %% +.deleteStmt -|> DeleteStmt
         %% +.dropObjectStmt -|> DropObjectStmt
         %% +.insertStmt -|> InsertStmt
