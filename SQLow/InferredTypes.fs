@@ -5,31 +5,19 @@ open System.Collections.Generic
 
 type TypeVariableId = int
 
-/// Matches SQLite rules for determining the type affinity of a free-form type name.
-let private typeAffinityRules =
-    [|
-        "INT", IntegerType
-        "CHAR", StringType
-        "CLOB", StringType
-        "TEXT", StringType
-        "BLOB", BlobType
-        "REAL", FloatType
-        "FLOA", FloatType
-        "DOUB", FloatType
-    |]
-
 type InferredType =
     | ConcreteType of ColumnType
     | OneOfTypes of ColumnType list
     /// A type whose nullability depends on that of another type.
     | DependentlyNullType of ifNull: InferredType * thenNull: InferredType
     | TypeVariable of TypeVariableId
-    static member Float = ConcreteType { Nullable = false; Type = FloatType }
-    static member Integer = ConcreteType { Nullable = false; Type = IntegerType }
-    static member Number = OneOfTypes [{ Nullable = false; Type = IntegerType }; { Nullable = false; Type = FloatType }]
+    static member Float = ConcreteType { Nullable = false; Type = FloatType Float64 }
+    static member Integer = ConcreteType { Nullable = false; Type = IntegerType Integer64 }
+    static member Number =
+        OneOfTypes [{ Nullable = false; Type = IntegerType Integer64 }; { Nullable = false; Type = FloatType Float64 }]
     static member String = ConcreteType { Nullable = false; Type = StringType }
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
-    static member Blob = ConcreteType { Nullable = false; Type = BlobType }
+    static member Blob = ConcreteType { Nullable = false; Type = BinaryType }
     static member Any = ConcreteType { Nullable = false; Type = AnyType }
     static member Dependent(ifNull : InferredType, outputType : CoreColumnType) =
         DependentlyNullType(ifNull, ConcreteType { Nullable = false; Type = outputType })
@@ -44,15 +32,15 @@ type InferredType =
         | NumericLiteral (IntegerLiteral _) -> InferredType.Number
         | NumericLiteral (FloatLiteral _) -> InferredType.Float
     static member Affinity(typeName : TypeName) =
-        let names = typeName.TypeName |> Seq.map string |> String.concat " "
-        let byRules =
-            seq {
-                for substr, affinity in typeAffinityRules do
-                    if names.IndexOf(substr, StringComparison.OrdinalIgnoreCase) >= 0 then yield affinity
-            } |> Seq.tryHead
-        match byRules with
-        | Some affinity -> affinity
-        | None -> FloatType // "numeric" affinity
+        match typeName with
+        | StringTypeName _ -> StringType
+        | BinaryTypeName _ -> BinaryType
+        | IntegerTypeName sz -> IntegerType sz
+        | FloatTypeName sz -> FloatType sz
+        | DecimalTypeName -> DecimalType
+        | BooleanTypeName -> BooleanType
+        | DateTimeTypeName -> DateTimeType
+        | DateTimeOffsetTypeName -> DateTimeOffsetType
     static member OfTypeName(typeName : TypeName, inputType : InferredType) =
         let affinity = InferredType.Affinity(typeName)
         match inputType with

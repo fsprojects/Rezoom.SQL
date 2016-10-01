@@ -26,17 +26,25 @@ type SavepointName = Name
 
 type Alias = Name option
 
-type TypeBounds =
-    {
-        Low : SignedNumericLiteral
-        High : SignedNumericLiteral option
-    }
+type IntegerSize =
+    | Integer8
+    | Integer16
+    | Integer32
+    | Integer64
+
+type FloatSize =
+    | Float32
+    | Float64
 
 type TypeName =
-    {
-        TypeName : Name list
-        Bounds : TypeBounds option
-    }
+    | StringTypeName of maxLength : int option
+    | BinaryTypeName of maxLength : int option
+    | IntegerTypeName of IntegerSize
+    | FloatTypeName of FloatSize
+    | DecimalTypeName
+    | BooleanTypeName
+    | DateTimeTypeName
+    | DateTimeOffsetTypeName
 
 type ObjectName<'t> =
     {

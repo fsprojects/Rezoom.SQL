@@ -6,15 +6,33 @@ type CoreColumnType =
     | AnyType
     | BooleanType
     | StringType
-    | IntegerType
-    | FloatType
-    | BlobType
+    | IntegerType of IntegerSize
+    | FloatType of FloatSize
+    | DecimalType
+    | BinaryType
+    | DateTimeType
+    | DateTimeOffsetType
 
 type ColumnType =
     {
         Type : CoreColumnType
         Nullable : bool
     }
+    member ty.CLRType =
+        match ty.Type with
+        | IntegerType Integer8 -> if ty.Nullable then typeof<Nullable<sbyte>> else typeof<sbyte>
+        | IntegerType Integer16 -> if ty.Nullable then typeof<Nullable<int16>> else typeof<int16>
+        | IntegerType Integer32 -> if ty.Nullable then typeof<Nullable<int32>> else typeof<int32>
+        | IntegerType Integer64 -> if ty.Nullable then typeof<Nullable<int64>> else typeof<int64>
+        | FloatType Float32 -> if ty.Nullable then typeof<Nullable<single>> else typeof<single>
+        | FloatType Float64 -> if ty.Nullable then typeof<Nullable<double>> else typeof<double>
+        | BooleanType -> if ty.Nullable then typeof<Nullable<bool>> else typeof<bool>
+        | DecimalType -> if ty.Nullable then typeof<Nullable<decimal>> else typeof<decimal>
+        | DateTimeType -> if ty.Nullable then typeof<Nullable<DateTime>> else typeof<DateTime>
+        | DateTimeOffsetType -> if ty.Nullable then typeof<Nullable<DateTimeOffset>> else typeof<DateTimeOffset>
+        | StringType -> typeof<string>
+        | BinaryType -> typeof<byte array>
+        | AnyType -> typeof<obj>
 
 type ArgumentType =
     | ArgumentConcrete of ColumnType

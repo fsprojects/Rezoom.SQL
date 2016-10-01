@@ -283,23 +283,22 @@ let private literal =
         currentTimestampLiteral
     ]
 
-let private typeBounds =
-    %% '('
-    -- ws
-    -- +.(qty.[1..2] / tws ',' * tws signedNumericLiteral)
-    -- ')'
-    -- ws
-    -|> fun bounds ->
-        match bounds.Count with
-        | 1 -> { TypeBounds.Low = bounds.[0]; High = None }
-        | 2 -> { TypeBounds.Low = bounds.[0]; High = Some bounds.[1] }
-        | _ -> failwith "Unreachable"
-
 let private typeName =
-    (%% +.(qty.[1..] /. ws * name)
-    -- +.(typeBounds * zeroOrOne)
-    -|> fun name bounds -> { TypeName = name |> List.ofSeq; Bounds = bounds })
-    <?> "type-name"
+    let maxBound = %% '(' -- ws -- +.p<int> -- ws -- ')' -%> id
+    %[
+        %% kw "STRING" -- +.(zeroOrOne * maxBound) -%> StringTypeName
+        %% kw "BINARY" -- +.(zeroOrOne * maxBound) -%> StringTypeName
+        %% kw "INT8" -%> IntegerTypeName Integer8
+        %% kw "INT16" -%> IntegerTypeName Integer16
+        %% kw "INT" -%> IntegerTypeName Integer32
+        %% kw "INT64" -%> IntegerTypeName Integer64
+        %% kw "FLOAT32" -%> FloatTypeName Float32
+        %% kw "FLOAT64" -%> FloatTypeName Float64
+        %% kw "DECIMAL" -%> DecimalTypeName
+        %% kw "BOOL" -%> BooleanTypeName
+        %% kw "DATETIME" -%> DateTimeTypeName
+        %% kw "DATETIMEOFFSET" -%> DateTimeOffsetTypeName
+    ]
 
 let private cast expr =
     %% kw "CAST"

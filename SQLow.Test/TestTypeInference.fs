@@ -21,7 +21,7 @@ type TestTypeInference() =
     [<TestMethod>]
     member __.TestSimpleSelect() =
         let cmd = CommandEffect.OfSQL(zeroModel, "anonymous", @"
-            create table Users(id int primary key, name nvarchar(128), email nvarchar(128));
+            create table Users(id int primary key, name string(128), email string(128));
             select * from Users
         ")
         Assert.AreEqual(0, cmd.Parameters.Count)
@@ -30,7 +30,7 @@ type TestTypeInference() =
         let cs = results.[0].Columns
         Assert.IsTrue(cs.[0].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("id"), cs.[0].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = IntegerType }, cs.[0].Expr.Info.Type)
+        Assert.AreEqual({ Nullable = true; Type = IntegerType Integer32 }, cs.[0].Expr.Info.Type)
         Assert.IsFalse(cs.[1].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("name"), cs.[1].ColumnName)
         Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[1].Expr.Info.Type)
@@ -41,20 +41,20 @@ type TestTypeInference() =
     [<TestMethod>]
     member __.TestSimpleSelectWithParameter() =
         let cmd = CommandEffect.OfSQL(zeroModel, "anonymous", @"
-            create table Users(id int primary key, name nvarchar(128), email nvarchar(128));
+            create table Users(id int primary key, name string(128), email string(128));
             select * from Users u
             where u.id = @id
         ")
         Assert.AreEqual(1, cmd.Parameters.Count)
         Assert.AreEqual
-            ( (NamedParameter (Name("id")), { Nullable = true; Type = IntegerType })
+            ( (NamedParameter (Name("id")), { Nullable = true; Type = IntegerType Integer32 })
             , cmd.Parameters.[0])
         let results = cmd.ResultSets |> toReadOnlyList
         Assert.AreEqual(1, results.Count)
         let cs = results.[0].Columns
         Assert.IsTrue(cs.[0].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("id"), cs.[0].ColumnName)
-        Assert.AreEqual({ Nullable = true; Type = IntegerType }, cs.[0].Expr.Info.Type)
+        Assert.AreEqual({ Nullable = true; Type = IntegerType Integer32 }, cs.[0].Expr.Info.Type)
         Assert.IsFalse(cs.[1].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("name"), cs.[1].ColumnName)
         Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[1].Expr.Info.Type)
@@ -65,20 +65,20 @@ type TestTypeInference() =
     [<TestMethod>]
     member __.TestSimpleSelectWithParameterNotNull() =
         let cmd = CommandEffect.OfSQL(zeroModel, "anonymous", @"
-            create table Users(id int primary key not null, name nvarchar(128), email nvarchar(128));
+            create table Users(id int primary key not null, name string(128), email string(128));
             select * from Users u
             where u.id = @id
         ")
         Assert.AreEqual(1, cmd.Parameters.Count)
         Assert.AreEqual
-            ( (NamedParameter (Name("id")), { Nullable = false; Type = IntegerType })
+            ( (NamedParameter (Name("id")), { Nullable = false; Type = IntegerType Integer32 })
             , cmd.Parameters.[0])
         let results = cmd.ResultSets |> toReadOnlyList
         Assert.AreEqual(1, results.Count)
         let cs = results.[0].Columns
         Assert.IsTrue(cs.[0].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("id"), cs.[0].ColumnName)
-        Assert.AreEqual({ Nullable = false; Type = IntegerType }, cs.[0].Expr.Info.Type)
+        Assert.AreEqual({ Nullable = false; Type = IntegerType Integer32 }, cs.[0].Expr.Info.Type)
         Assert.IsFalse(cs.[1].Expr.Info.PrimaryKey)
         Assert.AreEqual(Name("name"), cs.[1].ColumnName)
         Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[1].Expr.Info.Type)

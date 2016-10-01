@@ -546,8 +546,8 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             Direction = orderingTerm.Direction
         }
     member this.Limit(limit : Limit) =
-        {   Limit = this.Expr(limit.Limit, IntegerType)
-            Offset = limit.Offset |> Option.map (fun e -> this.Expr(e, IntegerType))
+        {   Limit = this.Expr(limit.Limit, IntegerType Integer64)
+            Offset = limit.Offset |> Option.map (fun e -> this.Expr(e, IntegerType Integer64))
         }
     member this.CompoundTerm(term : CompoundTerm) : InfCompoundTerm =
         let info, value =

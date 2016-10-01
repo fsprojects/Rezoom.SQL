@@ -23,6 +23,21 @@ type SQLiteExpression(statement : StatementTranslator, indexer) =
         "\"" + name.Value.Replace("\"", "\"\"") + "\""
         |> text
     override __.Literal = upcast literal
+    override __.TypeName(name) =
+        (Seq.singleton << text) <|
+            match name with
+            | BooleanTypeName
+            | IntegerTypeName Integer8
+            | IntegerTypeName Integer16
+            | IntegerTypeName Integer32
+            | IntegerTypeName Integer64 -> "int"
+            | FloatTypeName Float32
+            | FloatTypeName Float64 -> "float"
+            | StringTypeName(_) -> "varchar"
+            | BinaryTypeName(_) -> "blob"
+            | DecimalTypeName
+            | DateTimeTypeName
+            | DateTimeOffsetTypeName -> failwith <| sprintf "Unsupported type ``%A``" name
 
 type SQLiteStatement(indexer : IParameterIndexer) as this =
     inherit StatementTranslator()
@@ -50,14 +65,6 @@ type SQLiteBackend() =
         }
     interface IBackend with
         member this.InitialModel = initialModel
-        member this.MapPrimitiveType(ty) =
-            match ty.Type with
-            | IntegerType -> if ty.Nullable then typeof<Nullable<int64>> else typeof<int64>
-            | BooleanType -> if ty.Nullable then typeof<Nullable<bool>> else typeof<bool>
-            | FloatType -> if ty.Nullable then typeof<Nullable<double>> else typeof<double>
-            | StringType -> typeof<string>
-            | BlobType -> typeof<byte array>
-            | AnyType -> typeof<obj>
         member this.ToCommandFragments(indexer, stmts) =
             let translator = SQLiteStatement(indexer)
             translator.Statements(stmts)

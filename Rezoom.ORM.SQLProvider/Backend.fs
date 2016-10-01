@@ -9,6 +9,5 @@ type IParameterIndexer =
 
 type IBackend =
     abstract member InitialModel : Model
-    abstract member MapPrimitiveType : ty : ColumnType -> Type
     abstract member ToCommandFragments
         : indexer : IParameterIndexer * stmts : TStmt IReadOnlyList -> CommandFragment IReadOnlyList

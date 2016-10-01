@@ -79,7 +79,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
         ty.AddMembers [ field :> MemberInfo; getter :> _ ]
         fields.Add(camel, field)
     for KeyValue(name, (_, column)) in columnMap.Columns do
-        addField column.Expr.Info.PrimaryKey name <| model.Backend.MapPrimitiveType(column.Expr.Info.Type)
+        addField column.Expr.Info.PrimaryKey name <| column.Expr.Info.Type.CLRType
     for KeyValue(name, subMap) in columnMap.SubMaps do
         let subTy = generateRowTypeFromColumns model (name + "Row") subMap
         ty.AddMember(subTy)
@@ -108,7 +108,7 @@ let private generateCtor (baseCtor : ConstructorInfo) (generate : GenerateType) 
     let fragments = backend.ToCommandFragments(indexer, generate.Command.Statements)
     let parameters =
         [ for NamedParameter name, ty in parameters ->
-            ProvidedParameter(name.Value, generate.UserModel.Backend.MapPrimitiveType(ty))
+            ProvidedParameter(name.Value, ty.CLRType)
         ]
     let ctor = ProvidedConstructor(parameters)
     ctor.BaseConstructorCall <-
@@ -129,7 +129,7 @@ let private generateCommandMethod (generate : GenerateType) (retTy : Type) (call
     let fragments = backend.ToCommandFragments(indexer, generate.Command.Statements)
     let parameters =
         [ for NamedParameter name, ty in parameters ->
-            ProvidedParameter(name.Value, generate.UserModel.Backend.MapPrimitiveType(ty))
+            ProvidedParameter(name.Value, ty.CLRType)
         ]
     let meth = ProvidedMethod("Command", parameters, retTy)
     meth.SetMethodAttrs(MethodAttributes.Static ||| MethodAttributes.Public)

@@ -374,21 +374,6 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
             yield this.Name(col.ColumnName)
         }
     abstract member TypeName : TypeName -> Fragments
-    default this.TypeName(name) =
-        seq {
-            yield! name.TypeName |> Seq.map this.Name |> join1 " "
-            match name.Bounds with
-            | None -> ()
-            | Some bounds ->
-                yield text "("
-                yield! this.Literal.SignedLiteral(bounds.Low)
-                match bounds.High with
-                | None -> ()
-                | Some high ->
-                    yield text ","
-                    yield! this.Literal.SignedLiteral(high)
-                yield text ")"
-        }
     abstract member Cast : castExpr : TCastExpr -> Fragments
     default this.Cast(castExpr) =
         seq {

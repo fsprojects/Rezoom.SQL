@@ -97,11 +97,18 @@ type private TypeInferenceContext() =
         | OneOfTypes possible ->
             let preference = function
                 | AnyType -> -1
-                | BlobType -> 0
+                | BinaryType -> 0
                 | BooleanType -> 1
-                | IntegerType -> 2
-                | FloatType -> 3
-                | StringType -> 4
+                | IntegerType Integer8 -> 2
+                | IntegerType Integer16 -> 3
+                | IntegerType Integer32 -> 4
+                | IntegerType Integer64 -> 5
+                | FloatType Float32 -> 6
+                | FloatType Float64 -> 7
+                | DecimalType -> 8
+                | StringType -> 9
+                | DateTimeType -> 10
+                | DateTimeOffsetType -> 11
             let nullable = possible |> Seq.map (fun t -> t.Nullable) |> Seq.max
             let ty = possible |> Seq.map (fun t -> t.Type) |> Seq.maxBy preference
             {
