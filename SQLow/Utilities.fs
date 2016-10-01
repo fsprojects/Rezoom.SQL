@@ -103,4 +103,24 @@ let appendDicts (left : IReadOnlyDictionary<'k, 'v>) (right : IReadOnlyDictionar
         member __.Values = Seq.append left.Values right.Values
     }
 
-        
+let private filterIndex i (sequence : 'x seq) =
+    seq {
+        let mutable index = 0
+        for element in sequence do
+            if index <> i then yield element
+            index <- index + 1
+    }
+
+let rec permutations (sequence : 'x seq) =
+    seq {
+        let mutable index = 0
+        for element in sequence do
+            for rest in filterIndex index sequence |> permutations do
+                yield seq {
+                    yield element
+                    yield! rest
+                }
+            index <- index + 1
+        if index = 0 then
+            yield Seq.empty
+    }

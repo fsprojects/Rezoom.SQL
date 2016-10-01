@@ -61,7 +61,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 let table =
                     {   SchemaName = schema.SchemaName
                         TableName = create.Name.Value.ObjectName
-                        Columns = columns :> _ IReadOnlyList
+                        Columns = columns |> Set.ofSeq
                     }
                 let schema =
                     { schema with Tables = schema.Tables |> Map.add table.TableName table }
@@ -105,13 +105,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                                 ColumnName = col.Name
                                 ColumnType = { Type = affinity; Nullable = not hasNotNullConstraint }
                             }
-                        let newTbl =
-                            { tbl with
-                                Columns =
-                                    tbl.Columns
-                                    |> Seq.append [ newCol ]
-                                    |> toReadOnlyList
-                            }
+                        let newTbl = { tbl with Columns = tbl.Columns |> Set.add newCol }
                         let schema = { schema with Tables = schema.Tables |> Map.add tbl.TableName newTbl }
                         Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
     member this.CreateView(create : InfCreateViewStmt) =
@@ -126,15 +120,16 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     {   SchemaName = schema.SchemaName
                         ViewName = create.ViewName.ObjectName
                         Columns =
-                            [| for column in create.AsSelect.Value.Info.Table.Query.Columns ->
-                                {   SchemaName = schemaName
-                                    TableName = create.ViewName.ObjectName
-                                    ColumnName = column.ColumnName
-                                    PrimaryKey = column.Expr.Info.PrimaryKey
-                                    ColumnType = inference.Concrete(column.Expr.Info.Type)
-                                }
-                            |]
-                        ReferencedTables = Seq.empty |> toReadOnlyList // TODO
+                            seq {
+                                for column in create.AsSelect.Value.Info.Table.Query.Columns ->
+                                    {   SchemaName = schemaName
+                                        TableName = create.ViewName.ObjectName
+                                        ColumnName = column.ColumnName
+                                        PrimaryKey = column.Expr.Info.PrimaryKey
+                                        ColumnType = inference.Concrete(column.Expr.Info.Type)
+                                    }
+                            } |> Set.ofSeq
+                        ReferencedTables = Set.empty // TODO
                     }
                 let schema = { schema with Views = schema.Views |> Map.add create.ViewName.ObjectName view }
                 Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }

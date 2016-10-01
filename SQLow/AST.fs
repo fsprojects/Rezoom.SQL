@@ -647,3 +647,4 @@ type DropObjectStmt = DropObjectStmt<unit>
 type UpdateStmt = UpdateStmt<unit, unit>
 type InsertStmt = InsertStmt<unit, unit>
 type Stmt = Stmt<unit, unit>
+type Stmts = Stmt IReadOnlyList

@@ -75,7 +75,7 @@ and SchemaTable =
     {
         SchemaName : Name
         TableName : Name
-        Columns : SchemaColumn IReadOnlyList
+        Columns : SchemaColumn Set
     }
 
 
@@ -94,6 +94,6 @@ and SchemaView =
     {
         SchemaName : Name
         ViewName : Name
-        Columns : SchemaColumn IReadOnlyList
-        ReferencedTables : SchemaTable IReadOnlyList
+        Columns : SchemaColumn Set
+        ReferencedTables : SchemaTable Set
     }

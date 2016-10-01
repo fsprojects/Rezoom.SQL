@@ -58,6 +58,7 @@
     <Compile Include="Backend.fs" />
     <Compile Include="BackendUtilities.fs" />
     <Compile Include="Backend.SQLite.fs" />
+    <Compile Include="Migrations.fs" />
     <Compile Include="UserModel.fs" />
     <Compile Include="CompileTimeColumnMap.fs" />
     <Compile Include="ProvidedTypesTrickery.fs" />
