@@ -23,13 +23,15 @@ type CommandEffect =
             Parameters = [||] :> _ IReadOnlyList
             ModelChange = None
         }
+    static member ParseSQL(descr: string, sql : string) : Stmts =
+        Parser.parseStatements descr sql |> toReadOnlyList
     static member OfSQL(model : Model, stmts : Stmts) =
         let builder = CommandEffectBuilder(model)
         for stmt in stmts do
             builder.AddStatement(stmt)
         builder.CommandEffect()
     static member OfSQL(model : Model, descr : string, sql : string) =
-        let stmts = Parser.parseStatements descr sql
+        let stmts = CommandEffect.ParseSQL(descr, sql)
         CommandEffect.OfSQL(model, stmts)
 
 and private CommandEffectBuilder(model : Model) =

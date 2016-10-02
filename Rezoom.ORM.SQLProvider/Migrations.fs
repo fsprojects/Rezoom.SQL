@@ -1,7 +1,10 @@
 ﻿module Rezoom.ORM.SQLProvider.Migrations
 open System
 open System.Collections.Generic
+open FSharp.Reflection
+open FSharp.Quotations
 open SQLow
+open Rezoom.ORM
 
 // Migrations have three version parts:
 // Major Version - Feature Name - Feature Version
@@ -104,7 +107,7 @@ let private majorVersionNextModel model (this : Stmts MigrationMajorVersion) =
     }
     , match commonNextModel with | None -> model | Some (m, _) -> m
 
-let private nextModel model (majorVersions : Stmts MigrationMajorVersion seq) =
+let nextModel model (majorVersions : Stmts MigrationMajorVersion seq) =
     let mutable model = model
     let majorVersions =
         seq {
@@ -114,4 +117,66 @@ let private nextModel model (majorVersions : Stmts MigrationMajorVersion seq) =
                 yield majorVersion
         } |> toReadOnlyList
     majorVersions, model
-    
+
+let private mapStmts f (major : 'stmts MigrationMajorVersion) =
+    {   MajorVersion = major.MajorVersion
+        Features =
+            seq {
+                for feature in major.Features ->
+                    {   FeatureName = feature.FeatureName
+                        Migrations =
+                            seq {
+                                for migration in feature.Migrations ->
+                                    {   FeatureVersion = migration.FeatureVersion
+                                        SourceFileName = migration.SourceFileName
+                                        Command = f migration.Command
+                                    }
+                            } |> toReadOnlyList
+                    }
+            } |> toReadOnlyList
+    }
+
+let private stringizeFragments (fragments : CommandFragment seq) =
+    seq {
+        for fragment in fragments do
+            match fragment with
+            | LocalName name -> yield name
+            | CommandText text -> yield text
+            | Whitespace -> yield " "
+            | Parameter _ -> failwith "Migrations may not reference parameters"
+    } |> String.concat ""
+
+let stringizeMajorVersion (backend : IBackend) (major : TStmts MigrationMajorVersion) =
+    let indexer =
+        { new IParameterIndexer with
+            member this.ParameterIndex(parameter) = failwith "Migrations may not be parameterized"
+        }
+    let stringize stmts = backend.ToCommandFragments(indexer, stmts) |> stringizeFragments
+    mapStmts stringize major
+
+let quotationize (major : string MigrationMajorVersion) =
+    let quotationizeMigration migration =
+        Expr.NewRecord
+            ( typeof<string Migration>
+            ,   [   Quotations.Expr.Value(migration.Command)
+                    Quotations.Expr.Value(migration.FeatureVersion)
+                    Quotations.Expr.Value(migration.SourceFileName)
+                ])
+    let quotationizeFeature feature =
+        Expr.NewRecord
+            ( typeof<string MigrationFeature>
+            ,   [   Quotations.Expr.Value(feature.FeatureName)
+                    Expr.NewArray
+                        ( typeof<string Migration>
+                        , [ for migration in feature.Migrations -> quotationizeMigration migration ])
+                ]
+            )
+    let features =
+        Expr.NewArray
+            ( typeof<string MigrationFeature>
+            , [ for feature in major.Features -> quotationizeFeature feature ])
+    Expr.NewRecord
+        ( typeof<string MigrationMajorVersion>
+        ,   [   features
+                Quotations.Expr.Value(major.MajorVersion)
+            ])
