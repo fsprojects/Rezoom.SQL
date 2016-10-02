@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Data;
-using Rezoom.ORM;
-using Rezoom.ORM.CodeGeneration;
+using StaticQL.Mapping;
+using StaticQL.Mapping.CodeGeneration;
 
 namespace Rezoom.ADO
 {
