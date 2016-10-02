@@ -1,4 +1,4 @@
-﻿namespace Rezoom.ORM.SQLProvider
+﻿module Rezoom.ORM.SQLProvider.Migrations
 open System
 open System.Collections.Generic
 open SQLow
@@ -10,9 +10,9 @@ open SQLow
 // Feature B. The code in this file validates that each ordering of feature migrations results in the same
 // model.
 //         
-//    +---V2 Feature A.1---V2 Feature A.2----+                          +---V4 Feature A
-//   /                                        \                        /
-// V1-----V2 Feature B-----------------------V2-----V3 Feature A-----V3-----V4 Feature B.1---V4 Feature B.2
+//    +---V2 Feature A.1---V2 Feature A.2----+                       +---V4 Feature A
+//   /                                        \                     /
+// V1-----V2 Feature B------------------------V2---V3 Feature A---V3-----V4 Feature B.1---V4 Feature B.2
 //   \                                        /
 //    +---V2 Feature C-----------------------+
 //
@@ -26,58 +26,92 @@ open SQLow
 // 5. Run the remaining feature migrations in no particular order (other than by version *within* each feature).
 // 6. Proceed to the next major version and repeat steps 4, 5, and 6.
 
-type CheckMigration =
-    {   Command : Stmts
+type Migration<'stmts> =
+    {   Command : 'stmts
         FeatureVersion : int
         SourceFileName : string
     }
-    member this.NextModel(model : Model) =
-        let effect = CommandEffect.OfSQL(model, this.Command)
-        if effect.Parameters.Count > 0 then
-            failwithf
-                "Migrations may not contain parameters: parameter named ``%O`` in %s"
-                effect.Parameters.[0]
-                this.SourceFileName
-        effect.ModelChange |? model
+
+let private migrationNextModel model (migration : Stmts Migration) =
+    let effect = CommandEffect.OfSQL(model, migration.Command)
+    if effect.Parameters.Count > 0 then
+        failwithf
+            "Migrations may not contain parameters: parameter named ``%O`` in %s"
+            effect.Parameters.[0]
+            migration.SourceFileName
+    {   Command = effect.Statements
+        FeatureVersion = migration.FeatureVersion
+        SourceFileName = migration.SourceFileName
+    }
+    , effect.ModelChange |? model
         
-type CheckMigrationFeature =
+type MigrationFeature<'stmts> =
     {  
         FeatureName : Name
-        Migrations : CheckMigration IReadOnlyList
+        Migrations : 'stmts Migration IReadOnlyList
     }
-    member this.NextModel(model : Model) =
-        this.Migrations
-        |> Seq.fold (fun model migration -> migration.NextModel(model)) model
 
-type CheckMigrationMajorVersion =
-    {   Features : CheckMigrationFeature IReadOnlyCollection
+let private featureNextModel model (feature : Stmts MigrationFeature) =
+    let mutable model = model
+    {   FeatureName = feature.FeatureName
+        Migrations =
+            seq {
+                for migration in feature.Migrations do
+                    let migration, newModel = migrationNextModel model migration
+                    model <- newModel
+                    yield migration
+            } |> toReadOnlyList
+    }
+    , model
+
+type MigrationMajorVersion<'stmts> =
+    {   Features : 'stmts MigrationFeature IReadOnlyCollection
         MajorVersion : int
     }
-    static member private Factorial(x) =
-        if x <= 2L then x else x * CheckMigrationMajorVersion.Factorial(x - 1L)
-    member this.NextModel(model : Model) =
-        let maxFeatures = 6
-        if this.Features.Count > maxFeatures then
-            failwithf
-                "No more than %d features per major version are permitted -- would have to validate %d migration paths"
-                maxFeatures (CheckMigrationMajorVersion.Factorial(int64 this.Features.Count))
-        let mutable commonNextModel = None
-        for featureSequence in this.Features |> permutations do
-            let nextModel =
-                featureSequence
-                |> Seq.fold (fun model feature -> feature.NextModel(model)) model
-            match commonNextModel with
-            | Some commonNextModel ->
-                if nextModel <> commonNextModel then
-                    failwithf
-                        "The features of major version %d result in different models when run in different orders"
-                        this.MajorVersion
-            | None ->
-                commonNextModel <- Some nextModel
-        commonNextModel |? model
 
-type CheckMigrationTrack(majorVersions : CheckMigrationMajorVersion IReadOnlyList) =
-    member this.CurrentVersionModel(initial : Model) =
-        majorVersions
-        |> Seq.fold (fun model version -> version.NextModel(model)) initial
+let rec private fac x =
+    if x <= 2L then x else x * fac (x - 1L)
+
+let private majorVersionNextModel model (this : Stmts MigrationMajorVersion) =
+    let maxFeatures = 6
+    if this.Features.Count > maxFeatures then
+        failwithf
+            "No more than %d features per major version are permitted -- would have to validate %d migration paths"
+            maxFeatures (fac (int64 this.Features.Count))
+    let mutable commonNextModel = None
+    for featureSequence in this.Features |> permutations do
+        match commonNextModel with
+        | None ->
+            let mutable model = model
+            let features =
+                seq {
+                    for feature in featureSequence do
+                        let feature, newModel = featureNextModel model feature
+                        model <- newModel
+                        yield feature
+                } |> toReadOnlyList
+            commonNextModel <- Some (model, features)
+        | Some (commonNextModel, _) ->
+            let possibleModel =
+                featureSequence |> Seq.fold (fun model feature -> featureNextModel model feature |> snd) model
+            if possibleModel <> commonNextModel then
+                failwithf "Features of major version %d are interdependent" this.MajorVersion
+    {   Features =
+            match commonNextModel with
+            | None -> [||] :> _ IReadOnlyCollection
+            | Some (_, features) -> features :> _ IReadOnlyCollection
+        MajorVersion = this.MajorVersion
+    }
+    , match commonNextModel with | None -> model | Some (m, _) -> m
+
+let private nextModel model (majorVersions : Stmts MigrationMajorVersion seq) =
+    let mutable model = model
+    let majorVersions =
+        seq {
+            for majorVersion in majorVersions do
+                let majorVersion, newModel = majorVersionNextModel model majorVersion
+                model <- newModel
+                yield majorVersion
+        } |> toReadOnlyList
+    majorVersions, model
     
