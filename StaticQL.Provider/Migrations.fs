@@ -82,7 +82,7 @@ let private majorVersionNextModel model (this : Stmts MigrationMajorVersion) =
             "No more than %d features per major version are permitted -- would have to validate %d migration paths"
             maxFeatures (fac (int64 this.Features.Count))
     let mutable commonNextModel = None
-    for featureSequence in this.Features |> permutations do
+    for featureSequence in this.Features |> Seq.toList |> permutations do
         match commonNextModel with
         | None ->
             let mutable model = model
