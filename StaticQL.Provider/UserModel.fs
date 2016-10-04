@@ -82,6 +82,6 @@ type UserModel(backend : IBackend, model : Model, migrations : string MigrationM
         let migrations = migrations |> Seq.map (stringizeMajorVersion backend) |> toReadOnlyList
         UserModel
             ( backend = backend
-            , model = backend.InitialModel
+            , model = model
             , migrations = migrations
             )

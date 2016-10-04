@@ -284,7 +284,7 @@ let private literal =
     ]
 
 let private typeName =
-    let maxBound = %% '(' -- ws -- +.p<int> -- ws -- ')' -%> id
+    let maxBound = %% '(' -- ws -- +.p<int> -- ws -- ')' -- ws -%> id
     %[
         %% kw "STRING" -- +.(zeroOrOne * maxBound) -%> StringTypeName
         %% kw "BINARY" -- +.(zeroOrOne * maxBound) -%> StringTypeName

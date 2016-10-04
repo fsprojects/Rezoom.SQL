@@ -28,7 +28,7 @@ type public Provider(cfg : TypeProviderConfig) as this =
     let buildTypeFromStaticParameters typeName (parameterValues : obj array) =
         match parameterValues with 
         | [| :? string as model; :? string as sql |] ->
-            let model = UserModel.Load(model)
+            let model = UserModel.Load(Path.Combine(cfg.ResolutionFolder, model))
             let parsed = CommandEffect.OfSQL(model.Model, typeName, sql)
             let ty =
                 {   Assembly = thisAssembly

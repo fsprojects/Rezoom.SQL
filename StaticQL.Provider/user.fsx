@@ -11,11 +11,10 @@
 open StaticQL.Provider
 open StaticQL.Mapping
 
-type Query = SQL<"foo", """
-create table Users (id int primary key not null, name nvarchar(30));
-select * from Users u where u.id = @id
+type Query = SQL<"user-migrations", """
+    select * from Users u where u.id = @id
 """>
 
-let q : Command1<_> = Query.Command(id = 1L)
+let q : Command1<_> = Query.Command(id = 1)
 printfn "%O" <| q.GetType()
 printfn "%A" <| q.Fragments
