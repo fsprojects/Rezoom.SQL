@@ -17,8 +17,8 @@ type public Provider(cfg : TypeProviderConfig) as this =
     let thisAssembly = Assembly.LoadFrom(cfg.RuntimeAssembly)
     let rootNamespace = "StaticQL.Provider"
     let staticParams =
-        [   ProvidedStaticParameter("model", typeof<string>)
-            ProvidedStaticParameter("sql", typeof<string>)
+        [   ProvidedStaticParameter("sql", typeof<string>)
+            ProvidedStaticParameter("model", typeof<string>, "")
         ]
     let parameterizedTy =
         ProvidedTypeDefinition(thisAssembly, rootNamespace, "SQL", Some typeof<obj>, IsErased = false)
@@ -27,7 +27,7 @@ type public Provider(cfg : TypeProviderConfig) as this =
 
     let buildTypeFromStaticParameters typeName (parameterValues : obj array) =
         match parameterValues with 
-        | [| :? string as model; :? string as sql |] ->
+        | [| :? string as sql; :? string as model |] ->
             let model = UserModel.Load(Path.Combine(cfg.ResolutionFolder, model))
             let parsed = CommandEffect.OfSQL(model.Model, typeName, sql)
             let ty =

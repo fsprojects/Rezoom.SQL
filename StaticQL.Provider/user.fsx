@@ -11,9 +11,9 @@
 open StaticQL.Provider
 open StaticQL.Mapping
 
-type Query = SQL<"user-migrations", """
+type Query = SQL<"""
     select * from Users u where u.id = @id
-""">
+""", "user-migrations">
 
 let q : Command<_> = Query.Command(id = 1)
 printfn "%O" <| q.GetType()
