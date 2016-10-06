@@ -15,6 +15,6 @@ type Query = SQL<"user-migrations", """
     select * from Users u where u.id = @id
 """>
 
-let q : Command1<_> = Query.Command(id = 1)
+let q : Command<_> = Query.Command(id = 1)
 printfn "%O" <| q.GetType()
 printfn "%A" <| q.Fragments

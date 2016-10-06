@@ -51,14 +51,14 @@ type Command<'output>(fragments, parameters) =
     inherit Command(fragments, parameters)
     abstract member GetResult : unit -> 'output
 
-type Command0<'a>(fragments, parameters) =
+type private Command0<'a>(fragments, parameters) =
     inherit Command<'a>(fragments, parameters)
     override __.BeginResultSet(_) = ()
     override __.ProcessRow() = ()
     override __.GetResultObject() = upcast Unchecked.defaultof<'a>
     override __.GetResult() = Unchecked.defaultof<'a>
 
-type Command1<'a>(fragments, parameters) =
+type private Command1<'a>(fragments, parameters) =
     inherit Command<'a>(fragments, parameters)
     let reader = ReaderTemplate<'a>.Template().CreateReader()
     let mutable row = Unchecked.defaultof<Row>
@@ -71,7 +71,7 @@ type Command1<'a>(fragments, parameters) =
     override __.GetResultObject() = upcast result.Value
     override __.GetResult() = result.Value
 
-type Command2<'a, 'b>(fragments, parameters) =
+type private Command2<'a, 'b>(fragments, parameters) =
     inherit Command<ResultSets<'a, 'b>>(fragments, parameters)
     let aReader = ReaderTemplate<'a>.Template().CreateReader()
     let bReader = ReaderTemplate<'b>.Template().CreateReader()
@@ -92,7 +92,7 @@ type Command2<'a, 'b>(fragments, parameters) =
     override __.GetResultObject() = upcast result.Value
     override __.GetResult() = result.Value
 
-type Command3<'a, 'b, 'c>(fragments, parameters) =
+type private Command3<'a, 'b, 'c>(fragments, parameters) =
     inherit Command<ResultSets<'a, 'b, 'c>>(fragments, parameters)
     let aReader = ReaderTemplate<'a>.Template().CreateReader()
     let bReader = ReaderTemplate<'b>.Template().CreateReader()
@@ -116,6 +116,11 @@ type Command3<'a, 'b, 'c>(fragments, parameters) =
     override __.GetResult() = result.Value
 
 type CommandConstructor() =
-    static member Command0(fragments, parameters) = new Command0<unit>(fragments, parameters)
-    static member Command1<'a>(fragments, parameters) = new Command1<'a>(fragments, parameters)
-    static member Command2<'a, 'b>(fragments, parameters) = new Command2<'a, 'b>(fragments, parameters)
+    static member Command0(fragments, parameters) =
+        new Command0<unit>(fragments, parameters) :> _ Command
+    static member Command1<'a>(fragments, parameters) =
+        new Command1<'a>(fragments, parameters) :> _ Command
+    static member Command2<'a, 'b>(fragments, parameters) =
+        new Command2<'a, 'b>(fragments, parameters) :> _ Command
+    static member Command3<'a, 'b, 'c>(fragments, parameters) =
+        new Command3<'a, 'b, 'c>(fragments, parameters) :> _ Command

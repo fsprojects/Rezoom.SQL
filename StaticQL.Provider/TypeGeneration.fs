@@ -142,29 +142,32 @@ let private generateCommandMethod (generate : GenerateType) (retTy : Type) (call
 
 let generateType (generate : GenerateType) =
     let commandCtor = typeof<CommandConstructor>
+    let cmd (r : Type) = typedefof<_ Command>.MakeGenericType(r)
     let rowTypes, commandCtorMethod, commandType =
         let genRowType = generateRowType generate.UserModel
         match generate.Command.ResultSets |> Seq.toList with
         | [] ->
-            [], commandCtor.GetMethod("Command0"), typedefof<_ Command0>.MakeGenericType(typeof<unit>)
+            []
+            , commandCtor.GetMethod("Command0")
+            , cmd typeof<unit>
         | [ resultSet ] ->
             let rowType = genRowType "Row" resultSet
             [ rowType ]
             , commandCtor.GetMethod("Command1").MakeGenericMethod(rowType)
-            , typedefof<_ Command1>.MakeGenericType(rowType)
+            , cmd rowType
         | [ resultSet1; resultSet2 ] ->
             let rowType1 = genRowType "Row1" resultSet1
             let rowType2 = genRowType "Row2" resultSet2
             [ rowType1; rowType2 ]
             , commandCtor.GetMethod("Command2").MakeGenericMethod(rowType1, rowType2)
-            , typedefof<Command2<_, _>>.MakeGenericType(rowType1, rowType2)
+            , cmd <| typedefof<ResultSets<_, _>>.MakeGenericType(rowType1, rowType2)
         | [ resultSet1; resultSet2; resultSet3 ] ->
             let rowType1 = genRowType "Row1" resultSet1
             let rowType2 = genRowType "Row2" resultSet2
             let rowType3 = genRowType "Row3" resultSet3
             [ rowType1; rowType2; rowType3 ]
             , commandCtor.GetMethod("Command3").MakeGenericMethod(rowType1, rowType2, rowType3)
-            , typedefof<Command3<_, _, _>>.MakeGenericType(rowType1, rowType2, rowType3)
+            , cmd <| typedefof<ResultSets<_, _, _>>.MakeGenericType(rowType1, rowType2, rowType3)
         | sets ->
             failwithf "Too many (%d) result sets from command." (List.length sets)
     let provided =
