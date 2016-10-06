@@ -23,12 +23,20 @@ type public Provider(cfg : TypeProviderConfig) as this =
     let parameterizedTy =
         ProvidedTypeDefinition(thisAssembly, rootNamespace, "SQL", Some typeof<obj>, IsErased = false)
 
-    let tmpAssembly = ProvidedAssembly(Path.ChangeExtension(Path.GetTempFileName(), ".dll"))
+    let tmpAssembly = ProvidedAssembly(Path.GetTempFileName())
+
+    let watchers = Dictionary<_, _>()
+    let addWatcher path =
+        let path = Path.GetFullPath(path)
+        if not <| watchers.ContainsKey(path) then
+            let watcher = new Watcher(path)
+            watcher.Invalidated.Add(fun _ -> this.Invalidate())
+            watchers.Add(path, watcher)
 
     let buildTypeFromStaticParameters typeName (parameterValues : obj array) =
         match parameterValues with 
         | [| :? string as sql; :? string as model |] ->
-            let model = UserModel.Load(Path.Combine(cfg.ResolutionFolder, model))
+            let model = UserModel.Load(cfg.ResolutionFolder, model)
             let parsed = CommandEffect.OfSQL(model.Model, typeName, sql)
             let ty =
                 {   Assembly = thisAssembly
@@ -38,12 +46,14 @@ type public Provider(cfg : TypeProviderConfig) as this =
                     Command = parsed
                 } |> generateType
             tmpAssembly.AddTypes([ty])
+            addWatcher model.ModelPath
             ty
-        | _ -> failwith "Invalid parameters (expected 2 strings: model, sql)"
+        | _ -> failwith "Invalid parameters (expected 2 strings: sql, model)"
     do
         parameterizedTy.DefineStaticParameters(staticParams, buildTypeFromStaticParameters)
         tmpAssembly.AddTypes([ parameterizedTy ])
         this.AddNamespace(rootNamespace, [ parameterizedTy ])
+        this.Disposing.Add(fun _ -> for watcher in watchers.Values do watcher.Dispose())
 
 [<TypeProviderAssembly>]
 do ()

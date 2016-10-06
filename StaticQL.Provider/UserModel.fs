@@ -69,19 +69,21 @@ module private UserModelLoader =
 
 open UserModelLoader
 
-type UserModel(backend : IBackend, model : Model, migrations : string MigrationMajorVersion IReadOnlyList) =
-    member __.Backend = backend
-    member __.Model = model
-    member __.Migrations = migrations
-    static member Load(path : string) =
-        // go parse config file / find migration scripts
-        // TODO be sure to cache this and invalidate on changes
-        let migrations = loadMigrations path
+type UserModel =
+    {   ModelPath : string
+        Backend : IBackend
+        Model : Model
+        Migrations : string MigrationMajorVersion IReadOnlyList
+    }
+    static member ConfigFileName = "dbconfig.json"
+    static member Load(resolutionFolder : string, modelPath : string) =
+        let modelPath = Path.Combine(resolutionFolder, modelPath) // TODO search for config file
+        let migrations = loadMigrations modelPath
         let backend = SQLiteBackend() :> IBackend // TODO choose backend based on config file
         let migrations, model = nextModel backend.InitialModel migrations
         let migrations = migrations |> Seq.map (stringizeMajorVersion backend) |> toReadOnlyList
-        UserModel
-            ( backend = backend
-            , model = model
-            , migrations = migrations
-            )
+        {   ModelPath = modelPath
+            Backend = backend
+            Model = model
+            Migrations = migrations
+        }

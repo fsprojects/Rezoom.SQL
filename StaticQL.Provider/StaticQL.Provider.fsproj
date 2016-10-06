@@ -66,6 +66,7 @@
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
     <Compile Include="TypeGeneration.fs" />
+    <Compile Include="Watcher.fs" />
     <Compile Include="Provider.fs" />
   </ItemGroup>
   <ItemGroup>
