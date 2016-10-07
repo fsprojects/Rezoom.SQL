@@ -17,7 +17,7 @@ type CommandFragment =
     | Whitespace
 
 [<AbstractClass>]
-type Command(fragments : CommandFragment IReadOnlyList, parameters : obj IReadOnlyList) =
+type Command(fragments : CommandFragment IReadOnlyList, parameters : (obj * DbType) IReadOnlyList) =
     member __.Fragments = fragments
     member __.Parameters = parameters
     

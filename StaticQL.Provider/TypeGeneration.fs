@@ -1,5 +1,6 @@
 ﻿module StaticQL.Provider.TypeGeneration
 open System
+open System.Data
 open System.Collections.Generic
 open System.IO
 open System.Text.RegularExpressions
@@ -101,41 +102,26 @@ let private generateRowType (model : UserModel) (name : string) (query : ColumnT
     CompileTimeColumnMap.Parse(query.Columns)
     |> generateRowTypeFromColumns model name
 
-let private generateCtor (baseCtor : ConstructorInfo) (generate : GenerateType) =
-    let backend = generate.UserModel.Backend
-    let parameters = generate.Command.Parameters
-    let indexer = parameterIndexer (parameters |> Seq.map fst)
-    let fragments = backend.ToCommandFragments(indexer, generate.Command.Statements)
-    let parameters =
-        [ for NamedParameter name, ty in parameters ->
-            ProvidedParameter(name.Value, ty.CLRType)
-        ]
-    let ctor = ProvidedConstructor(parameters)
-    ctor.BaseConstructorCall <-
-        function
-        | this :: args ->
-            let arr = Expr.NewArray(typeof<obj>, args |> List.map (fun e -> Expr.Coerce(e, typeof<obj>)))
-            let frags = toFragmentArrayExpr fragments
-            baseCtor, [ frags; arr ]
-        | _ ->
-            failwith "Invalid base constructor call argument list"
-    ctor.InvokeCode <- fun _ -> <@@ () @@>
-    ctor
-
 let private generateCommandMethod (generate : GenerateType) (retTy : Type) (callMeth : MethodInfo) =
     let backend = generate.UserModel.Backend
-    let parameters = generate.Command.Parameters
+    let parameters = generate.Command.Parameters |> Seq.sortBy fst |> Seq.toList
     let indexer = parameterIndexer (parameters |> Seq.map fst)
     let fragments = backend.ToCommandFragments(indexer, generate.Command.Statements)
-    let parameters =
+    let methodParameters =
         [ for NamedParameter name, ty in parameters ->
             ProvidedParameter(name.Value, ty.CLRType)
         ]
-    let meth = ProvidedMethod("Command", parameters, retTy)
+    let meth = ProvidedMethod("Command", methodParameters, retTy)
     meth.SetMethodAttrs(MethodAttributes.Static ||| MethodAttributes.Public)
     meth.InvokeCode <-
         fun args ->
-            let arr = Expr.NewArray(typeof<obj>, args |> List.map (fun e -> Expr.Coerce(e, typeof<obj>)))
+            let arr =
+                Expr.NewArray
+                    ( typeof<obj * DbType>
+                    , (args, parameters) ||> List.map2 (fun ex (_, ty) ->
+                        let tx = backend.ParameterTransform(ty)
+                        Expr.NewTuple([ tx.ValueTransform ex; Quotations.Expr.Value(tx.ParameterType) ]))
+                    )
             let frags = toFragmentArrayExpr fragments
             Expr.CallUnchecked(callMeth, [ frags; arr ])
     meth

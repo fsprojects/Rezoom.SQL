@@ -1,5 +1,6 @@
 ﻿namespace StaticQL.Provider
 open System
+open System.Data
 open System.Collections.Generic
 open System.Globalization
 open StaticQL
@@ -65,6 +66,7 @@ type SQLiteBackend() =
         }
     interface IBackend with
         member this.InitialModel = initialModel
+        member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =
             let translator = SQLiteStatement(indexer)
             translator.Statements(stmts)
