@@ -21,8 +21,14 @@ type Command(fragments : CommandFragment IReadOnlyList, parameters : (obj * DbTy
     member __.Fragments = fragments
     member __.Parameters = parameters
     
+    /// The number of result sets this command will return, if it can be statically determined.
+    abstract member ResultSetCount : int option
+    default __.ResultSetCount = None
+    /// Start processing a result set.
     abstract member BeginResultSet : IDataReader -> unit
+    /// Process a single row of the result set.
     abstract member ProcessRow : unit -> unit
+    /// Obtain the result object after processing *all* result sets.
     abstract member GetResultObject : unit -> obj
 
 /// Represents multiple result sets as the output from a single command.
