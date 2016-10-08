@@ -1,10 +1,10 @@
-﻿namespace StaticQL.Provider
+﻿namespace StaticQL
 open System
 open System.IO
 open System.Text.RegularExpressions
 open System.Collections.Generic
 open StaticQL
-open StaticQL.Provider.Migrations
+open StaticQL.Migrations
 
 module private UserModelLoader =
     let private migrationPattern =
@@ -41,7 +41,7 @@ module private UserModelLoader =
 
     let loadMigrations migrationsFolder =
         let migrations =
-            [| for path in Directory.GetFiles(migrationsFolder, "*.SQL", SearchOption.AllDirectories) do
+            [| for path in Directory.GetFiles(migrationsFolder, "*.sql", SearchOption.AllDirectories) do
                 match parseMigrationInfo path with
                 | None -> ()
                 | Some (_, _, featureVersion as migrationInfo) ->
@@ -70,19 +70,40 @@ module private UserModelLoader =
 open UserModelLoader
 
 type UserModel =
-    {   ModelPath : string
+    {   ConfigDirectory : string
+        MigrationsDirectory : string
         Backend : IBackend
         Model : Model
         Migrations : string MigrationMajorVersion IReadOnlyList
     }
-    static member ConfigFileName = "dbconfig.json"
+    static member ConfigFileName = "staticql.json"
     static member Load(resolutionFolder : string, modelPath : string) =
-        let modelPath = Path.Combine(resolutionFolder, modelPath) // TODO search for config file
-        let migrations = loadMigrations modelPath
-        let backend = SQLiteBackend() :> IBackend // TODO choose backend based on config file
+        let config, configDirectory =
+            if String.IsNullOrEmpty(modelPath) then // implicit based on location of dbconfig.json
+                let configPath =
+                    Directory.GetFiles(resolutionFolder, "*.json", SearchOption.AllDirectories)
+                    |> Array.tryFind (fun f -> f.EndsWith(UserModel.ConfigFileName, StringComparison.OrdinalIgnoreCase))
+                match configPath with
+                | None -> Config.defaultConfig, resolutionFolder
+                | Some path ->
+                    Config.parseConfigFile path, Path.GetDirectoryName(path)
+            else
+                let path = Path.Combine(resolutionFolder, modelPath)
+                if path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) then
+                    Config.parseConfigFile path, Path.GetDirectoryName(path)
+                else
+                    let configPath = Path.Combine(path, UserModel.ConfigFileName)
+                    if File.Exists(configPath) then
+                        Config.parseConfigFile configPath, path
+                    else
+                        Config.defaultConfig, path
+        let migrationsDirectory = Path.Combine(configDirectory, config.MigrationsPath) |> Path.GetFullPath
+        let migrations = loadMigrations migrationsDirectory
+        let backend = config.Backend.ToBackend()
         let migrations, model = nextModel backend.InitialModel migrations
         let migrations = migrations |> Seq.map (stringizeMajorVersion backend) |> toReadOnlyList
-        {   ModelPath = modelPath
+        {   MigrationsDirectory = migrationsDirectory
+            ConfigDirectory = Path.GetFullPath(configDirectory)
             Backend = backend
             Model = model
             Migrations = migrations

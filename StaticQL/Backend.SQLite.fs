@@ -1,11 +1,11 @@
-﻿namespace StaticQL.Provider
+﻿namespace StaticQL.SQLite
 open System
 open System.Data
 open System.Collections.Generic
 open System.Globalization
 open StaticQL
 open StaticQL.Mapping
-open StaticQL.Provider.BackendUtilities
+open StaticQL.BackendUtilities
 
 type SQLiteLiteral() =
     inherit LiteralTranslator()

@@ -1,4 +1,4 @@
-﻿module StaticQL.Provider.Migrations
+﻿module StaticQL.Migrations
 open System
 open System.Collections.Generic
 open FSharp.Reflection

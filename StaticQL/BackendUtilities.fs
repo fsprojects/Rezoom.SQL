@@ -1,4 +1,4 @@
-﻿module StaticQL.Provider.BackendUtilities
+﻿module StaticQL.BackendUtilities
 open System
 open System.Globalization
 open System.Collections.Generic

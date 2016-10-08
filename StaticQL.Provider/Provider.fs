@@ -46,7 +46,8 @@ type public Provider(cfg : TypeProviderConfig) as this =
                     Command = parsed
                 } |> generateType
             tmpAssembly.AddTypes([ty])
-            addWatcher model.ModelPath
+            addWatcher model.ConfigDirectory
+            addWatcher model.MigrationsDirectory
             ty
         | _ -> failwith "Invalid parameters (expected 2 strings: sql, model)"
     do

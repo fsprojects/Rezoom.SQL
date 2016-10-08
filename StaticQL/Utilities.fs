@@ -116,3 +116,6 @@ let rec permutations (xs : 'a list) =
     match xs with
     | [] -> Seq.singleton []
     | x :: rest -> permutations rest |> Seq.collect (insertionsOf x)
+ 
+/// Translates from FParsec's position type to our own.
+let internal translatePosition (pos : FParsec.Position) = { Index = pos.Index; Line = pos.Line; Column = pos.Column }

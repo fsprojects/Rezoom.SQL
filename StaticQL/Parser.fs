@@ -6,9 +6,6 @@ open FParsec
 open FParsec.Pipes
 open FParsec.Pipes.Precedence
 
-/// Translates from FParsec's position type to our own.
-let private translatePosition (pos : Position) = { Index = pos.Index; Line = pos.Line; Column = pos.Column }
-
 /// Get the source position the parser is currently at.
 let private sourcePosition =
     %% +.p<Position>

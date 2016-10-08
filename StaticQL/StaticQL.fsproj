@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -65,6 +65,12 @@
     <Compile Include="TypeChecker.fs" />
     <Compile Include="ModelChange.fs" />
     <Compile Include="CommandEffect.fs" />
+    <Compile Include="Backend.fs" />
+    <Compile Include="BackendUtilities.fs" />
+    <Compile Include="Backend.SQLite.fs" />
+    <Compile Include="Migrations.fs" />
+    <Compile Include="Config.fs" />
+    <Compile Include="UserModel.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
@@ -85,7 +91,15 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StaticQL.Mapping\StaticQL.Mapping.fsproj">
+      <Name>StaticQL.Mapping</Name>
+      <Project>{6b6a06c5-157a-4fe3-8b4c-2a1ae6a15333}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

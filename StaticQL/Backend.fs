@@ -1,4 +1,4 @@
-﻿namespace StaticQL.Provider
+﻿namespace StaticQL
 open System
 open System.Data
 open System.Collections.Generic

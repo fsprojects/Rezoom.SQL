@@ -1,6 +1,7 @@
 ﻿namespace StaticQL.Provider
 open System
 open System.IO
+open StaticQL
 
 type Watcher(path : string) as this =
     let fs = new FileSystemWatcher(path, IncludeSubdirectories = true)
