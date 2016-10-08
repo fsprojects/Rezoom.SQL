@@ -133,6 +133,27 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     }
                 let schema = { schema with Views = schema.Views |> Map.add create.ViewName.ObjectName view }
                 Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
+    member this.DropObject(drop : InfDropObjectStmt) =
+        let schemaName = drop.ObjectName.SchemaName |? model.DefaultSchema
+        let objName = drop.ObjectName.ObjectName
+        match model.Schemas |> Map.tryFind schemaName with
+        | None -> failAt drop.ObjectName.Source <| sprintf "No such schema: ``%O``" objName
+        | Some schema ->
+            let update name map newSchema =
+                match map |> Map.tryFind objName with
+                | None ->
+                    if drop.IfExists then None
+                    else failAt drop.ObjectName.Source <| sprintf "No such %s: ``%O``" name objName
+                | Some _ ->
+                    Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName (newSchema()) }
+            match drop.Drop with
+            | DropTable ->
+                update "table" schema.Tables <| fun () -> { schema with Tables = Map.remove objName schema.Tables }
+            | DropView ->
+                update "view" schema.Views <| fun () -> { schema with Views = Map.remove objName schema.Views }
+            | DropIndex
+            | DropTrigger -> None // TODO: track these in schema
+            
     member this.Statment(stmt : InfStmt) =
         match stmt with
         | AlterTableStmt alter -> this.AlterTable(alter)
@@ -140,10 +161,10 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
         | CreateViewStmt create -> this.CreateView(create)
         | CreateIndexStmt create -> failwith "not implemented"
         | CreateTriggerStmt create -> failwith "not implemented"
+        | DropObjectStmt drop -> this.DropObject(drop)
         | BeginStmt
         | CommitStmt
         | DeleteStmt _
-        | DropObjectStmt _
         | InsertStmt _
         | RollbackStmt
         | SelectStmt _
