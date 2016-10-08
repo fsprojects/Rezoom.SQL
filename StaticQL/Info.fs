@@ -132,6 +132,7 @@ type TCompoundExprCore = CompoundExprCore<ColumnType ObjectInfo, ColumnType Expr
 type TCompoundExpr = CompoundExpr<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TCompoundTermCore = CompoundTermCore<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TCompoundTerm = CompoundTerm<ColumnType ObjectInfo, ColumnType ExprInfo>
+type TForeignKeyClause = ForeignKeyClause<ColumnType ObjectInfo>
 type TCreateTableDefinition = CreateTableDefinition<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TCreateTableStmt = CreateTableStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TSelectCore = SelectCore<ColumnType ObjectInfo, ColumnType ExprInfo>

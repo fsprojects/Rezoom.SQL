@@ -473,7 +473,7 @@ type CreateTableStmt<'t, 'e> =
     {
         Temporary : bool
         IfNotExists : bool
-        Name : ObjectName<'t> WithSource
+        Name : ObjectName<'t>
         As : CreateTableAs<'t, 'e>
     }
 

@@ -45,14 +45,14 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
         |]
     member private this.CreateTable(create : InfCreateTableStmt) =
         let defaultSchema = if create.Temporary then model.TemporarySchema else model.DefaultSchema
-        let schema = create.Name.Value.SchemaName |? defaultSchema
+        let schema = create.Name.SchemaName |? defaultSchema
         match model.Schemas.TryFind(schema) with
         | None -> failAt create.Name.Source <| sprintf "No such schema: ``%O``" schema
         | Some schema ->
-            let tableName = create.Name.Value.ObjectName
+            let tableName = create.Name.ObjectName
             if schema.Tables.ContainsKey(tableName) then
                 if create.IfNotExists then None
-                else failAt create.Name.Source <| sprintf "Table ``%O`` already exists" create.Name.Value
+                else failAt create.Name.Source <| sprintf "Table ``%O`` already exists" create.Name
             else
                 let columns =
                     match create.As with
@@ -60,7 +60,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     | CreateAsDefinition def -> this.CreateTableColumns(schema.SchemaName, tableName, def)  
                 let table =
                     {   SchemaName = schema.SchemaName
-                        TableName = create.Name.Value.ObjectName
+                        TableName = create.Name.ObjectName
                         Columns = columns |> Set.ofSeq
                     }
                 let schema =

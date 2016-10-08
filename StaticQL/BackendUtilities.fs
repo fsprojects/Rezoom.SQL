@@ -62,6 +62,8 @@ type LiteralTranslator() =
             yield literalValue
         }
 
+//////////////////////////////////////// Statement ////////////////////////////////////////
+
 [<AbstractClass>]
 type StatementTranslator() =
     abstract member Expr : ExprTranslator
@@ -298,15 +300,177 @@ type StatementTranslator() =
             | None -> ()
             | Some limit -> yield! this.Limit(limit)
         }
+    abstract member ConflictClause : clause : ConflictClause -> Fragments
+    default this.ConflictClause(clause) =
+        seq {
+            yield text "ON CONFLICT"
+            yield ws
+            yield
+                match clause with
+                | Rollback -> text "ROLLBACK"
+                | Abort -> text "ABORT"
+                | Fail -> text "FAIL"
+                | Ignore -> text "IGNORE"
+                | Replace -> text "REPLACE"
+        }
+    member this.ConflictClause(clause : ConflictClause option) =
+        seq {
+            match clause with
+            | None -> ()
+            | Some clause ->
+                yield ws
+                yield! this.ConflictClause(clause)
+        }
+    abstract member ForeignKeyRule : rule : ForeignKeyRule -> Fragments
+    default this.ForeignKeyRule(rule) =
+        seq {
+            match rule with
+            | MatchRule name ->
+                yield text "MATCH"
+                yield ws
+                yield this.Expr.Name(name)
+            | EventRule (evt, handler) ->
+                yield text "ON"
+                yield ws
+                yield
+                    match evt with
+                    | OnDelete -> text "DELETE"
+                    | OnUpdate -> text "UPDATE"
+                yield ws
+                yield
+                    match handler with
+                    | SetNull -> text "SET NULL"
+                    | SetDefault -> text "SET DEFAULT"
+                    | Cascade -> text "CASCADE"
+                    | Restrict -> text "RESTRICT"
+                    | NoAction -> text "NO ACTION"
+        }
+    abstract member ForeignKeyClause : clause : TForeignKeyClause -> Fragments
+    default this.ForeignKeyClause(clause) =
+        seq {
+            yield text "REFERENCES"
+            yield ws
+            yield! this.Expr.ObjectName(clause.ReferencesTable)
+            match clause.ReferencesColumns with
+            | None -> ()
+            | Some columns ->
+                yield ws
+                yield text "("
+                yield! columns |> Seq.map this.Expr.Name |> join1 ","
+                yield text ")"
+            for rule in clause.Rules do
+                yield ws
+                yield! this.ForeignKeyRule(rule)
+            match clause.Defer with
+            | None -> ()
+            | Some defer ->
+                if not defer.Deferrable then
+                    yield text "NOT"
+                    yield ws
+                yield text "DEFERRABLE"
+                match defer.InitiallyDeferred with
+                | None -> ()
+                | Some initially ->
+                    yield ws
+                    yield text "INITIALLY"
+                    yield ws
+                    yield text (if initially then "DEFERRED" else "IMMEDIATE")
+        }
+    abstract member ColumnConstraint : constr : TColumnConstraint -> Fragments
+    default this.ColumnConstraint(constr) =
+        seq {
+            match constr.Name with
+            | None -> ()
+            | Some name ->
+                yield text "CONSTRAINT"
+                yield ws
+                yield this.Expr.Name(name)
+                yield ws
+            match constr.ColumnConstraintType with
+            | NullableConstraint -> ()
+            | PrimaryKeyConstraint pk ->
+                yield text "PRIMARY KEY"
+                yield ws
+                yield this.OrderDirection(pk.Order)
+                yield! this.ConflictClause(pk.ConflictClause)
+                if pk.AutoIncrement then
+                    yield ws
+                    yield text "AUTOINCREMENT"
+            | NotNullConstraint conflict ->
+                yield text "NOT NULL"
+                yield! this.ConflictClause(conflict)
+            | UniqueConstraint conflict ->
+                yield text "UNIQUE"
+                yield! this.ConflictClause(conflict)
+            | CheckConstraint expr ->
+                yield text "CHECK("
+                yield! this.Expr.Expr(expr)
+                yield text ")"
+            | DefaultConstraint expr ->
+                yield text "DEFAULT("
+                yield! this.Expr.Expr(expr)
+                yield text ")"
+            | CollateConstraint name ->
+                yield text "COLLATE"
+                yield ws
+                yield this.Expr.Name(name)
+            | ForeignKeyConstraint fk ->
+                yield! this.ForeignKeyClause(fk)
+        }
+    abstract member ColumnDefinition : col : TColumnDef -> Fragments
+    default this.ColumnDefinition(col) =
+        seq {
+            yield this.Expr.Name(col.Name)
+            match col.Type with
+            | None -> ()
+            | Some ty ->
+                yield ws
+                yield! this.Expr.TypeName(ty)
+            for constr in col.Constraints do
+                yield ws
+                yield! this.ColumnConstraint(constr)
+        }
+    abstract member CreateTableDefinition : create : TCreateTableDefinition -> Fragments
+    default this.CreateTableDefinition(create) =
+        seq {
+            yield text "("
+            yield! create.Columns |> Seq.map this.ColumnDefinition |> join ","
+            yield text ")"
+        }
+    abstract member CreateTable : create : TCreateTableStmt -> Fragments
+    default this.CreateTable(create) =
+        seq {
+            yield text "CREATE"
+            yield ws
+            if create.Temporary then
+                yield text "TEMP"
+                yield ws
+            yield text "TABLE"
+            yield ws
+            if create.IfNotExists then
+                yield text "IF NOT EXISTS"
+                yield ws
+            yield! this.Expr.ObjectName(create.Name)
+            yield ws
+            match create.As with
+            | CreateAsSelect select ->
+                yield text "AS"
+                yield ws
+                yield! this.Select(select)
+            | CreateAsDefinition def ->
+                yield! this.CreateTableDefinition(def)
+        }
     abstract member Statement : TStmt -> Fragments
     default this.Statement(stmt) =
         match stmt with
         | SelectStmt select -> this.Select(select)
-        | CreateTableStmt createTable -> Seq.empty // TODO
+        | CreateTableStmt create -> this.CreateTable(create)
         | _ -> failwith "Not implemented"
     abstract member Statements : TStmt seq -> Fragments
     default this.Statements(stmts) =
         stmts |> Seq.map this.Statement |> join ";"
+
+//////////////////////////////////////// Expr ////////////////////////////////////////
 
 and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : IParameterIndexer) =
     abstract member Literal : LiteralTranslator

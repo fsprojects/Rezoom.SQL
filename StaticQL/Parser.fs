@@ -1032,7 +1032,7 @@ let private createTableStmt =
     -- +.temporary
     -? kw "TABLE"
     -- +.ifNotExists
-    -- +.withSource objectName
+    -- +.objectName
     -- +.createTableAs
     -|> fun temp ifNotExists name createAs ->
         {

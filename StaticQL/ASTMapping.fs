@@ -259,7 +259,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.CreateTable(createTable : CreateTableStmt<'t1, 'e1>) =
         {   Temporary = createTable.Temporary
             IfNotExists = createTable.IfNotExists
-            Name = { Source = createTable.Name.Source; Value = this.ObjectName(createTable.Name.Value) }
+            Name = this.ObjectName(createTable.Name)
             As =
                 match createTable.As with
                 | CreateAsSelect select -> CreateAsSelect <| this.Select(select)

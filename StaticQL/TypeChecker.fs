@@ -660,7 +660,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.CreateTable(createTable : CreateTableStmt) =
         {   Temporary = createTable.Temporary
             IfNotExists = createTable.IfNotExists
-            Name = { Source = createTable.Name.Source; Value = this.ObjectName(createTable.Name.Value, true) }
+            Name = this.ObjectName(createTable.Name, true)
             As =
                 match createTable.As with
                 | CreateAsSelect select -> CreateAsSelect <| this.Select(select)
