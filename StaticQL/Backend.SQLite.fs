@@ -6,9 +6,10 @@ open System.Globalization
 open StaticQL
 open StaticQL.Mapping
 open StaticQL.BackendUtilities
+open StaticQL.Translators
 
 type SQLiteLiteral() =
-    inherit LiteralTranslator()
+    inherit DefaultLiteralTranslator()
     override __.BlobLiteral(bytes) =
         let hexPairs = bytes |> Array.map (fun b -> b.ToString("X2", CultureInfo.InvariantCulture))
         "x'" + String.Concat(hexPairs) + "'"
@@ -18,7 +19,7 @@ type SQLiteLiteral() =
         |> text
 
 type SQLiteExpression(statement : StatementTranslator, indexer) =
-    inherit ExprTranslator(statement, indexer)
+    inherit DefaultExprTranslator(statement, indexer)
     let literal = SQLiteLiteral()
     override __.Name(name) =
         "\"" + name.Value.Replace("\"", "\"\"") + "\""
@@ -41,7 +42,7 @@ type SQLiteExpression(statement : StatementTranslator, indexer) =
             | DateTimeOffsetTypeName -> failwith <| sprintf "Unsupported type ``%A``" name
 
 type SQLiteStatement(indexer : IParameterIndexer) as this =
-    inherit StatementTranslator()
+    inherit DefaultStatementTranslator()
     let expr = SQLiteExpression(this :> StatementTranslator, indexer)
     override __.Expr = upcast expr
 
