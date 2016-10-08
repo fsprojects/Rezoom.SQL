@@ -630,5 +630,9 @@ type DefaultStatementTranslator() =
         | CommitStmt -> this.Commit
         | RollbackStmt -> this.Rollback
     override this.Statements(stmts) =
-        stmts |> Seq.map this.Statement |> join ";"
+        seq {
+            for stmt in stmts do
+                yield! this.Statement(stmt)
+                yield text ";"
+        }
 
