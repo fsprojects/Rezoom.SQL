@@ -49,6 +49,7 @@ type StatementTranslator() =
     abstract member CreateView : create : TCreateViewStmt -> Fragments
     abstract member CreateIndex : create : TCreateIndexStmt -> Fragments
     abstract member DropObject : drop : TDropObjectStmt -> Fragments
+    abstract member Insert : insert : TInsertStmt -> Fragments
     abstract member Begin : Fragments
     abstract member Commit : Fragments
     abstract member Rollback : Fragments

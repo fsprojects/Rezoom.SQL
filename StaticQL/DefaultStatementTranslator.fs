@@ -469,6 +469,41 @@ type DefaultStatementTranslator() =
                 yield ws
             yield! this.Expr.ObjectName(drop.ObjectName)
         }
+    override this.Insert(insert) =
+        seq {
+            match insert.With with
+            | None -> ()
+            | Some withClause ->
+                yield! this.With(withClause)
+                yield ws
+            yield text "INSERT"
+            match insert.Or with
+            | None -> ()
+            | Some insertOr ->
+                yield ws
+                yield
+                    match insertOr with
+                    | InsertOrRollback -> text "OR ROLLBACK"
+                    | InsertOrAbort -> text "OR ABORT"
+                    | InsertOrReplace -> text "OR REPLACE"
+                    | InsertOrFail -> text "OR FAIL"
+                    | InsertOrIgnore -> text "OR IGNORE"
+            yield ws
+            yield text "INTO"
+            yield ws
+            yield! this.Expr.ObjectName(insert.InsertInto)
+            match insert.Columns with
+            | None -> ()
+            | Some columns ->
+                yield text "("
+                yield! columns |> Seq.map this.Expr.Name |> join1 ","
+                yield text ")"
+            yield ws
+            match insert.Data with
+            | None -> yield text "DEFAULT VALUES"
+            | Some data ->
+                yield! this.Select(data)
+        }
     override this.Begin = Seq.singleton (text "BEGIN")
     override this.Commit = Seq.singleton (text "COMMIT")
     override this.Rollback = Seq.singleton (text "ROLLBACK")
@@ -482,7 +517,7 @@ type DefaultStatementTranslator() =
         | DropObjectStmt drop -> this.DropObject(drop)
 
         | SelectStmt select -> this.Select(select)
-        | InsertStmt insert -> failwith "not implemented"
+        | InsertStmt insert -> this.Insert(insert)
         | UpdateStmt update -> failwith "not implemented"
         | DeleteStmt delete -> failwith "not implemented"
 
