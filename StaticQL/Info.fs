@@ -104,6 +104,8 @@ and ObjectInfo<'t> =
         match this with
         | TableLike t -> t
         | other -> failwithf "Expected table, but found reference to %A" other
+    member this.Query = this.Table.Query
+    member this.Columns = this.Query.Columns
     member this.Map<'t1>(f : 't -> 't1) : ObjectInfo<'t1> =
         match this with
         | TableLike t -> TableLike (t.Map(f))

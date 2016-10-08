@@ -34,7 +34,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
             }
         |]
     member private this.CreateTableColumns(model, schemaName : Name, tableName : Name, asSelect : InfSelectStmt) =
-        let query = asSelect.Value.Info.Table.Query
+        let query = asSelect.Value.Info.Query
         [| for column in query.Columns ->
             {   SchemaName = schemaName
                 TableName = tableName
@@ -121,7 +121,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                         ViewName = create.ViewName.ObjectName
                         Columns =
                             seq {
-                                for column in create.AsSelect.Value.Info.Table.Query.Columns ->
+                                for column in create.AsSelect.Value.Info.Columns ->
                                     {   SchemaName = schemaName
                                         TableName = create.ViewName.ObjectName
                                         ColumnName = column.ColumnName
