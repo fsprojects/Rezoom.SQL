@@ -302,7 +302,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.DropObject(drop : DropObjectStmt<'t1>) =
         {   Drop = drop.Drop
             IfExists = drop.IfExists
-            IndexName = this.ObjectName(drop.IndexName)
+            ObjectName = this.ObjectName(drop.ObjectName)
         }
     member this.Insert(insert : InsertStmt<'t1, 'e1>) =
         {   With = Option.map this.WithClause insert.With

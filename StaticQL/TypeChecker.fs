@@ -709,7 +709,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.DropObject(drop : DropObjectStmt) =
         {   Drop = drop.Drop
             IfExists = drop.IfExists
-            IndexName = this.ObjectName(drop.IndexName)
+            ObjectName = this.ObjectName(drop.ObjectName)
         }
     member this.Insert(insert : InsertStmt) =
         let checker, withClause =

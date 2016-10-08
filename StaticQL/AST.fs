@@ -577,7 +577,7 @@ type DropObjectStmt<'t> =
     {
         Drop : DropObjectType
         IfExists : bool
-        IndexName : ObjectName<'t>
+        ObjectName : ObjectName<'t>
     }
 
 type Stmt<'t, 'e> =

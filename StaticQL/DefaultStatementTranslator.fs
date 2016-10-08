@@ -453,14 +453,42 @@ type DefaultStatementTranslator() =
                 yield ws
                 yield! this.Expr.Expr(where)
         }
+    override this.DropObject(drop) =
+        seq {
+            yield text "DROP"
+            yield ws
+            yield
+                match drop.Drop with
+                | DropIndex -> text "INDEX"
+                | DropTable -> text "TABLE"
+                | DropTrigger -> text "TRIGGER"
+                | DropView -> text "VIEW"
+            yield ws
+            if drop.IfExists then
+                yield text "IF EXISTS"
+                yield ws
+            yield! this.Expr.ObjectName(drop.ObjectName)
+        }
+    override this.Begin = Seq.singleton (text "BEGIN")
+    override this.Commit = Seq.singleton (text "COMMIT")
+    override this.Rollback = Seq.singleton (text "ROLLBACK")
     override this.Statement(stmt) =
         match stmt with
-        | SelectStmt select -> this.Select(select)
         | AlterTableStmt alter -> this.AlterTable(alter)
         | CreateTableStmt create -> this.CreateTable(create)
         | CreateViewStmt create -> this.CreateView(create)
         | CreateIndexStmt create -> this.CreateIndex(create)
-        | _ -> failwith "Not implemented"
+        | CreateTriggerStmt create -> failwith "not implemented"
+        | DropObjectStmt drop -> this.DropObject(drop)
+
+        | SelectStmt select -> this.Select(select)
+        | InsertStmt insert -> failwith "not implemented"
+        | UpdateStmt update -> failwith "not implemented"
+        | DeleteStmt delete -> failwith "not implemented"
+
+        | BeginStmt -> this.Begin
+        | CommitStmt -> this.Commit
+        | RollbackStmt -> this.Rollback
     override this.Statements(stmts) =
         stmts |> Seq.map this.Statement |> join ";"
 

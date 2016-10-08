@@ -1284,7 +1284,7 @@ let private dropObjectStmt =
     -- +.ifExists
     -- +.objectName
     -|> fun dropType ifExists name ->
-        { Drop = dropType; IfExists = ifExists; IndexName = name }
+        { Drop = dropType; IfExists = ifExists; ObjectName = name }
 
 let private stmt =
     %[
