@@ -1,5 +1,6 @@
 ﻿module StaticQL.BackendUtilities
 open System
+open System.Text
 open System.Globalization
 open System.Collections.Generic
 open StaticQL.Mapping
@@ -9,7 +10,28 @@ type Fragment = CommandFragment
 type Fragments = Fragment seq
 
 let simplifyFragments (fragments : Fragments) =
-    fragments // TODO: combine consecutive CommandText fragments
+    seq {
+        let mutable hasWhitespace = false
+        let builder = StringBuilder()
+        for fragment in fragments do
+            match fragment with
+            | CommandText text ->
+                ignore <| builder.Append(text)
+                hasWhitespace <- text.EndsWith(" ")
+            | Whitespace ->
+                if not hasWhitespace then ignore <| builder.Append(' ')
+                hasWhitespace <- true
+            | Parameter _
+            | LocalName _ ->
+                if builder.Length > 0 then
+                    yield CommandText <| builder.ToString()
+                    ignore <| builder.Clear()
+                yield fragment
+                hasWhitespace <- false
+        if builder.Length > 0 then
+            yield CommandText <| builder.ToString()
+            ignore <| builder.Clear()
+    }
 
 let ws = Whitespace
 let text str = CommandText str
