@@ -376,10 +376,90 @@ type DefaultStatementTranslator() =
             | CreateAsDefinition def ->
                 yield! this.CreateTableDefinition(def)
         }
+    override this.AlterTable(alter) =
+        seq {
+            yield text "ALTER TABLE"
+            yield ws
+            yield! this.Expr.ObjectName(alter.Table)
+            yield ws
+            match alter.Alteration with
+            | RenameTo newName ->
+                yield text "RENAME TO"
+                yield ws
+                yield this.Expr.Name(newName)
+            | AddColumn columnDef ->
+                yield text "ADD COLUMN"
+                yield ws
+                yield! this.ColumnDefinition(columnDef)
+        }
+    override this.CreateView(create) =
+        seq {
+            yield text "CREATE"
+            yield ws
+            if create.Temporary then
+                yield text "TEMP"
+                yield ws
+            yield text "VIEW"
+            yield ws
+            if create.IfNotExists then
+                yield text "IF NOT EXISTS"
+                yield ws
+            yield! this.Expr.ObjectName(create.ViewName)
+            yield ws
+            match create.ColumnNames with
+            | None -> ()
+            | Some names ->
+                yield text "("
+                yield! names |> Seq.map this.Expr.Name |> join1 ","
+                yield text ")"
+                yield ws
+            yield text "AS"
+            yield ws
+            yield! this.Select(create.AsSelect)
+        }
+    override this.CreateIndex(create) =
+        seq {
+            yield text "CREATE"
+            yield ws
+            if create.Unique then
+                yield text "UNIQUE"
+                yield ws
+            yield text "INDEX"
+            yield ws
+            if create.IfNotExists then
+                yield text "IF NOT EXISTS"
+                yield ws
+            yield! this.Expr.ObjectName(create.IndexName)
+            yield ws
+            yield text "ON"
+            yield ws
+            yield! this.Expr.ObjectName(create.TableName)
+            yield text "("
+            yield!
+                seq {
+                    for expr, dir in create.IndexedColumns do
+                        yield seq {
+                            yield! this.Expr.Expr(expr)
+                            yield ws
+                            yield this.OrderDirection(dir)
+                        }
+                } |> join ","
+            yield text ")"
+            match create.Where with
+            | None -> ()
+            | Some where ->
+                yield ws
+                yield text "WHERE"
+                yield ws
+                yield! this.Expr.Expr(where)
+        }
     override this.Statement(stmt) =
         match stmt with
         | SelectStmt select -> this.Select(select)
+        | AlterTableStmt alter -> this.AlterTable(alter)
         | CreateTableStmt create -> this.CreateTable(create)
+        | CreateViewStmt create -> this.CreateView(create)
+        | CreateIndexStmt create -> this.CreateIndex(create)
         | _ -> failwith "Not implemented"
     override this.Statements(stmts) =
         stmts |> Seq.map this.Statement |> join ";"

@@ -45,6 +45,9 @@ type StatementTranslator() =
     abstract member ColumnDefinition : col : TColumnDef -> Fragments
     abstract member CreateTableDefinition : create : TCreateTableDefinition -> Fragments
     abstract member CreateTable : create : TCreateTableStmt -> Fragments
+    abstract member AlterTable : alter : TAlterTableStmt -> Fragments
+    abstract member CreateView : create : TCreateViewStmt -> Fragments
+    abstract member CreateIndex : create : TCreateIndexStmt -> Fragments
     abstract member Statement : TStmt -> Fragments
     abstract member Statements : TStmt seq -> Fragments
 
