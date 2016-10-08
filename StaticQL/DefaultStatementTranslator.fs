@@ -10,6 +10,25 @@ type DefaultStatementTranslator() =
         match dir with
         | Ascending -> text "ASC"
         | Descending -> text "DESC"
+    override this.IndexHint(indexHint) =
+        seq {
+            match indexHint with
+            | NotIndexed ->
+                yield text "NOT INDEXED"
+            | (IndexedBy name) ->
+                yield text "INDEXED BY"
+                yield ws
+                yield this.Expr.Name(name)
+        }
+    member this.QualifiedTableName(qualified : TQualifiedTableName) =
+        seq {
+            yield! this.Expr.ObjectName(qualified.TableName)
+            match qualified.IndexHint with
+            | None -> ()
+            | Some indexHint ->
+                yield ws
+                yield! this.IndexHint(indexHint)
+        }
     override this.CTE(cte) =
         seq {
             yield this.Expr.Name(cte.Name)
@@ -81,14 +100,9 @@ type DefaultStatementTranslator() =
                     yield this.Expr.Name(alias)
                 match indexHint with
                 | None -> ()
-                | Some NotIndexed ->
+                | Some indexHint ->
                     yield ws
-                    yield text "NOT INDEXED"
-                | Some (IndexedBy name) ->
-                    yield ws
-                    yield text "INDEXED BY"
-                    yield ws
-                    yield this.Expr.Name(name)
+                    yield! this.IndexHint(indexHint)
             | Subquery select ->
                 yield text "("
                 yield! this.Select(select)
@@ -218,10 +232,16 @@ type DefaultStatementTranslator() =
             yield! this.Compound(select.Compound.Value)
             match select.OrderBy with
             | None -> ()
-            | Some orderBy -> yield! orderBy |> Seq.map this.OrderingTerm |> join ","
+            | Some orderBy ->
+                yield ws
+                yield text "ORDER BY"
+                yield ws
+                yield! orderBy |> Seq.map this.OrderingTerm |> join ","
             match select.Limit with
             | None -> ()
-            | Some limit -> yield! this.Limit(limit)
+            | Some limit ->
+                yield ws
+                yield! this.Limit(limit)
         }
     override this.ConflictClause(clause) =
         seq {
@@ -437,8 +457,8 @@ type DefaultStatementTranslator() =
             yield text "("
             yield!
                 seq {
-                    for expr, dir in create.IndexedColumns do
-                        yield seq {
+                    for expr, dir in create.IndexedColumns ->
+                        seq {
                             yield! this.Expr.Expr(expr)
                             yield ws
                             yield this.OrderDirection(dir)
@@ -504,6 +524,91 @@ type DefaultStatementTranslator() =
             | Some data ->
                 yield! this.Select(data)
         }
+    override this.Update(update) =
+        seq {
+            match update.With with
+            | None -> ()
+            | Some withClause ->
+                yield! this.With(withClause)
+                yield ws
+            yield text "UPDATE"
+            match update.Or with
+            | None -> ()
+            | Some updateOr ->
+                yield ws
+                yield
+                    match updateOr with
+                    | UpdateOrRollback -> text "OR ROLLBACK"
+                    | UpdateOrAbort -> text "OR ABORT"
+                    | UpdateOrReplace -> text "OR REPLACE"
+                    | UpdateOrFail -> text "OR FAIL"
+                    | UpdateOrIgnore -> text "OR IGNORE"
+            yield ws
+            yield! this.QualifiedTableName(update.UpdateTable)
+            yield ws
+            yield text "SET"
+            yield ws
+            yield!
+                seq {
+                    for name, value in update.Set ->
+                        seq {
+                            yield this.Expr.Name(name)
+                            yield ws
+                            yield text "="
+                            yield ws
+                            yield! this.Expr.Expr(value)
+                        }
+                } |> join ","
+            match update.Where with
+            | None -> ()
+            | Some where ->
+                yield ws
+                yield text "WHERE"
+                yield ws
+                yield! this.Expr.Expr(where)
+            match update.OrderBy with
+            | None -> ()
+            | Some orderBy ->
+                yield ws
+                yield text "ORDER BY"
+                yield ws
+                yield! orderBy |> Seq.map this.OrderingTerm |> join ","
+            match update.Limit with
+            | None -> ()
+            | Some limit ->
+                yield ws
+                yield! this.Limit(limit)
+        }
+    override this.Delete(delete) =
+        seq {
+            match delete.With with
+            | None -> ()
+            | Some withClause ->
+                yield! this.With(withClause)
+                yield ws
+            yield text "DELETE FROM"
+            yield ws
+            yield! this.QualifiedTableName(delete.DeleteFrom)
+            match delete.Where with
+            | None -> ()
+            | Some where ->
+                yield ws
+                yield text "WHERE"
+                yield ws
+                yield! this.Expr.Expr(where)
+            match delete.OrderBy with
+            | None -> ()
+            | Some orderBy ->
+                yield ws
+                yield text "ORDER BY"
+                yield ws
+                yield! orderBy |> Seq.map this.OrderingTerm |> join ","
+            match delete.Limit with
+            | None -> ()
+            | Some limit ->
+                yield ws
+                yield! this.Limit(limit)
+        }
     override this.Begin = Seq.singleton (text "BEGIN")
     override this.Commit = Seq.singleton (text "COMMIT")
     override this.Rollback = Seq.singleton (text "ROLLBACK")
@@ -513,13 +618,13 @@ type DefaultStatementTranslator() =
         | CreateTableStmt create -> this.CreateTable(create)
         | CreateViewStmt create -> this.CreateView(create)
         | CreateIndexStmt create -> this.CreateIndex(create)
-        | CreateTriggerStmt create -> failwith "not implemented"
+        | CreateTriggerStmt create -> failwith "not implemented: CREATE TRIGGER statements" // TODO
         | DropObjectStmt drop -> this.DropObject(drop)
 
         | SelectStmt select -> this.Select(select)
         | InsertStmt insert -> this.Insert(insert)
-        | UpdateStmt update -> failwith "not implemented"
-        | DeleteStmt delete -> failwith "not implemented"
+        | UpdateStmt update -> this.Update(update)
+        | DeleteStmt delete -> this.Delete(delete)
 
         | BeginStmt -> this.Begin
         | CommitStmt -> this.Commit

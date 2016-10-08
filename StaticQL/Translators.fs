@@ -23,6 +23,7 @@ type LiteralTranslator() =
 type StatementTranslator() =
     abstract member Expr : ExprTranslator
     abstract member OrderDirection : OrderDirection -> Fragment
+    abstract member IndexHint : IndexHint -> Fragments
     abstract member CTE : cte : TCommonTableExpression -> Fragments
     abstract member With : withClause : TWithClause -> Fragments
     abstract member Values : vals : TExpr ResizeArray WithSource ResizeArray -> Fragments
@@ -50,6 +51,8 @@ type StatementTranslator() =
     abstract member CreateIndex : create : TCreateIndexStmt -> Fragments
     abstract member DropObject : drop : TDropObjectStmt -> Fragments
     abstract member Insert : insert : TInsertStmt -> Fragments
+    abstract member Update : update : TUpdateStmt -> Fragments
+    abstract member Delete : delete : TDeleteStmt -> Fragments
     abstract member Begin : Fragments
     abstract member Commit : Fragments
     abstract member Rollback : Fragments
