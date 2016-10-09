@@ -11,6 +11,8 @@
 open StaticQL.Provider
 open StaticQL.Mapping
 
+type M = Model
+
 type Query = SQL<"""
     select * from Users u where u.id = @id
 """, "user-migrations">

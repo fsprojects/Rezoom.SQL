@@ -13,13 +13,17 @@ open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open StaticQL.Mapping
 open StaticQL
 
+type GenerateTypeCase =
+    | GenerateSQL of string
+    | GenerateModel
+
 type GenerateType =
     {
         UserModel : UserModel
         Assembly : Assembly
         Namespace : string
         TypeName : string
-        Command : CommandEffect
+        Case : GenerateTypeCase
     }
 
 let private parameterIndexer (pars : BindParameter seq) =
@@ -102,11 +106,12 @@ let private generateRowType (model : UserModel) (name : string) (query : ColumnT
     CompileTimeColumnMap.Parse(query.Columns)
     |> generateRowTypeFromColumns model name
 
-let private generateCommandMethod (generate : GenerateType) (retTy : Type) (callMeth : MethodInfo) =
+let private generateCommandMethod
+    (generate : GenerateType) (command : CommandEffect) (retTy : Type) (callMeth : MethodInfo) =
     let backend = generate.UserModel.Backend
-    let parameters = generate.Command.Parameters |> Seq.sortBy fst |> Seq.toList
+    let parameters = command.Parameters |> Seq.sortBy fst |> Seq.toList
     let indexer = parameterIndexer (parameters |> Seq.map fst)
-    let fragments = backend.ToCommandFragments(indexer, generate.Command.Statements)
+    let fragments = backend.ToCommandFragments(indexer, command.Statements)
     let methodParameters =
         [ for NamedParameter name, ty in parameters ->
             ProvidedParameter(name.Value, ty.CLRType)
@@ -126,12 +131,13 @@ let private generateCommandMethod (generate : GenerateType) (retTy : Type) (call
             Expr.CallUnchecked(callMeth, [ frags; arr ])
     meth
 
-let generateType (generate : GenerateType) =
+let generateSQLType (generate : GenerateType) (sql : string) =
+    let commandEffect = CommandEffect.OfSQL(generate.UserModel.Model, generate.TypeName, sql)
     let commandCtor = typeof<CommandConstructor>
     let cmd (r : Type) = typedefof<_ Command>.MakeGenericType(r)
     let rowTypes, commandCtorMethod, commandType =
         let genRowType = generateRowType generate.UserModel
-        match generate.Command.ResultSets |> Seq.toList with
+        match commandEffect.ResultSets |> Seq.toList with
         | [] ->
             []
             , commandCtor.GetMethod("Command0")
@@ -160,5 +166,40 @@ let generateType (generate : GenerateType) =
         ProvidedTypeDefinition
             (generate.Assembly, generate.Namespace, generate.TypeName, Some typeof<obj>, IsErased = false)
     provided.AddMembers rowTypes
-    provided.AddMember <| generateCommandMethod generate commandType commandCtorMethod
+    provided.AddMember <| generateCommandMethod generate commandEffect commandType commandCtorMethod
     provided
+
+let generateModelType (generate : GenerateType) =
+    let provided =
+        ProvidedTypeDefinition
+            (generate.Assembly, generate.Namespace, generate.TypeName, Some typeof<obj>, IsErased = false)
+    let migrationsField =
+        ProvidedField
+            ( "_migrations"
+            , typeof<string Migrations.MigrationMajorVersion array>
+            )
+    migrationsField.SetFieldAttributes(FieldAttributes.Static ||| FieldAttributes.Private)
+    provided.AddMember <| migrationsField
+    let staticCtor =
+        ProvidedConstructor([], IsTypeInitializer = true)
+    staticCtor.InvokeCode <- fun _ ->
+        Expr.FieldSet
+            ( migrationsField
+            , Expr.NewArray
+                ( typeof<string Migrations.MigrationMajorVersion>
+                , generate.UserModel.Migrations |> Seq.map Migrations.quotationize |> Seq.toList
+                ))
+    provided.AddMember <| staticCtor
+    provided.AddMember <|
+        ProvidedProperty
+            ( "Migrations"
+            , typeof<string Migrations.MigrationMajorVersion IReadOnlyList>
+            , GetterCode = fun _ -> Expr.FieldGet(migrationsField)
+            , IsStatic = true
+            )
+    provided
+
+let generateType (generate : GenerateType) =
+    match generate.Case with
+    | GenerateSQL sql -> generateSQLType generate sql
+    | GenerateModel -> generateModelType generate

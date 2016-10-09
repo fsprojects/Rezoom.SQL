@@ -146,6 +146,7 @@ let stringizeMajorVersion (backend : IBackend) (major : TStmts MigrationMajorVer
     mapStmts stringize major
 
 let quotationize (major : string MigrationMajorVersion) =
+    let nameCtor = typeof<Name>.GetConstructor([| typeof<string> |])
     let quotationizeMigration migration =
         Expr.NewRecord
             ( typeof<string Migration>
@@ -156,10 +157,11 @@ let quotationize (major : string MigrationMajorVersion) =
     let quotationizeFeature feature =
         Expr.NewRecord
             ( typeof<string MigrationFeature>
-            ,   [   Quotations.Expr.Value(feature.FeatureName)
+            ,   [   Expr.NewObject(nameCtor, [ Quotations.Expr.Value(feature.FeatureName.Value) ])
                     Expr.NewArray
                         ( typeof<string Migration>
                         , [ for migration in feature.Migrations -> quotationizeMigration migration ])
+                    |> fun arr -> Expr.Coerce(arr, typeof<string Migration IReadOnlyList>)
                 ]
             )
     let features =
@@ -168,6 +170,6 @@ let quotationize (major : string MigrationMajorVersion) =
             , [ for feature in major.Features -> quotationizeFeature feature ])
     Expr.NewRecord
         ( typeof<string MigrationMajorVersion>
-        ,   [   features
+        ,   [   features |> fun arr -> Expr.Coerce(arr, typeof<string MigrationFeature IReadOnlyCollection>)
                 Quotations.Expr.Value(major.MajorVersion)
             ])
