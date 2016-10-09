@@ -15,19 +15,18 @@ type public Provider(cfg : TypeProviderConfig) as this =
 
     // Get the assembly and namespace used to house the provided types.
     let thisAssembly = Assembly.LoadFrom(cfg.RuntimeAssembly)
+    let tmpAssembly = ProvidedAssembly(Path.GetTempFileName())
     let rootNamespace = "StaticQL.Provider"
     let staticParams =
         [   ProvidedStaticParameter("sql", typeof<string>)
             ProvidedStaticParameter("model", typeof<string>, "")
         ]
-    let parameterizedTy =
+    let sqlTy =
         ProvidedTypeDefinition(thisAssembly, rootNamespace, "SQL", Some typeof<obj>, IsErased = false)
-
-    let tmpAssembly = ProvidedAssembly(Path.GetTempFileName())
 
     let modelCache = new UserModelCache()
 
-    let buildTypeFromStaticParameters typeName (parameterValues : obj array) =
+    let buildSQLFromStaticParameters typeName (parameterValues : obj array) =
         match parameterValues with 
         | [| :? string as sql; :? string as model |] ->
             let model = modelCache.Load(cfg.ResolutionFolder, model)
@@ -43,9 +42,10 @@ type public Provider(cfg : TypeProviderConfig) as this =
             ty
         | _ -> failwith "Invalid parameters (expected 2 strings: sql, model)"
     do
-        parameterizedTy.DefineStaticParameters(staticParams, buildTypeFromStaticParameters)
-        tmpAssembly.AddTypes([ parameterizedTy ])
-        this.AddNamespace(rootNamespace, [ parameterizedTy ])
+        sqlTy.DefineStaticParameters(staticParams, buildSQLFromStaticParameters)
+        tmpAssembly.AddTypes([ sqlTy ])
+        this.AddNamespace(rootNamespace, [ sqlTy ])
+        modelCache.Invalidated.Add(fun _ -> this.Invalidate())
         this.Disposing.Add(fun _ -> modelCache.Dispose())
 
 [<TypeProviderAssembly>]

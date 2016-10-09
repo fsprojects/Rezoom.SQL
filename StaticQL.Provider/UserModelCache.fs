@@ -7,25 +7,25 @@ open StaticQL
 type UserModelCache() as this =
     let watchers = Dictionary()
     let cache = Dictionary()
-    let invalidate = Event<EventHandler, EventArgs>()
+    let invalidated = Event<EventHandler, EventArgs>()
 
     let addWatcher path invalidateKey =
         let succ, watcher = watchers.TryGetValue(path)
         let watcher =
             if succ then watcher else
             let watcher = new Watcher(path)
-            watcher.Invalidated.Add(fun _ -> invalidate.Trigger(this, EventArgs.Empty))
+            watcher.Invalidated.Add(fun _ -> invalidated.Trigger(this, EventArgs.Empty))
             watchers.Add(path, watcher)
             watcher
-        watcher.Invalidated.Add(fun _ -> ignore <| cache.Remove(invalidateKey)) // remove from cache on changes
+        watcher.Invalidating.Add(fun _ -> ignore <| cache.Remove(invalidateKey)) // remove from cache on changes
 
     [<CLIEvent>]
-    member __.Invalidated = invalidate.Publish
+    member __.Invalidated = invalidated.Publish
 
     member this.Load(resolutionFolder, modelPath) =
         let key = (resolutionFolder, modelPath)
-        let succ, found = cache.TryGetValue(key)
-        if succ then found else
+        let succ, cachedModel = cache.TryGetValue(key)
+        if succ then cachedModel else
         let model = UserModel.Load(resolutionFolder, modelPath)
         cache.[key] <- model
         addWatcher model.ConfigDirectory key
