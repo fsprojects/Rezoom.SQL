@@ -5,7 +5,7 @@ open System.IO
 open StaticQL
 
 type Watcher(path : string) as this =
-    let fs = new FileSystemWatcher(path, IncludeSubdirectories = true, NotifyFilter = NotifyFilters.LastWrite)
+    let fs = new FileSystemWatcher(path, IncludeSubdirectories = true)
     let invalidating = Event<EventHandler, EventArgs>()
     let invalidated = Event<EventHandler, EventArgs>()
     let timer = new Timer(fun _ -> // we use a timer to buffer changes so we don't invalidate many times in a couple ms
