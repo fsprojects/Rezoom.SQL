@@ -1308,6 +1308,7 @@ let private stmt =
 let private stmtsAtLeast min =
     %% ws
     -- +.(qty.[min..] /. tws ';' * tws stmt)
+    -- eof
     -|> id
 
 let private stmts = stmtsAtLeast 0
