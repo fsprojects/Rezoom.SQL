@@ -163,6 +163,10 @@ type InferredFromClause =
         /// All the objects involved in the from clause in order.
         FromObjects : (Name * InferredType ObjectInfo) seq
     }
+    static member FromSingleObject(tableName : InfObjectName) =
+        {   FromVariables = Dictionary() :> IReadOnlyDictionary<_, _>
+            FromObjects = (Name(""), tableName.Info) |> Seq.singleton
+        }
     member this.ResolveTable(tableName : ObjectName) =
         match tableName.SchemaName with
         // We don't currently support referencing columns like "main.users.id". Use table aliases instead!
@@ -179,7 +183,8 @@ type InferredFromClause =
                     for tableAlias, objectInfo in this.FromObjects do
                         let table = objectInfo.Table
                         match table.Query.ColumnByName(name.ColumnName) with
-                        | Found column -> yield Ok (Some tableAlias, table, column)
+                        | Found column ->
+                            yield Ok ((if tableAlias.Value = "" then None else Some tableAlias), table, column)
                         | NotFound _ -> ()
                         | Ambiguous err -> yield Error err
                 } |> toReadOnlyList

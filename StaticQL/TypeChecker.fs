@@ -54,6 +54,7 @@ open TypeInferenceExtensions
 
 type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.Scope = scope
+    member this.WithScope(scope) = TypeChecker(cxt, scope)
     member this.ObjectName(objectName : ObjectName) = this.ObjectName(objectName, false)
     member this.ObjectName(objectName : ObjectName, allowNotFound) : InfObjectName =
         {   SchemaName = objectName.SchemaName
@@ -700,8 +701,12 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             | Some withClause ->
                 let checker, withClause = this.WithClause(withClause)
                 checker, Some withClause
+        let deleteFrom = checker.QualifiedTableName(delete.DeleteFrom)
+        let checker =
+            checker.WithScope
+                ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(deleteFrom.TableName) |> Some })
         {   With = withClause
-            DeleteFrom = checker.QualifiedTableName(delete.DeleteFrom)
+            DeleteFrom = deleteFrom
             Where = Option.map checker.Expr delete.Where
             OrderBy = Option.map (rmap checker.OrderingTerm) delete.OrderBy
             Limit = Option.map checker.Limit delete.Limit
@@ -731,8 +736,12 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             | Some withClause ->
                 let checker, withClause = this.WithClause(withClause)
                 checker, Some withClause
+        let updateTable = checker.QualifiedTableName(update.UpdateTable)
+        let checker =
+            checker.WithScope
+                ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(updateTable.TableName) |> Some })
         {   With = withClause
-            UpdateTable = checker.QualifiedTableName(update.UpdateTable)
+            UpdateTable = updateTable
             Or = update.Or
             Set = update.Set |> rmap (fun (name, expr) -> name, checker.Expr(expr))
             Where = Option.map checker.Expr update.Where
