@@ -13,7 +13,7 @@ type TestRoundTrip() =
         let fragments = userModel.Backend.ToCommandFragments(indexer, parsed.Statements)
         let str = CommandFragment.Stringize(fragments)
         Console.WriteLine(str)
-        let parsedBack = CommandEffect.OfSQL(userModel.Model, "anonymous", str)
+        let parsedBack = CommandEffect.OfSQL(userModel.Model, "readback", str)
         let fragmentsBack = userModel.Backend.ToCommandFragments(indexer, parsedBack.Statements)
         let strBack = CommandFragment.Stringize(fragmentsBack)
         Console.WriteLine(String('-', 80))
@@ -34,6 +34,32 @@ type TestRoundTrip() =
             left join Groups g on g.Id = gm.GroupId
             where g.Name like '%grp%' escape '%'
         """
+
+    [<TestMethod>]
+    member __.TestInsert() =
+        roundtrip """
+            insert into Users(id, name)
+            values (0, 'ben')
+        """
+
+    [<TestMethod>]
+    member __.TestInsertFromSelect() =
+        roundtrip """
+            insert into Groups
+            select * from Groups
+        """
+
+    [<TestMethod>]
+    member __.TestDelete() =
+        roundtrip """
+            delete from Users where Email like '%earthlink.net'
+        """
+
+    member __.TestDrop() =
+        roundtrip """
+            drop table main.Users
+        """
+
     [<TestMethod>]
     member __.TestCreate() =
         roundtrip """
