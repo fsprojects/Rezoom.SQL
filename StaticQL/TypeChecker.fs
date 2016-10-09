@@ -395,7 +395,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             }
     member private this.TableExprScope(texpr : TableExpr) =
         let dict = Dictionary()
-        { FromVariables = dict; FromObjects = this.TableExprScope(dict, texpr) }
+        { FromVariables = dict; FromObjects = this.TableExprScope(dict, texpr) |> ResizeArray }
 
     member this.TableInvocation(table : TableInvocation) =
         {   Table = this.ObjectName(table.Table)
