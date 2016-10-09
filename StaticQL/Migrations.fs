@@ -136,22 +136,13 @@ let private mapStmts f (major : 'stmts MigrationMajorVersion) =
             } |> toReadOnlyList
     }
 
-let private stringizeFragments (fragments : CommandFragment seq) =
-    seq {
-        for fragment in fragments do
-            match fragment with
-            | LocalName name -> yield name
-            | CommandText text -> yield text
-            | Whitespace -> yield " "
-            | Parameter _ -> failwith "Migrations may not reference parameters"
-    } |> String.concat ""
-
 let stringizeMajorVersion (backend : IBackend) (major : TStmts MigrationMajorVersion) =
     let indexer =
         { new IParameterIndexer with
             member this.ParameterIndex(parameter) = failwith "Migrations may not be parameterized"
         }
-    let stringize stmts = backend.ToCommandFragments(indexer, stmts) |> stringizeFragments
+    let stringize stmts =
+        backend.ToCommandFragments(indexer, stmts) |> CommandFragment.Stringize
     mapStmts stringize major
 
 let quotationize (major : string MigrationMajorVersion) =

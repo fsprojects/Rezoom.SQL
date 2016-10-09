@@ -18,6 +18,10 @@ type private TypeInferenceContext() =
             | x, y when x = y -> Ok x
             | AnyType, y -> Ok y
             | x, AnyType -> Ok x
+            | IntegerType s1, IntegerType s2 ->
+                Ok <| IntegerType (max s1 s2) // widen size
+            | FloatType s1, FloatType s2 ->
+                Ok <| FloatType (max s1 s2) // widen size
             | x, y ->
                 Error <| sprintf "The types %A and %A cannot be unified" x y
         match ty with
@@ -83,34 +87,41 @@ type private TypeInferenceContext() =
                                 yield { Nullable = nullable; Type = ty }
                         ] |> OneOfTypes
             | OneOfTypes left, (ConcreteType right as concrete) ->
-                if left |> List.exists (fun t -> t.Type = right.Type) then
-                    return concrete
-                else
+                let unified =
+                    left
+                    |> Seq.sortByDescending (fun t -> this.Preference t.Type)
+                    |> Seq.map (fun t -> this.Unify(ConcreteType t, concrete))
+                    |> Seq.tryPick (function | Error _ -> None | Ok t -> Some t)
+                match unified with
+                | Some unified -> return unified
+                | None ->
                     return! Error <|
                         sprintf "The type %A is not one of %A"
                             right.Type (left |> List.map (fun c -> c.Type) |> List.distinct)
             | (ConcreteType _ as left), (OneOfTypes _ as right) -> return! this.Unify(right, left)
         }
+    member private this.Preference(ty) =
+        // if given a choice between many types, we prefer to assume the one with the highest score here
+        match ty with
+        | AnyType -> -1
+        | BinaryType -> 0
+        | BooleanType -> 1
+        | IntegerType Integer8 -> 2
+        | IntegerType Integer16 -> 3
+        | IntegerType Integer32 -> 4
+        | IntegerType Integer64 -> 5
+        | FloatType Float32 -> 6
+        | FloatType Float64 -> 7
+        | DecimalType -> 8
+        | StringType -> 9
+        | DateTimeType -> 10
+        | DateTimeOffsetType -> 11
     member this.Concrete(inferred) =
         match inferred with
         | ConcreteType concrete -> concrete
         | OneOfTypes possible ->
-            let preference = function
-                | AnyType -> -1
-                | BinaryType -> 0
-                | BooleanType -> 1
-                | IntegerType Integer8 -> 2
-                | IntegerType Integer16 -> 3
-                | IntegerType Integer32 -> 4
-                | IntegerType Integer64 -> 5
-                | FloatType Float32 -> 6
-                | FloatType Float64 -> 7
-                | DecimalType -> 8
-                | StringType -> 9
-                | DateTimeType -> 10
-                | DateTimeOffsetType -> 11
             let nullable = possible |> Seq.map (fun t -> t.Nullable) |> Seq.max
-            let ty = possible |> Seq.map (fun t -> t.Type) |> Seq.maxBy preference
+            let ty = possible |> Seq.map (fun t -> t.Type) |> Seq.maxBy this.Preference
             {
                 Nullable = nullable
                 Type = ty

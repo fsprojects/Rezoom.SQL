@@ -11,10 +11,13 @@ type InferredType =
     /// A type whose nullability depends on that of another type.
     | DependentlyNullType of ifNull: InferredType * thenNull: InferredType
     | TypeVariable of TypeVariableId
-    static member Float = ConcreteType { Nullable = false; Type = FloatType Float64 }
-    static member Integer = ConcreteType { Nullable = false; Type = IntegerType Integer64 }
+    static member Float = ConcreteType { Nullable = false; Type = FloatType Float32 }
+    static member Integer = ConcreteType { Nullable = false; Type = IntegerType Integer8 }
     static member Number =
-        OneOfTypes [{ Nullable = false; Type = IntegerType Integer64 }; { Nullable = false; Type = FloatType Float64 }]
+        OneOfTypes
+            [   { Nullable = false; Type = IntegerType Integer8 }
+                { Nullable = false; Type = FloatType Float32 }
+            ]
     static member String = ConcreteType { Nullable = false; Type = StringType }
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
     static member Blob = ConcreteType { Nullable = false; Type = BinaryType }
