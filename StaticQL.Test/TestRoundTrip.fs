@@ -34,3 +34,31 @@ type TestRoundTrip() =
             left join Groups g on g.Id = gm.GroupId
             where g.Name like '%grp%' escape '%'
         """
+    [<TestMethod>]
+    member __.TestCreate() =
+        roundtrip """
+            create table Foo
+                ( bar int primary key not null
+                , baz float32
+                , foreign key (bar, baz) references Users(Email, Name)
+                );
+        """
+
+    [<TestMethod>]
+    member __.TestAlterAddColumn() =
+        roundtrip """
+            alter table UserGroupMaps
+                add Tag int not null
+        """
+
+    [<TestMethod>]
+    member __.TestAlterRename() =
+        roundtrip """
+            alter table UserGroupMaps rename to UserGroupAssociations
+        """
+
+    [<TestMethod>]
+    member __.TestCreateView() =
+        roundtrip """
+            create temp view CoolUsers as select * from Users where name not like '%szany%'
+        """
