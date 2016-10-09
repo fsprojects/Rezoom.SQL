@@ -5,7 +5,6 @@ open StaticQL
 open StaticQL.Mapping
 open StaticQL.BackendUtilities
 
-[<AbstractClass>]
 type DefaultLiteralTranslator() =
     inherit LiteralTranslator()
     override __.NullLiteral = CommandText "NULL"
@@ -14,6 +13,13 @@ type DefaultLiteralTranslator() =
     override __.CurrentTimestampLiteral = CommandText "CURRENT_TIMESTAMP"
     override __.IntegerLiteral i = CommandText (i.ToString(CultureInfo.InvariantCulture))
     override __.FloatLiteral f = CommandText (f.ToString("0.0##############", CultureInfo.InvariantCulture))
+    override __.BlobLiteral(bytes) =
+        let hexPairs = bytes |> Array.map (fun b -> b.ToString("X2", CultureInfo.InvariantCulture))
+        "x'" + String.Concat(hexPairs) + "'"
+        |> text
+    override __.StringLiteral(str) =
+        "'" + str.Replace("'", "''") + "'"
+        |> text
     override this.Literal literal =
         match literal with
         | NullLiteral -> this.NullLiteral

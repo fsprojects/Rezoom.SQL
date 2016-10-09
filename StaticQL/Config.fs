@@ -3,12 +3,14 @@ open System
 open FParsec
 
 type ConfigBackend =
+    | StaticQL // outputs StaticQL that can be parsed back
     | SQLite
     | TSQL
     | PostgreSQL
     | MySQL
     member this.ToBackend() =
         match this with
+        | StaticQL -> DefaultBackend() :> IBackend
         | SQLite -> SQLite.SQLiteBackend() :> IBackend
         | _ -> failwithf "Unimplemented backend %A" this // TODO
 
@@ -20,7 +22,7 @@ type Config =
     }
 
 let defaultConfig =
-    {   Backend = SQLite
+    {   Backend = StaticQL
         MigrationsPath = "."
     }
 

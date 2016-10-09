@@ -3,9 +3,9 @@ open StaticQL
 open StaticQL.Mapping
 open StaticQL.BackendUtilities
 
-[<AbstractClass>]
-type DefaultStatementTranslator() =
+type DefaultStatementTranslator(indexer : IParameterIndexer) =
     inherit StatementTranslator()
+    override this.Expr = upcast DefaultExprTranslator(this, indexer)
     override __.OrderDirection(dir) =
         match dir with
         | Ascending -> text "ASC"

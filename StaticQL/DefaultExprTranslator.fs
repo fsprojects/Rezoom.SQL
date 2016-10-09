@@ -3,9 +3,29 @@ open StaticQL
 open StaticQL.Mapping
 open StaticQL.BackendUtilities
 
-[<AbstractClass>]
 type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameterIndexer) =
     inherit ExprTranslator(statement, indexer)
+    override __.Literal = upcast DefaultLiteralTranslator()
+    override __.Name(name) =
+        "\"" + name.Value.Replace("\"", "\"\"") + "\""
+        |> text
+    override __.TypeName(name) =
+        (Seq.singleton << text) <|
+            match name with
+            | BooleanTypeName -> "BOOL"
+            | IntegerTypeName Integer8 -> "INT8"
+            | IntegerTypeName Integer16 -> "INT16"
+            | IntegerTypeName Integer32 -> "INT32"
+            | IntegerTypeName Integer64 -> "INT64"
+            | FloatTypeName Float32 -> "FLOAT32"
+            | FloatTypeName Float64 -> "FLOAT64"
+            | StringTypeName(Some size) -> "STRING(" + string size + ")"
+            | StringTypeName(None) -> "STRING"
+            | BinaryTypeName(Some size) -> "BINARY(" + string size + ")"
+            | BinaryTypeName(None) -> "BINARY"
+            | DecimalTypeName -> "DECIMAL"
+            | DateTimeTypeName -> "DATETIME"
+            | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
     override __.BinaryOperator op =
         CommandText <|
         match op with

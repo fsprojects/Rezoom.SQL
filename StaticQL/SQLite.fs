@@ -8,22 +8,9 @@ open StaticQL.Mapping
 open StaticQL.BackendUtilities
 open StaticQL.Translators
 
-type SQLiteLiteral() =
-    inherit DefaultLiteralTranslator()
-    override __.BlobLiteral(bytes) =
-        let hexPairs = bytes |> Array.map (fun b -> b.ToString("X2", CultureInfo.InvariantCulture))
-        "x'" + String.Concat(hexPairs) + "'"
-        |> text
-    override __.StringLiteral(str) =
-        "'" + str.Replace("'", "''") + "'"
-        |> text
-
-type SQLiteExpression(statement : StatementTranslator, indexer) =
+type private SQLiteExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
-    let literal = SQLiteLiteral()
-    override __.Name(name) =
-        "\"" + name.Value.Replace("\"", "\"\"") + "\""
-        |> text
+    let literal = DefaultLiteralTranslator()
     override __.Literal = upcast literal
     override __.TypeName(name) =
         (Seq.singleton << text) <|
@@ -41,8 +28,8 @@ type SQLiteExpression(statement : StatementTranslator, indexer) =
             | DateTimeTypeName
             | DateTimeOffsetTypeName -> failwith <| sprintf "Unsupported type ``%A``" name
 
-type SQLiteStatement(indexer : IParameterIndexer) as this =
-    inherit DefaultStatementTranslator()
+type private SQLiteStatement(indexer : IParameterIndexer) as this =
+    inherit DefaultStatementTranslator(indexer)
     let expr = SQLiteExpression(this :> StatementTranslator, indexer)
     override __.Expr = upcast expr
 
