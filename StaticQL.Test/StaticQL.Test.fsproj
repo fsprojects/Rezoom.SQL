@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -53,6 +53,7 @@
     <Content Include="app.config" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="TestTypeInference.fs" />
+    <Compile Include="TestRoundTrip.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
@@ -63,6 +64,11 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\StaticQL.Mapping\StaticQL.Mapping.fsproj">
+      <Name>StaticQL.Mapping</Name>
+      <Project>{6b6a06c5-157a-4fe3-8b4c-2a1ae6a15333}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\StaticQL\StaticQL.fsproj">
       <Name>StaticQL</Name>
       <Project>{87fcd04a-1f90-4d53-a428-cf5f5c532a22}</Project>

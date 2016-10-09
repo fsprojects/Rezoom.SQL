@@ -15,6 +15,15 @@ type CommandFragment =
     | Parameter of int
     /// At least one unit of whitespace.
     | Whitespace
+    static member Stringize(fragments : CommandFragment seq) =
+        seq {
+            for fragment in fragments do
+                match fragment with
+                | LocalName name -> yield name
+                | CommandText text -> yield text
+                | Whitespace -> yield " "
+                | Parameter _ -> failwith "Parameter references cannot be converted to strings"
+        } |> String.concat ""
 
 [<AbstractClass>]
 type Command(fragments : CommandFragment IReadOnlyList, parameters : (obj * DbType) IReadOnlyList) =
