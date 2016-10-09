@@ -53,12 +53,17 @@ type DefaultStatementTranslator() =
             yield! withClause.Tables |> Seq.map this.CTE |> join ","
         }
     override this.Values(vals) =
-        vals |> Seq.map (fun row ->
-            seq {
-                yield text "("
-                yield! row.Value |> Seq.map this.Expr.Expr |> join ","
-                yield text ")"
-            }) |> join ","
+        seq {
+            yield text "VALUES"
+            yield!
+                vals |> Seq.map (fun row ->
+                    seq {
+                        yield text "("
+                        yield! row.Value |> Seq.map this.Expr.Expr |> join ","
+                        yield text ")"
+                    }) |> join ","
+        }
+
     override this.ResultColumn(col) =
         match col with
         | ColumnsWildcard -> text "*" |> Seq.singleton
