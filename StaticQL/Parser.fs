@@ -287,10 +287,12 @@ let private typeName =
         %% kw "BINARY" -- +.(zeroOrOne * maxBound) -%> StringTypeName
         %% kw "INT8" -%> IntegerTypeName Integer8
         %% kw "INT16" -%> IntegerTypeName Integer16
-        %% kw "INT" -%> IntegerTypeName Integer32
+        %% kw "INT32" -%> IntegerTypeName Integer32
         %% kw "INT64" -%> IntegerTypeName Integer64
+        %% kw "INT" -%> IntegerTypeName Integer32
         %% kw "FLOAT32" -%> FloatTypeName Float32
         %% kw "FLOAT64" -%> FloatTypeName Float64
+        %% kw "FLOAT" -%> FloatTypeName Float64
         %% kw "DECIMAL" -%> DecimalTypeName
         %% kw "BOOL" -%> BooleanTypeName
         %% kw "DATETIME" -%> DateTimeTypeName
