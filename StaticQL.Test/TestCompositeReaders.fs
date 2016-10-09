@@ -1,8 +1,8 @@
-﻿namespace Rezoom.ORM.Test.CompositeReaders
-open Rezoom.ORM.CodeGeneration
+﻿namespace StaticQL.Test.CompositeReaders
+open StaticQL.Mapping
+open StaticQL.Mapping.CodeGeneration
 open System
 open System.ComponentModel.DataAnnotations
-open Rezoom.ORM
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
 type User = 

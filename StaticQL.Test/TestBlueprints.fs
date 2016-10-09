@@ -1,5 +1,5 @@
-﻿namespace Rezoom.ORM.Test.Blueprints
-open Rezoom.ORM
+﻿namespace StaticQL.Test.Blueprints
+open StaticQL.Mapping
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 

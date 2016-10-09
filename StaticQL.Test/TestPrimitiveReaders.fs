@@ -1,6 +1,6 @@
-﻿namespace Rezoom.ORM.Test.PrimitiveReaders
-open Rezoom.ORM
-open Rezoom.ORM.CodeGeneration
+﻿namespace StaticQL.Test.PrimitiveReaders
+open StaticQL.Mapping
+open StaticQL.Mapping.CodeGeneration
 open System
 open Microsoft.VisualStudio.TestTools.UnitTesting
 

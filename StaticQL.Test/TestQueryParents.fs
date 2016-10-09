@@ -1,6 +1,6 @@
-﻿namespace Rezoom.ORM.Test.QueryParents
-open Rezoom.ORM
-open Rezoom.ORM.CodeGeneration
+﻿namespace StaticQL.Test.QueryParents
+open StaticQL.Mapping
+open StaticQL.Mapping.CodeGeneration
 open Microsoft.VisualStudio.TestTools.UnitTesting
 
 type RecordFolder =
