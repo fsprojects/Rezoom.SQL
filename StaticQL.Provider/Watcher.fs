@@ -18,6 +18,8 @@ type Watcher(path : string) as this =
         fs.Changed.Add(handler)
         fs.Renamed.Add(handler)
 
+    member __.Path = path
+
     [<CLIEvent>]
     member __.Invalidated = invalidate.Publish
     member __.Dispose() = fs.Dispose()
