@@ -53,9 +53,9 @@ This is similar in effect to Haskell's Haxl.
 
   * Demonstrates how the example integration can be used.
 
-* Micro-ORM Rezoom.ORM
+* Micro-ORM StaticQL.Mapping
 
-  * Not really dependent or inherently integrated with the rest of Rezoom, but designed to work well with it.
+  * Not dependent or inherently integrated with the rest of Rezoom, but designed to work well with it.
 
   * Automatically materializes the results of a SQL query (`IDataReader`) as CLR objects e.g. `User list`.
 
@@ -69,13 +69,17 @@ This is similar in effect to Haskell's Haxl.
 
   * Implements Rezoom errands for running SQL queries and getting the
     results either as raw object arrays or materialized using
-    `Rezoom.ORM`.
+    `StaticQL.Mapping`.
 
-## What's planned (but doesn't exist yet)
+  * This library will probably be replaced as StaticQL is further
+    developed. There is already some rewritten code in
+    StaticQL.Mapping for executing commands in batches.
 
-* SQL type provider
+## What's in progress
 
-  * Understands SQLow, a "lowest common denominator" dialect of SQL (basically SQLite's syntax with a few extensions)
+* SQL type provider StaticQL.Provider
+
+  * Understands StaticQL, a "lowest common denominator" dialect of SQL (basically SQLite's syntax with a few extensions)
 
   * Can output it to various backends - SQLite, T-SQL, Postgres, etc.
     Goal is not to let you change backends transparently but just to
@@ -88,7 +92,9 @@ This is similar in effect to Haskell's Haxl.
 
   * Infers the types of parameters used in your query.
 
-  * Generates statically typed query objects with materialization handled by Rezoom.ORM.
+  * Generates statically typed query objects with materialization handled by StaticQL.Mapping.
+
+## What's on the horizon
 
 * Documentation
 
