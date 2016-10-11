@@ -124,7 +124,7 @@ type CommandBatch(conn : DbConnection) =
     let evaluation = lazy evaluate()
     let evaluationSync = lazy evaluateSync()
 
-    member private this.Batch(cmd : Command) =
+    member private this.BatchAsync(cmd : Command) =
         let index = commands.Count
         commands.Add(cmd)
         fun () ->
@@ -132,8 +132,8 @@ type CommandBatch(conn : DbConnection) =
                 let! allCommandResults = evaluation.Value
                 return allCommandResults.[index]
             }
-    member this.Batch(cmd : #Command<'a>) =
-        let batched = this.Batch(cmd :> Command)
+    member this.BatchAsync(cmd : #Command<'a>) =
+        let batched = this.BatchAsync(cmd :> Command)
         fun () ->
             async {
                 let! boxed = batched()
