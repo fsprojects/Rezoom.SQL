@@ -11,6 +11,8 @@ type CommandBatch(conn : DbConnection) =
     static let parameterName i = "@STATICQL_" + string i
     static let localName i name = "STATICQL_" + name + "_" + string i
     let commands = ResizeArray<Command>()
+    let mutable evaluating = false
+    let mutable result = None
 
     let buildCommand (dbCommand : DbCommand) =
         let builder = StringBuilder()
@@ -37,6 +39,11 @@ type CommandBatch(conn : DbConnection) =
         dbCommand.CommandText <- builder.ToString()
 
     let evaluate() = async {
+        match result with // if one of the subscribers ran synchronously we need to pull that result
+        | Some r -> return r
+        | None ->
+        if evaluating then failwith "Already evaluating command"
+        else evaluating <- true
         use dbCommand = conn.CreateCommand()
         buildCommand dbCommand
         use! reader = Async.AwaitTask <| dbCommand.ExecuteReaderAsync()
@@ -74,7 +81,48 @@ type CommandBatch(conn : DbConnection) =
         return processed
     }
 
+    let evaluateSync() =
+        if evaluating then failwith "Already evaluating command"
+        else evaluating <- true
+        use dbCommand = conn.CreateCommand()
+        buildCommand dbCommand
+        use reader = dbCommand.ExecuteReader()
+        let processed = ResizeArray()
+        for i = 0 to commands.Count - 1 do
+            let cmd = commands.[i]
+            let mutable resultSetCount = match cmd.ResultSetCount with | Some 0 -> -1 | _ -> 0
+            while resultSetCount >= 0 do
+                cmd.BeginResultSet(reader)
+                let mutable hasRows = true
+                while hasRows do
+                    let hasRow = reader.Read()
+                    if hasRow then
+                        cmd.ProcessRow()
+                    else
+                        hasRows <- false
+                resultSetCount <- resultSetCount + 1
+                let hasNextResult = reader.NextResult()
+                match cmd.ResultSetCount with
+                | None -> // check for terminator
+                    if not hasNextResult || reader.FieldCount = 1 && reader.GetName(0) = terminatorColumn i then
+                        resultSetCount <- -1
+                    else
+                        let hasNextResult = reader.NextResult() // skip over terminator
+                        if not hasNextResult then
+                            resultSetCount <- -1
+                | Some count ->
+                    if resultSetCount = count then 
+                        resultSetCount <- -1
+                    elif not hasNextResult then
+                        failwithf
+                            "Command claimed it would produce %d result sets, but only yielded %d"
+                            count resultSetCount
+            processed.Add(cmd.GetResultObject())
+        result <- Some processed
+        processed
+
     let evaluation = lazy evaluate()
+    let evaluationSync = lazy evaluateSync()
 
     member private this.Batch(cmd : Command) =
         let index = commands.Count
@@ -91,3 +139,9 @@ type CommandBatch(conn : DbConnection) =
                 let! boxed = batched()
                 return (Unchecked.unbox boxed : 'a)
             }
+    member private this.BatchSync(cmd : Command) =
+        let index = commands.Count
+        commands.Add(cmd)
+        fun () -> evaluationSync.Value.[index]
+    member this.BatchSync(cmd : #Command<'a>) =
+        this.BatchSync(cmd) |> fun x () -> x() |> Unchecked.unbox : 'a

@@ -9,3 +9,5 @@ type Command<'a> with
         CommandBatch(conn).Batch(this)() |> Async.StartAsTask
     member this.ExecuteAsync(conn : DbConnection) =
         CommandBatch(conn).Batch(this)()
+    member this.Execute(conn : DbConnection) =
+        CommandBatch(conn).BatchSync(this)()
