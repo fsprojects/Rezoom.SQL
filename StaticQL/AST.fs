@@ -422,7 +422,7 @@ type ColumnConstraint<'t, 'e> =
 type ColumnDef<'t, 'e> =
     {
         Name : Name
-        Type : TypeName option
+        Type : TypeName
         Constraints : ColumnConstraint<'t, 'e> ResizeArray
     }
 

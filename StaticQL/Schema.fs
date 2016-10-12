@@ -12,12 +12,25 @@ type CoreColumnType =
     | BinaryType
     | DateTimeType
     | DateTimeOffsetType
+    static member OfTypeName(typeName : TypeName) =
+        match typeName with
+        | StringTypeName _ -> StringType
+        | BinaryTypeName _ -> BinaryType
+        | IntegerTypeName sz -> IntegerType sz
+        | FloatTypeName sz -> FloatType sz
+        | DecimalTypeName -> DecimalType
+        | BooleanTypeName -> BooleanType
+        | DateTimeTypeName -> DateTimeType
+        | DateTimeOffsetTypeName -> DateTimeOffsetType
 
 type ColumnType =
-    {
-        Type : CoreColumnType
+    {   Type : CoreColumnType
         Nullable : bool
     }
+    static member OfTypeName(typeName : TypeName, nullable) =
+        {   Type = CoreColumnType.OfTypeName(typeName)
+            Nullable = nullable
+        }
     member ty.CLRType =
         match ty.Type with
         | IntegerType Integer8 -> if ty.Nullable then typeof<Nullable<sbyte>> else typeof<sbyte>
@@ -39,8 +52,7 @@ type ArgumentType =
     | ArgumentTypeVariable of Name
 
 type FunctionType =
-    {
-        FixedArguments : ArgumentType IReadOnlyList
+    {   FixedArguments : ArgumentType IReadOnlyList
         VariableArgument : ArgumentType option
         Output : ArgumentType
         AllowWildcard : bool
@@ -49,21 +61,18 @@ type FunctionType =
     }
 
 type DatabaseBuiltin =
-    {
-        Functions : Map<Name, FunctionType>
+    {   Functions : Map<Name, FunctionType>
     }
 
 type Model =
-    {
-        Schemas : Map<Name, Schema>
+    {   Schemas : Map<Name, Schema>
         DefaultSchema : Name
         TemporarySchema : Name
         Builtin : DatabaseBuiltin
     }
 
 and Schema =
-    {
-        SchemaName : Name
+    {   SchemaName : Name
         Tables : Map<Name, SchemaTable>
         Views : Map<Name, SchemaView>
     }
@@ -72,16 +81,47 @@ and Schema =
         || this.Views.ContainsKey(name)
 
 and SchemaTable =
-    {
-        SchemaName : Name
+    {   SchemaName : Name
         TableName : Name
         Columns : SchemaColumn Set
     }
-
+    static member OfCreateDefinition(schemaName, tableName, def : CreateTableDefinition<_, _>) =
+        let tablePkColumns =
+            seq {
+                for constr in def.Constraints do
+                    match constr.TableConstraintType with
+                    | TableIndexConstraint { Type = PrimaryKey; IndexedColumns = indexed } ->
+                        for expr, _ in indexed do
+                            match expr.Value with
+                            | ColumnNameExpr name -> yield name.ColumnName
+                            | _ -> ()
+                    | _ -> ()
+            } |> Set.ofSeq
+        let tableColumns =
+            seq {
+                for column in def.Columns ->
+                let hasNotNullConstraint =
+                    column.Constraints
+                    |> Seq.exists(function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
+                let isPrimaryKey =
+                    tablePkColumns.Contains(column.Name)
+                    || column.Constraints |> Seq.exists(function
+                        | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true
+                        | _ -> false)
+                {   SchemaName = schemaName
+                    TableName = tableName
+                    PrimaryKey = isPrimaryKey
+                    ColumnName = column.Name
+                    ColumnType = ColumnType.OfTypeName(column.Type, not hasNotNullConstraint)
+                }
+            }
+        {   SchemaName = schemaName
+            TableName = tableName
+            Columns = tableColumns |> Set.ofSeq
+        }
 
 and SchemaColumn =
-    {
-        SchemaName : Name
+    {   SchemaName : Name
         TableName : Name
         ColumnName : Name
         /// True if this column is part of the table's primary key.
@@ -91,8 +131,7 @@ and SchemaColumn =
 
 
 and SchemaView =
-    {
-        SchemaName : Name
+    {   SchemaName : Name
         ViewName : Name
         Columns : SchemaColumn Set
         ReferencedTables : SchemaTable Set

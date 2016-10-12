@@ -7,12 +7,12 @@ create table Users
    );
 
 create table Groups
-   ( Id not null primary key
+   ( Id int not null primary key
    , Name string(128)
    );
 
 create table UserGroupMaps
-   ( UserId not null primary key references Users(Id)
-   , GroupId not null primary key references Groups(Id)
+   ( UserId int not null primary key references Users(Id)
+   , GroupId int not null primary key references Groups(Id)
    );
 

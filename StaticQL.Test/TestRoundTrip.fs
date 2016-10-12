@@ -88,3 +88,9 @@ type TestRoundTrip() =
         roundtrip """
             create temp view CoolUsers as select * from Users where name not like '%szany%'
         """
+
+    [<TestMethod>]
+    member __.TestCreateCompositePK() =
+        roundtrip """
+            create table Maps(UserId int, GroupId int, primary key(UserId, GroupId))
+        """

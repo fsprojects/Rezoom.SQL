@@ -3,36 +3,7 @@ open System
 open System.Collections.Generic
 open StaticQL.InferredTypes
 
-type private ModelChange(model : Model, inference : ITypeInferenceContext) =
-    member private this.CreateTableColumns(schemaName : Name, tableName : Name, def : InfCreateTableDefinition) =
-        let tablePkColumns =
-            seq {
-                for constr in def.Constraints do
-                    match constr.TableConstraintType with
-                    | TableIndexConstraint { Type = PrimaryKey; IndexedColumns = indexed } ->
-                        for expr, _ in indexed do
-                            match expr.Value with
-                            | ColumnNameExpr name -> yield name.ColumnName
-                            | _ -> ()
-                    | _ -> ()
-            } |> Set.ofSeq
-        [| for column in def.Columns ->
-            let affinity = column.Type |> Option.map InferredType.Affinity |? AnyType
-            let hasNotNullConstraint =
-                column.Constraints
-                |> Seq.exists(function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
-            let isPrimaryKey =
-                tablePkColumns.Contains(column.Name)
-                || column.Constraints |> Seq.exists(function
-                    | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true
-                    | _ -> false)
-            {   SchemaName = schemaName
-                TableName = tableName
-                PrimaryKey = isPrimaryKey
-                ColumnName = column.Name
-                ColumnType = { Type = affinity; Nullable = not hasNotNullConstraint }
-            }
-        |]
+type private ModelChange(model : Model, inference : ITypeInferenceContext) = 
     member private this.CreateTableColumns(model, schemaName : Name, tableName : Name, asSelect : InfSelectStmt) =
         let query = asSelect.Value.Info.Query
         [| for column in query.Columns ->
@@ -54,15 +25,16 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 if create.IfNotExists then None
                 else failAt create.Name.Source <| sprintf "Table ``%O`` already exists" create.Name
             else
-                let columns =
-                    match create.As with
-                    | CreateAsSelect select -> this.CreateTableColumns(model, schema.SchemaName, tableName, select)
-                    | CreateAsDefinition def -> this.CreateTableColumns(schema.SchemaName, tableName, def)  
                 let table =
-                    {   SchemaName = schema.SchemaName
-                        TableName = create.Name.ObjectName
-                        Columns = columns |> Set.ofSeq
-                    }
+                    match create.As with
+                    | CreateAsSelect select ->
+                        {   SchemaName = schema.SchemaName
+                            TableName = create.Name.ObjectName
+                            Columns =
+                                this.CreateTableColumns(model, schema.SchemaName, tableName, select) |> Set.ofSeq
+                        }
+                    | CreateAsDefinition def ->
+                        SchemaTable.OfCreateDefinition(schema.SchemaName, tableName, def)
                 let schema =
                     { schema with Tables = schema.Tables |> Map.add table.TableName table }
                 Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
@@ -89,7 +61,6 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     match tbl.Columns |> Seq.tryFind (fun c -> c.ColumnName = col.Name) with
                     | Some _ -> failAt alter.Table.Source <| sprintf "Column ``%O`` already exists" col.Name
                     | None ->
-                        let affinity = col.Type |> Option.map InferredType.Affinity |? AnyType
                         let hasNotNullConstraint =
                             col.Constraints
                             |> Seq.exists(
@@ -103,7 +74,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                                 TableName = tblName
                                 PrimaryKey = isPrimaryKey
                                 ColumnName = col.Name
-                                ColumnType = { Type = affinity; Nullable = not hasNotNullConstraint }
+                                ColumnType = ColumnType.OfTypeName(col.Type, not hasNotNullConstraint)
                             }
                         let newTbl = { tbl with Columns = tbl.Columns |> Set.add newCol }
                         let schema = { schema with Tables = schema.Tables |> Map.add tbl.TableName newTbl }

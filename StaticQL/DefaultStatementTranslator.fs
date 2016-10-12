@@ -364,11 +364,8 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
     override this.ColumnDefinition(col) =
         seq {
             yield this.Expr.Name(col.Name)
-            match col.Type with
-            | None -> ()
-            | Some ty ->
-                yield ws
-                yield! this.Expr.TypeName(ty)
+            yield ws
+            yield! this.Expr.TypeName(col.Type)
             for constr in col.Constraints do
                 yield ws
                 yield! this.ColumnConstraint(constr)

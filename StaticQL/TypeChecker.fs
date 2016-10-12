@@ -631,11 +631,14 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         | RenameTo name -> RenameTo name
         | AddColumn cdef -> AddColumn <| this.ColumnDef(cdef)
     member this.CreateIndex(createIndex : CreateIndexStmt) =
+        let tableName = this.ObjectName(createIndex.TableName)
+        let checker =
+            this.WithScope({ scope with FromClause = Some <| InferredFromClause.FromSingleObject(tableName) })
         {   Unique = createIndex.Unique
             IfNotExists = createIndex.IfNotExists
             IndexName = this.ObjectName(createIndex.IndexName)
-            TableName = this.ObjectName(createIndex.TableName)
-            IndexedColumns = createIndex.IndexedColumns |> rmap (fun (e, d) -> this.Expr(e), d)
+            TableName = tableName
+            IndexedColumns = createIndex.IndexedColumns |> rmap (fun (e, d) -> checker.Expr(e), d)
             Where = createIndex.Where |> Option.map this.Expr
         }
     member this.TableIndexConstraint(constr : TableIndexConstraintClause) =
@@ -653,19 +656,35 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     TableForeignKeyConstraint (names, this.ForeignKey(foreignKey))
                 | TableCheckConstraint expr -> TableCheckConstraint <| this.Expr(expr)
         }
-    member this.CreateTableDefinition(createTable : CreateTableDefinition) =
-        {   Columns = createTable.Columns |> rmap this.ColumnDef
+    member this.CreateTableDefinition(tableName : InfObjectName, createTable : CreateTableDefinition) =
+        let fake =
+            SchemaTable.OfCreateDefinition
+                ( tableName.SchemaName |? scope.Model.DefaultSchema
+                , tableName.ObjectName
+                , createTable
+                )
+        let from =
+            InferredFromClause.FromSingleObject
+                ({ tableName with
+                    Info =
+                        {   Table = TableReference fake
+                            Query = InferredQuery.OfTable(fake)
+                        } |> TableLike })
+        let this = this.WithScope({ scope with FromClause = Some from })
+        let columns = createTable.Columns |> rmap this.ColumnDef
+        {   Columns = columns
             Constraints = createTable.Constraints |> rmap this.TableConstraint
             WithoutRowId = createTable.WithoutRowId
         }
     member this.CreateTable(createTable : CreateTableStmt) =
+        let name = this.ObjectName(createTable.Name, true)
         {   Temporary = createTable.Temporary
             IfNotExists = createTable.IfNotExists
-            Name = this.ObjectName(createTable.Name, true)
+            Name = name
             As =
                 match createTable.As with
                 | CreateAsSelect select -> CreateAsSelect <| this.Select(select)
-                | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(def)
+                | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(name, def)
         }
     member this.TriggerAction(action : TriggerAction) =
         match action with

@@ -34,18 +34,8 @@ type InferredType =
         | BlobLiteral _ -> InferredType.Blob
         | NumericLiteral (IntegerLiteral _) -> InferredType.Number
         | NumericLiteral (FloatLiteral _) -> InferredType.Float
-    static member Affinity(typeName : TypeName) =
-        match typeName with
-        | StringTypeName _ -> StringType
-        | BinaryTypeName _ -> BinaryType
-        | IntegerTypeName sz -> IntegerType sz
-        | FloatTypeName sz -> FloatType sz
-        | DecimalTypeName -> DecimalType
-        | BooleanTypeName -> BooleanType
-        | DateTimeTypeName -> DateTimeType
-        | DateTimeOffsetTypeName -> DateTimeOffsetType
     static member OfTypeName(typeName : TypeName, inputType : InferredType) =
-        let affinity = InferredType.Affinity(typeName)
+        let affinity = CoreColumnType.OfTypeName(typeName)
         match inputType with
         | TypeVariable _ as tv
         | DependentlyNullType (_ as tv, _) -> InferredType.Dependent(tv, affinity)
