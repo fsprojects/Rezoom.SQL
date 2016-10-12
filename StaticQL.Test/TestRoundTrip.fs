@@ -94,3 +94,9 @@ type TestRoundTrip() =
         roundtrip """
             create table Maps(UserId int, GroupId int, primary key(UserId, GroupId))
         """
+
+    [<TestMethod>]
+    member __.TestAddColumnWithCheckConstraint() =
+        roundtrip """
+            alter table Users add LuckyNumber int not null check (LuckyNumber <> 13)
+        """

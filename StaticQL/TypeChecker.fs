@@ -626,10 +626,24 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             Type = cdef.Type
             Constraints = rmap this.ColumnConstraint cdef.Constraints
         }
-    member this.Alteration(alteration : AlterTableAlteration) =
+    member this.Alteration(tableName : InfObjectName, alteration : AlterTableAlteration) =
         match alteration with
         | RenameTo name -> RenameTo name
-        | AddColumn cdef -> AddColumn <| this.ColumnDef(cdef)
+        | AddColumn cdef ->
+            let fake =
+                resultAt tableName.Source <|
+                match tableName.Info.Table.Table with
+                | TableReference schemaTable -> schemaTable.WithAdditionalColumn(cdef)
+                | _ -> Error <| sprintf "Not a table: %O" tableName
+            let from =
+                InferredFromClause.FromSingleObject
+                    ({ tableName with
+                        Info =
+                            {   Table = TableReference fake
+                                Query = InferredQuery.OfTable(fake)
+                            } |> TableLike })
+            let this = this.WithScope({ scope with FromClause = Some from })
+            AddColumn <| this.ColumnDef(cdef)
     member this.CreateIndex(createIndex : CreateIndexStmt) =
         let tableName = this.ObjectName(createIndex.TableName)
         let checker =
@@ -771,8 +785,9 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         match stmt with
         | AlterTableStmt alter ->
             AlterTableStmt <|
-                {   Table = this.ObjectName(alter.Table)
-                    Alteration = this.Alteration(alter.Alteration)
+                let tbl = this.ObjectName(alter.Table)
+                {   Table = tbl
+                    Alteration = this.Alteration(tbl, alter.Alteration)
                 }
         | CreateIndexStmt index -> CreateIndexStmt <| this.CreateIndex(index)
         | CreateTableStmt createTable -> CreateTableStmt <| this.CreateTable(createTable)

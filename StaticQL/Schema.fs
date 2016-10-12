@@ -85,6 +85,26 @@ and SchemaTable =
         TableName : Name
         Columns : SchemaColumn Set
     }
+    member this.WithAdditionalColumn(col : ColumnDef<_, _>) =
+        match this.Columns |> Seq.tryFind (fun c -> c.ColumnName = col.Name) with
+        | Some _ -> Error <| sprintf "Column ``%O`` already exists" col.Name
+        | None ->
+            let hasNotNullConstraint =
+                col.Constraints
+                |> Seq.exists(
+                    function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
+            let isPrimaryKey =
+                col.Constraints
+                |> Seq.exists(
+                    function | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true | _ -> false)
+            let newCol =
+                {   SchemaName = this.SchemaName
+                    TableName = this.TableName
+                    PrimaryKey = isPrimaryKey
+                    ColumnName = col.Name
+                    ColumnType = ColumnType.OfTypeName(col.Type, not hasNotNullConstraint)
+                }
+            Ok { this with Columns = this.Columns |> Set.add newCol }
     static member OfCreateDefinition(schemaName, tableName, def : CreateTableDefinition<_, _>) =
         let tablePkColumns =
             seq {

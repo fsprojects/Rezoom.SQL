@@ -58,27 +58,9 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     | Some existing ->
                         failAt alter.Table.Source <| sprintf "Table ``%O`` already exists" existing
                 | AddColumn col ->
-                    match tbl.Columns |> Seq.tryFind (fun c -> c.ColumnName = col.Name) with
-                    | Some _ -> failAt alter.Table.Source <| sprintf "Column ``%O`` already exists" col.Name
-                    | None ->
-                        let hasNotNullConstraint =
-                            col.Constraints
-                            |> Seq.exists(
-                                function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
-                        let isPrimaryKey =
-                            col.Constraints
-                            |> Seq.exists(
-                                function | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true | _ -> false)
-                        let newCol =
-                            {   SchemaName = schemaName
-                                TableName = tblName
-                                PrimaryKey = isPrimaryKey
-                                ColumnName = col.Name
-                                ColumnType = ColumnType.OfTypeName(col.Type, not hasNotNullConstraint)
-                            }
-                        let newTbl = { tbl with Columns = tbl.Columns |> Set.add newCol }
-                        let schema = { schema with Tables = schema.Tables |> Map.add tbl.TableName newTbl }
-                        Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
+                    let newTbl = tbl.WithAdditionalColumn(col) |> resultAt alter.Table.Source
+                    let schema = { schema with Tables = schema.Tables |> Map.add tbl.TableName newTbl }
+                    Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
     member this.CreateView(create : InfCreateViewStmt) =
         let schemaName = create.ViewName.SchemaName |? model.DefaultSchema
         match model.Schemas |> Map.tryFind schemaName with
