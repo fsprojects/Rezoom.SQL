@@ -12,6 +12,7 @@ type ConfigBackend =
         match this with
         | StaticQL -> DefaultBackend() :> IBackend
         | SQLite -> SQLite.SQLiteBackend() :> IBackend
+        | TSQL -> TSQL.TSQLBackend() :> IBackend
         | _ -> failwithf "Unimplemented backend %A" this // TODO
 
 type Config =
