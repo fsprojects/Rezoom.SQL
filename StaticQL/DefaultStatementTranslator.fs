@@ -6,6 +6,8 @@ open StaticQL.BackendUtilities
 type DefaultStatementTranslator(indexer : IParameterIndexer) =
     inherit StatementTranslator()
     override this.Expr = upcast DefaultExprTranslator(this, indexer)
+    member this.Predicate(x) = this.Expr.Expr(x, Predicate)
+    member this.FirstClassValue(x) = this.Expr.Expr(x, FirstClassValue)
     override __.OrderDirection(dir) =
         match dir with
         | Ascending -> text "ASC"
@@ -59,7 +61,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 vals |> Seq.map (fun row ->
                     seq {
                         yield text "("
-                        yield! row.Value |> Seq.map this.Expr.Expr |> join ","
+                        yield! row.Value |> Seq.map this.FirstClassValue |> join ","
                         yield text ")"
                     }) |> join ","
         }
@@ -74,7 +76,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
             }
         | Column (expr, alias) ->
             seq {
-                yield! this.Expr.Expr(expr)
+                yield! this.FirstClassValue(expr)
                 match alias with
                 | None -> ()
                 | Some alias ->
@@ -144,7 +146,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield ws
                 yield text "ON"
                 yield ws
-                yield! this.Expr.Expr(expr)
+                yield! this.Predicate(expr)
             | JoinUsing names ->
                 yield ws 
                 yield text "USING"
@@ -172,21 +174,21 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield ws
                 yield text "WHERE"
                 yield ws
-                yield! this.Expr.Expr(where)
+                yield! this.Predicate(where)
             match select.GroupBy with
             | None -> ()
             | Some groupBy ->
                 yield ws
                 yield text "GROUP BY"
                 yield ws
-                yield! groupBy.By |> Seq.map this.Expr.Expr |> join ","
+                yield! groupBy.By |> Seq.map this.FirstClassValue |> join ","
                 match groupBy.Having with
                 | None -> ()
                 | Some having ->
                     yield ws
                     yield text "HAVING"
                     yield ws
-                    yield! this.Expr.Expr(having)
+                    yield! this.Predicate(having)
         }
     override this.CompoundTerm(compound) =
         match compound with
@@ -211,18 +213,18 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
         seq {
             yield text "LIMIT"
             yield ws
-            yield! this.Expr.Expr(limit.Limit)
+            yield! this.FirstClassValue(limit.Limit)
             match limit.Offset with
             | None -> ()
             | Some offset ->
                 yield ws
                 yield text "OFFSET"
                 yield ws
-                yield! this.Expr.Expr(offset)
+                yield! this.FirstClassValue(offset)
         }
     override this.OrderingTerm(term) =
         seq {
-            yield! this.Expr.Expr(term.By)
+            yield! this.FirstClassValue(term.By)
             yield ws
             yield this.OrderDirection(term.Direction)
         }
@@ -348,11 +350,11 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield! this.ConflictClause(conflict)
             | CheckConstraint expr ->
                 yield text "CHECK("
-                yield! this.Expr.Expr(expr)
+                yield! this.Predicate(expr)
                 yield text ")"
             | DefaultConstraint expr ->
                 yield text "DEFAULT("
-                yield! this.Expr.Expr(expr)
+                yield! this.FirstClassValue(expr)
                 yield text ")"
             | CollateConstraint name ->
                 yield text "COLLATE"
@@ -461,7 +463,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 seq {
                     for expr, dir in create.IndexedColumns ->
                         seq {
-                            yield! this.Expr.Expr(expr)
+                            yield! this.FirstClassValue(expr)
                             yield ws
                             yield this.OrderDirection(dir)
                         }
@@ -473,7 +475,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield ws
                 yield text "WHERE"
                 yield ws
-                yield! this.Expr.Expr(where)
+                yield! this.Predicate(where)
         }
     override this.DropObject(drop) =
         seq {
@@ -558,7 +560,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                             yield ws
                             yield text "="
                             yield ws
-                            yield! this.Expr.Expr(value)
+                            yield! this.FirstClassValue(value)
                         }
                 } |> join ","
             match update.Where with
@@ -567,7 +569,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield ws
                 yield text "WHERE"
                 yield ws
-                yield! this.Expr.Expr(where)
+                yield! this.Predicate(where)
             match update.OrderBy with
             | None -> ()
             | Some orderBy ->
@@ -597,7 +599,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield ws
                 yield text "WHERE"
                 yield ws
-                yield! this.Expr.Expr(where)
+                yield! this.Predicate(where)
             match delete.OrderBy with
             | None -> ()
             | Some orderBy ->

@@ -71,6 +71,43 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         | Glob
         | Match
         | Regexp -> failwithf "Not supported by TSQL: %A" op
+    /// Identifies expressions that are set up to use as predicates in T-SQL.
+    /// These expressions don't produce actual values.
+    /// For example, you can't `SELECT 1=1`, but you can do `SELECT 1 WHERE 1=1`.
+    /// Conversely, you can't `SELECT 1 WHERE tbl.BitColumn`, but you can do `SELECT tbl.BitColumn`.
+    static member private IsPredicateBoolean(expr : TExpr) =
+        expr.Info.Type.Type = BooleanType
+        &&  match expr.Value with
+            | SimilarityExpr _
+            | BetweenExpr _
+            | InExpr _
+            | ExistsExpr _
+            | BinaryExpr _
+            | UnaryExpr _ -> true
+            | _ -> false
+    member private __.BaseExpr(expr, context) = base.Expr(expr, context)
+    override this.Expr(expr, context) =
+        match context with
+        | FirstClassValue ->
+            if TSQLExpression.IsPredicateBoolean(expr) then
+                seq {
+                    yield text "CAST((CASE WHEN"
+                    yield ws
+                    yield! this.BaseExpr(expr, Predicate)
+                    yield ws
+                    yield text "THEN 1 ELSE 0 END) AS BIT)"
+                }
+            else
+                base.Expr(expr, context)
+        | Predicate ->
+            if TSQLExpression.IsPredicateBoolean(expr) then
+                base.Expr(expr, context)
+            else
+                seq {
+                    yield text "(("
+                    yield! this.BaseExpr(expr, FirstClassValue)
+                    yield text ")<>0)"
+                }
 
 type private TSQLStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(indexer)

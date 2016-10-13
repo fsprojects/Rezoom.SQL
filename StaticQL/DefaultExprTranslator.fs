@@ -85,7 +85,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
     override this.Cast(castExpr) =
         seq {
             yield text "CAST("
-            yield! this.Expr(castExpr.Expression)
+            yield! this.Expr(castExpr.Expression, FirstClassValue)
             yield ws
             yield text "AS"
             yield ws
@@ -134,14 +134,16 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
                 yield! this.Expr(escape)
         }
     override this.Binary(bin) =
+        let context = if bin.Operator.IsLogicalOperator then Predicate else FirstClassValue
         seq {
-            yield! this.Expr(bin.Left)
+            yield! this.Expr(bin.Left, context)
             yield ws
             yield this.BinaryOperator(bin.Operator)
             yield ws
-            yield! this.Expr(bin.Right)
+            yield! this.Expr(bin.Right, context)
         }
     override this.Unary(un) =
+        let context = if un.Operator.IsLogicalOperator then Predicate else FirstClassValue
         match un.Operator with
         | Negative
         | Not
@@ -149,12 +151,12 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             seq {
                 yield this.UnaryOperator(un.Operator)
                 yield ws
-                yield! this.Expr(un.Operand)
+                yield! this.Expr(un.Operand, context)
             }
         | NotNull
         | IsNull ->
             seq {
-                yield! this.Expr(un.Operand)
+                yield! this.Expr(un.Operand, context)
                 yield ws
                 yield this.UnaryOperator(un.Operator)
             }
@@ -185,7 +187,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         }
     override this.In(inex) =
         seq {
-            yield! this.Expr(inex.Input)
+            yield! this.Expr(inex.Input, FirstClassValue)
             yield ws
             if inex.Invert then
                 yield text "NOT"
@@ -208,26 +210,30 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         seq {
             yield text "CASE"
             yield ws
+            let whenContext =
+                match case.Input with
+                | None -> Predicate
+                | Some _ -> FirstClassValue
             match case.Input with
             | None -> ()
             | Some input ->
-                yield! this.Expr(input)
+                yield! this.Expr(input, FirstClassValue)
                 yield ws
             for input, output in case.Cases do
                 yield text "WHEN"
                 yield ws
-                yield! this.Expr(input)
+                yield! this.Expr(input, whenContext)
                 yield ws
                 yield text "THEN"
                 yield ws
-                yield! this.Expr(output)
+                yield! this.Expr(output, FirstClassValue)
             match case.Else.Value with
             | None -> ()
             | Some els ->
                 yield ws
                 yield text "ELSE"
                 yield ws
-                yield! this.Expr(els)
+                yield! this.Expr(els, FirstClassValue)
             yield ws
             yield text "END"
         }
@@ -266,7 +272,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         | FunctionInvocationExpr _
         | ScalarSubqueryExpr _ -> false
         | _ -> true
-    override this.Expr(expr) =
+    override this.Expr(expr, _) =
         let needsParens = this.NeedsParens(expr.Value)
         seq {
             if needsParens then yield text "("
@@ -289,5 +295,6 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
                 | RaiseExpr raise -> this.Raise(raise)
             if needsParens then yield text ")"
         }
+    member this.Expr(expr) = this.Expr(expr, FirstClassValue)
 
 

@@ -6,6 +6,17 @@ open StaticQL
 open StaticQL.Mapping
 open StaticQL.BackendUtilities
 
+// MSSQL doesn't treat booleans as first-class values, and we don't want to have to rewrite the
+// entire statement translator for it, so we pass this context around to hint to the ExprTranslator
+// that it may need to fudge in a "CASE WHEN expr THEN 1 ELSE 0 END" to get a usable value.
+type ExprTranslationContext =
+    /// The expression is expected to produce a first-class value
+    /// that can be passed to functions, returned from a select, etc.
+    | FirstClassValue
+    /// The expression is expected to produce a value suitable for a predicate like a "WHERE" clause or
+    /// condition within a "CASE" expression.
+    | Predicate
+
 [<AbstractClass>]
 type LiteralTranslator() =
     abstract member NullLiteral : Fragment
@@ -83,6 +94,6 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
     abstract member Exists : subquery : TSelectStmt -> Fragments
     abstract member ScalarSubquery : subquery : TSelectStmt -> Fragments
     abstract member NeedsParens : TExprType -> bool
-    abstract member Expr : expr : TExpr -> Fragments
+    abstract member Expr : expr : TExpr * context : ExprTranslationContext -> Fragments
 
 

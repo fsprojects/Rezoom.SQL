@@ -94,6 +94,12 @@ type BinaryOperator =
     | IsNot
     | And
     | Or
+    /// True if this operator expects boolean inputs and has a boolean output.
+    member this.IsLogicalOperator =
+        match this with
+        | And
+        | Or -> true
+        | _ -> false
 
 type UnaryOperator =
     | Negative
@@ -101,6 +107,11 @@ type UnaryOperator =
     | BitNot
     | NotNull
     | IsNull
+    /// True if this operator expects boolean inputs and has a boolean output.
+    member this.IsLogicalOperator =
+        match this with
+        | Not -> true
+        | _ -> false
 
 type SimilarityOperator =
     | Like
