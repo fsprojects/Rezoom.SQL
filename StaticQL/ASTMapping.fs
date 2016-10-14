@@ -265,22 +265,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                 | CreateAsSelect select -> CreateAsSelect <| this.Select(select)
                 | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(def)
         }
-    member this.TriggerAction(action : TriggerAction<'t1, 'e1>) =
-        match action with
-        | TriggerUpdate update -> TriggerUpdate <| this.Update(update)
-        | TriggerInsert insert -> TriggerInsert <| this.Insert(insert)
-        | TriggerDelete delete -> TriggerDelete <| this.Delete(delete)
-        | TriggerSelect select -> TriggerSelect <| this.Select(select)
-    member this.CreateTrigger(createTrigger : CreateTriggerStmt<'t1, 'e1>) =
-        {   Temporary = createTrigger.Temporary
-            IfNotExists = createTrigger.IfNotExists
-            TriggerName = this.ObjectName(createTrigger.TriggerName)
-            TableName = this.ObjectName(createTrigger.TableName)
-            Schedule = createTrigger.Schedule
-            Cause = createTrigger.Cause
-            Condition = Option.map this.Expr createTrigger.Condition
-            Actions = rmap this.TriggerAction createTrigger.Actions
-        }
     member this.CreateView(createView : CreateViewStmt<'t1, 'e1>) =
         {   Temporary = createView.Temporary
             IfNotExists = createView.IfNotExists
@@ -329,7 +313,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                 }
         | CreateIndexStmt index -> CreateIndexStmt <| this.CreateIndex(index)
         | CreateTableStmt createTable -> CreateTableStmt <| this.CreateTable(createTable)
-        | CreateTriggerStmt createTrigger -> CreateTriggerStmt <| this.CreateTrigger(createTrigger)
         | CreateViewStmt createView -> CreateViewStmt <| this.CreateView(createView)
         | DeleteStmt delete -> DeleteStmt <| this.Delete(delete)
         | DropObjectStmt drop -> DropObjectStmt <| this.DropObject(drop)

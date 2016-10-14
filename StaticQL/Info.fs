@@ -98,7 +98,6 @@ and TableLikeExprInfo<'t> =
 and ObjectInfo<'t> =
     | TableLike of 't TableLikeExprInfo
     | Index
-    | Trigger
     | Missing
     member this.Table =
         match this with
@@ -110,7 +109,6 @@ and ObjectInfo<'t> =
         match this with
         | TableLike t -> TableLike (t.Map(f))
         | Index -> Index
-        | Trigger -> Trigger
         | Missing -> Missing
 
 type TExprType = ExprType<ColumnType ObjectInfo, ColumnType ExprInfo>
@@ -157,8 +155,6 @@ type TAlterTableAlteration = AlterTableAlteration<ColumnType ObjectInfo, ColumnT
 type TCreateIndexStmt = CreateIndexStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TTableIndexConstraintClause = TableIndexConstraintClause<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TTableConstraint = TableConstraint<ColumnType ObjectInfo, ColumnType ExprInfo>
-type TTriggerAction = TriggerAction<ColumnType ObjectInfo, ColumnType ExprInfo>
-type TCreateTriggerStmt = CreateTriggerStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TCreateViewStmt = CreateViewStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TQualifiedTableName = QualifiedTableName<ColumnType ObjectInfo>
 type TDeleteStmt = DeleteStmt<ColumnType ObjectInfo, ColumnType ExprInfo>

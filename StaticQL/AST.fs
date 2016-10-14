@@ -541,34 +541,6 @@ type InsertStmt<'t, 'e> =
         Data : SelectStmt<'t, 'e> option // either select/values, or "default values" if none
     }
 
-type TriggerSchedule =
-    | Before
-    | After
-    | InsteadOf
-
-type TriggerCause =
-    | DeleteOn
-    | InsertOn
-    | UpdateOn of Name ResizeArray option
-
-type TriggerAction<'t, 'e> =
-    | TriggerUpdate of UpdateStmt<'t, 'e>
-    | TriggerInsert of InsertStmt<'t, 'e>
-    | TriggerDelete of DeleteStmt<'t, 'e>
-    | TriggerSelect of SelectStmt<'t, 'e>
-
-type CreateTriggerStmt<'t, 'e> =
-    {
-        Temporary : bool
-        IfNotExists : bool
-        TriggerName : ObjectName<'t>
-        TableName : ObjectName<'t>
-        Schedule : TriggerSchedule
-        Cause : TriggerCause
-        Condition : Expr<'t, 'e> option
-        Actions : TriggerAction<'t, 'e> ResizeArray
-    }
-
 type CreateViewStmt<'t, 'e> =
     {
         Temporary : bool
@@ -595,7 +567,6 @@ type Stmt<'t, 'e> =
     | AlterTableStmt of AlterTableStmt<'t, 'e>
     | CreateIndexStmt of CreateIndexStmt<'t, 'e>
     | CreateTableStmt of CreateTableStmt<'t, 'e>
-    | CreateTriggerStmt of CreateTriggerStmt<'t, 'e>
     | CreateViewStmt of CreateViewStmt<'t, 'e>
     | DeleteStmt of DeleteStmt<'t, 'e>
     | DropObjectStmt of DropObjectStmt<'t>
@@ -649,8 +620,6 @@ type AlterTableAlteration = AlterTableAlteration<unit, unit>
 type CreateIndexStmt = CreateIndexStmt<unit, unit>
 type TableIndexConstraintClause = TableIndexConstraintClause<unit, unit>
 type TableConstraint = TableConstraint<unit, unit>
-type TriggerAction = TriggerAction<unit, unit>
-type CreateTriggerStmt = CreateTriggerStmt<unit, unit>
 type CreateViewStmt = CreateViewStmt<unit, unit>
 type QualifiedTableName = QualifiedTableName<unit>
 type DeleteStmt = DeleteStmt<unit, unit>

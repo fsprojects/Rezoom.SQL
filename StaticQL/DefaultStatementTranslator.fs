@@ -622,7 +622,6 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
         | CreateTableStmt create -> this.CreateTable(create)
         | CreateViewStmt create -> this.CreateView(create)
         | CreateIndexStmt create -> this.CreateIndex(create)
-        | CreateTriggerStmt create -> failwith "not implemented: CREATE TRIGGER statements" // TODO
         | DropObjectStmt drop -> this.DropObject(drop)
 
         | SelectStmt select -> this.Select(select)

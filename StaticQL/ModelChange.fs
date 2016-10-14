@@ -113,7 +113,6 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
         | CreateTableStmt create -> this.CreateTable(create)
         | CreateViewStmt create -> this.CreateView(create)
         | CreateIndexStmt create -> failwith "not implemented"
-        | CreateTriggerStmt create -> failwith "not implemented"
         | DropObjectStmt drop -> this.DropObject(drop)
         | BeginStmt
         | CommitStmt

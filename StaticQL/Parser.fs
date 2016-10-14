@@ -1158,59 +1158,6 @@ let private insertStmt =
             Data = data
         }
 
-let private triggerSchedule =
-    %[
-        %% kw "BEFORE" -|> Before
-        %% kw "AFTER" -|> After
-        %% kw "INSTEAD" -- kw "OF" -|> InsteadOf
-        preturn Before
-    ]
-
-let private triggerCause =
-    let updateColumns =
-        %% kw "OF" -- +.(qty.[1..] / tws ',' * tws name) -|> id
-    %[  %% kw "DELETE" -|> DeleteOn
-        %% kw "INSERT" -|> InsertOn
-        %% kw "UPDATE" -- +.(zeroOrOne * updateColumns) -|> UpdateOn
-    ]
-
-let private triggerAction =
-    %[  %% +.selectStmt -|> TriggerSelect
-        %% +.deleteStmt -|> TriggerDelete
-        %% +.updateStmt -|> TriggerUpdate
-        %% +.insertStmt -|> TriggerInsert
-    ]
-
-let private createTriggerStmt =
-    let whenClause =
-        %% kw "WHEN"
-        -- +.expr
-        -|> id
-    %% kw "CREATE"
-    -- +.temporary
-    -? kw "TRIGGER"
-    -- +.ifNotExists
-    -- +.objectName
-    -- +.triggerSchedule
-    -- +.triggerCause
-    -- kw "ON"
-    -- +.objectName
-    -- zeroOrOne * (%% kw "FOR" -- kw "EACH" -- kw "ROW" -|> ())
-    -- +.(zeroOrOne * whenClause)
-    -- kw "BEGIN"
-    -- +.(qty.[1..] /. tws ';' * tws triggerAction)
-    -- kw "END"
-    -|> fun temp ifne triggerName schedule cause tableName whenClause actions ->
-        {   Temporary = Option.isSome temp
-            IfNotExists = Option.isSome ifne
-            TriggerName = triggerName
-            TableName = tableName
-            Schedule = schedule
-            Cause = cause
-            Condition = whenClause
-            Actions = actions
-        }
-
 let private createViewStmt =
     %% kw "CREATE"
     -- +.temporary
@@ -1252,7 +1199,6 @@ let private stmt =
     %[  %% +.alterTableStmt -|> AlterTableStmt
         %% +.createIndexStmt -|> CreateIndexStmt
         %% +.createTableStmt -|> CreateTableStmt
-        %% +.createTriggerStmt -|> CreateTriggerStmt
         %% +.createViewStmt -|> CreateViewStmt
         %% +.deleteStmt -|> DeleteStmt
         %% +.dropObjectStmt -|> DropObjectStmt

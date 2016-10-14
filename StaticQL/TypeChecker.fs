@@ -700,22 +700,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 | CreateAsSelect select -> CreateAsSelect <| this.Select(select)
                 | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(name, def)
         }
-    member this.TriggerAction(action : TriggerAction) =
-        match action with
-        | TriggerUpdate update -> TriggerUpdate <| this.Update(update)
-        | TriggerInsert insert -> TriggerInsert <| this.Insert(insert)
-        | TriggerDelete delete -> TriggerDelete <| this.Delete(delete)
-        | TriggerSelect select -> TriggerSelect <| this.Select(select)
-    member this.CreateTrigger(createTrigger : CreateTriggerStmt) =
-        {   Temporary = createTrigger.Temporary
-            IfNotExists = createTrigger.IfNotExists
-            TriggerName = this.ObjectName(createTrigger.TriggerName, true)
-            TableName = this.ObjectName(createTrigger.TableName)
-            Schedule = createTrigger.Schedule
-            Cause = createTrigger.Cause
-            Condition = Option.map this.Expr createTrigger.Condition
-            Actions = rmap this.TriggerAction createTrigger.Actions
-        }
     member this.CreateView(createView : CreateViewStmt) =
         {   Temporary = createView.Temporary
             IfNotExists = createView.IfNotExists
@@ -791,7 +775,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 }
         | CreateIndexStmt index -> CreateIndexStmt <| this.CreateIndex(index)
         | CreateTableStmt createTable -> CreateTableStmt <| this.CreateTable(createTable)
-        | CreateTriggerStmt createTrigger -> CreateTriggerStmt <| this.CreateTrigger(createTrigger)
         | CreateViewStmt createView -> CreateViewStmt <| this.CreateView(createView)
         | DeleteStmt delete -> DeleteStmt <| this.Delete(delete)
         | DropObjectStmt drop -> DropObjectStmt <| this.DropObject(drop)
