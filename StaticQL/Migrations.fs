@@ -147,29 +147,26 @@ let stringizeMajorVersion (backend : IBackend) (major : TStmts MigrationMajorVer
 
 let quotationize (major : string MigrationMajorVersion) =
     let nameCtor = typeof<Name>.GetConstructor([| typeof<string> |])
-    let quotationizeMigration migration =
-        Expr.NewRecord
-            ( typeof<string Migration>
-            ,   [   Quotations.Expr.Value(migration.Command)
-                    Quotations.Expr.Value(migration.FeatureVersion)
-                    Quotations.Expr.Value(migration.SourceFileName)
-                ])
-    let quotationizeFeature feature =
-        Expr.NewRecord
-            ( typeof<string MigrationFeature>
-            ,   [   Expr.NewObject(nameCtor, [ Quotations.Expr.Value(feature.FeatureName.Value) ])
-                    Expr.NewArray
+    let quotationizeMigration (migration : string Migration) =
+        <@@ {   Command = %%Quotations.Expr.Value(migration.Command)
+                FeatureVersion = %%Quotations.Expr.Value(migration.FeatureVersion)
+                SourceFileName = %%Quotations.Expr.Value(migration.SourceFileName)
+            } : string Migration
+        @@>
+    let quotationizeFeature (feature : string MigrationFeature) =
+        <@@ {   FeatureName = Name(%%Quotations.Expr.Value(feature.FeatureName.Value) : string)
+                Migrations =
+                    %%(Expr.NewArray
                         ( typeof<string Migration>
-                        , [ for migration in feature.Migrations -> quotationizeMigration migration ])
-                    |> fun arr -> Expr.Coerce(arr, typeof<string Migration IReadOnlyList>)
-                ]
-            )
+                        , [ for migration in feature.Migrations -> quotationizeMigration migration ]
+                        ) |> fun arr -> Expr.Coerce(arr, typeof<string Migration IReadOnlyList>))
+            } : string MigrationFeature
+        @@>
     let features =
         Expr.NewArray
             ( typeof<string MigrationFeature>
             , [ for feature in major.Features -> quotationizeFeature feature ])
-    Expr.NewRecord
-        ( typeof<string MigrationMajorVersion>
-        ,   [   features |> fun arr -> Expr.Coerce(arr, typeof<string MigrationFeature IReadOnlyCollection>)
-                Quotations.Expr.Value(major.MajorVersion)
-            ])
+    <@@ {   Features = %%(features |> fun arr -> Expr.Coerce(arr, typeof<string MigrationFeature IReadOnlyCollection>))
+            MajorVersion = %%Quotations.Expr.Value(major.MajorVersion)
+        } : string MigrationMajorVersion
+    @@>
