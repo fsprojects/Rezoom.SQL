@@ -33,20 +33,12 @@ let private parameterIndexer (pars : BindParameter seq) =
         member __.ParameterIndex(par) = dict.[par]
     }
 
-let private localNameCase, private commandTextCase, private parameterCase, private whiteCase =
-    let cases = FSharpType.GetUnionCases(typeof<CommandFragment>)
-    ( cases |> Array.find (fun c -> c.Name = "LocalName")
-    , cases |> Array.find (fun c -> c.Name = "CommandText")
-    , cases |> Array.find (fun c -> c.Name = "Parameter")
-    , cases |> Array.find (fun c -> c.Name = "Whitespace")
-    )
-
 let private toFragmentExpr (fragment : CommandFragment) =
     match fragment with
-    | LocalName n -> Expr.NewUnionCase(localNameCase, [ Quotations.Expr.Value(n) ])
-    | CommandText t -> Expr.NewUnionCase(commandTextCase, [ Quotations.Expr.Value(t) ])
-    | Parameter i -> Expr.NewUnionCase(parameterCase, [ Quotations.Expr.Value(i) ])
-    | Whitespace -> Expr.NewUnionCase(whiteCase, [])
+    | LocalName n -> <@@ LocalName (%%Quotations.Expr.Value(n)) @@>
+    | CommandText t -> <@@ CommandText (%%Quotations.Expr.Value(t)) @@>
+    | Parameter i -> <@@ Parameter (%%Quotations.Expr.Value(i)) @@>
+    | Whitespace -> <@@ Whitespace @@>
 
 let private toFragmentArrayExpr (fragments : CommandFragment IReadOnlyList) =
     Expr.NewArray(typeof<CommandFragment>, fragments |> Seq.map toFragmentExpr |> Seq.toList)
