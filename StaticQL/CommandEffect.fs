@@ -44,7 +44,7 @@ and private CommandEffectBuilder(model : Model) =
         let checker = TypeChecker(inference, InferredSelectScope.Root(model))
         let inferredStmt = checker.Stmt(stmt)
         inferredStmts.Add(inferredStmt)
-        newModel <- ModelChange(model, inference).Statment(inferredStmt)
+        newModel <- ModelChange(model, inference).Statement(inferredStmt)
     member this.CommandEffect() =
         let mapping =
             ASTMapping<InferredType ObjectInfo, InferredType ExprInfo, _, _>

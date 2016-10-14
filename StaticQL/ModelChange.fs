@@ -107,7 +107,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
             | DropIndex
             | DropTrigger -> None // TODO: track these in schema
             
-    member this.Statment(stmt : InfStmt) =
+    member this.Statement(stmt : InfStmt) =
         match stmt with
         | AlterTableStmt alter -> this.AlterTable(alter)
         | CreateTableStmt create -> this.CreateTable(create)
