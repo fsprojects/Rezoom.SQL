@@ -438,7 +438,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         let checker = TypeChecker(cxt, { scope with FromClause = Some <| this.TableExprScope(texpr) })
         checker, this.TableExpr(checker, texpr)
 
-    member this.ResultColumn(resultColumn : ResultColumn WithSource) =
+    member this.ResultColumn(resultColumn : ResultColumn) =
         let qualify (alias : Name) fromTable (col : _ ColumnExprInfo) =
             Column
                 ({  Source = resultColumn.Source
@@ -452,7 +452,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                                 } |> Some
                         } |> ColumnNameExpr
                     Info = col.Expr.Info }, None)
-        match resultColumn.Value with
+        match resultColumn.Case with
         | ColumnsWildcard ->
             match scope.FromClause with
             | None -> failAt resultColumn.Source "Must have a FROM clause to use * wildcard"
@@ -478,7 +478,9 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             Columns =
                 resultColumns.Columns
                 |> Seq.collect
-                    (fun rc -> this.ResultColumn(rc) |> Seq.map (fun c -> { WithSource.Source = rc.Source; Value = c }))
+                    (fun rc ->
+                        this.ResultColumn(rc)
+                        |> Seq.map (fun c -> { Source = rc.Source; Case = c; AliasPrefix = None }))
                 |> ResizeArray
         }
     member this.GroupBy(groupBy : GroupBy) =
@@ -496,7 +498,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         let infoColumns =
             seq {
                 for column in columns.Columns do
-                    match column.Value with
+                    match column.Case with
                     | Column (expr, alias) ->
                         yield
                             {   Expr = expr
@@ -509,7 +511,8 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                                         | None -> failAt column.Source "Expression-valued column requires an alias"
                                         | Some col -> col.ColumnName
                             }
-                     | _ -> failwith "All columns must be qualified" // bug if we get here
+                     // typechecker should've eliminated alternatives
+                     | _ -> failwith "All columns must be qualified -- this is a typechecker bug"
             } |> toReadOnlyList
         {   Columns = columns
             From = from

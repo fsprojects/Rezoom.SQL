@@ -575,12 +575,20 @@ let private asAlias =
     -? +.nameOrString
     -|> id
 
-let private resultColumn =
+let private resultColumnCase =
     %% +.[
         %% '*' -|> ColumnsWildcard
         %% +.name -- '.' -? '*' -|> TableColumnsWildcard
         %% +.expr -- +.(asAlias * zeroOrOne) -|> fun ex alias -> Column (ex, alias)
     ] -- ws -|> id
+
+let private resultColumn =
+    %% +.withSource resultColumnCase
+    -|> fun case ->
+        {   ResultColumn.Case = case.Value
+            Source = case.Source
+            AliasPrefix = None
+        }
 
 let private selectColumns =
     %% kw "SELECT"
@@ -588,7 +596,7 @@ let private selectColumns =
             %% kw "ALL" -|> Some AllColumns
             preturn None
         ]
-    -- +.(qty.[1..] / tws ',' * withSource resultColumn)
+    -- +.(qty.[1..] / tws ',' * resultColumn)
     -|> fun distinct cols -> { Distinct = distinct; Columns = cols }
 
 let private indexHint =
@@ -718,7 +726,7 @@ let private compoundTerm =
         ]
     -- +.sourcePosition
     -|> fun pos1 term pos2 ->
-        {   Source = { StartPosition = pos1; EndPosition = pos2 }
+        {   CompoundTerm.Source = { StartPosition = pos1; EndPosition = pos2 }
             Value = term
             Info = ()
         }

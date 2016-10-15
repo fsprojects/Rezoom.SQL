@@ -66,32 +66,33 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                     }) |> join ","
         }
 
-    override this.ResultColumn(col) =
-        match col with
-        | ColumnsWildcard -> text "*" |> Seq.singleton
-        | TableColumnsWildcard name ->
-            seq {
-                yield this.Expr.Name(name)
-                yield text ".*"
-            }
-        | Column (expr, alias) ->
-            seq {
-                yield! this.FirstClassValue(expr)
-                match alias with
-                | None -> ()
-                | Some alias ->
-                    yield ws
-                    yield text "AS"
-                    yield ws
-                    yield this.Expr.Name(alias)
-            }
+    override this.ResultColumn(expr, alias) =
+        seq {
+            yield! this.FirstClassValue(expr)
+            match alias with
+            | None -> ()
+            | Some alias ->
+                yield ws
+                yield text "AS"
+                yield ws
+                yield this.Expr.Name(alias)
+        }
     override this.ResultColumns(cols) =
         seq {
             match cols.Distinct with
             | None
             | Some AllColumns -> ()
             | Some DistinctColumns -> yield text "DISTINCT"; yield ws
-            yield! cols.Columns |> Seq.map (fun c -> this.ResultColumn(c.Value)) |> join ","
+            yield!
+                seq {
+                    for col in cols.Columns do
+                        match col.AliasPrefix, col.Case with
+                        | Some prefix, _ -> failwith "Bug in typechecker: alias prefixes should've been built-in"
+                        | None, Column(expr, alias) ->
+                            yield this.ResultColumn(expr, alias)
+                        | None, _ ->
+                            failwith "Bug in typechecker: wildcards should've been expanded"
+                } |> join ","
         }
     override this.TableOrSubquery(tbl) =
         seq {

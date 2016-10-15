@@ -120,14 +120,15 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             Offset = Option.map this.Expr limit.Offset
         }
     member this.ResultColumn(resultColumn : ResultColumn<'t1, 'e1>) =
-        match resultColumn with
-        | ColumnsWildcard -> ColumnsWildcard
-        | TableColumnsWildcard tbl -> TableColumnsWildcard tbl
-        | Column (expr, alias) -> Column (this.Expr(expr), alias)
+        let case =
+            match resultColumn.Case with
+            | ColumnsWildcard -> ColumnsWildcard
+            | TableColumnsWildcard tbl -> TableColumnsWildcard tbl
+            | Column (expr, alias) -> Column (this.Expr(expr), alias)
+        { Case = case; Source = resultColumn.Source; AliasPrefix = resultColumn.AliasPrefix }
     member this.ResultColumns(resultColumns : ResultColumns<'t1, 'e1>) =
         {   Distinct = resultColumns.Distinct
-            Columns = resultColumns.Columns
-            |> rmap (fun { Source = source; Value = value } -> { Source = source; Value = this.ResultColumn(value) })
+            Columns = resultColumns.Columns |> rmap this.ResultColumn
         }
     member this.TableOrSubquery(table : TableOrSubquery<'t1, 'e1>) =
         let tbl =

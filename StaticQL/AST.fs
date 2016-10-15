@@ -315,13 +315,19 @@ and GroupBy<'t, 'e> =
 and ResultColumns<'t, 'e> =
     {
         Distinct : DistinctColumns option
-        Columns : ResultColumn<'t, 'e> WithSource ResizeArray
+        Columns : ResultColumn<'t, 'e> ResizeArray
     }
 
-and ResultColumn<'t, 'e> =
+and ResultColumnCase<'t, 'e> =
     | ColumnsWildcard
     | TableColumnsWildcard of Name
     | Column of Expr<'t, 'e> * Alias
+
+and ResultColumn<'t, 'e> =
+    {   Case : ResultColumnCase<'t, 'e>
+        AliasPrefix : Name option
+        Source : SourceInfo
+    }
 
 and IndexHint =
     | IndexedBy of Name
@@ -604,6 +610,7 @@ type JoinConstraint = JoinConstraint<unit, unit>
 type GroupBy = GroupBy<unit, unit>
 type Limit = Limit<unit, unit>
 type OrderingTerm = OrderingTerm<unit, unit>
+type ResultColumnCase = ResultColumnCase<unit, unit>
 type ResultColumn = ResultColumn<unit, unit>
 type ResultColumns = ResultColumns<unit, unit>
 type TableOrSubquery = TableOrSubquery<unit, unit>
