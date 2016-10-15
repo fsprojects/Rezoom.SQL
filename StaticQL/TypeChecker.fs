@@ -439,28 +439,32 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         checker, this.TableExpr(checker, texpr)
 
     member this.ResultColumn(resultColumn : ResultColumn) =
-        let qualify (alias : Name) fromTable (col : _ ColumnExprInfo) =
+        let qualify (tableAlias : Name) fromTable (col : _ ColumnExprInfo) =
             Column
                 ({  Source = resultColumn.Source
                     Value =
                         {   ColumnName = col.ColumnName
                             Table =
                                 {   Source = resultColumn.Source
-                                    ObjectName = alias
+                                    ObjectName = tableAlias
                                     SchemaName = None
                                     Info = fromTable
                                 } |> Some
                         } |> ColumnNameExpr
-                    Info = col.Expr.Info }, None)
+                    Info = col.Expr.Info
+                },
+                    match resultColumn.AliasPrefix with
+                    | None -> None
+                    | Some prefix -> Some (prefix + col.ColumnName))
         match resultColumn.Case with
         | ColumnsWildcard ->
             match scope.FromClause with
             | None -> failAt resultColumn.Source "Must have a FROM clause to use * wildcard"
             | Some from ->
                 seq {
-                    for alias, fromTable in from.FromObjects do
+                    for tableAlias, fromTable in from.FromObjects do
                     for col in fromTable.Table.Query.Columns do
-                        yield qualify alias fromTable col
+                        yield qualify tableAlias fromTable col
                 }
         | TableColumnsWildcard tbl ->
             match scope.FromClause with
@@ -472,7 +476,17 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     for col in fromTable.Table.Query.Columns do
                         yield qualify tbl fromTable col
                 }
-        | Column (expr, alias) -> Column (this.Expr(expr), alias) |> Seq.singleton
+        | Column (expr, alias) ->
+            match resultColumn.AliasPrefix with
+            | None -> Column (this.Expr(expr), alias) |> Seq.singleton
+            | Some prefix -> 
+                let expr = this.Expr(expr)
+                let baseAlias =
+                    match alias, expr.Value with
+                    | Some a, _ -> a
+                    | None, ColumnNameExpr c -> c.ColumnName
+                    | None, _ -> failAt resultColumn.Source "Expression-valued column requires an alias"
+                Column (expr, Some (prefix + baseAlias)) |> Seq.singleton
     member this.ResultColumns(resultColumns : ResultColumns) =
         {   Distinct = resultColumns.Distinct
             Columns =
