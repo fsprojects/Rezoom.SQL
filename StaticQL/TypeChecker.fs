@@ -640,7 +640,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     ({ tableName with
                         Info =
                             {   Table = TableReference fake
-                                Query = InferredQuery.OfTable(fake)
+                                Query = inferredOfTable(fake)
                             } |> TableLike })
             let this = this.WithScope({ scope with FromClause = Some from })
             AddColumn <| this.ColumnDef(cdef)
@@ -682,7 +682,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 ({ tableName with
                     Info =
                         {   Table = TableReference fake
-                            Query = InferredQuery.OfTable(fake)
+                            Query = inferredOfTable(fake)
                         } |> TableLike })
         let this = this.WithScope({ scope with FromClause = Some from })
         let columns = createTable.Columns |> rmap this.ColumnDef

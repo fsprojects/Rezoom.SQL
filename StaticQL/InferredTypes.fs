@@ -129,19 +129,19 @@ let foundAt source nameResolution =
     | NotFound err
     | Ambiguous err -> failAt source err
 
-type InferredQuery() =
-    static member OfTable(table : SchemaTable) =
-        {   Columns =
-                table.Columns
-                |> Seq.map (fun c -> InferredQueryColumn.OfColumn(Some table.TableName, c))
-                |> toReadOnlyList
-        }
-    static member OfView(view : SchemaView) =
-        {   Columns =
-                view.Columns
-                |> Seq.map (fun c -> InferredQueryColumn.OfColumn(Some view.ViewName, c))
-                |> toReadOnlyList
-        }
+let inferredOfTable (table : SchemaTable) =
+    {   Columns =
+            table.Columns
+            |> Seq.map (fun c -> InferredQueryColumn.OfColumn(Some table.TableName, c))
+            |> toReadOnlyList
+    }
+
+let inferredOfView (view : SchemaView) =
+    {   Columns =
+            view.Columns
+            |> Seq.map (fun c -> InferredQueryColumn.OfColumn(Some view.ViewName, c))
+            |> toReadOnlyList
+    }
 
 type InferredFromClause =
     {
@@ -223,11 +223,11 @@ and InferredSelectScope =
     member private this.ResolveObjectReferenceBySchema(schema : Schema, name : Name) =
         match schema.Tables.TryFind(name) with
         |  Some tbl ->
-            { Table = TableReference tbl; Query = InferredQuery.OfTable(tbl) } |> TableLike |> Found
+            { Table = TableReference tbl; Query = inferredOfTable(tbl) } |> TableLike |> Found
         | None ->
             match schema.Views.TryFind(name) with
             | Some view ->
-                { Table = ViewReference view; Query = InferredQuery.OfView(view) } |> TableLike |> Found
+                { Table = ViewReference view; Query = inferredOfView(view) } |> TableLike |> Found
             | None ->
                 NotFound <| sprintf "No such table in schema %O: ``%O``" schema.SchemaName name
 
