@@ -582,13 +582,44 @@ let private resultColumnCase =
         %% +.expr -- +.(asAlias * zeroOrOne) -|> fun ex alias -> Column (ex, alias)
     ] -- ws -|> id
 
-let private resultColumn =
-    %% +.withSource resultColumnCase
-    -|> fun case ->
-        {   ResultColumn.Case = case.Value
-            Source = case.Source
-            AliasPrefix = None
-        }
+let private resultColumnsQuantifier =
+    %[
+        %% kw "MANY" -|> "*"
+        %% kw "OPTIONAL" -|> "?"
+        %% kw "ONE" -|> ""
+    ]
+
+let private resultColumns =
+    let typical =
+        %% +.withSource resultColumnCase
+        -|> fun case ->
+            {   ResultColumn.Case = case.Value
+                Source = case.Source
+                AliasPrefix = None
+            } |> Seq.singleton
+    precursive <| fun resultColumns ->
+        let quantified =
+            %% +.resultColumnsQuantifier
+            -? +.name
+            -- ws
+            -- '('
+            -- ws
+            -- +.resultColumns
+            -- ')'
+            -- ws
+            -|> fun quantifier name cols ->
+                let prefix = name + quantifier + "$"
+                seq {
+                    for col in cols ->
+                        { col with
+                            AliasPrefix =
+                                match col.AliasPrefix with
+                                | None -> Some prefix
+                                | Some subPrefix -> Some <| prefix + subPrefix
+                        }
+                }
+        %% +.(qty.[1..] /. tws ',' * [ quantified; typical ])
+        -|> (Seq.concat >> ResizeArray)
 
 let private selectColumns =
     %% kw "SELECT"
@@ -596,7 +627,7 @@ let private selectColumns =
             %% kw "ALL" -|> Some AllColumns
             preturn None
         ]
-    -- +.(qty.[1..] / tws ',' * resultColumn)
+    -- +.resultColumns
     -|> fun distinct cols -> { Distinct = distinct; Columns = cols }
 
 let private indexHint =
