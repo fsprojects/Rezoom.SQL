@@ -50,14 +50,15 @@ type CommandBatch(conn : DbConnection) =
         let processed = ResizeArray()
         for i = 0 to commands.Count - 1 do
             let cmd = commands.[i]
+            let processor = cmd.ObjectResultSetProcessor()
             let mutable resultSetCount = match cmd.ResultSetCount with | Some 0 -> -1 | _ -> 0
             while resultSetCount >= 0 do
-                cmd.BeginResultSet(reader)
+                processor.BeginResultSet(reader)
                 let mutable hasRows = true
                 while hasRows do
                     let! hasRow = Async.AwaitTask <| reader.ReadAsync()
                     if hasRow then
-                        cmd.ProcessRow()
+                        processor.ProcessRow()
                     else
                         hasRows <- false
                 resultSetCount <- resultSetCount + 1
@@ -77,7 +78,7 @@ type CommandBatch(conn : DbConnection) =
                         failwithf
                             "Command claimed it would produce %d result sets, but only yielded %d"
                             count resultSetCount
-            processed.Add(cmd.GetResultObject())
+            processed.Add(processor.ObjectGetResult())
         return processed
     }
 
@@ -90,14 +91,15 @@ type CommandBatch(conn : DbConnection) =
         let processed = ResizeArray()
         for i = 0 to commands.Count - 1 do
             let cmd = commands.[i]
+            let processor = cmd.ObjectResultSetProcessor()
             let mutable resultSetCount = match cmd.ResultSetCount with | Some 0 -> -1 | _ -> 0
             while resultSetCount >= 0 do
-                cmd.BeginResultSet(reader)
+                processor.BeginResultSet(reader)
                 let mutable hasRows = true
                 while hasRows do
                     let hasRow = reader.Read()
                     if hasRow then
-                        cmd.ProcessRow()
+                        processor.ProcessRow()
                     else
                         hasRows <- false
                 resultSetCount <- resultSetCount + 1
@@ -117,7 +119,7 @@ type CommandBatch(conn : DbConnection) =
                         failwithf
                             "Command claimed it would produce %d result sets, but only yielded %d"
                             count resultSetCount
-            processed.Add(cmd.GetResultObject())
+            processed.Add(processor.ObjectGetResult())
         result <- Some processed
         processed
 

@@ -15,6 +15,7 @@ type CommandFragment =
     | Parameter of int
     /// At least one unit of whitespace.
     | Whitespace
+    /// Converts a sequence of fragments *without parameters* to a string.
     static member Stringize(fragments : CommandFragment seq) =
         seq {
             for fragment in fragments do
@@ -26,6 +27,21 @@ type CommandFragment =
         } |> String.concat ""
 
 [<AbstractClass>]
+type ResultSetProcessor() =
+    /// Start processing a result set.
+    abstract member BeginResultSet : IDataReader -> unit
+    /// Process a single row of the result set.
+    abstract member ProcessRow : unit -> unit
+    /// Obtain the result object after processing *all* result sets.
+    abstract member ObjectGetResult : unit -> obj
+
+[<AbstractClass>]
+type ResultSetProcessor<'output>() =
+    inherit ResultSetProcessor()
+    abstract member GetResult : unit -> 'output
+    override this.ObjectGetResult() = this.GetResult() |> box
+
+[<AbstractClass>]
 type Command(fragments : CommandFragment IReadOnlyList, parameters : (obj * DbType) IReadOnlyList) =
     member __.Fragments = fragments
     member __.Parameters = parameters
@@ -33,12 +49,8 @@ type Command(fragments : CommandFragment IReadOnlyList, parameters : (obj * DbTy
     /// The number of result sets this command will return, if it can be statically determined.
     abstract member ResultSetCount : int option
     default __.ResultSetCount = None
-    /// Start processing a result set.
-    abstract member BeginResultSet : IDataReader -> unit
-    /// Process a single row of the result set.
-    abstract member ProcessRow : unit -> unit
-    /// Obtain the result object after processing *all* result sets.
-    abstract member GetResultObject : unit -> obj
+
+    abstract member ObjectResultSetProcessor : unit -> ResultSetProcessor
 
 /// Represents multiple result sets as the output from a single command.
 [<AbstractClass>]
@@ -64,17 +76,22 @@ type ResultSets<'a, 'b, 'c>(a : 'a, b : 'b, c : 'c) =
 [<AbstractClass>]
 type Command<'output>(fragments, parameters) =
     inherit Command(fragments, parameters)
-    abstract member GetResult : unit -> 'output
+    abstract member ResultSetProcessor : unit -> ResultSetProcessor<'output>
+    override this.ObjectResultSetProcessor() = upcast this.ResultSetProcessor()
 
-type private Command0<'a>(fragments, parameters) =
-    inherit Command<'a>(fragments, parameters)
+type private ResultSetProcessor0<'a>() =
+    inherit ResultSetProcessor<'a>()
     override __.BeginResultSet(_) = ()
     override __.ProcessRow() = ()
-    override __.GetResultObject() = upcast Unchecked.defaultof<'a>
+    override __.ObjectGetResult() = upcast Unchecked.defaultof<'a>
     override __.GetResult() = Unchecked.defaultof<'a>
 
-type private Command1<'a>(fragments, parameters) =
-    inherit Command<'a>(fragments, parameters)
+type private Command0(fragments, parameters) =
+    inherit Command<unit>(fragments, parameters)
+    override __.ResultSetProcessor() = upcast ResultSetProcessor0<unit>()
+
+type private ResultSetProcessor1<'a>() =
+    inherit ResultSetProcessor<'a>()
     let reader = ReaderTemplate<'a>.Template().CreateReader()
     let mutable row = Unchecked.defaultof<Row>
     let result = lazy reader.ToEntity()
@@ -83,11 +100,14 @@ type private Command1<'a>(fragments, parameters) =
         row <- DataReader.DataReaderRow(dataReader)
     override __.ProcessRow() =
         reader.Read(row)
-    override __.GetResultObject() = upcast result.Value
     override __.GetResult() = result.Value
 
-type private Command2<'a, 'b>(fragments, parameters) =
-    inherit Command<ResultSets<'a, 'b>>(fragments, parameters)
+type private Command1<'a>(fragments, parameters) =
+    inherit Command<'a>(fragments, parameters)
+    override __.ResultSetProcessor() = upcast ResultSetProcessor1<'a>()
+
+type private ResultSetProcessor2<'a, 'b>() =
+    inherit ResultSetProcessor<ResultSets<'a, 'b>>()
     let aReader = ReaderTemplate<'a>.Template().CreateReader()
     let bReader = ReaderTemplate<'b>.Template().CreateReader()
     let mutable row = Unchecked.defaultof<Row>
@@ -104,11 +124,14 @@ type private Command2<'a, 'b>(fragments, parameters) =
         row <- DataReader.DataReaderRow(dataReader)
     override __.ProcessRow() =
         (List.head readers).Read(row)
-    override __.GetResultObject() = upcast result.Value
     override __.GetResult() = result.Value
 
-type private Command3<'a, 'b, 'c>(fragments, parameters) =
-    inherit Command<ResultSets<'a, 'b, 'c>>(fragments, parameters)
+type private Command2<'a, 'b>(fragments, parameters) =
+    inherit Command<ResultSets<'a, 'b>>(fragments, parameters)
+    override __.ResultSetProcessor() = upcast ResultSetProcessor2<'a, 'b>()
+
+type private ResultSetProcessor3<'a, 'b, 'c>() =
+    inherit ResultSetProcessor<ResultSets<'a, 'b, 'c>>()
     let aReader = ReaderTemplate<'a>.Template().CreateReader()
     let bReader = ReaderTemplate<'b>.Template().CreateReader()
     let cReader = ReaderTemplate<'c>.Template().CreateReader()
@@ -127,12 +150,15 @@ type private Command3<'a, 'b, 'c>(fragments, parameters) =
         row <- DataReader.DataReaderRow(dataReader)
     override __.ProcessRow() =
         (List.head readers).Read(row)
-    override __.GetResultObject() = upcast result.Value
     override __.GetResult() = result.Value
+
+type private Command3<'a, 'b, 'c>(fragments, parameters) =
+    inherit Command<ResultSets<'a, 'b, 'c>>(fragments, parameters)
+    override __.ResultSetProcessor() = upcast ResultSetProcessor3<'a, 'b, 'c>()
 
 type CommandConstructor() =
     static member Command0(fragments, parameters) =
-        new Command0<unit>(fragments, parameters) :> _ Command
+        new Command0(fragments, parameters) :> _ Command
     static member Command1<'a>(fragments, parameters) =
         new Command1<'a>(fragments, parameters) :> _ Command
     static member Command2<'a, 'b>(fragments, parameters) =
