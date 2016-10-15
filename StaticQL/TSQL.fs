@@ -34,7 +34,7 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
             | DecimalTypeName -> "NUMERIC(38, 19)"
             | DateTimeTypeName -> "DATETIME2"
             | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
-    override __.BinaryOperator op =
+    override __.BinaryOperator(op) =
         CommandText <|
         match op with
         | Concatenate -> "+"
@@ -57,7 +57,7 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         | IsNot
         | BitShiftLeft
         | BitShiftRight -> failwithf "Not supported by TSQL: %A" op
-    override __.UnaryOperator op =
+    override __.UnaryOperator(op) =
         CommandText <|
         match op with
         | Negative -> "-"
@@ -65,7 +65,7 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         | NotNull -> "IS NOT NULL"
         | IsNull -> "IS NULL"
         | BitNot -> failwithf "Not supported by TSQL: %A" op
-    override __.SimilarityOperator op =
+    override __.SimilarityOperator(op) =
         CommandText <|
         match op with
         | Like -> "LIKE"

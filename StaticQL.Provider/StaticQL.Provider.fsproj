@@ -55,14 +55,14 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Watcher.fs" />
+    <Compile Include="UserModelCache.fs" />
     <Compile Include="CompileTimeColumnMap.fs" />
     <Compile Include="ProvidedTypesTrickery.fs" />
     <None Include="ProvidedTypes-LICENSE.md" />
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
     <Compile Include="TypeGeneration.fs" />
-    <Compile Include="Watcher.fs" />
-    <Compile Include="UserModelCache.fs" />
     <Compile Include="Provider.fs" />
   </ItemGroup>
   <ItemGroup>

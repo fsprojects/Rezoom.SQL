@@ -127,6 +127,7 @@ let generateSQLType (generate : GenerateType) (sql : string) =
     let commandEffect = CommandEffect.OfSQL(generate.UserModel.Model, generate.TypeName, sql)
     let commandCtor = typeof<CommandConstructor>
     let cmd (r : Type) = typedefof<_ Command>.MakeGenericType(r)
+    let lst (r : Type) = typedefof<_ IReadOnlyList>.MakeGenericType(r)
     let rowTypes, commandCtorMethod, commandType =
         let genRowType = generateRowType generate.UserModel
         match commandEffect.ResultSets |> Seq.toList with
@@ -137,21 +138,21 @@ let generateSQLType (generate : GenerateType) (sql : string) =
         | [ resultSet ] ->
             let rowType = genRowType "Row" resultSet
             [ rowType ]
-            , commandCtor.GetMethod("Command1").MakeGenericMethod(rowType)
-            , cmd rowType
+            , commandCtor.GetMethod("Command1").MakeGenericMethod(lst rowType)
+            , cmd (lst rowType)
         | [ resultSet1; resultSet2 ] ->
             let rowType1 = genRowType "Row1" resultSet1
             let rowType2 = genRowType "Row2" resultSet2
             [ rowType1; rowType2 ]
-            , commandCtor.GetMethod("Command2").MakeGenericMethod(rowType1, rowType2)
-            , cmd <| typedefof<ResultSets<_, _>>.MakeGenericType(rowType1, rowType2)
+            , commandCtor.GetMethod("Command2").MakeGenericMethod(lst rowType1, lst rowType2)
+            , cmd <| typedefof<ResultSets<_, _>>.MakeGenericType(lst rowType1, lst rowType2)
         | [ resultSet1; resultSet2; resultSet3 ] ->
             let rowType1 = genRowType "Row1" resultSet1
             let rowType2 = genRowType "Row2" resultSet2
             let rowType3 = genRowType "Row3" resultSet3
             [ rowType1; rowType2; rowType3 ]
-            , commandCtor.GetMethod("Command3").MakeGenericMethod(rowType1, rowType2, rowType3)
-            , cmd <| typedefof<ResultSets<_, _, _>>.MakeGenericType(rowType1, rowType2, rowType3)
+            , commandCtor.GetMethod("Command3").MakeGenericMethod(lst rowType1, lst rowType2, lst rowType3)
+            , cmd <| typedefof<ResultSets<_, _, _>>.MakeGenericType(lst rowType1, lst rowType2, lst rowType3)
         | sets ->
             failwithf "Too many (%d) result sets from command." (List.length sets)
     let provided =
