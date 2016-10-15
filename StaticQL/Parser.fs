@@ -600,7 +600,7 @@ let private resultColumns =
     precursive <| fun resultColumns ->
         let quantified =
             %% +.resultColumnsQuantifier
-            -? +.name
+            -? +.nameOrKeyword
             -- ws
             -- '('
             -- ws
