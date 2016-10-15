@@ -8,9 +8,13 @@ open StaticQL.Mapping
 open StaticQL.BackendUtilities
 open StaticQL.Translators
 
+type private SQLiteLiteral() =
+    inherit DefaultLiteralTranslator()
+    override __.BooleanLiteral(t) = CommandText <| if t then "1" else "0"
+
 type private SQLiteExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
-    let literal = DefaultLiteralTranslator()
+    let literal = SQLiteLiteral()
     override __.Literal = upcast literal
     override __.TypeName(name) =
         (Seq.singleton << text) <|

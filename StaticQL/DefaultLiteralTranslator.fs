@@ -8,6 +8,7 @@ open StaticQL.BackendUtilities
 type DefaultLiteralTranslator() =
     inherit LiteralTranslator()
     override __.NullLiteral = CommandText "NULL"
+    override __.BooleanLiteral b = CommandText <| if b then "TRUE" else "FALSE"
     override __.IntegerLiteral i = CommandText (i.ToString(CultureInfo.InvariantCulture))
     override __.FloatLiteral f = CommandText (f.ToString("0.0##############", CultureInfo.InvariantCulture))
     override __.BlobLiteral(bytes) =
@@ -20,6 +21,7 @@ type DefaultLiteralTranslator() =
     override this.Literal literal =
         match literal with
         | NullLiteral -> this.NullLiteral
+        | BooleanLiteral t -> this.BooleanLiteral(t)
         | StringLiteral str -> this.StringLiteral(str)
         | BlobLiteral blob -> this.BlobLiteral(blob)
         | NumericLiteral (IntegerLiteral i) -> this.IntegerLiteral(i)

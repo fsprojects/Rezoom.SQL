@@ -10,6 +10,7 @@ open StaticQL.Translators
 
 type private TSQLLiteral() =
     inherit DefaultLiteralTranslator()
+    override __.BooleanLiteral(t) = CommandText <| if t then "1" else "0"
     override __.BlobLiteral(bytes) =
         let hexPairs = bytes |> Array.map (fun b -> b.ToString("X2", CultureInfo.InvariantCulture))
         "0x" + String.Concat(hexPairs) |> text

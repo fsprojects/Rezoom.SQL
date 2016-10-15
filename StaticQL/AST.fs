@@ -15,6 +15,7 @@ type SignedNumericLiteral =
 
 type Literal =
     | NullLiteral
+    | BooleanLiteral of bool
     | StringLiteral of string
     | BlobLiteral of byte array
     | NumericLiteral of NumericLiteral

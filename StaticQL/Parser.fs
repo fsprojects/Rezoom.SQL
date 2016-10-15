@@ -217,6 +217,11 @@ let private kw str =
 let private nullLiteral =
     %% kw "NULL" -|> NullLiteral
 
+let private booleanLiteral =
+    %[  %% kw "TRUE" -|> BooleanLiteral true
+        %% kw "FALSE" -|> BooleanLiteral false
+    ]
+
 let private blobLiteral =
     let octet =
         %% +.(qty.[2] * hex)
@@ -254,10 +259,11 @@ let private signedNumericLiteral =
     -|> fun sign value -> { Sign = sign; Value = value }
 
 let private literal =
-    %[  %% +.numericLiteral -|> NumericLiteral
-        %% +.stringLiteral -|> StringLiteral
-        blobLiteral
+    %[  booleanLiteral
         nullLiteral
+        blobLiteral
+        %% +.stringLiteral -|> StringLiteral
+        %% +.numericLiteral -|> NumericLiteral
     ]
 
 let private typeName =

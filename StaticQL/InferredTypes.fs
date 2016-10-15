@@ -27,6 +27,7 @@ type InferredType =
     static member OfLiteral(literal : Literal) =
         match literal with
         | NullLiteral -> ConcreteType { Nullable = true; Type = AnyType }
+        | BooleanLiteral _ -> InferredType.Boolean
         | StringLiteral _ -> InferredType.String
         | BlobLiteral _ -> InferredType.Blob
         | NumericLiteral (IntegerLiteral _) -> InferredType.Number
