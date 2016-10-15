@@ -100,3 +100,21 @@ type TestRoundTrip() =
         roundtrip """
             alter table Users add LuckyNumber int not null check (LuckyNumber <> 13)
         """
+
+    [<TestMethod>]
+    member __.TestMany() =
+        roundtrip """
+            select u.*, many Groups(g.*)
+            from Users u
+            left join UserGroupMaps gm on gm.UserId = u.Id
+            left join Groups g on g.Id = gm.GroupId
+        """
+     
+    [<TestMethod>]
+    member __.TestOne() =
+        roundtrip """
+            select u.*, many Group(g.*)
+            from Users u
+            left join UserGroupMaps gm on gm.UserId = u.Id
+            left join Groups g on g.Id = gm.GroupId
+        """
