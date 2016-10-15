@@ -518,12 +518,10 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                             {   Expr = expr
                                 FromAlias = None
                                 ColumnName =
-                                    match alias with
-                                    | Some alias -> alias
-                                    | None ->
-                                        match expr.Info.Column with
-                                        | None -> failAt column.Source "Expression-valued column requires an alias"
-                                        | Some col -> col.ColumnName
+                                    match alias, expr.Value with
+                                    | Some alias, _ -> alias
+                                    | None, ColumnNameExpr c -> c.ColumnName
+                                    | None, _ -> failAt column.Source "Expression-valued column requires an alias (bug)"
                             }
                      // typechecker should've eliminated alternatives
                      | _ -> failwith "All columns must be qualified -- this is a typechecker bug"
