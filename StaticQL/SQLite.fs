@@ -23,11 +23,11 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | IntegerTypeName Integer8
             | IntegerTypeName Integer16
             | IntegerTypeName Integer32
-            | IntegerTypeName Integer64 -> "int"
+            | IntegerTypeName Integer64 -> "INT"
             | FloatTypeName Float32
-            | FloatTypeName Float64 -> "float"
-            | StringTypeName(_) -> "varchar"
-            | BinaryTypeName(_) -> "blob"
+            | FloatTypeName Float64 -> "FLOAT"
+            | StringTypeName(_) -> "VARCHAR"
+            | BinaryTypeName(_) -> "BLOB"
             | DecimalTypeName
             | DateTimeTypeName
             | DateTimeOffsetTypeName -> failwith <| sprintf "Unsupported type ``%A``" name
