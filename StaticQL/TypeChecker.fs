@@ -529,7 +529,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         }
     member this.WithClause(withClause : WithClause) =
         let mutable scope = scope
-        TypeChecker(cxt, scope),
+        let clause =
             {   Recursive = withClause.Recursive
                 Tables =
                     seq {
@@ -542,6 +542,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                             cte
                     } |> ResizeArray
             }
+        TypeChecker(cxt, scope), clause
     member this.OrderingTerm(orderingTerm : OrderingTerm) =
         {   By = this.Expr(orderingTerm.By)
             Direction = orderingTerm.Direction
