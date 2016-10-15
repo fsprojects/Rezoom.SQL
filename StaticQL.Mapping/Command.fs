@@ -106,24 +106,28 @@ type private Command1<'a>(fragments, parameters) =
     inherit Command<'a>(fragments, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor1<'a>()
 
+type private MultiResultSetProcessor(readers : EntityReader list) =
+    let mutable row = Unchecked.defaultof<Row>
+    let mutable readers = readers
+    let mutable first = true
+    member __.BeginResultSet(dataReader : IDataReader) =
+        if not first then
+            readers <- List.tail readers
+        else
+            first <- false
+        (List.head readers).ProcessColumns(DataReader.columnMap(dataReader))
+        row <- DataReader.DataReaderRow(dataReader)
+    member __.ProcessRow() =
+        (List.head readers).Read(row)
+
 type private ResultSetProcessor2<'a, 'b>() =
     inherit ResultSetProcessor<ResultSets<'a, 'b>>()
     let aReader = ReaderTemplate<'a>.Template().CreateReader()
     let bReader = ReaderTemplate<'b>.Template().CreateReader()
-    let mutable row = Unchecked.defaultof<Row>
-    let mutable readers =
-        [
-            Unchecked.defaultof<EntityReader>
-            aReader :> EntityReader
-            bReader :> EntityReader
-        ]
+    let proc = MultiResultSetProcessor([ aReader; bReader ])
     let result = lazy ResultSets<'a, 'b>(aReader.ToEntity(), bReader.ToEntity())
-    override __.BeginResultSet(dataReader) =
-        readers <- List.tail readers
-        (List.head readers).ProcessColumns(DataReader.columnMap(dataReader))
-        row <- DataReader.DataReaderRow(dataReader)
-    override __.ProcessRow() =
-        (List.head readers).Read(row)
+    override __.BeginResultSet(dataReader) = proc.BeginResultSet(dataReader)
+    override __.ProcessRow() = proc.ProcessRow()
     override __.GetResult() = result.Value
 
 type private Command2<'a, 'b>(fragments, parameters) =
@@ -135,21 +139,10 @@ type private ResultSetProcessor3<'a, 'b, 'c>() =
     let aReader = ReaderTemplate<'a>.Template().CreateReader()
     let bReader = ReaderTemplate<'b>.Template().CreateReader()
     let cReader = ReaderTemplate<'c>.Template().CreateReader()
-    let mutable row = Unchecked.defaultof<Row>
-    let mutable readers =
-        [
-            Unchecked.defaultof<EntityReader>
-            aReader :> EntityReader
-            bReader :> EntityReader
-            cReader :> EntityReader
-        ]
+    let proc = MultiResultSetProcessor([ aReader; bReader; cReader ])
     let result = lazy ResultSets<'a, 'b, 'c>(aReader.ToEntity(), bReader.ToEntity(), cReader.ToEntity())
-    override __.BeginResultSet(dataReader) =
-        readers <- List.tail readers
-        (List.head readers).ProcessColumns(DataReader.columnMap(dataReader))
-        row <- DataReader.DataReaderRow(dataReader)
-    override __.ProcessRow() =
-        (List.head readers).Read(row)
+    override __.BeginResultSet(dataReader) = proc.BeginResultSet(dataReader)
+    override __.ProcessRow() = proc.ProcessRow()
     override __.GetResult() = result.Value
 
 type private Command3<'a, 'b, 'c>(fragments, parameters) =
