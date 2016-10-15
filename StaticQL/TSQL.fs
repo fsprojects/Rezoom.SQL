@@ -114,6 +114,75 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(indexer)
     let expr = TSQLExpression(this :> StatementTranslator, indexer)
     override __.Expr = upcast expr
+    member this.SelectCoreWithTop(select : TSelectCore, top) =
+        seq {
+            yield text "SELECT"
+            yield ws
+            match top with
+            | None -> ()
+            | Some top ->
+                yield text "TOP"
+                yield ws
+                yield! this.FirstClassValue(top)
+                yield ws
+            yield! this.ResultColumns(select.Columns)
+            match select.From with
+            | None -> ()
+            | Some from ->
+                yield ws
+                yield text "FROM"
+                yield ws
+                yield! this.TableExpr(from)
+            match select.Where with
+            | None -> ()
+            | Some where ->
+                yield ws
+                yield text "WHERE"
+                yield ws
+                yield! this.Predicate(where)
+            match select.GroupBy with
+            | None -> ()
+            | Some groupBy ->
+                yield ws
+                yield text "GROUP BY"
+                yield ws
+                yield! groupBy.By |> Seq.map this.FirstClassValue |> join ","
+                match groupBy.Having with
+                | None -> ()
+                | Some having ->
+                    yield ws
+                    yield text "HAVING"
+                    yield ws
+                    yield! this.Predicate(having)
+        }
+    override this.SelectCore(select) = this.SelectCoreWithTop(select, None)
+    override this.Select(select) =
+        match select.Value.Limit with
+        | None -> base.Select(select)
+        | Some limit ->
+            // TSQL doesn't exactly support LIMIT so what shall we do?
+            match limit.Offset, select.Value.Compound.Value with
+            | None, CompoundTerm { Value = Select core } ->
+                // We can use TOP here
+                this.SelectCoreWithTop(core, Some limit.Limit)
+            | _ ->
+                this.Select(select) // Our override of LIMIT will turn this into an offset/fetch clause
+    override this.Limit(limit) =
+        seq {
+            yield text "OFFSET"
+            yield ws
+            match limit.Offset with
+            | Some offset ->
+                yield! this.FirstClassValue(offset)
+            | None ->
+                yield text "0"
+            yield ws
+            yield text "ROWS FETCH NEXT"
+            yield ws
+            yield! this.FirstClassValue(limit.Limit)
+            yield ws
+            yield text "ROWS ONLY"
+        }
 
 type TSQLBackend() =
     static let initialModel =
