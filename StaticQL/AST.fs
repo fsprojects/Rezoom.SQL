@@ -15,9 +15,6 @@ type SignedNumericLiteral =
 
 type Literal =
     | NullLiteral
-    | CurrentTimeLiteral
-    | CurrentDateLiteral
-    | CurrentTimestampLiteral
     | StringLiteral of string
     | BlobLiteral of byte array
     | NumericLiteral of NumericLiteral

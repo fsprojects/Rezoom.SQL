@@ -217,15 +217,6 @@ let private kw str =
 let private nullLiteral =
     %% kw "NULL" -|> NullLiteral
 
-let private currentTimeLiteral =
-    %% kw "CURRENT_TIME" -|> CurrentTimeLiteral
-
-let private currentDateLiteral =
-    %% kw "CURRENT_DATE" -|> CurrentDateLiteral
-
-let private currentTimestampLiteral =
-    %% kw "CURRENT_TIMESTAMP" -|> CurrentTimestampLiteral
-
 let private blobLiteral =
     let octet =
         %% +.(qty.[2] * hex)
@@ -267,9 +258,6 @@ let private literal =
         %% +.stringLiteral -|> StringLiteral
         blobLiteral
         nullLiteral
-        currentTimeLiteral
-        currentDateLiteral
-        currentTimestampLiteral
     ]
 
 let private typeName =

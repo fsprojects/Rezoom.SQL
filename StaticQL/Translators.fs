@@ -20,9 +20,6 @@ type ExprTranslationContext =
 [<AbstractClass>]
 type LiteralTranslator() =
     abstract member NullLiteral : Fragment
-    abstract member CurrentTimeLiteral : Fragment
-    abstract member CurrentDateLiteral : Fragment
-    abstract member CurrentTimestampLiteral : Fragment
     abstract member StringLiteral : str : string -> Fragment
     abstract member BlobLiteral : bytes : byte array -> Fragment
     abstract member IntegerLiteral : i : uint64 -> Fragment
