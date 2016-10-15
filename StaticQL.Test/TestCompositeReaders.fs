@@ -26,9 +26,9 @@ type Person =
 
 type CompositeKeyType =
     {
-        [<Key>]
+        [<BlueprintKey>]
         FooId : int
-        [<Key>]
+        [<BlueprintKey>]
         BarId : int
         MapName : string
     }
