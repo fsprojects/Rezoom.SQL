@@ -6,3 +6,16 @@ open System
 [<AllowNullLiteral>]
 type BlueprintConstructorAttribute() =
     inherit Attribute()
+
+/// Marks a property as being part of the primary key of its composite type.
+[<AttributeUsage(AttributeTargets.Property ||| AttributeTargets.Field, Inherited = false, AllowMultiple = false)>]
+[<AllowNullLiteral>]
+type BlueprintKeyAttribute() =
+    inherit Attribute()
+
+/// Indicates that a property is represented with a different column name than its own member name.
+[<AttributeUsage(AttributeTargets.Property ||| AttributeTargets.Field, Inherited = false, AllowMultiple = false)>]
+[<AllowNullLiteral>]
+type BlueprintColumnNameAttribute(name : string) =
+    inherit Attribute()
+    member __.Name = name

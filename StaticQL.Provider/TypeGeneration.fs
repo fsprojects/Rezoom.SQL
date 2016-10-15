@@ -47,12 +47,25 @@ let private toFragmentArrayExpr (fragments : CommandFragment IReadOnlyList) =
 let private toCamelCase (str : string) =
     Regex.Replace(str, @"^\p{Lu}+", fun m -> m.Value.ToLowerInvariant())
 
-type KeyType() =
-    [<ComponentModel.DataAnnotations.Key>]
-    member __.DummyKeyProperty = 0
-    static member AttributeData =
-        CustomAttributeData.GetCustomAttributes(typeof<KeyType>.GetProperty("DummyKeyProperty"))
-        |> Seq.find (fun a -> a.AttributeType = typeof<ComponentModel.DataAnnotations.KeyAttribute>)
+let private toRowTypeName (name : string) =
+    // Must sanitize to remove things like * from the name.
+    Regex.Replace(name, @"[^_a-zA-Z0-9]", fun m -> string (char (int m.Value.[0] % 26 + int 'A'))) + "Row"
+
+type private BlueprintKeyAttributeData() =
+    inherit CustomAttributeData()
+    static let keyTy = typeof<BlueprintKeyAttribute>
+    override __.Constructor = keyTy.GetConstructor(Type.EmptyTypes)
+    override __.ConstructorArguments = [||] :> IList<_>
+    override __.NamedArguments = [||] :> IList<_>
+
+type private BlueprintColumnNameAttributeData(name : string) =
+    inherit CustomAttributeData()
+    static let colTy = typeof<BlueprintColumnNameAttribute>
+    override __.Constructor = colTy.GetConstructor([| typeof<string> |])
+    override __.ConstructorArguments =
+        [|  CustomAttributeTypedArgument(typeof<string>, name)
+        |] :> IList<_>
+    override __.NamedArguments = [||] :> IList<_>
 
 let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap : CompileTimeColumnMap) =
     let ty =
@@ -60,15 +73,24 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
             ( name
             , Some typeof<obj>
             , IsErased = false
+            , HideObjectMethods = true
             )
     let fields = ResizeArray()
-    let addField pk name fieldTy =
-        let camel = toCamelCase name
+    let addField pk (name : string) (fieldTy : Type) =
+        let fieldTy, propName =
+            if name.EndsWith("*") then
+                typedefof<_ IReadOnlyList>.MakeGenericType(fieldTy), name.Substring(0, name.Length - 1)
+            elif name.EndsWith("?") then
+                typedefof< _ option>.MakeGenericType(fieldTy), name.Substring(0, name.Length - 1)
+            else fieldTy, name
+        let camel = toCamelCase propName
         let field = ProvidedField("_" + camel, fieldTy)
         field.SetFieldAttributes(FieldAttributes.Private)
-        let getter = ProvidedProperty(name, fieldTy)
+        let getter = ProvidedProperty(propName, fieldTy)
         if pk then
-            getter.AddCustomAttribute(KeyType.AttributeData)
+            getter.AddCustomAttribute(BlueprintKeyAttributeData())
+        if name <> propName then
+            getter.AddCustomAttribute(BlueprintColumnNameAttributeData(name))
         getter.GetterCode <-
             function
             | [ this ] -> Expr.FieldGet(this, field)
@@ -76,9 +98,10 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
         ty.AddMembers [ field :> MemberInfo; getter :> _ ]
         fields.Add(camel, field)
     for KeyValue(name, (_, column)) in columnMap.Columns do
-        addField column.Expr.Info.PrimaryKey name <| column.Expr.Info.Type.CLRType
+        let info = column.Expr.Info
+        addField info.PrimaryKey name info.Type.CLRType
     for KeyValue(name, subMap) in columnMap.SubMaps do
-        let subTy = generateRowTypeFromColumns model (name + "Row") subMap
+        let subTy = generateRowTypeFromColumns model (toRowTypeName name) subMap
         ty.AddMember(subTy)
         addField false name subTy
     let ctorParams = [ for camel, field in fields -> ProvidedParameter(camel, field.FieldType) ]
@@ -157,7 +180,13 @@ let generateSQLType (generate : GenerateType) (sql : string) =
             failwithf "Too many (%d) result sets from command." (List.length sets)
     let provided =
         ProvidedTypeDefinition
-            (generate.Assembly, generate.Namespace, generate.TypeName, Some typeof<obj>, IsErased = false)
+            ( generate.Assembly
+            , generate.Namespace
+            , generate.TypeName
+            , Some typeof<obj>
+            , IsErased = false
+            , HideObjectMethods = true
+            )
     provided.AddMembers rowTypes
     provided.AddMember <| generateCommandMethod generate commandEffect commandType commandCtorMethod
     provided
@@ -165,7 +194,13 @@ let generateSQLType (generate : GenerateType) (sql : string) =
 let generateModelType (generate : GenerateType) =
     let provided =
         ProvidedTypeDefinition
-            (generate.Assembly, generate.Namespace, generate.TypeName, Some typeof<obj>, IsErased = false)
+            ( generate.Assembly
+            , generate.Namespace
+            , generate.TypeName
+            , Some typeof<obj>
+            , IsErased = false
+            , HideObjectMethods = true
+            )
     let migrationsField =
         ProvidedField
             ( "_migrations"

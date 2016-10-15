@@ -46,7 +46,7 @@ let private pickConstructor (ty : Type) =
             (List.length multiple)
 
 /// Pick, in order of most to least preferred:
-/// - the column whose getter is annotated with [<DataAnnotations.Key>] 
+/// - the column whose getter is annotated with [<BlueprintKey>] 
 /// - the column named "ID"
 /// - the column named "{TypeName}ID"
 let private pickIdentity (ty : Type) (cols : IReadOnlyDictionary<string, Column>) =
@@ -56,7 +56,7 @@ let private pickIdentity (ty : Type) (cols : IReadOnlyDictionary<string, Column>
                 match col.Getter with
                 | None -> ()
                 | Some getter ->
-                    let attr = getter.MemberInfo.GetCustomAttribute<DataAnnotations.KeyAttribute>()
+                    let attr = getter.MemberInfo.GetCustomAttribute<BlueprintKeyAttribute>()
                     if not (isNull attr) then yield col
         } |> Seq.toArray
     match attributed with
@@ -104,6 +104,14 @@ let private pickReverseRelationship (ty : Type) (columnName : string) (neighbor 
             |> Seq.tryHead
     | _ -> None
 
+let private pickName (name : string) (getter : Getter option) =
+    match getter with
+    | None -> name
+    | Some getter ->
+        let columnNameAttr = getter.MemberInfo.GetCustomAttribute<BlueprintColumnNameAttribute>()
+        if isNull columnNameAttr then name
+        else columnNameAttr.Name
+
 let rec private compositeShapeOfType ty =
     let ctor, pars = pickConstructor ty
     let props =
@@ -137,6 +145,7 @@ let rec private compositeShapeOfType ty =
                     if getterTy.IsAssignableFrom(setterTy) then Some getter
                     else None
                 let blueprint = lazy ofType setterTy
+                let name = pickName name getter
                 name, {
                     ColumnId = index
                     Name = name
