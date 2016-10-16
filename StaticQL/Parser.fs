@@ -136,17 +136,11 @@ let private stringLiteral =
     -|> String.Concat)
     <?> "string-literal"
 
-let private nameOrString =
-    %[  name
-        %% +.stringLiteral -|> Name
-    ]
-
 let private nameOrKeyword =
     %[  quotedName
         bracketedName
         backtickedName
         unquotedNameOrKeyword
-        %% +.stringLiteral -|> Name
     ]
 
 let private objectName =
@@ -180,26 +174,6 @@ let private columnName =
             }
         | _ -> failwith "Unreachable")
     <?> "column-name"
-
-let private qualifiedColumnName =
-   (%% +.withSource nameOrString
-    -- ws
-    -? '.'
-    -- +.(qty.[0..2] / tws '.' * tws nameOrString)
-    -|> fun initial rest ->
-        match rest.Count with
-        | 0 -> { Table = None; ColumnName = initial.Value }
-        | 1 ->
-            {   Table = Some { Source = initial.Source; SchemaName = None; ObjectName = initial.Value; Info = () }
-                ColumnName = rest.[0]
-            }
-        | 2 ->
-            {   Table =
-                    Some { Source = initial.Source; SchemaName = Some initial.Value; ObjectName = rest.[0]; Info = () }
-                ColumnName = rest.[1]
-            }
-        | _ -> failwith "Unreachable")
-    <?> "qualified-column-name"
 
 let private namedBindParameter =
     %% '@'
@@ -508,7 +482,6 @@ let private term (expr : Parser<Expr<unit, unit>, unit>) =
     -- +.[
             %% '(' -- ws -- +.parenthesized -- ')' -|> id
             %% kw "EXISTS" -- ws -- '(' -- ws -- +.selectStmt -- ')' -|> ExistsExpr
-            %% +.qualifiedColumnName -|> ColumnNameExpr
             %% +.literal -|> LiteralExpr
             %% +.bindParameter -|> BindParameterExpr
             %% +.cast expr -|> CastExpr
@@ -588,7 +561,7 @@ do
 let private parenthesizedColumnNames =
     %% '('
     -- ws
-    -- +.(qty.[0..] / tws ',' * tws nameOrString)
+    -- +.(qty.[0..] / tws ',' * tws name)
     -- ')'
     -- ws
     -|> id
@@ -614,7 +587,7 @@ let private withClause =
 
 let private asAlias =
     %% (zeroOrOne * kw "AS")
-    -? +.nameOrString
+    -? +.name
     -|> id
 
 let private resultColumnCase =
@@ -1175,7 +1148,7 @@ let private updateOr =
 
 let private updateStmt =
     let setColumn =
-        %% +.nameOrString
+        %% +.name
         -- ws
         -- '='
         -- ws
