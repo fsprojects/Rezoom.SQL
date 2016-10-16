@@ -118,3 +118,21 @@ type TestRoundTrip() =
             left join UserGroupMaps gm on gm.UserId = u.Id
             left join Groups g on g.Id = gm.GroupId
         """
+
+    [<TestMethod>]
+    member __.TestDateLiterals() =
+        roundtrip """
+            select *
+            from Users u
+            where 2016-10-16 > 2015-01-01
+        """
+        roundtrip """
+            select *
+            from Users u
+            where 2016-10-16T04:30:31 > 2016-10-16T18:14:19.123
+        """
+        roundtrip """
+            select *
+            from Users u
+            where 2016-10-16T04:30:31+01:30 > 2016-10-16T18:14:19.123-04:00
+        """

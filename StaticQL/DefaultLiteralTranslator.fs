@@ -18,12 +18,18 @@ type DefaultLiteralTranslator() =
     override __.StringLiteral(str) =
         "'" + str.Replace("'", "''") + "'"
         |> text
+    override __.DateTimeLiteral(dt) =
+        CommandText <| dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff")
+    override __.DateTimeOffsetLiteral(dt) =
+        CommandText <| dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffzzz")
     override this.Literal literal =
         match literal with
         | NullLiteral -> this.NullLiteral
         | BooleanLiteral t -> this.BooleanLiteral(t)
         | StringLiteral str -> this.StringLiteral(str)
         | BlobLiteral blob -> this.BlobLiteral(blob)
+        | DateTimeLiteral dt -> this.DateTimeLiteral(dt)
+        | DateTimeOffsetLiteral dt -> this.DateTimeOffsetLiteral(dt)
         | NumericLiteral (IntegerLiteral i) -> this.IntegerLiteral(i)
         | NumericLiteral (FloatLiteral f) -> this.FloatLiteral(f)
     override this.SignedLiteral literal =

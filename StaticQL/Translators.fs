@@ -25,6 +25,8 @@ type LiteralTranslator() =
     abstract member BlobLiteral : bytes : byte array -> Fragment
     abstract member IntegerLiteral : i : uint64 -> Fragment
     abstract member FloatLiteral : f : float -> Fragment
+    abstract member DateTimeLiteral : dt : DateTime -> Fragment
+    abstract member DateTimeOffsetLiteral : dt : DateTimeOffset -> Fragment
     abstract member Literal : literal : Literal -> Fragment
     abstract member SignedLiteral : literal : SignedNumericLiteral -> Fragments
 

@@ -18,6 +18,8 @@ type Literal =
     | StringLiteral of string
     | BlobLiteral of byte array
     | NumericLiteral of NumericLiteral
+    | DateTimeLiteral of DateTime
+    | DateTimeOffsetLiteral of DateTimeOffset
 
 type SavepointName = Name
 

@@ -233,6 +233,47 @@ let private blobLiteral =
     -|> (Seq.toArray >> BlobLiteral))
     <?> "blob-literal"
 
+let private dateTimeishLiteral =
+    let digit = digit |>> fun c -> int c - int '0'
+    let digits n =
+        qty.[n] * digit |>> Array.fold (fun acc next -> acc * 10 + next) 0
+    let date = %% +.digits 4 -- '-' -- +.digits 2 -- '-' -- +.digits 2 -%> auto
+    let time = %% ci 'T' -- +.digits 2 -- ':' -- +.digits 2 -- ':' -- +.digits 2 -%> auto
+    let ms =
+        %% '.' -- +.(qty.[1..3] * digit)
+        -|> fun ds ->
+            let n = Seq.fold (fun acc next -> acc * 10 + next) 0 ds
+            let delta = ds.Count - 3
+            if delta > 0 then n / pown 10 delta
+            elif delta < 0 then n * pown 10 (-delta)
+            else n
+    let offsetPart =
+        %% +.[ %% '+' -|> 1; %% '-' -|> -1 ]
+        -- +.digits 2
+        -- ':'
+        -- +.digits 2
+        -%> auto
+    let timePart =
+        %% +.time
+        -- +.(zeroOrOne * ms)
+        -- +.(zeroOrOne * offsetPart)
+        -%> auto
+    %% +.date
+    ?- +.(zeroOrOne * timePart)
+    -|> fun (year, month, day) time ->
+        match time with
+        | None -> DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc) |> DateTimeLiteral
+        | Some ((hour, minute, second), ms, offset) ->
+            let ms = ms |? 0
+            let dateTime = DateTime(year, month, day, hour, minute, second, ms)
+            match offset with
+            | None ->
+                DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
+                |> DateTimeLiteral
+            | Some (sign, offsetHour, offsetMinute) ->
+                DateTimeOffset(dateTime, TimeSpan(offsetHour * sign, offsetMinute * sign, 0))
+                |> DateTimeOffsetLiteral
+
 let private numericLiteral =
     let options =
         NumberLiteralOptions.AllowHexadecimal
@@ -263,6 +304,7 @@ let private literal =
         nullLiteral
         blobLiteral
         %% +.stringLiteral -|> StringLiteral
+        dateTimeishLiteral
         %% +.numericLiteral -|> NumericLiteral
     ]
 

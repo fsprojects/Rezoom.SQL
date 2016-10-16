@@ -20,6 +20,8 @@ type InferredType =
             ]
     static member String = ConcreteType { Nullable = false; Type = StringType }
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
+    static member DateTime = ConcreteType { Nullable = false; Type = DateTimeType }
+    static member DateTimeOffset = ConcreteType { Nullable = false; Type = DateTimeOffsetType }
     static member Blob = ConcreteType { Nullable = false; Type = BinaryType }
     static member Any = ConcreteType { Nullable = false; Type = AnyType }
     static member Dependent(ifNull : InferredType, outputType : CoreColumnType) =
@@ -32,6 +34,8 @@ type InferredType =
         | BlobLiteral _ -> InferredType.Blob
         | NumericLiteral (IntegerLiteral _) -> InferredType.Number
         | NumericLiteral (FloatLiteral _) -> InferredType.Float
+        | DateTimeLiteral _ -> InferredType.DateTime
+        | DateTimeOffsetLiteral _ -> InferredType.DateTimeOffset
     static member OfTypeName(typeName : TypeName, inputType : InferredType) =
         let affinity = CoreColumnType.OfTypeName(typeName)
         match inputType with
