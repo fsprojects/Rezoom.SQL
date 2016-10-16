@@ -6,8 +6,7 @@ open Microsoft.VisualStudio.TestTools.UnitTesting
 type TestRawQueries() =
     [<TestMethod>]
     member __.TestQuerySingleUser() =
-        {
-            Task =
+        {   Task =
                 plan {
                     let! user = rawQuery "select Id, Name from Users where Id = {0}" [1]
                     return string <| user.Rows.[0].[1]
@@ -17,8 +16,7 @@ type TestRawQueries() =
 
     [<TestMethod>]
     member __.TestConcurrentQueries() =
-        {
-            Task =
+        {   Task =
                 plan {
                     let! users = rawQuery "select Id from Users" []
                     let names = new ResizeArray<string>()

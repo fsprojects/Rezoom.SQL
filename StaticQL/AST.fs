@@ -8,8 +8,7 @@ type NumericLiteral =
     | FloatLiteral of float
 
 type SignedNumericLiteral =
-    {
-        Sign : int // -1, 0, 1
+    {   Sign : int // -1, 0, 1
         Value : NumericLiteral
     }
 
@@ -45,8 +44,7 @@ type TypeName =
     | DateTimeOffsetTypeName
 
 type ObjectName<'t> =
-    {
-        Source : SourceInfo
+    {   Source : SourceInfo
         SchemaName : Name option
         ObjectName : Name
         Info : 't
@@ -58,8 +56,7 @@ type ObjectName<'t> =
         | Some schema -> schema + "." + this.ObjectName
 
 type ColumnName<'t> =
-    {
-        Table : ObjectName<'t> option
+    {   Table : ObjectName<'t> option
         ColumnName : Name
     }
     override this.ToString() =
@@ -141,41 +138,35 @@ type ExprType<'t, 'e> =
     | RaiseExpr of Raise
 
 and Expr<'t, 'e> =
-    {
-        Value : ExprType<'t, 'e>
+    {   Value : ExprType<'t, 'e>
         Info : 'e
         Source : SourceInfo
     }
 
 and InExpr<'t, 'e> =
-    {
-        Invert : bool
+    {   Invert : bool
         Input : Expr<'t, 'e>
         Set : InSet<'t, 'e> WithSource
     }
 
 and CollationExpr<'t, 'e> =
-    {
-        Input : Expr<'t, 'e>
+    {   Input : Expr<'t, 'e>
         Collation : Name
     }
 
 and BinaryExpr<'t, 'e> =
-    {
-        Left : Expr<'t, 'e>
+    {   Left : Expr<'t, 'e>
         Operator : BinaryOperator
         Right : Expr<'t, 'e>
     }
 
 and UnaryExpr<'t, 'e> =
-    {
-        Operator : UnaryOperator
+    {   Operator : UnaryOperator
         Operand : Expr<'t, 'e>
     }
 
 and SimilarityExpr<'t, 'e> =
-    {
-        Invert : bool
+    {   Invert : bool
         Operator : SimilarityOperator
         Input : Expr<'t, 'e>
         Pattern : Expr<'t, 'e>
@@ -183,34 +174,29 @@ and SimilarityExpr<'t, 'e> =
     }
 
 and BetweenExpr<'t, 'e> =
-    {
-        Invert : bool
+    {   Invert : bool
         Input : Expr<'t, 'e>
         Low : Expr<'t, 'e>
         High : Expr<'t, 'e>
     }
 
 and CastExpr<'t, 'e> =
-    {
-        Expression : Expr<'t, 'e>
+    {   Expression : Expr<'t, 'e>
         AsType : TypeName
     }
  
 and TableInvocation<'t, 'e> =
-    {
-        Table : ObjectName<'t>
+    {   Table : ObjectName<'t>
         Arguments : Expr<'t, 'e> ResizeArray option // we use an option to distinguish between schema.table and schema.table()
     }
 
 and FunctionInvocationExpr<'t, 'e> =
-    {
-        FunctionName : Name
+    {   FunctionName : Name
         Arguments : FunctionArguments<'t, 'e>
     }
 
 and CaseExpr<'t, 'e> =
-    {
-        Input : Expr<'t, 'e> option
+    {   Input : Expr<'t, 'e> option
         Cases : (Expr<'t, 'e> * Expr<'t, 'e>) ResizeArray
         Else : Expr<'t, 'e> option WithSource
     }
@@ -231,8 +217,7 @@ and InSet<'t, 'e> =
     | InTable of TableInvocation<'t, 'e>
 
 and SelectStmtCore<'t, 'e> =
-    {
-        With : WithClause<'t, 'e> option
+    {   With : WithClause<'t, 'e> option
         Compound : CompoundExpr<'t, 'e>
         OrderBy : OrderingTerm<'t, 'e> ResizeArray option
         Limit : Limit<'t, 'e> option
@@ -242,14 +227,12 @@ and SelectStmtCore<'t, 'e> =
 and SelectStmt<'t, 'e> = SelectStmtCore<'t, 'e> WithSource
 
 and WithClause<'t, 'e> =
-    {
-        Recursive : bool
+    {   Recursive : bool
         Tables : CommonTableExpression<'t, 'e> ResizeArray
     }
 
 and CommonTableExpression<'t, 'e> =
-    {
-        Name : Name
+    {   Name : Name
         ColumnNames : Name ResizeArray WithSource option
         AsSelect : SelectStmt<'t, 'e>
         Info : 't
@@ -260,14 +243,12 @@ and OrderDirection =
     | Descending
 
 and OrderingTerm<'t, 'e> =
-    {
-        By : Expr<'t, 'e>
+    {   By : Expr<'t, 'e>
         Direction : OrderDirection
     }
 
 and Limit<'t, 'e> =
-    {
-        Limit : Expr<'t, 'e>
+    {   Limit : Expr<'t, 'e>
         Offset : Expr<'t, 'e> option
     }
 
@@ -298,8 +279,7 @@ and CompoundTerm<'t, 'e> =
     }
 
 and SelectCore<'t, 'e> =
-    {
-        Columns : ResultColumns<'t, 'e>
+    {   Columns : ResultColumns<'t, 'e>
         From : TableExpr<'t, 'e> option
         Where : Expr<'t, 'e> option
         GroupBy : GroupBy<'t, 'e> option
@@ -307,14 +287,12 @@ and SelectCore<'t, 'e> =
     }
 
 and GroupBy<'t, 'e> =
-    {
-        By : Expr<'t, 'e> ResizeArray
+    {   By : Expr<'t, 'e> ResizeArray
         Having : Expr<'t, 'e> option
     }
 
 and ResultColumns<'t, 'e> =
-    {
-        Distinct : DistinctColumns option
+    {   Distinct : DistinctColumns option
         Columns : ResultColumn<'t, 'e> ResizeArray
     }
 
@@ -334,8 +312,7 @@ and IndexHint =
     | NotIndexed
 
 and QualifiedTableName<'t> =
-    {
-        TableName : ObjectName<'t>
+    {   TableName : ObjectName<'t>
         IndexHint : IndexHint option
     }
 
@@ -344,8 +321,7 @@ and TableOrSubqueryType<'t, 'e> =
     | Subquery of SelectStmt<'t, 'e>
 
 and TableOrSubquery<'t, 'e> =
-    {
-        Table : TableOrSubqueryType<'t, 'e>
+    {   Table : TableOrSubqueryType<'t, 'e>
         Alias : Name option
         Info : 't
     }
@@ -362,8 +338,7 @@ and JoinConstraint<'t, 'e> =
     | JoinUnconstrained
 
 and Join<'t, 'e> =
-    {
-        JoinType : JoinType
+    {   JoinType : JoinType
         LeftTable : TableExpr<'t, 'e>
         RightTable : TableExpr<'t, 'e>
         Constraint : JoinConstraint<'t, 'e>
@@ -398,22 +373,19 @@ type ForeignKeyRule =
     | EventRule of (ForeignKeyEvent * ForeignKeyEventHandler)
 
 type ForeignKeyDeferClause =
-    {
-        Deferrable : bool
+    {   Deferrable : bool
         InitiallyDeferred : bool option
     }
 
 type ForeignKeyClause<'t> =
-    {
-        ReferencesTable : ObjectName<'t>
+    {   ReferencesTable : ObjectName<'t>
         ReferencesColumns : Name ResizeArray option
         Rules : ForeignKeyRule ResizeArray
         Defer : ForeignKeyDeferClause option
     }
 
 type PrimaryKeyClause =
-    {
-        Order : OrderDirection
+    {   Order : OrderDirection
         ConflictClause : ConflictClause option
         AutoIncrement : bool
     }
@@ -429,14 +401,12 @@ type ColumnConstraintType<'t, 'e> =
     | ForeignKeyConstraint of ForeignKeyClause<'t>
 
 type ColumnConstraint<'t, 'e> =
-    {
-        Name : Name option
+    {   Name : Name option
         ColumnConstraintType : ColumnConstraintType<'t, 'e>
     }
 
 type ColumnDef<'t, 'e> =
-    {
-        Name : Name
+    {   Name : Name
         Type : TypeName
         Constraints : ColumnConstraint<'t, 'e> ResizeArray
     }
@@ -446,8 +416,7 @@ type AlterTableAlteration<'t, 'e> =
     | AddColumn of ColumnDef<'t, 'e>
 
 type AlterTableStmt<'t, 'e> =
-    {
-        Table : ObjectName<'t>
+    {   Table : ObjectName<'t>
         Alteration : AlterTableAlteration<'t, 'e>
     }
 
@@ -456,8 +425,7 @@ type TableIndexConstraintType =
     | Unique
 
 type TableIndexConstraintClause<'t, 'e> =
-    {
-        Type : TableIndexConstraintType
+    {   Type : TableIndexConstraintType
         IndexedColumns : (Expr<'t, 'e> * OrderDirection) ResizeArray
         ConflictClause : ConflictClause option
     }
@@ -468,14 +436,12 @@ type TableConstraintType<'t, 'e> =
     | TableCheckConstraint of Expr<'t, 'e>
 
 type TableConstraint<'t, 'e> =
-    {
-        Name : Name option
+    {   Name : Name option
         TableConstraintType : TableConstraintType<'t, 'e>
     }
 
 type CreateTableDefinition<'t, 'e> =
-    {
-        Columns : ColumnDef<'t, 'e> ResizeArray
+    {   Columns : ColumnDef<'t, 'e> ResizeArray
         Constraints : TableConstraint<'t, 'e> ResizeArray
         WithoutRowId : bool
     }
@@ -485,16 +451,14 @@ type CreateTableAs<'t, 'e> =
     | CreateAsSelect of SelectStmt<'t, 'e>
 
 type CreateTableStmt<'t, 'e> =
-    {
-        Temporary : bool
+    {   Temporary : bool
         IfNotExists : bool
         Name : ObjectName<'t>
         As : CreateTableAs<'t, 'e>
     }
 
 type CreateIndexStmt<'t, 'e> =
-    {
-        Unique : bool
+    {   Unique : bool
         IfNotExists : bool
         IndexName : ObjectName<'t>
         TableName : ObjectName<'t>
@@ -503,8 +467,7 @@ type CreateIndexStmt<'t, 'e> =
     }
 
 type DeleteStmt<'t, 'e> =
-    {
-        With : WithClause<'t, 'e> option
+    {   With : WithClause<'t, 'e> option
         DeleteFrom : QualifiedTableName<'t>
         Where : Expr<'t, 'e> option
         OrderBy : OrderingTerm<'t, 'e> ResizeArray option
@@ -519,8 +482,7 @@ type UpdateOr =
     | UpdateOrIgnore
 
 type UpdateStmt<'t, 'e> =
-    {
-        With : WithClause<'t, 'e> option
+    {   With : WithClause<'t, 'e> option
         UpdateTable : QualifiedTableName<'t>
         Or : UpdateOr option
         Set : (Name * Expr<'t, 'e>) ResizeArray
@@ -537,8 +499,7 @@ type InsertOr =
     | InsertOrIgnore
 
 type InsertStmt<'t, 'e> =
-    {
-        With : WithClause<'t, 'e> option
+    {   With : WithClause<'t, 'e> option
         Or : InsertOr option
         InsertInto : ObjectName<'t>
         Columns : Name ResizeArray option
@@ -546,8 +507,7 @@ type InsertStmt<'t, 'e> =
     }
 
 type CreateViewStmt<'t, 'e> =
-    {
-        Temporary : bool
+    {   Temporary : bool
         IfNotExists : bool
         ViewName : ObjectName<'t>
         ColumnNames : Name ResizeArray option
@@ -561,8 +521,7 @@ type DropObjectType =
     | DropView
 
 type DropObjectStmt<'t> =
-    {
-        Drop : DropObjectType
+    {   Drop : DropObjectType
         IfExists : bool
         ObjectName : ObjectName<'t>
     }
