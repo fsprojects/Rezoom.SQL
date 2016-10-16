@@ -4,8 +4,9 @@ open System.Data
 open System.Data.Common
 open System.Collections.Generic
 open System.Text
+open System.Threading.Tasks
 
-type CommandBatch(conn : DbConnection) =
+type private CommandBatchBuilder(conn : DbConnection) =
     static let terminatorColumn i = "STATICQL_TERMINATOR_" + string i
     static let terminator i = ";--'*/;SELECT NULL AS " + terminatorColumn i
     static let parameterName i = "@STATICQL_" + string i
@@ -38,112 +39,71 @@ type CommandBatch(conn : DbConnection) =
                 builder.Append(terminator commandIndex) |> ignore
         dbCommand.CommandText <- builder.ToString()
 
-    let evaluate() = async {
-        match result with // if one of the subscribers ran synchronously we need to pull that result
-        | Some r -> return r
-        | None ->
-        if evaluating then failwith "Already evaluating command"
-        else evaluating <- true
-        use dbCommand = conn.CreateCommand()
-        buildCommand dbCommand
-        use! reader = Async.AwaitTask <| dbCommand.ExecuteReaderAsync()
-        let processed = ResizeArray()
-        for i = 0 to commands.Count - 1 do
-            let cmd = commands.[i]
-            let processor = cmd.ObjectResultSetProcessor()
-            let mutable resultSetCount = match cmd.ResultSetCount with | Some 0 -> -1 | _ -> 0
-            while resultSetCount >= 0 do
-                processor.BeginResultSet(reader)
-                let mutable hasRows = true
-                while hasRows do
-                    let! hasRow = Async.AwaitTask <| reader.ReadAsync()
-                    if hasRow then
-                        processor.ProcessRow()
-                    else
-                        hasRows <- false
-                resultSetCount <- resultSetCount + 1
-                let! hasNextResult = Async.AwaitTask <| reader.NextResultAsync()
-                match cmd.ResultSetCount with
-                | None -> // check for terminator
-                    if not hasNextResult || reader.FieldCount = 1 && reader.GetName(0) = terminatorColumn i then
-                        resultSetCount <- -1
-                    else
-                        let! hasNextResult = Async.AwaitTask <| reader.NextResultAsync() // skip over terminator
-                        if not hasNextResult then
+    member __.Evaluate() =
+        async {
+            match result with // if one ran synchronously we need to pull that result
+            | Some r -> return r
+            | None ->
+            if evaluating then failwith "Already evaluating command"
+            else evaluating <- true
+            use dbCommand = conn.CreateCommand()
+            buildCommand dbCommand
+            use! reader = Async.AwaitTask <| dbCommand.ExecuteReaderAsync()
+            let processed = ResizeArray()
+            for i = 0 to commands.Count - 1 do
+                let cmd = commands.[i]
+                let processor = cmd.ObjectResultSetProcessor()
+                let mutable resultSetCount = match cmd.ResultSetCount with | Some 0 -> -1 | _ -> 0
+                while resultSetCount >= 0 do
+                    processor.BeginResultSet(reader)
+                    let mutable hasRows = true
+                    while hasRows do
+                        let! hasRow = Async.AwaitTask <| reader.ReadAsync()
+                        if hasRow then
+                            processor.ProcessRow()
+                        else
+                            hasRows <- false
+                    resultSetCount <- resultSetCount + 1
+                    let! hasNextResult = Async.AwaitTask <| reader.NextResultAsync()
+                    match cmd.ResultSetCount with
+                    | None -> // check for terminator
+                        if not hasNextResult || reader.FieldCount = 1 && reader.GetName(0) = terminatorColumn i then
                             resultSetCount <- -1
-                | Some count ->
-                    if resultSetCount = count then 
-                        resultSetCount <- -1
-                    elif not hasNextResult then
-                        failwithf
-                            "Command claimed it would produce %d result sets, but only yielded %d"
-                            count resultSetCount
-            processed.Add(processor.ObjectGetResult())
-        return processed
-    }
-
-    let evaluateSync() =
-        if evaluating then failwith "Already evaluating command"
-        else evaluating <- true
-        use dbCommand = conn.CreateCommand()
-        buildCommand dbCommand
-        use reader = dbCommand.ExecuteReader()
-        let processed = ResizeArray()
-        for i = 0 to commands.Count - 1 do
-            let cmd = commands.[i]
-            let processor = cmd.ObjectResultSetProcessor()
-            let mutable resultSetCount = match cmd.ResultSetCount with | Some 0 -> -1 | _ -> 0
-            while resultSetCount >= 0 do
-                processor.BeginResultSet(reader)
-                let mutable hasRows = true
-                while hasRows do
-                    let hasRow = reader.Read()
-                    if hasRow then
-                        processor.ProcessRow()
-                    else
-                        hasRows <- false
-                resultSetCount <- resultSetCount + 1
-                let hasNextResult = reader.NextResult()
-                match cmd.ResultSetCount with
-                | None -> // check for terminator
-                    if not hasNextResult || reader.FieldCount = 1 && reader.GetName(0) = terminatorColumn i then
-                        resultSetCount <- -1
-                    else
-                        let hasNextResult = reader.NextResult() // skip over terminator
-                        if not hasNextResult then
+                        else
+                            let! hasNextResult = Async.AwaitTask <| reader.NextResultAsync() // skip over terminator
+                            if not hasNextResult then
+                                resultSetCount <- -1
+                    | Some count ->
+                        if resultSetCount = count then 
                             resultSetCount <- -1
-                | Some count ->
-                    if resultSetCount = count then 
-                        resultSetCount <- -1
-                    elif not hasNextResult then
-                        failwithf
-                            "Command claimed it would produce %d result sets, but only yielded %d"
-                            count resultSetCount
-            processed.Add(processor.ObjectGetResult())
-        result <- Some processed
-        processed
+                        elif not hasNextResult then
+                            failwithf
+                                "Command claimed it would produce %d result sets, but only yielded %d"
+                                count resultSetCount
+                processed.Add(processor.ObjectGetResult())
+            return processed
+        }
 
-    let evaluation = lazy evaluate()
-    let evaluationSync = lazy evaluateSync()
-
-    member private this.BatchAsync(cmd : Command) =
+    member __.BatchCommand(cmd) =
         let index = commands.Count
         commands.Add(cmd)
+        index
+
+type CommandBatch(conn : DbConnection) =
+    let builder = CommandBatchBuilder(conn)
+    let evaluation = lazy Async.RunSynchronously(builder.Evaluate())
+    member __.Batch(cmd : #Command<'a>) =
+        let index = builder.BatchCommand(cmd)
         fun () ->
-            async {
-                let! allCommandResults = evaluation.Value
-                return allCommandResults.[index]
-            }
-    member this.BatchAsync(cmd : #Command<'a>) =
-        let batched = this.BatchAsync(cmd :> Command)
+            evaluation.Value.[index] |> Unchecked.unbox : 'a
+
+type AsyncCommandBatch(conn : DbConnection) =
+    let builder = CommandBatchBuilder(conn)
+    let evaluation = lazy Async.StartAsTask(builder.Evaluate())
+    member __.Batch(cmd : #Command<'a>) =
+        let index = builder.BatchCommand(cmd)
         fun () ->
-            async {
-                let! boxed = batched()
-                return (Unchecked.unbox boxed : 'a)
-            }
-    member private this.BatchSync(cmd : Command) =
-        let index = commands.Count
-        commands.Add(cmd)
-        fun () -> evaluationSync.Value.[index]
-    member this.BatchSync(cmd : #Command<'a>) =
-        this.BatchSync(cmd) |> fun x () -> x() |> Unchecked.unbox : 'a
+            evaluation.Value.ContinueWith
+                ( (fun (t : _ ResizeArray Task) -> t.Result.[index] |> Unchecked.unbox : 'a)
+                , TaskContinuationOptions.ExecuteSynchronously
+                )
