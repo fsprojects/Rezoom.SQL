@@ -6,8 +6,7 @@ open StaticQL
 type TestTypeInference() =
     static let zeroSchema name =
         {   SchemaName = name
-            Tables = Map.empty
-            Views = Map.empty
+            Objects = Map.empty
         }
     static let zeroModel =
         {   Schemas =

@@ -223,15 +223,14 @@ and InferredSelectScope =
         }
 
     member private this.ResolveObjectReferenceBySchema(schema : Schema, name : Name) =
-        match schema.Tables.TryFind(name) with
-        |  Some tbl ->
+        match schema.Objects |> Map.tryFind name with
+        | Some (SchemaTable tbl) ->
             { Table = TableReference tbl; Query = inferredOfTable(tbl) } |> TableLike |> Found
-        | None ->
-            match schema.Views.TryFind(name) with
-            | Some view ->
-                { Table = ViewReference view; Query = inferredOfView(view) } |> TableLike |> Found
-            | None ->
-                NotFound <| sprintf "No such table in schema %O: ``%O``" schema.SchemaName name
+        | Some (SchemaView view) ->
+            { Table = ViewReference view; Query = inferredOfView(view) } |> TableLike |> Found
+        | Some _ ->
+            Ambiguous <| sprintf "Not a table or table-like object: ``%O``" name
+        | None -> NotFound <| sprintf "No such table in schema %O: ``%O``" schema.SchemaName name
 
     /// Resolve a reference to a table which may occur as part of a TableExpr.
     /// This will resolve against the database model and CTEs, but not table aliases defined in the FROM clause.

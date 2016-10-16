@@ -73,12 +73,20 @@ type Model =
 
 and Schema =
     {   SchemaName : Name
-        Tables : Map<Name, SchemaTable>
-        Views : Map<Name, SchemaView>
+        Objects : Map<Name, SchemaObject>
     }
-    member this.ContainsObject(name : Name) =
-        this.Tables.ContainsKey(name)
-        || this.Views.ContainsKey(name)
+    member this.ContainsObject(name : Name) = this.Objects.ContainsKey(name)
+
+and SchemaObject =
+    | SchemaTable of SchemaTable
+    | SchemaView of SchemaView
+    | SchemaIndex of SchemaIndex
+
+and SchemaIndex =
+    {   SchemaName : Name
+        TableName : Name
+        IndexName : Name
+    }
 
 and SchemaTable =
     {   SchemaName : Name

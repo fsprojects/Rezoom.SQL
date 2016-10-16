@@ -189,12 +189,10 @@ type TSQLBackend() =
         let main, temp = Name("dbo"), Name("temp")
         {   Schemas =
                 [   {   SchemaName = main
-                        Tables = Map.empty
-                        Views = Map.empty
+                        Objects = Map.empty
                     }
                     {   SchemaName = temp
-                        Tables = Map.empty
-                        Views = Map.empty
+                        Objects = Map.empty
                     }
                 ] |> List.map (fun s -> s.SchemaName, s) |> Map.ofList
             DefaultSchema = main

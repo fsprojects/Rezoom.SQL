@@ -519,7 +519,6 @@ type CreateViewStmt<'t, 'e> =
 type DropObjectType =
     | DropIndex
     | DropTable
-    | DropTrigger
     | DropView
 
 type DropObjectStmt<'t> =

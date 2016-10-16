@@ -42,12 +42,10 @@ type SQLiteBackend() =
         let main, temp = Name("main"), Name("temp")
         {   Schemas =
                 [   {   SchemaName = main
-                        Tables = Map.empty
-                        Views = Map.empty
+                        Objects = Map.empty
                     }
                     {   SchemaName = temp
-                        Tables = Map.empty
-                        Views = Map.empty
+                        Objects = Map.empty
                     }
                 ] |> List.map (fun s -> s.SchemaName, s) |> Map.ofList
             DefaultSchema = main

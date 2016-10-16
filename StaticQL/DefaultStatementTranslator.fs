@@ -486,7 +486,6 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 match drop.Drop with
                 | DropIndex -> text "INDEX"
                 | DropTable -> text "TABLE"
-                | DropTrigger -> text "TRIGGER"
                 | DropView -> text "VIEW"
             yield ws
             if drop.IfExists then

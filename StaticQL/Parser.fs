@@ -1231,7 +1231,6 @@ let private ifExists =
 let private dropObjectType =
     %[  %% kw "INDEX" -|> DropIndex
         %% kw "TABLE" -|> DropTable
-        %% kw "TRIGGER" -|> DropTrigger
         %% kw "VIEW" -|> DropView
     ]
 
