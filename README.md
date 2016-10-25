@@ -25,14 +25,9 @@ This is similar in effect to Haskell's Haxl.
 
   * Compatibility wrappers to help implement errands from C#.
 
+  * Execution layer to run a `Plan` as a `System.Threading.Task` with batching/caching/deduplication.
+
   * Note: errand API is still unstable.
-
-* Execution library Rezoom.Execution
-
-  * Executes Rezoom `Plan` as a `System.Threading.Task`, deduplicating errands.
-
-  * End users could swap this library out for their own custom
-    execution logic, for example to customize how caching works.
 
 * Test library Rezoom.Test
 
@@ -64,16 +59,6 @@ This is similar in effect to Haskell's Haxl.
   * Generates IL for fast object construction.
 
   * Uses column naming convention to materialize nested structures, e.g. a list of Groups each with a nested list of Users.
-
-* Integration Rezoom.ADO
-
-  * Implements Rezoom errands for running SQL queries and getting the
-    results either as raw object arrays or materialized using
-    `StaticQL.Mapping`.
-
-  * This library will probably be replaced as StaticQL is further
-    developed. There is already some rewritten code in
-    StaticQL.Mapping for executing commands in batches.
 
 ## What's in progress
 
