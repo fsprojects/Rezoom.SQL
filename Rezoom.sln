@@ -15,13 +15,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rezoom.IPGeo", "Rezoom.IPGe
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.IPGeo.Test", "Rezoom.IPGeo.Test\Rezoom.IPGeo.Test.fsproj", "{97D70AE4-41FB-47D0-B518-589799F093D5}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "StaticQL.Mapping", "StaticQL.Mapping\StaticQL.Mapping.fsproj", "{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Mapping", "Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj", "{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "StaticQL.Test", "StaticQL.Test\StaticQL.Test.fsproj", "{AA699897-F692-4ED0-9865-98B6B4C713DB}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Test", "Rezoom.SQL.Test\Rezoom.SQL.Test.fsproj", "{AA699897-F692-4ED0-9865-98B6B4C713DB}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "StaticQL.Provider", "StaticQL.Provider\StaticQL.Provider.fsproj", "{7B1765CB-23F8-419A-9CC6-3DA319ED066F}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Provider", "Rezoom.SQL.Provider\Rezoom.SQL.Provider.fsproj", "{7B1765CB-23F8-419A-9CC6-3DA319ED066F}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "StaticQL", "StaticQL\StaticQL.fsproj", "{87FCD04A-1F90-4D53-A428-CF5F5C532A22}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL", "Rezoom.SQL\Rezoom.SQL.fsproj", "{87FCD04A-1F90-4D53-A428-CF5F5C532A22}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
