@@ -4,14 +4,10 @@ open Rezoom.SQL
 
 [<TestClass>]
 type TestTypeInference() =
-    static let zeroSchema name =
-        {   SchemaName = name
-            Objects = Map.empty
-        }
     static let zeroModel =
         {   Schemas =
-                [   zeroSchema (Name("main"))
-                    zeroSchema (Name("temp"))
+                [   Schema.Empty(Name("main"))
+                    Schema.Empty(Name("temp"))
                 ] |> List.map (fun s -> s.SchemaName, s) |> Map.ofList
             DefaultSchema = Name("main")
             TemporarySchema = Name("temp")

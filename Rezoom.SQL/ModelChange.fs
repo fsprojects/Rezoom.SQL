@@ -119,13 +119,20 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     dropped()
                 | _ ->
                     failAt drop.ObjectName.Source <| sprintf "Not a %s: ``%O``" typeName objName
+    member this.CreateIndex(create : InfCreateIndexStmt) =
+        match create.TableName.Info with
+        | TableLike { Table = TableReference schemaTable } ->
+            
+            failwith ""
+        | _ ->
+            failAt create.TableName.Source <| sprintf "Not a table: ``%O``" create.TableName
             
     member this.Statement(stmt : InfStmt) =
         match stmt with
         | AlterTableStmt alter -> this.AlterTable(alter)
         | CreateTableStmt create -> this.CreateTable(create)
         | CreateViewStmt create -> this.CreateView(create)
-        | CreateIndexStmt create -> failwith "not implemented"
+        | CreateIndexStmt create -> this.CreateIndex(create)
         | DropObjectStmt drop -> this.DropObject(drop)
         | BeginStmt
         | CommitStmt

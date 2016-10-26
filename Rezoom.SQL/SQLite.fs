@@ -41,12 +41,8 @@ type SQLiteBackend() =
     static let initialModel =
         let main, temp = Name("main"), Name("temp")
         {   Schemas =
-                [   {   SchemaName = main
-                        Objects = Map.empty
-                    }
-                    {   SchemaName = temp
-                        Objects = Map.empty
-                    }
+                [   Schema.Empty(main)
+                    Schema.Empty(temp)
                 ] |> List.map (fun s -> s.SchemaName, s) |> Map.ofList
             DefaultSchema = main
             TemporarySchema = temp

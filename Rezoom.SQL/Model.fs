@@ -60,6 +60,12 @@ type FunctionType =
         Aggregate : bool
     }
 
+/// Something an object can be dependent on.
+type DependencyTarget =
+    {   ObjectName : Name
+        ColumnName : Name option
+    }
+
 type DatabaseBuiltin =
     {   Functions : Map<Name, FunctionType>
     }
@@ -74,8 +80,18 @@ type Model =
 and Schema =
     {   SchemaName : Name
         Objects : Map<Name, SchemaObject>
+        Dependencies : Map<DependencyTarget, Name Set>
     }
+    static member Empty(name) =
+        {   SchemaName = name
+            Objects = Map.empty
+            Dependencies = Map.empty
+        }
     member this.ContainsObject(name : Name) = this.Objects.ContainsKey(name)
+    member this.ObjectDependentOn(target) =
+        match this.Dependencies |> Map.tryFind target with
+        | None -> Seq.empty
+        | Some set -> set |> Set.toSeq |> Seq.choose (fun name -> this.Objects |> Map.tryFind name)
 
 and SchemaObject =
     | SchemaTable of SchemaTable
