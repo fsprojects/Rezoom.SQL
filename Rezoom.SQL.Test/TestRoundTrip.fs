@@ -130,3 +130,13 @@ type TestRoundTrip() =
             from Users u
             where 2016-10-16T04:30:31+01:30 > 2016-10-16T18:14:19.123-04:00
         """
+
+    [<TestMethod>]
+    member __.TestSubquery() =
+        roundtrip """
+            select * from
+                (select u.Id from Users u) us
+                join
+                (select g.Id from Groups g) gs
+                on us.Id = gs.Id
+        """
