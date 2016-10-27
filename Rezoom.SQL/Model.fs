@@ -76,6 +76,8 @@ type Model =
         TemporarySchema : Name
         Builtin : DatabaseBuiltin
     }
+    member this.Schema(name : Name option) =
+        this.Schemas |> Map.tryFind (name |? this.DefaultSchema)
 
 and Schema =
     {   SchemaName : Name

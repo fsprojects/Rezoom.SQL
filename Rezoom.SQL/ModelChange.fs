@@ -41,8 +41,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     { schema with Objects = schema.Objects |> Map.add table.TableName (SchemaTable table) }
                 Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
     member this.AlterTable(alter : InfAlterTableStmt) =
-        let schemaName = alter.Table.SchemaName |? model.DefaultSchema
-        match model.Schemas |> Map.tryFind schemaName with
+        match model.Schema(alter.Table.SchemaName) with
         | None -> failAt alter.Table.Source <| sprintf "No such schema: ``%O``" alter.Table
         | Some schema ->
             let tblName = alter.Table.ObjectName
@@ -65,9 +64,8 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
             | Some _ -> failAt alter.Table.Source <| sprintf "Not a table: ``%O``" alter.Table
     member this.CreateView(create : InfCreateViewStmt) =
-        let schemaName = create.ViewName.SchemaName |? model.DefaultSchema
         let viewName = create.ViewName.ObjectName
-        match model.Schemas |> Map.tryFind schemaName with
+        match model.Schema(create.ViewName.SchemaName) with
         | None -> failAt create.ViewName.Source <| sprintf "No such schema: ``%O``" create.ViewName
         | Some schema ->
             match schema.Objects |> Map.tryFind viewName with
@@ -83,7 +81,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                         Columns =
                             seq {
                                 for column in create.AsSelect.Value.Info.Columns ->
-                                    {   SchemaName = schemaName
+                                    {   SchemaName = schema.SchemaName
                                         TableName = viewName
                                         ColumnName = column.ColumnName
                                         PrimaryKey = column.Expr.Info.PrimaryKey
@@ -95,14 +93,13 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 let schema = { schema with Objects = schema.Objects |> Map.add create.ViewName.ObjectName view }
                 Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
     member this.DropObject(drop : InfDropObjectStmt) =
-        let schemaName = drop.ObjectName.SchemaName |? model.DefaultSchema
         let objName = drop.ObjectName.ObjectName
         let typeName =
             match drop.Drop with
             | DropTable -> "table"
             | DropView -> "view"
             | DropIndex -> "index"
-        match model.Schemas |> Map.tryFind schemaName with
+        match model.Schema(drop.ObjectName.SchemaName) with
         | None -> failAt drop.ObjectName.Source <| sprintf "No such schema: ``%O``" objName
         | Some schema ->
             let dropped() =
@@ -120,12 +117,31 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 | _ ->
                     failAt drop.ObjectName.Source <| sprintf "Not a %s: ``%O``" typeName objName
     member this.CreateIndex(create : InfCreateIndexStmt) =
-        match create.TableName.Info with
-        | TableLike { Table = TableReference schemaTable } ->
-            
-            failwith ""
+        match model.Schema(create.IndexName.SchemaName), model.Schema(create.TableName.SchemaName) with
+        | Some schema, Some tableSchema when schema.SchemaName = tableSchema.SchemaName ->
+            let table =
+                match schema.Objects |> Map.tryFind create.TableName.ObjectName with
+                | None -> failAt create.TableName.Source <| sprintf "No such table: ``%O``" create.TableName
+                | Some (SchemaTable table) -> table
+                | Some _ -> failAt create.TableName.Source <| sprintf "Not a table: ``%O``" create.TableName
+            if schema.ContainsObject(create.IndexName.ObjectName) then
+                failAt create.IndexName.Source <| sprintf "Object already exists: ``%O``" create.IndexName
+            let index =
+                {   SchemaName = schema.SchemaName
+                    TableName = table.TableName
+                    IndexName = create.IndexName.ObjectName
+                }
+            let schema =
+                { schema with
+                    Objects = schema.Objects |> Map.add index.IndexName (SchemaIndex index)
+                }
+            Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
+        | Some _, Some _ ->
+            failAt create.IndexName.Source <| sprintf "Can't create index in a different schema from its table"
+        | None, Some _ ->
+            failAt create.IndexName.Source <| sprintf "No such schema for index: ``%O``" create.IndexName
         | _ ->
-            failAt create.TableName.Source <| sprintf "Not a table: ``%O``" create.TableName
+            failAt create.TableName.Source <| sprintf "No such schema for table: ``%O``" create.TableName
             
     member this.Statement(stmt : InfStmt) =
         match stmt with
