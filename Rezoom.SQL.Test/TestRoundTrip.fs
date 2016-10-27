@@ -96,12 +96,6 @@ type TestRoundTrip() =
         """
 
     [<TestMethod>]
-    member __.TestAddColumnWithCheckConstraint() =
-        roundtrip """
-            alter table Users add LuckyNumber int not null check (LuckyNumber <> 13)
-        """
-
-    [<TestMethod>]
     member __.TestMany() =
         roundtrip """
             select u.*, many Groups(g.*)
