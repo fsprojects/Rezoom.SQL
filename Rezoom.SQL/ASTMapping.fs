@@ -230,7 +230,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | AddColumn cdef -> AddColumn <| this.ColumnDef(cdef)
     member this.CreateIndex(createIndex : CreateIndexStmt<'t1, 'e1>) =
         {   Unique = createIndex.Unique
-            IfNotExists = createIndex.IfNotExists
             IndexName = this.ObjectName(createIndex.IndexName)
             TableName = this.ObjectName(createIndex.TableName)
             IndexedColumns = createIndex.IndexedColumns |> rmap (fun (e, d) -> this.Expr(e), d)
@@ -257,7 +256,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         }
     member this.CreateTable(createTable : CreateTableStmt<'t1, 'e1>) =
         {   Temporary = createTable.Temporary
-            IfNotExists = createTable.IfNotExists
             Name = this.ObjectName(createTable.Name)
             As =
                 match createTable.As with
@@ -266,7 +264,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         }
     member this.CreateView(createView : CreateViewStmt<'t1, 'e1>) =
         {   Temporary = createView.Temporary
-            IfNotExists = createView.IfNotExists
             ViewName = this.ObjectName(createView.ViewName)
             ColumnNames = createView.ColumnNames
             AsSelect = this.Select(createView.AsSelect)
@@ -284,7 +281,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         }
     member this.DropObject(drop : DropObjectStmt<'t1>) =
         {   Drop = drop.Drop
-            IfExists = drop.IfExists
             ObjectName = this.ObjectName(drop.ObjectName)
         }
     member this.Insert(insert : InsertStmt<'t1, 'e1>) =

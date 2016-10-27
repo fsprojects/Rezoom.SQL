@@ -444,14 +444,12 @@ type CreateTableAs<'t, 'e> =
 
 type CreateTableStmt<'t, 'e> =
     {   Temporary : bool
-        IfNotExists : bool
         Name : ObjectName<'t>
         As : CreateTableAs<'t, 'e>
     }
 
 type CreateIndexStmt<'t, 'e> =
     {   Unique : bool
-        IfNotExists : bool
         IndexName : ObjectName<'t>
         TableName : ObjectName<'t>
         IndexedColumns : (Expr<'t, 'e> * OrderDirection) ResizeArray
@@ -500,7 +498,6 @@ type InsertStmt<'t, 'e> =
 
 type CreateViewStmt<'t, 'e> =
     {   Temporary : bool
-        IfNotExists : bool
         ViewName : ObjectName<'t>
         ColumnNames : Name ResizeArray option
         AsSelect : SelectStmt<'t, 'e>
@@ -513,7 +510,6 @@ type DropObjectType =
 
 type DropObjectStmt<'t> =
     {   Drop : DropObjectType
-        IfExists : bool
         ObjectName : ObjectName<'t>
     }
 

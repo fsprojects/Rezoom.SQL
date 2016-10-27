@@ -1027,20 +1027,16 @@ let private createTableAs =
         %% +.createTableDefinition -|> CreateAsDefinition
     ]
 
-let private ifNotExists = %(zeroOrOne * (%% kw "IF" -- kw "NOT" -- kw "EXISTS" -|> ()))
-
 let private temporary = %(zeroOrOne * [kw "TEMPORARY"; kw "TEMP"])
         
 let private createTableStmt =
     %% kw "CREATE"
     -- +.temporary
     -? kw "TABLE"
-    -- +.ifNotExists
     -- +.objectName
     -- +.createTableAs
-    -|> fun temp ifNotExists name createAs ->
+    -|> fun temp name createAs ->
         {   Temporary = Option.isSome temp
-            IfNotExists = Option.isSome ifNotExists
             Name = name
             As = createAs
         }
@@ -1077,15 +1073,13 @@ let private createIndexStmt =
     %% kw "CREATE"
     -- +.(zeroOrOne * kw "UNIQUE")
     -? kw "INDEX"
-    -- +.ifNotExists
     -- +.objectName
     -- kw "ON"
     -- +.objectName
     -- +.indexedColumns
     -- +.(zeroOrOne * (%% kw "WHERE" -- +.expr -|> id))
-    -|> fun unique ifNotExists indexName tableName cols whereExpr ->
+    -|> fun unique indexName tableName cols whereExpr ->
         {   Unique = Option.isSome unique
-            IfNotExists = Option.isSome ifNotExists
             IndexName = indexName
             TableName = tableName
             IndexedColumns = cols
@@ -1191,14 +1185,12 @@ let private createViewStmt =
     %% kw "CREATE"
     -- +.temporary
     -? kw "VIEW"
-    -- +.ifNotExists
     -- +.objectName
     -- +.(zeroOrOne * parenthesizedColumnNames)
     -- kw "AS"
     -- +.selectStmt
-    -|> fun temp ifNotExists viewName cols asSelect ->
+    -|> fun temp viewName cols asSelect ->
         {   Temporary = Option.isSome temp
-            IfNotExists = Option.isSome ifNotExists
             ViewName = viewName
             ColumnNames = cols
             AsSelect = asSelect
@@ -1218,10 +1210,9 @@ let private dropObjectType =
 let private dropObjectStmt =
     %% kw "DROP"
     -? +.dropObjectType
-    -- +.ifExists
     -- +.objectName
-    -|> fun dropType ifExists name ->
-        { Drop = dropType; IfExists = ifExists; ObjectName = name }
+    -|> fun dropType name ->
+        { Drop = dropType; ObjectName = name }
 
 let private stmt =
     %[  %% +.alterTableStmt -|> AlterTableStmt

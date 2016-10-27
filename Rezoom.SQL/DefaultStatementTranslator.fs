@@ -361,9 +361,6 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield ws
             yield text "TABLE"
             yield ws
-            if create.IfNotExists then
-                yield text "IF NOT EXISTS"
-                yield ws
             yield! this.Expr.ObjectName(create.Name)
             yield ws
             match create.As with
@@ -399,9 +396,6 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield ws
             yield text "VIEW"
             yield ws
-            if create.IfNotExists then
-                yield text "IF NOT EXISTS"
-                yield ws
             yield! this.Expr.ObjectName(create.ViewName)
             yield ws
             match create.ColumnNames with
@@ -424,9 +418,6 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield ws
             yield text "INDEX"
             yield ws
-            if create.IfNotExists then
-                yield text "IF NOT EXISTS"
-                yield ws
             yield! this.Expr.ObjectName(create.IndexName)
             yield ws
             yield text "ON"
@@ -461,9 +452,6 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 | DropTable -> text "TABLE"
                 | DropView -> text "VIEW"
             yield ws
-            if drop.IfExists then
-                yield text "IF EXISTS"
-                yield ws
             yield! this.Expr.ObjectName(drop.ObjectName)
         }
     override this.Insert(insert) =

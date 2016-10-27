@@ -664,7 +664,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         let checker =
             this.WithScope({ scope with FromClause = Some <| InferredFromClause.FromSingleObject(tableName) })
         {   Unique = createIndex.Unique
-            IfNotExists = createIndex.IfNotExists
             IndexName = this.ObjectName(createIndex.IndexName)
             TableName = tableName
             IndexedColumns = createIndex.IndexedColumns |> rmap (fun (e, d) -> checker.Expr(e), d)
@@ -707,7 +706,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.CreateTable(createTable : CreateTableStmt) =
         let name = this.ObjectName(createTable.Name, true)
         {   Temporary = createTable.Temporary
-            IfNotExists = createTable.IfNotExists
             Name = name
             As =
                 match createTable.As with
@@ -716,7 +714,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         }
     member this.CreateView(createView : CreateViewStmt) =
         {   Temporary = createView.Temporary
-            IfNotExists = createView.IfNotExists
             ViewName = this.ObjectName(createView.ViewName, true)
             ColumnNames = createView.ColumnNames
             AsSelect = this.Select(createView.AsSelect)
@@ -744,7 +741,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         }
     member this.DropObject(drop : DropObjectStmt) =
         {   Drop = drop.Drop
-            IfExists = drop.IfExists
             ObjectName = this.ObjectName(drop.ObjectName)
         }
     member this.Insert(insert : InsertStmt) =

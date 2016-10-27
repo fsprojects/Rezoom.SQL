@@ -23,8 +23,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
             let tableName = create.Name.ObjectName
             match schema.Objects |> Map.tryFind tableName with
             | Some (SchemaTable _) ->
-                if create.IfNotExists then None
-                else failAt create.Name.Source <| sprintf "Table ``%O`` already exists" create.Name
+                failAt create.Name.Source <| sprintf "Table ``%O`` already exists" create.Name
             | Some _ -> failAt create.Name.Source <| sprintf "Object ``%O`` already exists" create.Name
             | None ->
                 let table =
@@ -70,7 +69,6 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
         | Some schema ->
             match schema.Objects |> Map.tryFind viewName with
             | Some (SchemaView _) ->
-                if create.IfNotExists then None else
                 failAt create.ViewName.Source <| sprintf "View already exists: ``%O``" create.ViewName
             | Some _ ->
                 failAt create.ViewName.Source <| sprintf "Object already exists: ``%O``" create.ViewName
