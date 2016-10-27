@@ -60,6 +60,7 @@
     <Compile Include="Parser.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Info.fs" />
+    <Compile Include="Dependencies.fs" />
     <Compile Include="InferredTypes.fs" />
     <Compile Include="TypeInferenceContext.fs" />
     <Compile Include="TypeChecker.fs" />
