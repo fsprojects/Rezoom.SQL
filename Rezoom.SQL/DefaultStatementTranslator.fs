@@ -251,26 +251,6 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield ws
                 yield! this.Limit(limit)
         }
-    override this.ConflictClause(clause) =
-        seq {
-            yield text "ON CONFLICT"
-            yield ws
-            yield
-                match clause with
-                | Rollback -> text "ROLLBACK"
-                | Abort -> text "ABORT"
-                | Fail -> text "FAIL"
-                | Ignore -> text "IGNORE"
-                | Replace -> text "REPLACE"
-        }
-    member this.ConflictClause(clause : ConflictClause option) =
-        seq {
-            match clause with
-            | None -> ()
-            | Some clause ->
-                yield ws
-                yield! this.ConflictClause(clause)
-        }
     override this.ForeignKeyRule(rule) =
         seq {
             match rule with
@@ -339,20 +319,13 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield text "PRIMARY KEY"
                 yield ws
                 yield this.OrderDirection(pk.Order)
-                yield! this.ConflictClause(pk.ConflictClause)
                 if pk.AutoIncrement then
                     yield ws
                     yield text "AUTOINCREMENT"
-            | NotNullConstraint conflict ->
+            | NotNullConstraint ->
                 yield text "NOT NULL"
-                yield! this.ConflictClause(conflict)
-            | UniqueConstraint conflict ->
+            | UniqueConstraint ->
                 yield text "UNIQUE"
-                yield! this.ConflictClause(conflict)
-            | CheckConstraint expr ->
-                yield text "CHECK("
-                yield! this.Predicate(expr)
-                yield text ")"
             | DefaultConstraint expr ->
                 yield text "DEFAULT("
                 yield! this.FirstClassValue(expr)

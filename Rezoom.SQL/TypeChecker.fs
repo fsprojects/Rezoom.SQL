@@ -630,9 +630,8 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 match constr.ColumnConstraintType with
                 | NullableConstraint -> NullableConstraint
                 | PrimaryKeyConstraint clause -> PrimaryKeyConstraint clause
-                | NotNullConstraint clause -> NotNullConstraint clause
-                | UniqueConstraint conflict -> UniqueConstraint conflict
-                | CheckConstraint expr -> CheckConstraint <| this.Expr(expr)
+                | NotNullConstraint -> NotNullConstraint
+                | UniqueConstraint -> UniqueConstraint
                 | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
                 | CollateConstraint name -> CollateConstraint name
                 | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey)
@@ -674,7 +673,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
     member this.TableIndexConstraint(constr : TableIndexConstraintClause) =
         {   Type = constr.Type
             IndexedColumns = constr.IndexedColumns |> rmap (fun (e, d) -> this.Expr(e), d)
-            ConflictClause = constr.ConflictClause
         }
     member this.TableConstraint(constr : TableConstraint) =
         {   Name = constr.Name

@@ -213,9 +213,8 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                 match constr.ColumnConstraintType with
                 | NullableConstraint -> NullableConstraint
                 | PrimaryKeyConstraint clause -> PrimaryKeyConstraint clause
-                | NotNullConstraint clause -> NotNullConstraint clause
-                | UniqueConstraint conflict -> UniqueConstraint conflict
-                | CheckConstraint expr -> CheckConstraint <| this.Expr(expr)
+                | NotNullConstraint -> NotNullConstraint
+                | UniqueConstraint -> UniqueConstraint
                 | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
                 | CollateConstraint name -> CollateConstraint name
                 | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey)
@@ -240,7 +239,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.TableIndexConstraint(constr : TableIndexConstraintClause<'t1, 'e1>) =
         {   Type = constr.Type
             IndexedColumns = constr.IndexedColumns |> rmap (fun (e, d) -> this.Expr(e), d)
-            ConflictClause = constr.ConflictClause
         }
     member this.TableConstraint(constr : TableConstraint<'t1, 'e1>) =
         {   Name = constr.Name

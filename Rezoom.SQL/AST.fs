@@ -352,13 +352,6 @@ and TableExprCore<'t, 'e> =
 
 and TableExpr<'t, 'e> = TableExprCore<'t, 'e> WithSource
 
-type ConflictClause =
-    | Rollback
-    | Abort
-    | Fail
-    | Ignore
-    | Replace
-
 type ForeignKeyEvent =
     | OnDelete
     | OnUpdate
@@ -388,16 +381,14 @@ type ForeignKeyClause<'t> =
 
 type PrimaryKeyClause =
     {   Order : OrderDirection
-        ConflictClause : ConflictClause option
         AutoIncrement : bool
     }
 
 type ColumnConstraintType<'t, 'e> =
     | NullableConstraint
     | PrimaryKeyConstraint of PrimaryKeyClause
-    | NotNullConstraint of ConflictClause option
-    | UniqueConstraint of ConflictClause option
-    | CheckConstraint of Expr<'t, 'e>
+    | NotNullConstraint
+    | UniqueConstraint
     | DefaultConstraint of Expr<'t, 'e>
     | CollateConstraint of Name
     | ForeignKeyConstraint of ForeignKeyClause<'t>
@@ -429,7 +420,6 @@ type TableIndexConstraintType =
 type TableIndexConstraintClause<'t, 'e> =
     {   Type : TableIndexConstraintType
         IndexedColumns : (Expr<'t, 'e> * OrderDirection) ResizeArray
-        ConflictClause : ConflictClause option
     }
 
 type TableConstraintType<'t, 'e> =

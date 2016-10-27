@@ -839,21 +839,6 @@ do
                 }
         ) |> withSource
 
-let private conflictClause =
-    let onConflict =
-        %% kw "ON" -- kw "CONFLICT" -|> ()
-    let clause =
-        %% (onConflict * zeroOrOne)
-        -- +.[
-                %% kw "ROLLBACK" -|> Rollback
-                %% kw "ABORT" -|> Abort
-                %% kw "FAIL" -|> Fail
-                %% kw "IGNORE" -|> Ignore
-                %% kw "REPLACE" -|> Replace
-            ]
-        -|> id
-    zeroOrOne * clause
-
 let private foreignKeyRule =
     let eventRule =
         %% kw "ON"
@@ -909,12 +894,10 @@ let private primaryKeyClause =
     -- kw "KEY"
     -- +.orderDirection
     -- ws
-    -- +.conflictClause
     -- +.(zeroOrOne * tws (kw "AUTOINCREMENT"))
-    -|> fun dir conflict auto ->
+    -|> fun dir auto ->
         {
             Order = dir
-            ConflictClause = conflict
             AutoIncrement = Option.isSome auto
         }
 
@@ -937,10 +920,9 @@ let private constraintType =
         ]
     %[
         %% +.primaryKeyClause -|> PrimaryKeyConstraint
-        %% kw "NOT"  -- kw "NULL" -- +.conflictClause -|> NotNullConstraint
+        %% kw "NOT"  -- kw "NULL" -|> NotNullConstraint
         %% kw "NULL" -|> NullableConstraint
-        %% kw "UNIQUE" -- +.conflictClause -|> UniqueConstraint
-        %% kw "CHECK" -- '(' -- ws -- +.expr -- ')' -|> CheckConstraint
+        %% kw "UNIQUE" -|> UniqueConstraint
         %% kw "DEFAULT" -- +.defaultValue -|> DefaultConstraint
         %% kw "COLLATE" -- +.name -|> CollateConstraint
         %% +.foreignKeyClause -|> ForeignKeyConstraint
@@ -997,9 +979,8 @@ let private indexedColumns =
 let private tableIndexConstraint =
     %% +.tableIndexConstraintType
     -- +.indexedColumns
-    -- +.conflictClause
-    -|> fun cty cols conflict ->
-        { Type = cty; IndexedColumns = cols; ConflictClause = conflict }
+    -|> fun cty cols ->
+        { Type = cty; IndexedColumns = cols }
 
 let private tableConstraintType =
     let foreignKey =
