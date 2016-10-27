@@ -678,7 +678,6 @@ let private joinType =
 let private joinConstraint =
     %[
         %% kw "ON" -- +.expr -- ws -|> JoinOn
-        %% kw "USING" -- '(' -- ws -- +.(qty.[1..] / tws ',' * name) -- ')' -- ws -|> JoinUsing
         preturn JoinUnconstrained
     ]
 

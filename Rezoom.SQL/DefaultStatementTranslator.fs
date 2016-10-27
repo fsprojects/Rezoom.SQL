@@ -148,13 +148,6 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 yield text "ON"
                 yield ws
                 yield! this.Predicate(expr)
-            | JoinUsing names ->
-                yield ws 
-                yield text "USING"
-                yield ws
-                yield text "("
-                yield! names |> Seq.map this.Expr.Name |> join1 ","
-                yield text ")"
             | JoinUnconstrained -> ()
         }
     override this.SelectCore(select) =

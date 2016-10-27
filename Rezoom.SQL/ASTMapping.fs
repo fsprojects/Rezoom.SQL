@@ -144,7 +144,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.JoinConstraint(constr : JoinConstraint<'t1, 'e1>) =  
         match constr with
         | JoinOn expr -> JoinOn <| this.Expr(expr)
-        | JoinUsing names -> JoinUsing names
         | JoinUnconstrained -> JoinUnconstrained
     member this.Join(join : Join<'t1, 'e1>) =
         {   JoinType = join.JoinType

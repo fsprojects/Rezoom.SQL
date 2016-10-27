@@ -429,7 +429,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                         Constraint =
                             match join.Constraint with
                             | JoinOn e -> constraintChecker.Expr(e, BooleanType) |> JoinOn
-                            | JoinUsing names -> JoinUsing names
                             | JoinUnconstrained -> JoinUnconstrained
                     } |> Join
         }

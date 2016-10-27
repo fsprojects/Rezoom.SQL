@@ -336,7 +336,6 @@ and JoinType =
 
 and JoinConstraint<'t, 'e> =
     | JoinOn of Expr<'t, 'e>
-    | JoinUsing of Name ResizeArray
     | JoinUnconstrained
 
 and Join<'t, 'e> =
