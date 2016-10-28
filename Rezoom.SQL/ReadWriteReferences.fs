@@ -1,21 +1,55 @@
-﻿module Rezoom.SQL.Dependencies
+﻿module private Rezoom.SQL.ReadWriteReferences
 open System
 open System.Collections.Generic
 open Rezoom.SQL
 
-type DependencyType =
+type ReferenceType =
     | ReadReference
     | WriteReference
 
-type DependencyFinder() =
-    member __.ReferenceObject(dependency : DependencyType, name : TObjectName) =
-        ()
-    member this.ReferenceColumn(dependency : DependencyType, name : TColumnName) =
-        // what about columns/tables local to the query?
-        match name.Table with
+type ReferenceFinder() =
+    let references = Dictionary<Name, Dictionary<DependencyTarget, ReferenceType Set>>()
+    let addReference schemaName target refType =
+        let succ, schema = references.TryGetValue(schemaName)
+        let schema =
+            if succ then schema else
+            let schema = Dictionary()
+            references.[schemaName] <- schema
+            schema
+        let succ, existing = schema.TryGetValue(target)
+        let updated =
+            Set.add refType <|
+            if succ then existing
+            else Set.empty
+        schema.[target] <- updated
+    member __.References =
+        seq {
+            for schema in references do
+                for target in schema.Value do
+                    yield schema.Key, target.Key, target.Value
+        }
+    member __.ReferencedObject(name : TObjectName) =
+        match name.Info with
+        | TableLike { Table = TableReference schemaTable } -> Some (schemaTable.SchemaName, schemaTable.TableName)
+        | TableLike { Table = ViewReference schemaView } -> Some (schemaView.SchemaName, schemaView.ViewName)
+        | Index schemaIndex -> Some (schemaIndex.SchemaName, schemaIndex.IndexName)
+        | _ -> None
+    member this.ReferenceObject(reference : ReferenceType, name : TObjectName) =
+        match this.ReferencedObject(name) with
+        | None -> ()
+        | Some (schema, name) ->
+            let target = { ObjectName = name; ColumnName = None }
+            addReference schema target reference
+    member this.ReferenceColumn(reference : ReferenceType, column : TColumnName) =
+        match column.Table with
         | None -> ()
         | Some tbl ->
-            this.ReferenceObject(dependency, tbl)
+            match this.ReferencedObject(tbl) with
+            | None -> ()
+            | Some (schema, name) ->
+                let target = { ObjectName = name; ColumnName = None }
+                addReference schema target reference
+                addReference schema { target with ColumnName = Some column.ColumnName } reference
     member this.Binary(binary : TBinaryExpr) =
         this.Expr(binary.Left)
         this.Expr(binary.Right)

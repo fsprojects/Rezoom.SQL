@@ -97,7 +97,7 @@ and TableLikeExprInfo<'t> =
 
 and ObjectInfo<'t> =
     | TableLike of 't TableLikeExprInfo
-    | Index
+    | Index of SchemaIndex
     | Missing
     member this.Table =
         match this with
@@ -108,7 +108,7 @@ and ObjectInfo<'t> =
     member this.Map<'t1>(f : 't -> 't1) : ObjectInfo<'t1> =
         match this with
         | TableLike t -> TableLike (t.Map(f))
-        | Index -> Index
+        | Index i -> Index i
         | Missing -> Missing
 
 type TExprType = ExprType<ColumnType ObjectInfo, ColumnType ExprInfo>
