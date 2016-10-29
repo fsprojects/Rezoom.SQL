@@ -418,7 +418,7 @@ type TableIndexConstraintType =
 
 type TableIndexConstraintClause<'t, 'e> =
     {   Type : TableIndexConstraintType
-        IndexedColumns : (Expr<'t, 'e> * OrderDirection) ResizeArray
+        IndexedColumns : (Name * OrderDirection) ResizeArray
     }
 
 type TableConstraintType<'t, 'e> =
@@ -451,7 +451,7 @@ type CreateIndexStmt<'t, 'e> =
     {   Unique : bool
         IndexName : ObjectName<'t>
         TableName : ObjectName<'t>
-        IndexedColumns : (Expr<'t, 'e> * OrderDirection) ResizeArray
+        IndexedColumns : (Name * OrderDirection) ResizeArray
         Where : Expr<'t, 'e> option
     }
 

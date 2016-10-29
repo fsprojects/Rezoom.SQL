@@ -34,6 +34,11 @@ let inline bug msg = failwith msg
 let inline failAt (source : SourceInfo) (msg : string) =
     raise (SourceException(source, msg))
 
+type NameResolution<'a> =
+    | Found of 'a
+    | NotFound of string
+    | Ambiguous of string
+
 type Result<'x, 'err> =
     | Ok of 'x
     | Error of 'err

@@ -3,53 +3,44 @@ open System
 open System.Collections.Generic
 open Rezoom.SQL
 
-type ReferenceType =
+type private ReferenceType =
     | ReadReference
     | WriteReference
 
-type ReferenceFinder() =
-    let references = Dictionary<Name, Dictionary<DependencyTarget, ReferenceType Set>>()
-    let addReference schemaName target refType =
-        let succ, schema = references.TryGetValue(schemaName)
-        let schema =
-            if succ then schema else
-            let schema = Dictionary()
-            references.[schemaName] <- schema
-            schema
-        let succ, existing = schema.TryGetValue(target)
+type private ReferenceFinder() =
+    let referencedViews = HashSet<Name * Name>()
+    let references =
+        { new IEqualityComparer<SchemaTable> with
+            member __.Equals(left, right) =
+                left.SchemaName = right.SchemaName
+                && left.TableName = right.TableName
+            member __.GetHashCode(tbl) =
+                (tbl.SchemaName, tbl.TableName).GetHashCode()
+        } |> Dictionary<SchemaTable, ReferenceType Set>
+    let addReference table refType =
+        let succ, existing = references.TryGetValue(table)
         let updated =
             Set.add refType <|
             if succ then existing
             else Set.empty
-        schema.[target] <- updated
+        references.[table] <- updated
     member __.References =
         seq {
-            for schema in references do
-                for target in schema.Value do
-                    yield schema.Key, target.Key, target.Value
+            for kv in references do
+                yield kv.Key, kv.Value
         }
-    member __.ReferencedObject(name : TObjectName) =
-        match name.Info with
-        | TableLike { Table = TableReference schemaTable } -> Some (schemaTable.SchemaName, schemaTable.TableName)
-        | TableLike { Table = ViewReference schemaView } -> Some (schemaView.SchemaName, schemaView.ViewName)
-        | Index schemaIndex -> Some (schemaIndex.SchemaName, schemaIndex.IndexName)
-        | _ -> None
     member this.ReferenceObject(reference : ReferenceType, name : TObjectName) =
-        match this.ReferencedObject(name) with
-        | None -> ()
-        | Some (schema, name) ->
-            let target = { ObjectName = name; ColumnName = None }
-            addReference schema target reference
+        match name.Info with
+        | TableLike { Table = TableReference schemaTable } ->
+            addReference schemaTable reference
+        | TableLike { Table = ViewReference schemaView } ->
+            if referencedViews.Add(schemaView.SchemaName, schemaView.ViewName) then
+                this.Select(schemaView.Definition)
+        | _ -> ()
     member this.ReferenceColumn(reference : ReferenceType, column : TColumnName) =
         match column.Table with
         | None -> ()
-        | Some tbl ->
-            match this.ReferencedObject(tbl) with
-            | None -> ()
-            | Some (schema, name) ->
-                let target = { ObjectName = name; ColumnName = None }
-                addReference schema target reference
-                addReference schema { target with ColumnName = Some column.ColumnName } reference
+        | Some tbl -> this.ReferenceObject(reference, tbl)
     member this.Binary(binary : TBinaryExpr) =
         this.Expr(binary.Left)
         this.Expr(binary.Right)
@@ -198,3 +189,23 @@ type ReferenceFinder() =
         | BeginStmt
         | CommitStmt
         | RollbackStmt -> ()
+
+type References =
+    {   TablesRead : SchemaTable IReadOnlyList
+        TablesWritten : SchemaTable IReadOnlyList
+    }
+
+let references (stmts : TStmt seq) =
+    let finder = ReferenceFinder()
+    for stmt in stmts do finder.Stmt(stmt)
+    let tablesRead = ResizeArray()
+    let tablesWritten = ResizeArray()
+    let dependencyTargets = ResizeArray()
+    for table, set in finder.References do
+        for depTy in set do
+            match depTy with
+            | ReadReference -> tablesRead.Add(table)
+            | WriteReference -> tablesWritten.Add(table)
+    {   TablesRead = tablesRead :> _ IReadOnlyList
+        TablesWritten = tablesWritten :> _ IReadOnlyList
+    }

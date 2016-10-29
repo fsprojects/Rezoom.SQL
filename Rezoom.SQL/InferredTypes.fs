@@ -139,11 +139,8 @@ let inferredOfTable (table : SchemaTable) =
     }
 
 let inferredOfView (view : SchemaView) =
-    {   Columns =
-            view.Columns
-            |> Seq.map (fun c -> InferredQueryColumn.OfColumn(Some view.ViewName, c))
-            |> toReadOnlyList
-    }
+    let concreteQuery = view.Definition.Value.Info.Query
+    concreteQuery.Map(ConcreteType)
 
 type InferredFromClause =
     {
@@ -228,8 +225,6 @@ and InferredSelectScope =
             { Table = TableReference tbl; Query = inferredOfTable(tbl) } |> TableLike |> Found
         | Some (SchemaView view) ->
             { Table = ViewReference view; Query = inferredOfView(view) } |> TableLike |> Found
-        | Some _ ->
-            Ambiguous <| sprintf "Not a table or table-like object: ``%O``" name
         | None -> NotFound <| sprintf "No such table in schema %O: ``%O``" schema.SchemaName name
 
     /// Resolve a reference to a table which may occur as part of a TableExpr.
@@ -274,4 +269,6 @@ and InferredSelectScope =
             | NotFound _ -> findFrom()
         | _ -> findFrom()
 
-            
+let concreteMapping (inference : ITypeInferenceContext) =
+    ASTMapping<InferredType ObjectInfo, InferredType ExprInfo, _, _>
+        ((fun t -> t.Map(inference.Concrete)), fun e -> e.Map(inference.Concrete))

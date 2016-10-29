@@ -33,6 +33,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                             TableName = create.Name.ObjectName
                             Columns =
                                 this.CreateTableColumns(model, schema.SchemaName, tableName, select) |> Set.ofSeq
+                            Indexes = Set.empty // TODO what about implicit indexes from PKs, unique constraints?
                         }
                     | CreateAsDefinition def ->
                         SchemaTable.OfCreateDefinition(schema.SchemaName, tableName, def)
@@ -76,17 +77,8 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 let view =
                     {   SchemaName = schema.SchemaName
                         ViewName = viewName
-                        Columns =
-                            seq {
-                                for column in create.AsSelect.Value.Info.Columns ->
-                                    {   SchemaName = schema.SchemaName
-                                        TableName = viewName
-                                        ColumnName = column.ColumnName
-                                        PrimaryKey = column.Expr.Info.PrimaryKey
-                                        ColumnType = inference.Concrete(column.Expr.Info.Type)
-                                    }
-                            } |> Set.ofSeq
-                        ReferencedTables = Set.empty // TODO
+                        // Must make concrete for the schema.
+                        Definition = (concreteMapping inference).Select(create.AsSelect)
                     } |> SchemaView
                 let schema = { schema with Objects = schema.Objects |> Map.add create.ViewName.ObjectName view }
                 Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
@@ -109,8 +101,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
             | Some o ->
                 match drop.Drop, o with
                 | DropTable, SchemaTable _
-                | DropView, SchemaView _
-                | DropIndex, SchemaIndex _ ->
+                | DropView, SchemaView _ ->
                     dropped()
                 | _ ->
                     failAt drop.ObjectName.Source <| sprintf "Not a %s: ``%O``" typeName objName
@@ -128,10 +119,15 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 {   SchemaName = schema.SchemaName
                     TableName = table.TableName
                     IndexName = create.IndexName.ObjectName
+                    Columns = create.IndexedColumns |> Seq.map fst |> Set.ofSeq
+                }
+            let table =
+                { table with
+                    Indexes = Set.add index table.Indexes
                 }
             let schema =
                 { schema with
-                    Objects = schema.Objects |> Map.add index.IndexName (SchemaIndex index)
+                    Objects = schema.Objects |> Map.add table.TableName (SchemaTable table)
                 }
             Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
         | Some _, Some _ ->

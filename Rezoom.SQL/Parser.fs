@@ -970,7 +970,7 @@ let private tableIndexConstraintType =
 let private indexedColumns =
     %% '('
     -- ws
-    -- +.(qty.[1..] / tws ',' * (%% +.expr -- +.orderDirection -%> auto))
+    -- +.(qty.[1..] / tws ',' * (%% +.nameOrKeyword -- +.orderDirection -%> auto))
     -- ')'
     -- ws
     -|> id

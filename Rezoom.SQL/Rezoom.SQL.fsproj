@@ -59,7 +59,6 @@
     <Compile Include="ASTMapping.fs" />
     <Compile Include="Parser.fs" />
     <Compile Include="Model.fs" />
-    <Compile Include="Info.fs" />
     <Compile Include="ReadWriteReferences.fs" />
     <Compile Include="InferredTypes.fs" />
     <Compile Include="TypeInferenceContext.fs" />

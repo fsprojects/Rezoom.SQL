@@ -665,12 +665,12 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         {   Unique = createIndex.Unique
             IndexName = this.ObjectName(createIndex.IndexName)
             TableName = tableName
-            IndexedColumns = createIndex.IndexedColumns |> rmap (fun (e, d) -> checker.Expr(e), d)
+            IndexedColumns = createIndex.IndexedColumns
             Where = createIndex.Where |> Option.map this.Expr
         }
     member this.TableIndexConstraint(constr : TableIndexConstraintClause) =
         {   Type = constr.Type
-            IndexedColumns = constr.IndexedColumns |> rmap (fun (e, d) -> this.Expr(e), d)
+            IndexedColumns = constr.IndexedColumns
         }
     member this.TableConstraint(constr : TableConstraint) =
         {   Name = constr.Name

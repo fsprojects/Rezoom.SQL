@@ -419,9 +419,9 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
             yield text "("
             yield!
                 seq {
-                    for expr, dir in create.IndexedColumns ->
+                    for name, dir in create.IndexedColumns ->
                         seq {
-                            yield! this.FirstClassValue(expr)
+                            yield this.Expr.Name(name)
                             yield ws
                             yield this.OrderDirection(dir)
                         }

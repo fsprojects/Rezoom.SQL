@@ -10,6 +10,8 @@ type CommandEffect =
     {   Statements : TStmt IReadOnlyList
         Parameters : (BindParameter * ColumnType) IReadOnlyList
         ModelChange : Model option
+        WriteTables : (Name * Name) seq
+        ReadTables : (Name * Name) seq
     }
     member this.ResultSets =
         seq {
@@ -22,6 +24,8 @@ type CommandEffect =
         {   Statements = [||] :> _ IReadOnlyList
             Parameters = [||] :> _ IReadOnlyList
             ModelChange = None
+            WriteTables = Seq.empty
+            ReadTables = Seq.empty
         }
     static member ParseSQL(descr: string, sql : string) : Stmts =
         Parser.parseStatements descr sql |> toReadOnlyList
@@ -46,9 +50,7 @@ and private CommandEffectBuilder(model : Model) =
         inferredStmts.Add(inferredStmt)
         newModel <- ModelChange(model, inference).Statement(inferredStmt)
     member this.CommandEffect() =
-        let mapping =
-            ASTMapping<InferredType ObjectInfo, InferredType ExprInfo, _, _>
-                ((fun t -> t.Map(inference.Concrete)), fun e -> e.Map(inference.Concrete))
+        let mapping = concreteMapping inference
         let stmts = inferredStmts |> Seq.map mapping.Stmt |> toReadOnlyList
         let pars =
             inference.Parameters
@@ -57,4 +59,6 @@ and private CommandEffectBuilder(model : Model) =
         {   Statements = stmts
             ModelChange = newModel
             Parameters = pars
+            WriteTables = failwith "TODO"
+            ReadTables = failwith "TODO"
         }

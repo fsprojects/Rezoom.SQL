@@ -231,12 +231,12 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         {   Unique = createIndex.Unique
             IndexName = this.ObjectName(createIndex.IndexName)
             TableName = this.ObjectName(createIndex.TableName)
-            IndexedColumns = createIndex.IndexedColumns |> rmap (fun (e, d) -> this.Expr(e), d)
+            IndexedColumns = createIndex.IndexedColumns
             Where = createIndex.Where |> Option.map this.Expr
         }
     member this.TableIndexConstraint(constr : TableIndexConstraintClause<'t1, 'e1>) =
         {   Type = constr.Type
-            IndexedColumns = constr.IndexedColumns |> rmap (fun (e, d) -> this.Expr(e), d)
+            IndexedColumns = constr.IndexedColumns
         }
     member this.TableConstraint(constr : TableConstraint<'t1, 'e1>) =
         {   Name = constr.Name
