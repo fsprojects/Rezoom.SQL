@@ -86,6 +86,13 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Rezoom\Rezoom.fsproj">
+      <Name>Rezoom</Name>
+      <Project>{d98acbeb-a039-4340-a7c5-6ed2b677268b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

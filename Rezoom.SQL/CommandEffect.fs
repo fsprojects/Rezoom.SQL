@@ -56,9 +56,16 @@ and private CommandEffectBuilder(model : Model) =
             inference.Parameters
             |> Seq.map (fun p -> p, inference.Concrete(inference.Variable(p)))
             |> toReadOnlyList
+        let references = lazy ReadWriteReferences.references stmts
         {   Statements = stmts
             ModelChange = newModel
             Parameters = pars
-            WriteTables = failwith "TODO"
-            ReadTables = failwith "TODO"
+            WriteTables =
+                seq {
+                    for ref in references.Value.TablesWritten -> ref.SchemaName, ref.TableName
+                }
+            ReadTables =
+                seq {
+                    for ref in references.Value.TablesRead -> ref.SchemaName, ref.TableName
+                }
         }

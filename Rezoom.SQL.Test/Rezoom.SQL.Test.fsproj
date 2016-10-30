@@ -61,6 +61,11 @@
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Rezoom\Rezoom.fsproj">
+      <Name>Rezoom</Name>
+      <Project>{d98acbeb-a039-4340-a7c5-6ed2b677268b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="LicenseToCIL">
       <HintPath>..\packages\LicenseToCIL.0.2.1\lib\net46\LicenseToCIL.dll</HintPath>
       <Private>True</Private>

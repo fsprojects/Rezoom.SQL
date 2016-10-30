@@ -67,6 +67,18 @@ module private UserModelLoader =
             }
         |]
 
+    let tableIds (model : Model) =
+        seq {
+            let mutable i = 0
+            for KeyValue(_, schema) in model.Schemas do
+            for KeyValue(_, obj) in schema.Objects do
+                match obj with
+                | SchemaTable tbl ->
+                    yield (tbl.SchemaName, tbl.TableName), i
+                    i <- i + 1
+                | _ -> ()
+        } |> Map.ofSeq
+
 open UserModelLoader
 
 type UserModel =
@@ -75,6 +87,7 @@ type UserModel =
         Backend : IBackend
         Model : Model
         Migrations : string MigrationMajorVersion IReadOnlyList
+        TableIds : Map<Name * Name, int> Lazy
     }
     static member ConfigFileName = "staticql.json"
     static member Load(resolutionFolder : string, modelPath : string) =
@@ -107,4 +120,5 @@ type UserModel =
             Backend = backend
             Model = model
             Migrations = migrations
+            TableIds = lazy tableIds model
         }

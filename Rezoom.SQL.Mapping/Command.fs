@@ -2,6 +2,7 @@
 open System
 open System.Data
 open System.Collections.Generic
+open Rezoom
 open Rezoom.SQL.Mapping.CodeGeneration
 
 type CommandFragment =
@@ -41,14 +42,31 @@ type ResultSetProcessor<'output>() =
     abstract member GetResult : unit -> 'output
     override this.ObjectGetResult() = this.GetResult() |> box
 
+type CommandCategory = CommandCategory of modelPath : string
+
+type CommandData =
+    {   Category : CommandCategory
+        Identity : string
+        Fragments : CommandFragment IReadOnlyList
+        DependencyMask : BitMask
+        InvalidationMask : BitMask
+        ResultSetCount : int option
+    }
+
 [<AbstractClass>]
-type Command(fragments : CommandFragment IReadOnlyList, parameters : (obj * DbType) IReadOnlyList) =
-    member __.Fragments = fragments
+type Command(data : CommandData, parameters : (obj * DbType) IReadOnlyList) =
+    let cacheInfo =
+        { new CacheInfo() with
+            override __.Category = upcast data.Category
+            override __.Identity = upcast data.Identity
+            override __.DependencyMask = data.DependencyMask
+            override __.InvalidationMask = data.InvalidationMask
+        }
+    member __.CacheInfo = cacheInfo
+    member __.Fragments = data.Fragments
     member __.Parameters = parameters
-    
     /// The number of result sets this command will return, if it can be statically determined.
-    abstract member ResultSetCount : int option
-    default __.ResultSetCount = None
+    member __.ResultSetCount = data.ResultSetCount
 
     abstract member ObjectResultSetProcessor : unit -> ResultSetProcessor
 
@@ -74,8 +92,8 @@ type ResultSets<'a, 'b, 'c>(a : 'a, b : 'b, c : 'c) =
 
 /// A command which can be expected to produce `'output` when run.
 [<AbstractClass>]
-type Command<'output>(fragments, parameters) =
-    inherit Command(fragments, parameters)
+type Command<'output>(data, parameters) =
+    inherit Command(data, parameters)
     abstract member ResultSetProcessor : unit -> ResultSetProcessor<'output>
     override this.ObjectResultSetProcessor() = upcast this.ResultSetProcessor()
 
@@ -86,8 +104,8 @@ type private ResultSetProcessor0<'a>() =
     override __.ObjectGetResult() = upcast Unchecked.defaultof<'a>
     override __.GetResult() = Unchecked.defaultof<'a>
 
-type private Command0(fragments, parameters) =
-    inherit Command<unit>(fragments, parameters)
+type private Command0(data, parameters) =
+    inherit Command<unit>(data, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor0<unit>()
 
 type private ResultSetProcessor1<'a>() =
@@ -102,8 +120,8 @@ type private ResultSetProcessor1<'a>() =
         reader.Read(row)
     override __.GetResult() = result.Value
 
-type private Command1<'a>(fragments, parameters) =
-    inherit Command<'a>(fragments, parameters)
+type private Command1<'a>(data, parameters) =
+    inherit Command<'a>(data, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor1<'a>()
 
 type private MultiResultSetProcessor(readers : EntityReader list) =
@@ -145,16 +163,16 @@ type private ResultSetProcessor3<'a, 'b, 'c>() =
     override __.ProcessRow() = proc.ProcessRow()
     override __.GetResult() = result.Value
 
-type private Command3<'a, 'b, 'c>(fragments, parameters) =
-    inherit Command<ResultSets<'a, 'b, 'c>>(fragments, parameters)
+type private Command3<'a, 'b, 'c>(data, parameters) =
+    inherit Command<ResultSets<'a, 'b, 'c>>(data, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor3<'a, 'b, 'c>()
 
 type CommandConstructor() =
-    static member Command0(fragments, parameters) =
-        new Command0(fragments, parameters) :> _ Command
-    static member Command1<'a>(fragments, parameters) =
-        new Command1<'a>(fragments, parameters) :> _ Command
-    static member Command2<'a, 'b>(fragments, parameters) =
-        new Command2<'a, 'b>(fragments, parameters) :> _ Command
-    static member Command3<'a, 'b, 'c>(fragments, parameters) =
-        new Command3<'a, 'b, 'c>(fragments, parameters) :> _ Command
+    static member Command0(data, parameters) =
+        new Command0(data, parameters) :> _ Command
+    static member Command1<'a>(data, parameters) =
+        new Command1<'a>(data, parameters) :> _ Command
+    static member Command2<'a, 'b>(data, parameters) =
+        new Command2<'a, 'b>(data, parameters) :> _ Command
+    static member Command3<'a, 'b, 'c>(data, parameters) =
+        new Command3<'a, 'b, 'c>(data, parameters) :> _ Command

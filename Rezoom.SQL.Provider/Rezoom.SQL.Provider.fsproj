@@ -36,6 +36,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>bin\Release\Rezoom.SQL.Provider.XML</DocumentationFile>
+    <StartAction>Program</StartAction>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -66,6 +67,11 @@
     <Compile Include="Provider.fs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Rezoom\Rezoom.fsproj">
+      <Name>Rezoom</Name>
+      <Project>{d98acbeb-a039-4340-a7c5-6ed2b677268b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>

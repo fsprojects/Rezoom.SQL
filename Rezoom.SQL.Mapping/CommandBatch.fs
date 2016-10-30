@@ -5,15 +5,15 @@ open System.Data.Common
 open System.Collections.Generic
 open System.Text
 open System.Threading.Tasks
+open FSharp.Control.Tasks.ContextInsensitive
 
 type private CommandBatchBuilder(conn : DbConnection) =
-    static let terminatorColumn i = "STATICQL_TERMINATOR_" + string i
+    static let terminatorColumn i = "RZSQL_TERMINATOR_" + string i
     static let terminator i = ";--'*/;SELECT NULL AS " + terminatorColumn i
-    static let parameterName i = "@STATICQL_" + string i
-    static let localName i name = "STATICQL_" + name + "_" + string i
+    static let parameterName i = "@RZSQL_" + string i
+    static let localName i name = "RZSQL_" + name + "_" + string i
     let commands = ResizeArray<Command>()
     let mutable evaluating = false
-    let mutable result = None
 
     let buildCommand (dbCommand : DbCommand) =
         let builder = StringBuilder()
@@ -40,15 +40,13 @@ type private CommandBatchBuilder(conn : DbConnection) =
         dbCommand.CommandText <- builder.ToString()
 
     member __.Evaluate() =
-        async {
-            match result with // if one ran synchronously we need to pull that result
-            | Some r -> return r
-            | None ->
+        task {
             if evaluating then failwith "Already evaluating command"
             else evaluating <- true
             use dbCommand = conn.CreateCommand()
             buildCommand dbCommand
-            use! reader = Async.AwaitTask <| dbCommand.ExecuteReaderAsync()
+            use! reader = dbCommand.ExecuteReaderAsync()
+            let reader = reader : DbDataReader
             let processed = ResizeArray()
             for i = 0 to commands.Count - 1 do
                 let cmd = commands.[i]
@@ -58,19 +56,19 @@ type private CommandBatchBuilder(conn : DbConnection) =
                     processor.BeginResultSet(reader)
                     let mutable hasRows = true
                     while hasRows do
-                        let! hasRow = Async.AwaitTask <| reader.ReadAsync()
+                        let! hasRow = reader.ReadAsync() : bool Task
                         if hasRow then
                             processor.ProcessRow()
                         else
                             hasRows <- false
                     resultSetCount <- resultSetCount + 1
-                    let! hasNextResult = Async.AwaitTask <| reader.NextResultAsync()
+                    let! hasNextResult = reader.NextResultAsync() : bool Task
                     match cmd.ResultSetCount with
                     | None -> // check for terminator
                         if not hasNextResult || reader.FieldCount = 1 && reader.GetName(0) = terminatorColumn i then
                             resultSetCount <- -1
                         else
-                            let! hasNextResult = Async.AwaitTask <| reader.NextResultAsync() // skip over terminator
+                            let! hasNextResult = reader.NextResultAsync() : bool Task
                             if not hasNextResult then
                                 resultSetCount <- -1
                     | Some count ->
@@ -91,15 +89,7 @@ type private CommandBatchBuilder(conn : DbConnection) =
 
 type CommandBatch(conn : DbConnection) =
     let builder = CommandBatchBuilder(conn)
-    let evaluation = lazy Async.RunSynchronously(builder.Evaluate())
-    member __.Batch(cmd : #Command<'a>) =
-        let index = builder.BatchCommand(cmd)
-        fun () ->
-            evaluation.Value.[index] |> Unchecked.unbox : 'a
-
-type AsyncCommandBatch(conn : DbConnection) =
-    let builder = CommandBatchBuilder(conn)
-    let evaluation = lazy Async.StartAsTask(builder.Evaluate())
+    let evaluation = lazy builder.Evaluate()
     member __.Batch(cmd : #Command<'a>) =
         let index = builder.BatchCommand(cmd)
         fun () ->

@@ -10,6 +10,7 @@ open FSharp.Quotations
 open FSharp.Reflection
 open ProviderImplementation.ProvidedTypes
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
+open Rezoom
 open Rezoom.SQL.Mapping
 open Rezoom.SQL
 
@@ -121,12 +122,41 @@ let private generateRowType (model : UserModel) (name : string) (query : ColumnT
     CompileTimeColumnMap.Parse(query.Columns)
     |> generateRowTypeFromColumns model name
 
+let private maskOfTables (model : UserModel) (tables : (Name * Name) seq) =
+    let mutable mask = BitMask.Zero
+    for table in tables do
+        match model.TableIds.Value |> Map.tryFind table with
+        | None -> ()
+        | Some id ->
+            mask <- mask.WithBit(id % 128, true)
+    mask
+
 let private generateCommandMethod
     (generate : GenerateType) (command : CommandEffect) (retTy : Type) (callMeth : MethodInfo) =
     let backend = generate.UserModel.Backend
     let parameters = command.Parameters |> Seq.sortBy fst |> Seq.toList
     let indexer = parameterIndexer (parameters |> Seq.map fst)
-    let fragments = backend.ToCommandFragments(indexer, command.Statements)
+    let commandData =
+        let fragments = backend.ToCommandFragments(indexer, command.Statements) |> toFragmentArrayExpr
+        let category = generate.UserModel.ConfigDirectory.TrimEnd('/', '.')
+        let identity = generate.Namespace + generate.TypeName
+        let resultSetCount = command.ResultSets |> Seq.length
+        let dependencies = maskOfTables generate.UserModel command.ReadTables
+        let invalidations = maskOfTables generate.UserModel command.WriteTables
+        <@@ {   Category = CommandCategory (%%Quotations.Expr.Value(category))
+                Identity = %%Quotations.Expr.Value(identity)
+                Fragments = (%%fragments : _ array) :> _ IReadOnlyList
+                DependencyMask =
+                    BitMask
+                        (%%Quotations.Expr.Value(dependencies.HighBits)
+                        , %%Quotations.Expr.Value(dependencies.LowBits))
+                InvalidationMask =
+                    BitMask
+                        (%%Quotations.Expr.Value(invalidations.HighBits)
+                        , %%Quotations.Expr.Value(invalidations.LowBits))
+                ResultSetCount = Some (%%Quotations.Expr.Value(resultSetCount))
+            }
+        @@>
     let methodParameters =
         [ for NamedParameter name, ty in parameters ->
             ProvidedParameter(name.Value, ty.CLRType)
@@ -142,8 +172,7 @@ let private generateCommandMethod
                         let tx = backend.ParameterTransform(ty)
                         Expr.NewTuple([ tx.ValueTransform ex; Quotations.Expr.Value(tx.ParameterType) ]))
                     )
-            let frags = toFragmentArrayExpr fragments
-            Expr.CallUnchecked(callMeth, [ frags; arr ])
+            Expr.CallUnchecked(callMeth, [ commandData; arr ])
     meth
 
 let generateSQLType (generate : GenerateType) (sql : string) =
