@@ -20,6 +20,12 @@ type CommandErrandArgument(parameters : (obj * DbType) IReadOnlyList) =
         | :? CommandErrandArgument as other -> this.Equals(other)
         | _ -> false
 
+type CommandBatchFactory() =
+    inherit ServiceFactory<CommandBatch>()
+    override __.CreateService(cxt) = failwith "not implemented" // TODO
+    override __.DisposeService(svc) = ()
+    override __.ServiceLifetime = ServiceLifetime.StepLocal
+
 type CommandErrand<'a>(command : Command<'a>) =
     inherit AsynchronousErrand<'a>()
     let cacheArgument = CommandErrandArgument(command.Parameters)
@@ -27,7 +33,7 @@ type CommandErrand<'a>(command : Command<'a>) =
     override __.CacheArgument = box cacheArgument 
     override __.SequenceGroup = box typeof<Command>
     override __.Prepare(cxt) =
-        let batch = cxt.GetService<CommandBatch>()
+        let batch = cxt.GetService<CommandBatchFactory, _>()
         batch.Batch(command)
 
 type Command<'a> with
