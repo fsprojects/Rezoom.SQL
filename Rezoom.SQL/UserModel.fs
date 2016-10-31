@@ -82,14 +82,15 @@ module private UserModelLoader =
 open UserModelLoader
 
 type UserModel =
-    {   ConfigDirectory : string
+    {   ConnectionName : string
+        ConfigDirectory : string
         MigrationsDirectory : string
         Backend : IBackend
         Model : Model
         Migrations : string MigrationMajorVersion IReadOnlyList
         TableIds : Map<Name * Name, int> Lazy
     }
-    static member ConfigFileName = "staticql.json"
+    static member ConfigFileName = "rzsql.json"
     static member Load(resolutionFolder : string, modelPath : string) =
         let config, configDirectory =
             if String.IsNullOrEmpty(modelPath) then // implicit based on location of dbconfig.json
@@ -115,7 +116,8 @@ type UserModel =
         let backend = config.Backend.ToBackend()
         let migrations, model = nextModel backend.InitialModel migrations
         let migrations = migrations |> Seq.map (stringizeMajorVersion backend) |> toReadOnlyList
-        {   MigrationsDirectory = migrationsDirectory
+        {   ConnectionName = config.ConnectionName
+            MigrationsDirectory = migrationsDirectory
             ConfigDirectory = Path.GetFullPath(configDirectory)
             Backend = backend
             Model = model

@@ -42,10 +42,8 @@ type ResultSetProcessor<'output>() =
     abstract member GetResult : unit -> 'output
     override this.ObjectGetResult() = this.GetResult() |> box
 
-type CommandCategory = CommandCategory of modelPath : string
-
 type CommandData =
-    {   Category : CommandCategory
+    {   ConnectionName : string
         Identity : string
         Fragments : CommandFragment IReadOnlyList
         DependencyMask : BitMask
@@ -53,15 +51,19 @@ type CommandData =
         ResultSetCount : int option
     }
 
+type CommandCategory = CommandCategory of connectionName : string
+
 [<AbstractClass>]
 type Command(data : CommandData, parameters : (obj * DbType) IReadOnlyList) =
+    let category = CommandCategory data.ConnectionName
     let cacheInfo =
         { new CacheInfo() with
-            override __.Category = upcast data.Category
+            override __.Category = upcast category
             override __.Identity = upcast data.Identity
             override __.DependencyMask = data.DependencyMask
             override __.InvalidationMask = data.InvalidationMask
         }
+    member __.ConnectionName = data.ConnectionName
     member __.CacheInfo = cacheInfo
     member __.Fragments = data.Fragments
     member __.Parameters = parameters

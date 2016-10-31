@@ -70,7 +70,7 @@
     <Compile Include="StaticEntityReaderTemplate.fs" />
     <Compile Include="Command.fs" />
     <Compile Include="CommandBatch.fs" />
-    <Compile Include="CommandExtensions.fs" />
+    <Compile Include="Integration.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="LicenseToCIL">

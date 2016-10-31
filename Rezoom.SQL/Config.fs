@@ -20,11 +20,14 @@ type Config =
         Backend : ConfigBackend
         /// Path to the migrations folder relative to the directory the config file resides in.
         MigrationsPath : string
+        /// Connection string name to use at runtime.
+        ConnectionName : string
     }
 
 let defaultConfig =
     {   Backend = Identity
         MigrationsPath = "."
+        ConnectionName = "rzsql"
     }
 
 module private Parser =
@@ -78,6 +81,7 @@ module private Parser =
         %[
             prop "BACKEND" (backend |>> fun backend config -> { config with Backend = backend })
             prop "MIGRATIONS" (stringLiteral |>> fun path config -> { config with MigrationsPath = path })
+            prop "CONNECTIONNAME" (stringLiteral |>> fun conn config -> { config with ConnectionName = conn })
         ]
 
     let config : Parser<Config, unit> =

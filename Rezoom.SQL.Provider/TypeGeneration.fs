@@ -138,21 +138,20 @@ let private generateCommandMethod
     let indexer = parameterIndexer (parameters |> Seq.map fst)
     let commandData =
         let fragments = backend.ToCommandFragments(indexer, command.Statements) |> toFragmentArrayExpr
-        let category = generate.UserModel.ConfigDirectory.TrimEnd('/', '.')
         let identity = generate.Namespace + generate.TypeName
         let resultSetCount = command.ResultSets |> Seq.length
         let dependencies = maskOfTables generate.UserModel command.ReadTables
         let invalidations = maskOfTables generate.UserModel command.WriteTables
-        <@@ {   Category = CommandCategory (%%Quotations.Expr.Value(category))
+        <@@ {   ConnectionName = %%Quotations.Expr.Value(generate.UserModel.ConnectionName)
                 Identity = %%Quotations.Expr.Value(identity)
                 Fragments = (%%fragments : _ array) :> _ IReadOnlyList
                 DependencyMask =
                     BitMask
-                        (%%Quotations.Expr.Value(dependencies.HighBits)
+                        ( %%Quotations.Expr.Value(dependencies.HighBits)
                         , %%Quotations.Expr.Value(dependencies.LowBits))
                 InvalidationMask =
                     BitMask
-                        (%%Quotations.Expr.Value(invalidations.HighBits)
+                        ( %%Quotations.Expr.Value(invalidations.HighBits)
                         , %%Quotations.Expr.Value(invalidations.LowBits))
                 ResultSetCount = Some (%%Quotations.Expr.Value(resultSetCount))
             }
