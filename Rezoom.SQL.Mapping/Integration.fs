@@ -92,7 +92,7 @@ type CommandErrand<'a>(command : Command<'a>) =
     let cacheArgument = CommandErrandArgument(command.Parameters)
     override __.CacheInfo = command.CacheInfo
     override __.CacheArgument = box cacheArgument 
-    override __.SequenceGroup = box typeof<Command>
+    override __.SequenceGroup = null
     override __.Prepare(cxt) =
         let batches = cxt.GetService<StepLocalBatchesFactory, _>()
         batches.GetBatch(command.ConnectionName).Batch(command)

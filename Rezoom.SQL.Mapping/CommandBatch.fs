@@ -40,9 +40,9 @@ type private CommandBatchBuilder(conn : DbConnection) =
         dbCommand.CommandText <- builder.ToString()
 
     member __.Evaluate() =
+        if evaluating then failwith "Already evaluating command"
+        else evaluating <- true
         task {
-            if evaluating then failwith "Already evaluating command"
-            else evaluating <- true
             use dbCommand = conn.CreateCommand()
             buildCommand dbCommand
             use! reader = dbCommand.ExecuteReaderAsync()
