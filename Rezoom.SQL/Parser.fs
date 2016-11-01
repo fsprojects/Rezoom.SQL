@@ -572,6 +572,7 @@ let private commonTableExpression =
     -- +.(zeroOrOne * withSource parenthesizedColumnNames)
     -- kw "AS"
     -- '('
+    -- ws
     -- +.selectStmt
     -- ')'
     -- ws
@@ -580,7 +581,7 @@ let private commonTableExpression =
 
 let private withClause =
     %% kw "WITH"
-    -- +.(zeroOrOne * tws (kw "RECURSIVE"))
+    -- +.(zeroOrOne * kw "RECURSIVE")
     -- +.(qty.[1..] / tws ',' * commonTableExpression)
     -|> fun recurs ctes ->
         { Recursive = Option.isSome recurs; Tables = ctes }

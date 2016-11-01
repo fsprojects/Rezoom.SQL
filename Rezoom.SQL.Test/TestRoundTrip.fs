@@ -55,6 +55,7 @@ type TestRoundTrip() =
             delete from Users where Email like '%earthlink.net'
         """
 
+    [<TestMethod>]
     member __.TestDrop() =
         roundtrip """
             drop table main.Users
@@ -139,4 +140,26 @@ type TestRoundTrip() =
                 join
                 (select g.Id from Groups g) gs
                 on us.Id = gs.Id
+        """
+
+    [<TestMethod>]
+    member __.TestCTE() =
+        roundtrip """
+            with
+                a(x) as
+                    ( select * from Users )
+            select * from a;
+        """
+
+    [<TestMethod>]
+    member __.TestRecursiveCTE() =
+        roundtrip """
+            with recursive
+                nums(x) as (
+                    select 1
+                    union all
+                    select x+1 from nums
+                    limit 1000000
+                )
+            select x from nums;
         """
