@@ -1,6 +1,7 @@
 ﻿[<AutoOpen>]
 module Rezoom.SQL.Mapping.Integration
 open System
+open System.Configuration
 open System.Collections.Generic
 open System.Data
 open System.Data.Common
@@ -9,6 +10,16 @@ open Rezoom
 [<AbstractClass>]
 type ConnectionProvider() =
     abstract member Open : name : string -> DbConnection
+
+type DefaultConnectionProvider() =
+    inherit ConnectionProvider()
+    override __.Open(name) =
+        let connectionString = ConfigurationManager.ConnectionStrings.[name]
+        let provider = DbProviderFactories.GetFactory(connectionString.ProviderName)
+        let conn = provider.CreateConnection()
+        conn.ConnectionString <- connectionString.ConnectionString
+        conn.Open()
+        conn
 
 type private ExecutionLocalConnections(provider : ConnectionProvider) =
     let connections = Dictionary()
@@ -34,9 +45,11 @@ type private ExecutionLocalConnectionsFactory() =
     inherit ServiceFactory<ExecutionLocalConnections>()
     override __.ServiceLifetime = ServiceLifetime.ExecutionLocal
     override __.CreateService(cxt) =
-        match cxt.TryGetConfiguration() with
-        | None -> failwith "No ConnectionProvider registered"
-        | Some provider -> new ExecutionLocalConnections(provider)
+        let provider = 
+            match cxt.Configuration.TryGetConfig<ConnectionProvider>() with
+            | None -> DefaultConnectionProvider() :> ConnectionProvider
+            | Some provider -> provider
+        new ExecutionLocalConnections(provider)
     override __.DisposeService(svc) = svc.Dispose()
 
 type private StepLocalBatches(conns : ExecutionLocalConnections) =
