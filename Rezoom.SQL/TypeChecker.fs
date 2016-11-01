@@ -471,13 +471,14 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             | Some from ->
                 let succ, fromTable = from.FromVariables.TryGetValue(tbl)
                 if not succ then failAt resultColumn.Source <| sprintf "No such table: ``%O``" tbl
-                seq {
-                    for col in fromTable.Table.Query.Columns do
-                        yield qualify tbl fromTable col
-                }
+                fromTable.Table.Query.Columns |> Seq.map (qualify tbl fromTable)
         | Column (expr, alias) ->
             match resultColumn.AliasPrefix with
-            | None -> Column (this.Expr(expr), alias) |> Seq.singleton
+            | None ->
+                match alias, expr.Value with
+                | None, ColumnNameExpr _
+                | Some _, _ -> Column (this.Expr(expr), alias) |> Seq.singleton
+                | _ -> failAt resultColumn.Source "Expression-valued column requires an alias"
             | Some prefix -> 
                 let expr = this.Expr(expr)
                 let baseAlias =
