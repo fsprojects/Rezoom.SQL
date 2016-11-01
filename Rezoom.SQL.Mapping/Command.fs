@@ -96,6 +96,7 @@ type ResultSets<'a, 'b, 'c>(a : 'a, b : 'b, c : 'c) =
 [<AbstractClass>]
 type Command<'output>(data, parameters) =
     inherit Command(data, parameters)
+    abstract member WithConnectionName : connectionName : string -> Command<'output>
     abstract member ResultSetProcessor : unit -> ResultSetProcessor<'output>
     override this.ObjectResultSetProcessor() = upcast this.ResultSetProcessor()
 
@@ -108,6 +109,8 @@ type private ResultSetProcessor0<'a>() =
 
 type private Command0(data, parameters) =
     inherit Command<unit>(data, parameters)
+    override __.WithConnectionName(connectionName) =
+        upcast Command0({ data with ConnectionName = connectionName}, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor0<unit>()
 
 type private ResultSetProcessor1<'a>() =
@@ -124,6 +127,8 @@ type private ResultSetProcessor1<'a>() =
 
 type private Command1<'a>(data, parameters) =
     inherit Command<'a>(data, parameters)
+    override __.WithConnectionName(connectionName) =
+        upcast Command1({ data with ConnectionName = connectionName}, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor1<'a>()
 
 type private MultiResultSetProcessor(readers : EntityReader list) =
@@ -150,8 +155,10 @@ type private ResultSetProcessor2<'a, 'b>() =
     override __.ProcessRow() = proc.ProcessRow()
     override __.GetResult() = result.Value
 
-type private Command2<'a, 'b>(fragments, parameters) =
-    inherit Command<ResultSets<'a, 'b>>(fragments, parameters)
+type private Command2<'a, 'b>(data, parameters) =
+    inherit Command<ResultSets<'a, 'b>>(data, parameters)
+    override __.WithConnectionName(connectionName) =
+        upcast Command2({ data with ConnectionName = connectionName}, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor2<'a, 'b>()
 
 type private ResultSetProcessor3<'a, 'b, 'c>() =
@@ -167,6 +174,8 @@ type private ResultSetProcessor3<'a, 'b, 'c>() =
 
 type private Command3<'a, 'b, 'c>(data, parameters) =
     inherit Command<ResultSets<'a, 'b, 'c>>(data, parameters)
+    override __.WithConnectionName(connectionName) =
+        upcast Command3({ data with ConnectionName = connectionName}, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor3<'a, 'b, 'c>()
 
 type CommandConstructor() =
