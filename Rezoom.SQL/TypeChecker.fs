@@ -832,6 +832,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         {   With = withClause
             UpdateTable = updateTable
             Or = update.Or
+            // TODO require that names are in the table
             Set = update.Set |> rmap (fun (name, expr) -> name, checker.Expr(expr))
             Where = Option.map checker.Expr update.Where
             OrderBy = Option.map (rmap checker.OrderingTerm) update.OrderBy
