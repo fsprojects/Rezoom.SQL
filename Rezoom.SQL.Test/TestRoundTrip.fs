@@ -146,8 +146,8 @@ type TestRoundTrip() =
     member __.TestCTE() =
         roundtrip """
             with
-                a(x) as
-                    ( select Id from Users )
+                a(x, y) as
+                    ( select Id, 1 from Users )
             select * from a;
         """
 
