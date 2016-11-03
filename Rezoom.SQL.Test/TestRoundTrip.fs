@@ -153,7 +153,6 @@ type TestRoundTrip() =
 
     [<TestMethod>]
     member __.TestRecursiveCTE() =
-        // TODO: can we *not* require aliases for the selects?
         roundtrip """
             with recursive
                 nums(x) as (
@@ -163,4 +162,17 @@ type TestRoundTrip() =
                     limit 1000000
                 )
             select x from nums;
+        """
+
+    [<TestMethod>]
+    member __.TestRecursiveCTEImplicitNames() =
+        roundtrip """
+            with recursive
+                nums as (
+                    select 1 as myname
+                    union all
+                    select myname+1 from nums
+                    limit 1000000
+                )
+            select myname from nums;
         """
