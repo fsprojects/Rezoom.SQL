@@ -773,7 +773,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         {   Temporary = createView.Temporary
             ViewName = this.ObjectName(createView.ViewName, true)
             ColumnNames = createView.ColumnNames
-            AsSelect = this.Select(createView.AsSelect, None) // TODO we do sort of know the shape
+            AsSelect = this.Select(createView.AsSelect, createView.ColumnNames |> Option.map cxt.AnonymousQueryInfo)
         }
     member this.QualifiedTableName(qualified : QualifiedTableName) =
         {   TableName = this.ObjectName(qualified.TableName)
