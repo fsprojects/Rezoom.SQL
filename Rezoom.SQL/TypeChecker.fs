@@ -72,6 +72,13 @@ module TypeInferenceExtensions =
         | _ -> None
 
     type InferredQueryShape = InferredType QueryExprInfo
+    type SelfQueryShape =
+        {   CTEName : Name option
+            KnownShape : InferredQueryShape option
+        }
+        static member Known(known) = { CTEName = None; KnownShape = known }
+        static member Known(known) = SelfQueryShape.Known(Some known)
+        static member Unknown = { CTEName = None; KnownShape = None }
 
 open TypeInferenceExtensions
 
@@ -295,7 +302,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 } |> Seq.map (fun e -> e.Info.Type) |> cxt.Unify |> resultOk inex.Set.Source
                 exprs |> InExpressions
             // TODO: enforce single column-ness?
-            | InSelect select -> InSelect <| this.Select(select, None)
+            | InSelect select -> InSelect <| this.Select(select, SelfQueryShape.Unknown)
             | InTable table -> InTable <| this.TableInvocation(table)
         {   Expr.Source = source
             Value =
@@ -361,12 +368,12 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
 
     member this.Exists(source : SourceInfo, exists : SelectStmt) =
         {   Expr.Source = source
-            Value = this.Select(exists, None) |> ExistsExpr
+            Value = this.Select(exists, SelfQueryShape.Unknown) |> ExistsExpr
             Info = ExprInfo<_>.OfType(InferredType.Boolean)
         }
 
     member this.ScalarSubquery(source : SourceInfo, select : SelectStmt) =
-        let select = this.Select(select, None)
+        let select = this.Select(select, SelfQueryShape.Unknown)
         let tbl = select.Value.Info.Table.Query
         if tbl.Columns.Count <> 1 then
             failAt source <| sprintf "Scalar subquery must have 1 column (this one has %d)" tbl.Columns.Count
@@ -405,7 +412,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         | Subquery select ->
             match tsub.Alias with
             | None -> failAt select.Source "Subquery requires an alias"
-            | Some alias -> alias, this.Select(select, None).Value.Info
+            | Some alias -> alias, this.Select(select, SelfQueryShape.Unknown).Value.Info
 
     member private this.TableExprScope(dict : Dictionary<Name, InferredType ObjectInfo>, texpr : TableExpr) =
         let add name objectInfo =
@@ -440,7 +447,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 let invoke = this.TableInvocation(tinvoc)
                 Table (invoke, index), invoke.Table.Info
             | Subquery select ->
-                let select = this.Select(select, None)
+                let select = this.Select(select, SelfQueryShape.Unknown)
                 Subquery select, select.Value.Info
         {   Table = tbl
             Alias = tsub.Alias
@@ -558,11 +565,11 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                                 FromAlias = None
                                 ColumnName =
                                     match implicitAlias (expr.Value, alias) with
-                                    | None -> failAt column.Source "Expression-valued column requires an alias (bug)"
+                                    | None -> failAt column.Source "Expression-valued column requires an alias"
                                     | Some alias -> alias
                             }
                      // typechecker should've eliminated alternatives
-                     | _ -> failwith "All columns must be qualified -- this is a typechecker bug"
+                     | _ -> failwith "All wildcards must be expanded -- this is a typechecker bug"
             } |> toReadOnlyList
         {   Columns = columns
             From = from
@@ -574,9 +581,8 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 } |> TableLike
         }
     member this.CTE(cte : CommonTableExpression) =
-        let knownShape =
-            cte.ColumnNames |> Option.map (fun names -> cxt.AnonymousQueryInfo(names.Value))
-        let select = this.Select(cte.AsSelect, knownShape)
+        let knownShape = cte.ColumnNames |> Option.map (fun n -> cxt.AnonymousQueryInfo(n.Value))
+        let select = this.Select(cte.AsSelect, { KnownShape = knownShape; CTEName = Some cte.Name })
         {   Name = cte.Name
             ColumnNames = cte.ColumnNames
             AsSelect = select
@@ -657,7 +663,28 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 | Intersect (expr, term) -> Intersect <| nested expr term
                 | Except (expr, term) -> Except <| nested expr term
         }
-    member this.Select(select : SelectStmt, knownShape : InferredQueryShape option) : InfSelectStmt =
+    member this.CompoundTop(compound : CompoundExpr, selfShape : SelfQueryShape) : InfCompoundExpr =
+        match selfShape.CTEName with
+        | None -> this.Compound(compound, selfShape.KnownShape)
+        | Some cteName ->
+            let nested leftCompound recursiveFinalTerm =
+                let leftCompound = this.Compound(leftCompound, selfShape.KnownShape)
+                let leftQuery = leftCompound.Value.Info.Query
+                let rightChecker = 
+                    { scope with
+                        CTEVariables = scope.CTEVariables |> Map.add cteName leftQuery
+                    } |> this.WithScope
+                leftCompound, rightChecker.CompoundTerm(recursiveFinalTerm, Some leftQuery)
+            {   CompoundExpr.Source = compound.Source
+                Value =
+                    match compound.Value with
+                    | CompoundTerm term -> CompoundTerm <| this.CompoundTerm(term, selfShape.KnownShape)
+                    | Union (expr, term) -> Union <| nested expr term
+                    | UnionAll (expr, term) -> UnionAll <| nested expr term
+                    | Intersect (expr, term) -> Intersect <| nested expr term
+                    | Except (expr, term) -> Except <| nested expr term
+            }
+    member this.Select(select : SelectStmt, selfShape : SelfQueryShape) : InfSelectStmt =
         {   Source = select.Source
             Value =
                 let select = select.Value
@@ -667,7 +694,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     | Some withClause ->
                         let checker, withClause = this.WithClause(withClause)
                         checker, Some withClause
-                let compound = checker.Compound(select.Compound, knownShape)
+                let compound = checker.CompoundTop(select.Compound, selfShape)
                 {   With = withClause
                     Compound = compound
                     OrderBy = Option.map (rmap checker.OrderingTerm) select.OrderBy
@@ -766,14 +793,15 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             Name = name
             As =
                 match createTable.As with
-                | CreateAsSelect select -> CreateAsSelect <| this.Select(select, None)
+                | CreateAsSelect select -> CreateAsSelect <| this.Select(select, SelfQueryShape.Unknown)
                 | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(name, def)
         }
     member this.CreateView(createView : CreateViewStmt) =
+        let knownShape = createView.ColumnNames |> Option.map (cxt.AnonymousQueryInfo)
         {   Temporary = createView.Temporary
             ViewName = this.ObjectName(createView.ViewName, true)
             ColumnNames = createView.ColumnNames
-            AsSelect = this.Select(createView.AsSelect, createView.ColumnNames |> Option.map cxt.AnonymousQueryInfo)
+            AsSelect = this.Select(createView.AsSelect, SelfQueryShape.Known(knownShape))
         }
     member this.QualifiedTableName(qualified : QualifiedTableName) =
         {   TableName = this.ObjectName(qualified.TableName)
@@ -811,12 +839,12 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         let knownShape =
             match insert.Columns with
             | None -> table.Info.Query
-            | Some cols -> cxt.AnonymousQueryInfo(cols) // TODO also match types with into.Info
+            | Some cols -> cxt.AnonymousQueryInfo(cols) // TODO also match types with table.Info
         {   With = withClause
             Or = insert.Or
             InsertInto = table
             Columns = insert.Columns
-            Data = insert.Data |> Option.map (fun data -> checker.Select(data, Some knownShape))
+            Data = insert.Data |> Option.map (fun data -> checker.Select(data, SelfQueryShape.Known(knownShape)))
         }
     member this.Update(update : UpdateStmt) =
         let checker, withClause =
@@ -852,7 +880,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         | DeleteStmt delete -> DeleteStmt <| this.Delete(delete)
         | DropObjectStmt drop -> DropObjectStmt <| this.DropObject(drop)
         | InsertStmt insert -> InsertStmt <| this.Insert(insert)
-        | SelectStmt select -> SelectStmt <| this.Select(select, knownShape = None)
+        | SelectStmt select -> SelectStmt <| this.Select(select, SelfQueryShape.Unknown)
         | UpdateStmt update -> UpdateStmt <| this.Update(update)
         | BeginStmt -> BeginStmt
         | CommitStmt -> CommitStmt

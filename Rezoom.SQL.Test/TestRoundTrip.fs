@@ -157,9 +157,9 @@ type TestRoundTrip() =
         roundtrip """
             with recursive
                 nums(x) as (
-                    select 1 as _
+                    select 1
                     union all
-                    select x+1 as _ from nums
+                    select x+1 from nums
                     limit 1000000
                 )
             select x from nums;
