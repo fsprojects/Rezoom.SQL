@@ -50,7 +50,15 @@ module TypeInferenceExtensions =
             | Not -> typeInference.Unify(operandType, InferredType.Boolean)
             | IsNull
             | NotNull -> result { return InferredType.Boolean }
+
+    let inline implicitAlias column =
+        match column with
+        | _, (Some _ as a) -> a
+        | ColumnNameExpr c, None -> Some c.ColumnName
+        | _ -> None
+
     type InferredQueryShape = InferredType QueryExprInfo
+
 open TypeInferenceExtensions
 
 type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
@@ -475,28 +483,38 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 fromTable.Table.Query.Columns |> Seq.map (qualify tbl fromTable)
         | Column (expr, alias) ->
             match resultColumn.AliasPrefix with
-            | None ->
-                match alias, expr.Value with
-                | None, ColumnNameExpr _
-                | Some _, _ -> Column (this.Expr(expr), alias) |> Seq.singleton
-                | _ -> failAt resultColumn.Source "Expression-valued column requires an alias"
+            | None -> Column (this.Expr(expr), alias) |> Seq.singleton
             | Some prefix -> 
                 let expr = this.Expr(expr)
-                let baseAlias =
-                    match alias, expr.Value with
-                    | Some a, _ -> a
-                    | None, ColumnNameExpr c -> c.ColumnName
-                    | None, _ -> failAt resultColumn.Source "Expression-valued column requires an alias"
-                Column (expr, Some (prefix + baseAlias)) |> Seq.singleton
-    member this.ResultColumns(resultColumns : ResultColumns) =
+                match implicitAlias (expr.Value, alias) with
+                | None -> Column (expr, None) |> Seq.singleton
+                | Some a -> Column (expr, Some (prefix + a)) |> Seq.singleton
+                    
+                        
+    member this.ResultColumns(resultColumns : ResultColumns, knownShape : InferredQueryShape option) =
+        let columns =
+            resultColumns.Columns
+            |> Seq.collect
+                (fun rc ->
+                    this.ResultColumn(rc)
+                    |> Seq.map (fun c -> { Source = rc.Source; Case = c; AliasPrefix = None }))
+            |> ResizeArray
+        let source = resultColumns.Columns.[0].Source
+        match knownShape with
+        | Some shape ->
+            if columns.Count <> shape.Columns.Count then
+                failAt source <| sprintf "Expected %d columns but selected %d" shape.Columns.Count columns.Count
+            for i = 0 to columns.Count - 1 do
+                let selected, alias as selectedCol = columns.[i].Case.AssumeColumn()
+                let shape = shape.Columns.[i]
+                cxt.Unify(selected.Info.Type, shape.Expr.Info.Type) |> resultOk selected.Source
+                match implicitAlias (selected.Value, alias) with
+                | Some a when a = shape.ColumnName -> ()
+                | _ ->
+                    columns.[i] <- { columns.[i] with Case = Column(selected, Some shape.ColumnName) }
+        | None -> ()
         {   Distinct = resultColumns.Distinct
-            Columns =
-                resultColumns.Columns
-                |> Seq.collect
-                    (fun rc ->
-                        this.ResultColumn(rc)
-                        |> Seq.map (fun c -> { Source = rc.Source; Case = c; AliasPrefix = None }))
-                |> ResizeArray
+            Columns = columns
         }
     member this.GroupBy(groupBy : GroupBy) =
         {   By = groupBy.By |> rmap this.Expr
@@ -509,7 +527,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             | Some from ->
                 let checker, texpr = this.TableExpr(from)
                 checker, Some texpr
-        let columns = checker.ResultColumns(select.Columns)
+        let columns = checker.ResultColumns(select.Columns, knownShape)
         let infoColumns =
             seq {
                 for column in columns.Columns do
@@ -519,10 +537,9 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                             {   Expr = expr
                                 FromAlias = None
                                 ColumnName =
-                                    match alias, expr.Value with
-                                    | Some alias, _ -> alias
-                                    | None, ColumnNameExpr c -> c.ColumnName
-                                    | None, _ -> failAt column.Source "Expression-valued column requires an alias (bug)"
+                                    match implicitAlias (expr.Value, alias) with
+                                    | None -> failAt column.Source "Expression-valued column requires an alias (bug)"
+                                    | Some alias -> alias
                             }
                      // typechecker should've eliminated alternatives
                      | _ -> failwith "All columns must be qualified -- this is a typechecker bug"
