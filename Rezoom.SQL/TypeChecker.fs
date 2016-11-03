@@ -254,6 +254,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     Column = None
                 }
         }
+
     member this.Between(source : SourceInfo, between : BetweenExpr) =
         let input = this.Expr(between.Input)
         let low = this.Expr(between.Low)
@@ -267,6 +268,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     Column = None
                 }
         }
+
     member this.In(source : SourceInfo, inex : InExpr) =
         let input = this.Expr(inex.Input)
         let set =
@@ -278,7 +280,8 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     yield! exprs
                 } |> Seq.map (fun e -> e.Info.Type) |> cxt.Unify |> resultOk inex.Set.Source
                 exprs |> InExpressions
-            | InSelect select -> InSelect <| this.Select(select)
+            // TODO: enforce single column-ness?
+            | InSelect select -> InSelect <| this.Select(select, None)
             | InTable table -> InTable <| this.TableInvocation(table)
         {   Expr.Source = source
             Value =
@@ -293,6 +296,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     Column = None
                 }
         }
+
     member this.Case(source : SourceInfo, case : CaseExpr) =
         let case =
             {   Input = Option.map this.Expr case.Input
@@ -340,13 +344,15 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     Column = None
                 }
         }
+
     member this.Exists(source : SourceInfo, exists : SelectStmt) =
         {   Expr.Source = source
-            Value = this.Select(exists) |> ExistsExpr
+            Value = this.Select(exists, None) |> ExistsExpr
             Info = ExprInfo<_>.OfType(InferredType.Boolean)
         }
+
     member this.ScalarSubquery(source : SourceInfo, select : SelectStmt) =
-        let select = this.Select(select)
+        let select = this.Select(select, None)
         let tbl = select.Value.Info.Table.Query
         if tbl.Columns.Count <> 1 then
             failAt source <| sprintf "Scalar subquery must have 1 column (this one has %d)" tbl.Columns.Count
@@ -354,6 +360,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             Value = ScalarSubqueryExpr select
             Info = tbl.Columns.[0].Expr.Info
         }
+
     member this.Expr(expr : Expr) : InfExpr =
         let source = expr.Source
         match expr.Value with
@@ -384,8 +391,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         | Subquery select ->
             match tsub.Alias with
             | None -> failAt select.Source "Subquery requires an alias"
-            | Some alias ->
-                alias, this.Select(select).Value.Info
+            | Some alias -> alias, this.Select(select, None).Value.Info
 
     member private this.TableExprScope(dict : Dictionary<Name, InferredType ObjectInfo>, texpr : TableExpr) =
         let add name objectInfo =
@@ -403,6 +409,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 yield! this.TableExprScope(dict, join.LeftTable)
                 yield! this.TableExprScope(dict, join.RightTable)
             }
+
     member private this.TableExprScope(texpr : TableExpr) =
         let dict = Dictionary()
         { FromVariables = dict; FromObjects = this.TableExprScope(dict, texpr) |> ResizeArray }
@@ -419,7 +426,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 let invoke = this.TableInvocation(tinvoc)
                 Table (invoke, index), invoke.Table.Info
             | Subquery select ->
-                let select = this.Select(select)
+                let select = this.Select(select, None)
                 Subquery select, select.Value.Info
         {   Table = tbl
             Alias = tsub.Alias
@@ -489,8 +496,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 match implicitAlias (expr.Value, alias) with
                 | None -> Column (expr, None) |> Seq.singleton
                 | Some a -> Column (expr, Some (prefix + a)) |> Seq.singleton
-                    
-                        
+                                     
     member this.ResultColumns(resultColumns : ResultColumns, knownShape : InferredQueryShape option) =
         let columns =
             resultColumns.Columns
@@ -554,7 +560,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 } |> TableLike
         }
     member this.CTE(cte : CommonTableExpression) =
-        let select = this.Select(cte.AsSelect)
+        let select = this.Select(cte.AsSelect, None) // TODO we might know the shape from CTE column names
         {   Name = cte.Name
             ColumnNames = cte.ColumnNames
             AsSelect = select
@@ -635,7 +641,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 | Intersect (expr, term) -> Intersect <| nested expr term
                 | Except (expr, term) -> Except <| nested expr term
         }
-    member this.Select(select : SelectStmt) : InfSelectStmt =
+    member this.Select(select : SelectStmt, knownShape : InferredQueryShape option) : InfSelectStmt =
         {   Source = select.Source
             Value =
                 let select = select.Value
@@ -645,7 +651,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     | Some withClause ->
                         let checker, withClause = this.WithClause(withClause)
                         checker, Some withClause
-                let compound = checker.Compound(select.Compound, None) // TODO possibly known shape from CTE
+                let compound = checker.Compound(select.Compound, knownShape)
                 {   With = withClause
                     Compound = compound
                     OrderBy = Option.map (rmap checker.OrderingTerm) select.OrderBy
@@ -744,14 +750,14 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             Name = name
             As =
                 match createTable.As with
-                | CreateAsSelect select -> CreateAsSelect <| this.Select(select)
+                | CreateAsSelect select -> CreateAsSelect <| this.Select(select, None)
                 | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(name, def)
         }
     member this.CreateView(createView : CreateViewStmt) =
         {   Temporary = createView.Temporary
             ViewName = this.ObjectName(createView.ViewName, true)
             ColumnNames = createView.ColumnNames
-            AsSelect = this.Select(createView.AsSelect)
+            AsSelect = this.Select(createView.AsSelect, None) // TODO we do sort of know the shape
         }
     member this.QualifiedTableName(qualified : QualifiedTableName) =
         {   TableName = this.ObjectName(qualified.TableName)
@@ -785,11 +791,12 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             | Some withClause ->
                 let checker, withClause = this.WithClause(withClause)
                 checker, Some withClause
+        let into = checker.ObjectName(insert.InsertInto)
         {   With = withClause
             Or = insert.Or
-            InsertInto = checker.ObjectName(insert.InsertInto)
+            InsertInto = into
             Columns = insert.Columns
-            Data = Option.map checker.Select insert.Data
+            Data = insert.Data |> Option.map (fun data -> checker.Select(data, Some into.Info.Query))
         }
     member this.Update(update : UpdateStmt) =
         let checker, withClause =
@@ -824,7 +831,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         | DeleteStmt delete -> DeleteStmt <| this.Delete(delete)
         | DropObjectStmt drop -> DropObjectStmt <| this.DropObject(drop)
         | InsertStmt insert -> InsertStmt <| this.Insert(insert)
-        | SelectStmt select -> SelectStmt <| this.Select(select)
+        | SelectStmt select -> SelectStmt <| this.Select(select, knownShape = None)
         | UpdateStmt update -> UpdateStmt <| this.Update(update)
         | BeginStmt -> BeginStmt
         | CommitStmt -> CommitStmt
