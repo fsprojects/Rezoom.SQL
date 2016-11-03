@@ -50,6 +50,20 @@ module TypeInferenceExtensions =
             | Not -> typeInference.Unify(operandType, InferredType.Boolean)
             | IsNull
             | NotNull -> result { return InferredType.Boolean }
+        member typeInference.AnonymousQueryInfo(columnNames) =
+            {   Columns =
+                    seq {
+                        for name in columnNames ->
+                            {   ColumnName = name
+                                FromAlias = None
+                                Expr =
+                                    {   Value = ColumnNameExpr { Table = None; ColumnName = name }
+                                        Source = SourceInfo.Zero
+                                        Info = ExprInfo.OfType(typeInference.AnonymousVariable())
+                                    }
+                            }
+                    } |> toReadOnlyList
+            }
 
     let inline implicitAlias column =
         match column with
@@ -560,7 +574,9 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                 } |> TableLike
         }
     member this.CTE(cte : CommonTableExpression) =
-        let select = this.Select(cte.AsSelect, None) // TODO we might know the shape from CTE column names
+        let knownShape =
+            cte.ColumnNames |> Option.map (fun names -> cxt.AnonymousQueryInfo(names.Value))
+        let select = this.Select(cte.AsSelect, knownShape)
         {   Name = cte.Name
             ColumnNames = cte.ColumnNames
             AsSelect = select
@@ -791,12 +807,16 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
             | Some withClause ->
                 let checker, withClause = this.WithClause(withClause)
                 checker, Some withClause
-        let into = checker.ObjectName(insert.InsertInto)
+        let table = checker.ObjectName(insert.InsertInto)
+        let knownShape =
+            match insert.Columns with
+            | None -> table.Info.Query
+            | Some cols -> cxt.AnonymousQueryInfo(cols) // TODO also match types with into.Info
         {   With = withClause
             Or = insert.Or
-            InsertInto = into
+            InsertInto = table
             Columns = insert.Columns
-            Data = insert.Data |> Option.map (fun data -> checker.Select(data, Some into.Info.Query))
+            Data = insert.Data |> Option.map (fun data -> checker.Select(data, Some knownShape))
         }
     member this.Update(update : UpdateStmt) =
         let checker, withClause =

@@ -147,7 +147,7 @@ type TestRoundTrip() =
         roundtrip """
             with
                 a(x) as
-                    ( select * from Users )
+                    ( select Id from Users )
             select * from a;
         """
 
