@@ -50,6 +50,7 @@ module TypeInferenceExtensions =
             | Not -> typeInference.Unify(operandType, InferredType.Boolean)
             | IsNull
             | NotNull -> result { return InferredType.Boolean }
+    type InferredQueryShape = InferredType QueryExprInfo
 open TypeInferenceExtensions
 
 type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
@@ -501,7 +502,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         {   By = groupBy.By |> rmap this.Expr
             Having = groupBy.Having |> Option.map this.Expr
         }
-    member this.SelectCore(select : SelectCore) =
+    member this.SelectCore(select : SelectCore, knownShape : InferredQueryShape option) =
         let checker, from =
             match select.From with
             | None -> this, None
@@ -566,39 +567,56 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
         {   Limit = this.Expr(limit.Limit, IntegerType Integer64)
             Offset = limit.Offset |> Option.map (fun e -> this.Expr(e, IntegerType Integer64))
         }
-    member this.CompoundTerm(term : CompoundTerm) : InfCompoundTerm =
+    member this.CompoundTerm(term : CompoundTerm, knownShape : InferredQueryShape option) : InfCompoundTerm =
         let info, value =
-            match term.Value with
-            | Values vals ->
+            match term.Value, knownShape with
+            | Values vals, Some shape ->
                 let vals = vals |> rmap (fun w -> { WithSource.Value = rmap this.Expr w.Value; Source = w.Source })
                 let columns =
                     seq {
-                        for value in vals.[0].Value ->
-                            {   Expr = value
-                                FromAlias = None
-                                ColumnName = Name("")
-                            }
+                        for rowIndex, row in vals |> Seq.indexed do
+                            if row.Value.Count <> shape.Columns.Count then
+                                failAt row.Source <|
+                                    sprintf "Incorrect number of columns (expected %d, got %d)"
+                                        shape.Columns.Count row.Value.Count
+                            for colVal, colShape in Seq.zip row.Value shape.Columns do
+                                cxt.Unify(colVal.Info.Type, colShape.Expr.Info.Type) |> resultOk row.Source
+                                if rowIndex > 0 then () else
+                                yield
+                                    {   Expr = colVal
+                                        FromAlias = None
+                                        ColumnName = colShape.ColumnName
+                                    }
                     } |> toReadOnlyList
                 TableLike
                     {   Table = CompoundTermResults
                         Query = { Columns = columns }
                     }, Values vals
-            | Select select ->
-                let select = this.SelectCore(select)
+            | Values vals, None ->
+                failAt term.Source "VALUES() clause can only be used when column names are implied by context"
+            | Select select, knownShape ->
+                let select = this.SelectCore(select, knownShape)
                 select.Info, Select select
         {   Source = term.Source
             Value = value
             Info = info
         }
-    member this.Compound(compound : CompoundExpr) =
+    member this.Compound(compound : CompoundExpr, knownShape : InferredQueryShape option) : InfCompoundExpr =
+        let nested leftCompound rightTerm =
+            match knownShape with
+            | Some _ as shape ->
+                this.Compound(leftCompound, knownShape), this.CompoundTerm(rightTerm, knownShape)
+            | None ->
+                let leftCompound = this.Compound(leftCompound, None)
+                leftCompound, this.CompoundTerm(rightTerm, Some leftCompound.Value.Info.Query)
         {   CompoundExpr.Source = compound.Source
-            Value = 
+            Value =
                 match compound.Value with
-                | CompoundTerm term -> CompoundTerm <| this.CompoundTerm(term)
-                | Union (expr, term) -> Union (this.Compound(expr), this.CompoundTerm(term))
-                | UnionAll (expr, term) -> UnionAll (this.Compound(expr), this.CompoundTerm(term))
-                | Intersect (expr, term) -> Intersect (this.Compound(expr), this.CompoundTerm(term))
-                | Except (expr, term) -> Except (this.Compound(expr), this.CompoundTerm(term))
+                | CompoundTerm term -> CompoundTerm <| this.CompoundTerm(term, knownShape)
+                | Union (expr, term) -> Union <| nested expr term
+                | UnionAll (expr, term) -> UnionAll <| nested expr term
+                | Intersect (expr, term) -> Intersect <| nested expr term
+                | Except (expr, term) -> Except <| nested expr term
         }
     member this.Select(select : SelectStmt) : InfSelectStmt =
         {   Source = select.Source
@@ -610,7 +628,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) =
                     | Some withClause ->
                         let checker, withClause = this.WithClause(withClause)
                         checker, Some withClause
-                let compound = checker.Compound(select.Compound)
+                let compound = checker.Compound(select.Compound, None) // TODO possibly known shape from CTE
                 {   With = withClause
                     Compound = compound
                     OrderBy = Option.map (rmap checker.OrderingTerm) select.OrderBy
