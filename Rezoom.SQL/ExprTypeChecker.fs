@@ -21,6 +21,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     if not allowNotFound then failAt objectName.Source r
                     else Missing
         }
+
     member this.ColumnName(source : SourceInfo, columnName : ColumnName) =
         let tblAlias, tblInfo, name = scope.ResolveColumnReference(columnName) |> foundAt source
         {   Expr.Source = source
@@ -38,11 +39,13 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 } |> ColumnNameExpr
             Info = name.Expr.Info
         }
+
     member this.Literal(source : SourceInfo, literal : Literal) =
         {   Expr.Source = source
             Value = LiteralExpr literal
             Info = ExprInfo<_>.OfType(InferredType.OfLiteral(literal))
         }
+
     member this.BindParameter(source : SourceInfo, par : BindParameter) =
         {   Expr.Source = source
             Value = BindParameterExpr par
@@ -65,6 +68,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     Column = None
                 }
         }
+
     member this.Unary(source : SourceInfo, unary : UnaryExpr) =
         let operand = this.Expr(unary.Operand)
         {   Expr.Source = source
@@ -79,6 +83,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     Column = None
                 }
         }
+
     member this.Cast(source : SourceInfo, cast : CastExpr) =
         let input = this.Expr(cast.Expression)
         let ty = InferredType.OfTypeName(cast.AsType, input.Info.Type)
@@ -94,6 +99,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     Column = None
                 }
         }
+
     member this.Collation(source : SourceInfo, collation : CollationExpr) =
         let input = this.Expr(collation.Input)
         cxt.Unify(input.Info.Type, InferredType.String) |> resultOk source
@@ -109,6 +115,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     Column = None
                 }
         }
+
     member this.FunctionInvocation(source : SourceInfo, func : FunctionInvocationExpr) =
         match scope.Model.Builtin.Functions.TryFind(func.FunctionName) with
         | None -> failAt source <| sprintf "No such function: ``%O``" func.FunctionName
@@ -169,6 +176,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                         Column = None
                     }
             }
+
     member this.Similarity(source : SourceInfo, sim : SimilarityExpr) =
         let input = this.Expr(sim.Input)
         let pattern = this.Expr(sim.Pattern)
@@ -328,6 +336,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
         | CaseExpr case -> this.Case(source, case)
         | ScalarSubqueryExpr select -> this.ScalarSubquery(source, select)
         | RaiseExpr raise -> { Source = source; Value = RaiseExpr raise; Info = ExprInfo<_>.OfType(InferredType.Any) }
+
     member this.Expr(expr : Expr, ty : CoreColumnType) =
         let expr = this.Expr(expr)
         cxt.Unify(expr.Info.Type, ty) |> resultOk expr.Source
