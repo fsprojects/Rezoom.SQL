@@ -13,6 +13,7 @@ type TestTypeErrors() =
             failwith "Should've thrown an exception!"
         with
         | :? SourceException as exn ->
+            printfn "\"%s\"" exn.Message
             Assert.AreEqual(msg, exn.Reason)
 
     [<TestMethod>]

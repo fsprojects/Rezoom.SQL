@@ -27,16 +27,19 @@ type SourceInfo =
         {   StartPosition = SourcePosition.Invalid
             EndPosition = SourcePosition.Invalid
         }
-    static member private ContextLength = 10
+    static member private ContextLength = 6 // words of context to show on each side
     static member private ContextBefore(source : string) =
         let mutable i = source.Length - 1
         let mutable inWord = false
         let mutable boundaryCount = 0
         while i >= 0 && boundaryCount < SourceInfo.ContextLength do
-            let inWordNow = Char.IsLetterOrDigit(source.[i])
-            if inWord <> inWordNow then
-                boundaryCount <- boundaryCount + 1
-            inWord <- inWordNow
+            if source.[i] = '\r' || source.[i] = '\n' then
+                boundaryCount <- SourceInfo.ContextLength
+            else
+                let inWordNow = Char.IsLetterOrDigit(source.[i])
+                if inWord <> inWordNow && not inWordNow then
+                    boundaryCount <- boundaryCount + 1
+                inWord <- inWordNow
             i <- i - 1
         i <- min (i + 1) (source.Length - 1)
         source.Substring(i, source.Length - i)
@@ -45,10 +48,13 @@ type SourceInfo =
         let mutable inWord = false
         let mutable boundaryCount = 0
         while i < source.Length && boundaryCount < SourceInfo.ContextLength do
-            let inWordNow = Char.IsLetterOrDigit(source.[i])
-            if inWord <> inWordNow then
-                boundaryCount <- boundaryCount + 1
-            inWord <- inWordNow
+            if source.[i] = '\r' || source.[i] = '\n' then
+                boundaryCount <- SourceInfo.ContextLength
+            else
+                let inWordNow = Char.IsLetterOrDigit(source.[i])
+                if inWord <> inWordNow && not inWordNow then
+                    boundaryCount <- boundaryCount + 1
+                inWord <- inWordNow
             i <- i + 1
         i <- max 0 (i - 1)
         source.Substring(0, i)
@@ -90,16 +96,16 @@ type SourceInfoException(msg : string, pos : SourceInfo) =
     inherit Exception(msg)
     member this.SourceInfo = pos
 
-type SourceException(msg, pos : SourceInfo, source, fileName) =
+type SourceException(msg : string, pos : SourceInfo, source, fileName) =
     inherit Exception
-        ( msg
-        + "\r\n"
+        ( msg.TrimEnd('.') + "."
+        + Environment.NewLine
         + fileName
         + "("
         + string pos.StartPosition.Line
         + ","
         + string pos.StartPosition.Column
-        + "): "
+        + "):" + Environment.NewLine
         + pos.ShowInSource(source)
         )
     member __.FileName = fileName
