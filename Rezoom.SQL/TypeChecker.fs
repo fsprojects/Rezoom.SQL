@@ -137,10 +137,12 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                     this.ResultColumn(rc)
                     |> Seq.map (fun c -> { Source = rc.Source; Case = c; AliasPrefix = None }))
             |> ResizeArray
-        let source = resultColumns.Columns.[0].Source
         match knownShape with
         | Some shape ->
             if columns.Count <> shape.Columns.Count then
+                let srcCols = columns
+                if srcCols.Count <= 0 then failwith "BUG: impossible, parser shouldn't have accepted this"
+                let source = srcCols.[srcCols.Count - 1].Source
                 failAt source <| sprintf "Expected %d columns but selected %d" shape.Columns.Count columns.Count
             for i = 0 to columns.Count - 1 do
                 let selected, alias as selectedCol = columns.[i].Case.AssumeColumn()

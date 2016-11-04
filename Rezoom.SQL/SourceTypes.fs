@@ -60,13 +60,15 @@ type SourceInfo =
         source.Substring(0, i)
             
     static member private Emphasize(source : string) =
-        " ⇨ " + source + " ⇦ "
+        let trimmed = source.TrimEnd('\r', '\n', ' ', '\t')
+        let missing = source.Substring(trimmed.Length, source.Length - trimmed.Length)
+        " ⇨ " + trimmed + " ⇦ " + missing
     member this.ShowInSource(source : string) =
         if
             this.StartPosition.Index < 0
             || this.EndPosition.Index < 0
             || this.StartPosition.Index >= int source.Length
-            || this.EndPosition.Index >= int source.Length
+            || this.EndPosition.Index > int source.Length
         then
             "(no known source (possibly generated code))"
         else

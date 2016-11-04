@@ -26,3 +26,12 @@ type TestTypeErrors() =
                 left join Groups g on g.Id = 'a'
                 where g.Name like '%grp%' escape '%'
             """
+
+    [<TestMethod>]
+    member __.TestWrongNumberOfColumnsInUnion() =
+        expectError "Expected 3 columns but selected 2"
+            """
+                select 1 a, 2 b, 3 c
+                union all
+                select 4, 5
+            """
