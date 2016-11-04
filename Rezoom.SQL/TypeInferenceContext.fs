@@ -196,7 +196,7 @@ module private TypeInferenceExtensions =
                                 FromAlias = None
                                 Expr =
                                     {   Value = ColumnNameExpr { Table = None; ColumnName = name }
-                                        Source = SourceInfo.Zero
+                                        Source = SourceInfo.Invalid
                                         Info = ExprInfo.OfType(typeInference.AnonymousVariable())
                                     }
                             }

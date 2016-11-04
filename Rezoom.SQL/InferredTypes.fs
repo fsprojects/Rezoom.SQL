@@ -110,7 +110,7 @@ type ITypeInferenceContext =
 type InferredQueryColumn() =
     static member OfColumn(fromAlias : Name option, column : SchemaColumn) =
         {   Expr =
-                {   Source = SourceInfo.Zero
+                {   Source = SourceInfo.Invalid
                     Info = { ExprInfo<_>.OfType(ConcreteType column.ColumnType) with Column = Some column }
                     Value = ColumnNameExpr { ColumnName = column.ColumnName; Table = None }
                 }

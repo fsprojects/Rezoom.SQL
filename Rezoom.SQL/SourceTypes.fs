@@ -7,10 +7,10 @@ type SourcePosition =
         Line : int64
         Column : int64
     }
-    static member Zero =
-        {   Index = 0L
-            Line = 0L
-            Column = 0L
+    static member Invalid =
+        {   Index = -1L
+            Line = -1L
+            Column = -1L
         }
 
 type ParsingException(msg, pos : SourcePosition) =
@@ -23,9 +23,9 @@ type SourceInfo =
     {   StartPosition : SourcePosition
         EndPosition : SourcePosition
     }
-    static member Zero =
-        {   StartPosition = SourcePosition.Zero
-            EndPosition = SourcePosition.Zero
+    static member Invalid =
+        {   StartPosition = SourcePosition.Invalid
+            EndPosition = SourcePosition.Invalid
         }
     member this.ShowInSource(source : string) =
         source.Substring
