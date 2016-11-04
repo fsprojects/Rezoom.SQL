@@ -24,7 +24,7 @@ type private TypeInferenceContext() =
             | FloatType s1, FloatType s2 ->
                 Ok <| FloatType (max s1 s2) // widen size
             | x, y ->
-                Error <| sprintf "The types %A and %A cannot be unified" x y
+                Error <| sprintf "The types %O and %O cannot be unified" x y
         match ty with
         | Error e -> Error e
         | Ok ty ->
@@ -76,8 +76,9 @@ type private TypeInferenceContext() =
                 let possibleTypes = Set.intersect leftTypes rightTypes
                 if Set.isEmpty possibleTypes then
                     return! Error <|
-                        sprintf "There is no intersection between the types %A and %A"
-                            (leftTypes |> Set.toList) (rightTypes |> Set.toList)
+                        sprintf "There is no intersection between the types (%s) and (%s)"
+                            (leftTypes |> Seq.map string |> String.concat " | ")
+                            (rightTypes |> Seq.map string |> String.concat " | ")
                 else
                     let leftNulls = left |> Seq.map (fun t -> t.Nullable)
                     let rightNulls = right |> Seq.map (fun t -> t.Nullable)
@@ -97,8 +98,8 @@ type private TypeInferenceContext() =
                 | Some unified -> return unified
                 | None ->
                     return! Error <|
-                        sprintf "The type %A is not one of %A"
-                            right.Type (left |> List.map (fun c -> c.Type) |> List.distinct)
+                        sprintf "The type %O is not one of (%s)"
+                            right.Type (left |> Seq.map (fun c -> string c.Type) |> Seq.distinct |> String.concat " | ")
             | (ConcreteType _ as left), (OneOfTypes _ as right) -> return! this.Unify(right, left)
         }
     member private this.Preference(ty) =

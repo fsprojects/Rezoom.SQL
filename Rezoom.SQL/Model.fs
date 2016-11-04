@@ -12,6 +12,21 @@ type CoreColumnType =
     | BinaryType
     | DateTimeType
     | DateTimeOffsetType
+    override this.ToString() =
+        match this with
+        | AnyType -> "ANY"
+        | BooleanType -> "BOOL"
+        | StringType -> "STRING"
+        | IntegerType Integer8 -> "INT8"
+        | IntegerType Integer16 -> "INT16"
+        | IntegerType Integer32 -> "INT"
+        | IntegerType Integer64 -> "INT64"
+        | FloatType Float32 -> "FLOAT32"
+        | FloatType Float64 -> "FLOAT64"
+        | DecimalType -> "DECIMAL"
+        | BinaryType -> "BINARY"
+        | DateTimeType -> "DATETIME"
+        | DateTimeOffsetType -> "DATETIMEOFFSET"
     static member OfTypeName(typeName : TypeName) =
         match typeName with
         | StringTypeName _ -> StringType

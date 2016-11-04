@@ -25,14 +25,10 @@ let emptyDictionary<'k, 'v> =
         member __.Values = Seq.empty
     }
 
-type SourceException(info : SourceInfo, msg) =
-    inherit Exception(msg)
-    member this.Info = info
-
 let inline bug msg = failwith msg
 
 let inline failAt (source : SourceInfo) (msg : string) =
-    raise (SourceException(source, msg))
+    raise (SourceInfoException(msg, source))
 
 type NameResolution<'a> =
     | Found of 'a
@@ -123,4 +119,5 @@ let rec permutations (xs : 'a list) =
     | x :: rest -> permutations rest |> Seq.collect (insertionsOf x)
  
 /// Translates from FParsec's position type to our own.
-let internal translatePosition (pos : FParsec.Position) = { Index = pos.Index; Line = pos.Line; Column = pos.Column }
+let internal translatePosition (pos : FParsec.Position) =
+    { Index = int pos.Index; Line = int pos.Line; Column = int pos.Column }

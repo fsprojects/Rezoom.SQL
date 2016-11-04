@@ -35,8 +35,9 @@ type CommandEffect =
             builder.AddStatement(stmt)
         builder.CommandEffect()
     static member OfSQL(model : Model, descr : string, sql : string) =
-        let stmts = CommandEffect.ParseSQL(descr, sql)
-        CommandEffect.OfSQL(model, stmts)
+        catchSource descr sql <| fun () ->
+            let stmts = CommandEffect.ParseSQL(descr, sql)
+            CommandEffect.OfSQL(model, stmts)
 
 and private CommandEffectBuilder(model : Model) =
     // shared throughout the whole command, since parameters are too.
