@@ -145,6 +145,7 @@ let private generateCommandMethod
         <@@ {   ConnectionName = %%Quotations.Expr.Value(generate.UserModel.ConnectionName)
                 Identity = %%Quotations.Expr.Value(identity)
                 Fragments = (%%fragments : _ array) :> _ IReadOnlyList
+                Cacheable = %%Quotations.Expr.Value(command.Idempotent)
                 DependencyMask =
                     BitMask
                         ( %%Quotations.Expr.Value(dependencies.HighBits)

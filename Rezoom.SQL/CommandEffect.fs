@@ -10,6 +10,7 @@ type CommandEffect =
     {   Statements : TStmt IReadOnlyList
         Parameters : (BindParameter * ColumnType) IReadOnlyList
         ModelChange : Model option
+        Idempotent : bool
         WriteTables : (Name * Name) seq
         ReadTables : (Name * Name) seq
     }
@@ -19,13 +20,6 @@ type CommandEffect =
                 match stmt with
                 | SelectStmt stmt -> yield stmt.Value.Info.Table.Query
                 | _ -> ()
-        }
-    static member None =
-        {   Statements = [||] :> _ IReadOnlyList
-            Parameters = [||] :> _ IReadOnlyList
-            ModelChange = None
-            WriteTables = Seq.empty
-            ReadTables = Seq.empty
         }
     static member ParseSQL(descr: string, sql : string) : Stmts =
         Parser.parseStatements descr sql |> toReadOnlyList
@@ -57,16 +51,17 @@ and private CommandEffectBuilder(model : Model) =
             inference.Parameters
             |> Seq.map (fun p -> p, inference.Concrete(inference.Variable(p)))
             |> toReadOnlyList
-        let references = lazy ReadWriteReferences.references stmts
+        let references = ReadWriteReferences.references stmts
         {   Statements = stmts
             ModelChange = newModel
             Parameters = pars
             WriteTables =
                 seq {
-                    for ref in references.Value.TablesWritten -> ref.SchemaName, ref.TableName
+                    for ref in references.TablesWritten -> ref.SchemaName, ref.TableName
                 }
             ReadTables =
                 seq {
-                    for ref in references.Value.TablesRead -> ref.SchemaName, ref.TableName
+                    for ref in references.TablesRead -> ref.SchemaName, ref.TableName
                 }
+            Idempotent = references.TablesWritten.Count <= 0 // TODO: what about NOW(), RAND() NEWGUID()?
         }

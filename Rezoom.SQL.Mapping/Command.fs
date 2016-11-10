@@ -48,6 +48,7 @@ type CommandData =
         Fragments : CommandFragment IReadOnlyList
         DependencyMask : BitMask
         InvalidationMask : BitMask
+        Cacheable : bool
         ResultSetCount : int option
     }
 
@@ -62,6 +63,7 @@ type Command(data : CommandData, parameters : (obj * DbType) IReadOnlyList) =
             override __.Identity = upcast data.Identity
             override __.DependencyMask = data.DependencyMask
             override __.InvalidationMask = data.InvalidationMask
+            override __.Cacheable = data.Cacheable
         }
     member __.ConnectionName = data.ConnectionName
     member __.CacheInfo = cacheInfo
