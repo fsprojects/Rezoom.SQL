@@ -1,0 +1,12 @@
+language: csharp
+mono:
+  - latest
+solution: Rezoom.sln
+install:
+  - nuget restore Rezoom.sln
+  - nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory testrunner
+script:
+  - xbuild /p:Configuration=Release Rezoom.sln
+  - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe ./Rezoom.Test/bin/Release/Rezoom.Test.dll
+  - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe ./Rezoom.SQL.Test/bin/Release/Rezoom.SQL.Test.dll
+
