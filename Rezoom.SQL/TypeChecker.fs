@@ -465,7 +465,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             ObjectName = this.ObjectName(drop.ObjectName)
         }
 
-    member this.Insert(insert : InsertStmt) =
+    member this.Insert(insert : InsertStmt) = // TODO: verify that we insert into all cols w/o default values
         let checker, withClause =
             match insert.With with
             | None -> this, None
