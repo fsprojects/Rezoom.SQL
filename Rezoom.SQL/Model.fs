@@ -239,7 +239,7 @@ and QueryExprInfo<'t> =
                 for { WithSource.Source = source; Value = name } in names do
                     let succ, found = mine.TryGetValue(name)
                     if succ then yield found
-                    else failAt source "No such column: ``%O``" name
+                    else failAt source <| sprintf "No such column: ``%O``" name
             } |> toReadOnlyList
         { Columns = filtered }
     member this.ColumnByName(name) =
