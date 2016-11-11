@@ -73,6 +73,7 @@ type FunctionType =
         AllowWildcard : bool
         AllowDistinct : bool
         Aggregate : bool
+        Idempotent : bool
     }
 
 type DatabaseBuiltin =
@@ -186,6 +187,8 @@ and SchemaView =
 and ExprInfo<'t> =
     {   /// The inferred type of this expression.
         Type : 't
+        /// Does this expression return the same value each time it's run?
+        Idempotent : bool
         /// Does this expression contain an aggregate? Not including window functions.
         Aggregate : bool
         /// If this expression is a function call, the function that it calls.
@@ -199,12 +202,14 @@ and ExprInfo<'t> =
         | Some c -> c.PrimaryKey
     static member OfType(t : 't) =
         {   Type = t
+            Idempotent = true
             Aggregate = false
             Function = None
             Column = None
         }
     member this.Map(f : 't -> _) =
         {   Type = f this.Type
+            Idempotent = this.Idempotent
             Aggregate = this.Aggregate
             Function = this.Function
             Column = this.Column
@@ -225,6 +230,8 @@ and ColumnExprInfo<'t> =
 
 and QueryExprInfo<'t> =
     { Columns : 't ColumnExprInfo IReadOnlyList }
+    member this.Idempotent =
+        this.Columns |> Seq.forall (fun e -> e.Expr.Info.Idempotent)
     member this.ColumnByName(name) =
         let matches =
             this.Columns
@@ -275,6 +282,11 @@ and ObjectInfo<'t> =
     | TableLike of 't TableLikeExprInfo
     | Index of SchemaIndex
     | Missing
+    member this.Idempotent =
+        match this with
+        | TableLike t -> t.Query.Idempotent
+        | Index _
+        | Missing -> true
     member this.Table =
         match this with
         | TableLike t -> t

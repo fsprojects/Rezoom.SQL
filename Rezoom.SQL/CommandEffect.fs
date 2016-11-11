@@ -63,5 +63,12 @@ and private CommandEffectBuilder(model : Model) =
                 seq {
                     for ref in references.TablesRead -> ref.SchemaName, ref.TableName
                 }
-            Idempotent = references.TablesWritten.Count <= 0 // TODO: what about NOW(), RAND() NEWGUID()?
+            Idempotent =
+                references.TablesWritten.Count <= 0
+                && (seq {
+                        for stmt in stmts do
+                            match stmt with
+                            | SelectStmt stmt -> yield stmt.Value.Info.Idempotent
+                            | _ -> ()
+                    } |> Seq.forall id)
         }

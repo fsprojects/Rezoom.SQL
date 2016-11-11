@@ -63,6 +63,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 } |> BinaryExpr
             Info =
                 {   Type = cxt.Binary(binary.Operator, left.Info.Type, right.Info.Type) |> resultAt source
+                    Idempotent = left.Info.Idempotent && right.Info.Idempotent
                     Aggregate = left.Info.Aggregate || right.Info.Aggregate
                     Function = None
                     Column = None
@@ -78,6 +79,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 } |> UnaryExpr
             Info =
                 {   Type = cxt.Unary(unary.Operator, operand.Info.Type) |> resultAt source
+                    Idempotent = operand.Info.Idempotent
                     Aggregate = operand.Info.Aggregate
                     Function = None
                     Column = None
@@ -94,6 +96,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 } |> CastExpr
             Info =
                 {   Type = ty
+                    Idempotent = input.Info.Idempotent
                     Aggregate = input.Info.Aggregate
                     Function = None
                     Column = None
@@ -110,6 +113,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 } |> CollateExpr
             Info =
                 {   Type = input.Info.Type
+                    Idempotent = input.Info.Idempotent
                     Aggregate = input.Info.Aggregate
                     Function = None
                     Column = None
@@ -131,6 +135,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     functionVars.[name] <- avar
                     avar
             let mutable argsAggregate = false
+            let mutable argsIdempotent = true
             let args, output =
                 match func.Arguments with
                 | ArgumentWildcard ->
@@ -145,6 +150,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                             let arg = this.Expr(expr)
                             outArgs.Add(arg)
                             argsAggregate <- argsAggregate || arg.Info.Aggregate
+                            argsIdempotent <- argsIdempotent && arg.Info.Idempotent
                             arg.Info.Type
                         let mutable lastIndex = 0
                         for i, expectedTy in funcType.FixedArguments |> Seq.indexed do
@@ -171,6 +177,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 Value = { FunctionName = func.FunctionName; Arguments = args } |> FunctionInvocationExpr
                 Info =
                     {   Type = output
+                        Idempotent = argsIdempotent && funcType.Idempotent
                         Aggregate = argsAggregate || funcType.Aggregate
                         Function = Some funcType
                         Column = None
@@ -201,6 +208,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 } |> SimilarityExpr
             Info =
                 {   Type = output
+                    Idempotent = input.Info.Idempotent && pattern.Info.Idempotent
                     Aggregate = input.Info.Aggregate || pattern.Info.Aggregate
                     Function = None
                     Column = None
@@ -215,6 +223,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
             Value = { Invert = between.Invert; Input = input; Low = low; High = high } |> BetweenExpr
             Info =
                 {   Type = cxt.Unify([ input.Info.Type; low.Info.Type; high.Info.Type ]) |> resultAt source
+                    Idempotent = input.Info.Idempotent && low.Info.Idempotent && high.Info.Idempotent
                     Aggregate = input.Info.Aggregate || low.Info.Aggregate || high.Info.Aggregate
                     Function = None
                     Column = None
@@ -228,18 +237,25 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
 
     member this.In(source : SourceInfo, inex : InExpr) =
         let input = this.Expr(inex.Input)
-        let set =
+        let set, aggregate, idempotent =
             match inex.Set.Value with
             | InExpressions exprs ->
                 let exprs = exprs |> rmap this.Expr
-                seq {
-                    yield input
-                    yield! exprs
-                } |> Seq.map (fun e -> e.Info.Type) |> cxt.Unify |> resultOk inex.Set.Source
-                exprs |> InExpressions
-            // TODO: enforce single column-ness?
-            | InSelect select -> InSelect <| queryChecker.Select(select)
-            | InTable table -> InTable <| this.TableInvocation(table)
+                let involvedInfos =
+                    Seq.append (Seq.singleton input) exprs |> Seq.map (fun e -> e.Info) |> toReadOnlyList
+                involvedInfos |> Seq.map (fun e -> e.Type) |> cxt.Unify |> resultOk inex.Set.Source
+                InExpressions exprs,
+                    (involvedInfos |> Seq.exists (fun i -> i.Aggregate)),
+                    (involvedInfos |> Seq.forall (fun i -> i.Idempotent))
+            | InSelect select ->
+                let select = queryChecker.Select(select)
+                let columnCount = select.Value.Info.Columns.Count
+                if columnCount <> 1 then
+                    failAt select.Source <| sprintf "Expected 1 column for IN query, but found %d" columnCount
+                InSelect select, input.Info.Aggregate, (input.Info.Idempotent && select.Value.Info.Idempotent)
+            | InTable table ->
+                let table = this.TableInvocation(table)
+                InTable table, input.Info.Aggregate, input.Info.Idempotent
         {   Expr.Source = source
             Value =
                 {   Invert = inex.Invert
@@ -248,6 +264,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 } |> InExpr
             Info =
                 {   Type = InferredType.Dependent(input.Info.Type, BooleanType)
+                    Idempotent = input.Info.Idempotent
                     Aggregate = input.Info.Aggregate
                     Function = None
                     Column = None
@@ -281,31 +298,40 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 | Some input -> input.Info.Type
             for whenExpr, _ in case.Cases -> whenExpr.Info.Type
         } |> cxt.Unify |> resultOk source
+        let subExprs =
+            seq {
+                match case.Input with
+                | None -> ()
+                | Some input -> yield input
+                for whenExpr, thenExpr in case.Cases do
+                    yield whenExpr
+                    yield thenExpr
+                match case.Else.Value with
+                | None -> ()
+                | Some els -> yield els
+            }
         {   Expr.Source = source
             Value = case |> CaseExpr
             Info =
                 {   Type = outputType
-                    Aggregate =
-                        seq {
-                            match case.Input with
-                            | None -> ()
-                            | Some input -> yield input
-                            for whenExpr, thenExpr in case.Cases do
-                                yield whenExpr
-                                yield thenExpr
-                            match case.Else.Value with
-                            | None -> ()
-                            | Some els -> yield els
-                        } |> Seq.exists (fun e -> e.Info.Aggregate)
+                    Idempotent = subExprs |> Seq.forall (fun e -> e.Info.Idempotent)
+                    Aggregate = subExprs |> Seq.exists (fun e -> e.Info.Aggregate)
                     Function = None
                     Column = None
                 }
         }
 
     member this.Exists(source : SourceInfo, exists : SelectStmt) =
+        let exists = queryChecker.Select(exists)
         {   Expr.Source = source
-            Value = queryChecker.Select(exists) |> ExistsExpr
-            Info = ExprInfo<_>.OfType(InferredType.Boolean)
+            Value = ExistsExpr exists
+            Info =
+                {   Type = InferredType.Boolean
+                    Idempotent = exists.Value.Info.Idempotent
+                    Aggregate = false
+                    Function = None
+                    Column = None
+                }
         }
 
     member this.ScalarSubquery(source : SourceInfo, select : SelectStmt) =
