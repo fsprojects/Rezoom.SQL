@@ -39,7 +39,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
             | None -> ()
             | Some names ->
                 yield text "("
-                yield! names.Value |> Seq.map this.Expr.Name |> join1 ", "
+                yield! names.Value |> Seq.map (srcValue >> this.Expr.Name) |> join1 ", "
                 yield text ") "
             yield text "AS ("
             yield! this.Select(cte.AsSelect)
@@ -277,7 +277,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
             | Some columns ->
                 yield ws
                 yield text "("
-                yield! columns |> Seq.map this.Expr.Name |> join1 ","
+                yield! columns |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
                 yield text ")"
             for rule in clause.Rules do
                 yield ws
@@ -395,7 +395,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
             | None -> ()
             | Some names ->
                 yield text "("
-                yield! names |> Seq.map this.Expr.Name |> join1 ","
+                yield! names |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
                 yield text ")"
                 yield ws
             yield text "AS"
@@ -474,7 +474,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
             | None -> ()
             | Some columns ->
                 yield text "("
-                yield! columns |> Seq.map this.Expr.Name |> join1 ","
+                yield! columns |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
                 yield text ")"
             yield ws
             match insert.Data with
@@ -510,7 +510,7 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
                 seq {
                     for name, value in update.Set ->
                         seq {
-                            yield this.Expr.Name(name)
+                            yield this.Expr.Name(name.Value)
                             yield ws
                             yield text "="
                             yield ws

@@ -93,6 +93,7 @@ type WithSource<'a> =
         /// The syntactic element
         Value : 'a
     }
+    member this.Map(f) = { Source = this.Source; Value = f this.Value }
 
 type SourceInfoException(msg : string, pos : SourceInfo) =
     inherit Exception(msg)

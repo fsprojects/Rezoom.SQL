@@ -192,12 +192,12 @@ module private TypeInferenceExtensions =
         member typeInference.AnonymousQueryInfo(columnNames) =
             {   Columns =
                     seq {
-                        for name in columnNames ->
+                        for { WithSource.Source = source; Value = name } in columnNames ->
                             {   ColumnName = name
                                 FromAlias = None
                                 Expr =
                                     {   Value = ColumnNameExpr { Table = None; ColumnName = name }
-                                        Source = SourceInfo.Invalid
+                                        Source = source
                                         Info = ExprInfo.OfType(typeInference.AnonymousVariable())
                                     }
                             }

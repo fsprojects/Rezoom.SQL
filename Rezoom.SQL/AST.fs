@@ -235,7 +235,7 @@ and WithClause<'t, 'e> =
 
 and CommonTableExpression<'t, 'e> =
     {   Name : Name
-        ColumnNames : Name ResizeArray WithSource option
+        ColumnNames : Name WithSource ResizeArray WithSource option
         AsSelect : SelectStmt<'t, 'e>
         Info : 't
     }
@@ -377,7 +377,7 @@ type ForeignKeyDeferClause =
 
 type ForeignKeyClause<'t> =
     {   ReferencesTable : ObjectName<'t>
-        ReferencesColumns : Name ResizeArray option
+        ReferencesColumns : Name WithSource ResizeArray option
         Rules : ForeignKeyRule ResizeArray
         Defer : ForeignKeyDeferClause option
     }
@@ -427,7 +427,7 @@ type TableIndexConstraintClause<'t, 'e> =
 
 type TableConstraintType<'t, 'e> =
     | TableIndexConstraint of TableIndexConstraintClause<'t, 'e>
-    | TableForeignKeyConstraint of Name ResizeArray * ForeignKeyClause<'t>
+    | TableForeignKeyConstraint of Name WithSource ResizeArray * ForeignKeyClause<'t>
     | TableCheckConstraint of Expr<'t, 'e>
 
 type TableConstraint<'t, 'e> =
@@ -478,7 +478,7 @@ type UpdateStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         UpdateTable : QualifiedTableName<'t>
         Or : UpdateOr option
-        Set : (Name * Expr<'t, 'e>) ResizeArray
+        Set : (Name WithSource * Expr<'t, 'e>) ResizeArray
         Where : Expr<'t, 'e> option
         OrderBy : OrderingTerm<'t, 'e> ResizeArray option
         Limit : Limit<'t, 'e> option
@@ -495,14 +495,14 @@ type InsertStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         Or : InsertOr option
         InsertInto : ObjectName<'t>
-        Columns : Name ResizeArray option
+        Columns : Name WithSource ResizeArray option
         Data : SelectStmt<'t, 'e> option // either select/values, or "default values" if none
     }
 
 type CreateViewStmt<'t, 'e> =
     {   Temporary : bool
         ViewName : ObjectName<'t>
-        ColumnNames : Name ResizeArray option
+        ColumnNames : Name WithSource ResizeArray option
         AsSelect : SelectStmt<'t, 'e>
     }
 

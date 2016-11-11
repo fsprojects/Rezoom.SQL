@@ -12,6 +12,15 @@ let rmap (f : 'a -> 'b) (list : 'a ResizeArray) =
 let toReadOnlyList (values : 'a seq) =
     ResizeArray(values) :> IReadOnlyList<_>
 
+let toDictionary (key : 'a -> 'k) (values : 'a seq) =
+    let d = Dictionary()
+    for value in values do
+        d.[key value] <- value
+    d
+
+let srcMap f (w : 'a WithSource) = w.Map(f)
+let srcValue (w : 'a WithSource) = w.Value
+
 [<GeneralizableValue>]
 let emptyDictionary<'k, 'v> =
     { new IReadOnlyDictionary<'k, 'v> with

@@ -561,7 +561,7 @@ do
 let private parenthesizedColumnNames =
     %% '('
     -- ws
-    -- +.(qty.[0..] / tws ',' * tws name)
+    -- +.(qty.[0..] / tws ',' * tws (withSource name))
     -- ')'
     -- ws
     -|> id
@@ -1126,7 +1126,7 @@ let private updateOr =
 
 let private updateStmt =
     let setColumn =
-        %% +.name
+        %% +.withSource name
         -- ws
         -- '='
         -- ws

@@ -232,6 +232,16 @@ and QueryExprInfo<'t> =
     { Columns : 't ColumnExprInfo IReadOnlyList }
     member this.Idempotent =
         this.Columns |> Seq.forall (fun e -> e.Expr.Info.Idempotent)
+    member this.ColumnsWithNames(names) =
+        let mine = this.Columns |> toDictionary (fun c -> c.ColumnName)
+        let filtered =
+            seq {
+                for { WithSource.Source = source; Value = name } in names do
+                    let succ, found = mine.TryGetValue(name)
+                    if succ then yield found
+                    else failAt source "No such column: ``%O``" name
+            } |> toReadOnlyList
+        { Columns = filtered }
     member this.ColumnByName(name) =
         let matches =
             this.Columns

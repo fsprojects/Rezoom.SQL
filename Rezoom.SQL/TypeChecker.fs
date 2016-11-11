@@ -476,11 +476,15 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
         let knownShape =
             match insert.Columns with
             | None -> table.Info.Query
-            | Some cols -> cxt.AnonymousQueryInfo(cols) // TODO also match types with table.Info
+            | Some cols -> table.Info.Query.ColumnsWithNames(cols)
+        let columns =
+            knownShape.Columns
+            |> Seq.map (fun c -> { WithSource.Source = c.Expr.Source; Value = c.ColumnName })
+            |> ResizeArray
         {   With = withClause
             Or = insert.Or
             InsertInto = table
-            Columns = insert.Columns
+            Columns = Some columns // we *must* specify these because our order might not match DB's
             Data = insert.Data |> Option.map (fun data -> checker.Select(data, SelfQueryShape.Known(knownShape)))
         }
 
@@ -495,11 +499,22 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
         let checker =
             checker.WithScope
                 ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(updateTable.TableName) |> Some })
+        let setColumns =
+            seq {
+                let cols = updateTable.TableName.Info.Query
+                for name, expr in update.Set do
+                    match cols.ColumnByName(name.Value) with
+                    | Found col ->
+                        let expr = checker.Expr(expr)
+                        cxt.Unify(col.Expr.Info.Type, expr.Info.Type) |> resultOk name.Source
+                        yield name, expr
+                    | _ ->
+                        failAt name.Source <| sprintf "No such column to set: ``%O``" name.Value
+            } |> ResizeArray
         {   With = withClause
             UpdateTable = updateTable
             Or = update.Or
-            // TODO require that names are in the table
-            Set = update.Set |> rmap (fun (name, expr) -> name, checker.Expr(expr))
+            Set = setColumns
             Where = Option.map checker.Expr update.Where
             OrderBy = Option.map (rmap checker.OrderingTerm) update.OrderBy
             Limit = Option.map checker.Limit update.Limit
