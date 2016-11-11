@@ -822,22 +822,26 @@ let private limit =
     -- +.(zeroOrOne * offset)
     -|> fun limit offset -> { Limit = limit; Offset = offset }
 
-do
-    selectStmtImpl :=
-        (
-            %% +.(zeroOrOne * withClause)
-            -? +.compoundExpr
-            -- +.(zeroOrOne * orderBy)
-            -- +.(zeroOrOne * limit)
-            -|> fun cte comp orderBy limit ->
-                {
-                    With = cte
-                    Compound = comp
+let selectStmtWithoutCTE =
+    %% +.withSource compoundExpr
+    -- +.(zeroOrOne * orderBy)
+    -- +.(zeroOrOne * limit)
+    -|> fun comp orderBy limit cte ->
+        {   WithSource.Source = comp.Source
+            Value =
+                {   With = cte
+                    Compound = comp.Value
                     OrderBy = orderBy
                     Limit = limit
                     Info = ()
                 }
-        ) |> withSource
+        }
+
+do
+    selectStmtImpl :=
+        %% +.(zeroOrOne * withClause)
+        -? +.selectStmtWithoutCTE
+        -|> (|>)
 
 let private foreignKeyRule =
     let eventRule =
@@ -1095,20 +1099,19 @@ let private qualifiedTableName =
         }
 
 let private deleteStmt =
-    %% +.(zeroOrOne * withClause)
-    -? kw "DELETE"
+    %% kw "DELETE"
     -- kw "FROM"
     -- +.qualifiedTableName
     -- +.(zeroOrOne * whereClause)
     -- +.(zeroOrOne * orderBy)
     -- +.(zeroOrOne * limit)
-    -|> fun withClause fromTable where orderBy limit ->
+    -|> fun fromTable where orderBy limit withClause ->
         {   With = withClause
             DeleteFrom = fromTable
             Where = where
             OrderBy = orderBy
             Limit = limit
-        }
+        } |> DeleteStmt
 
 let private updateOr =
     %% kw "OR"
@@ -1129,8 +1132,7 @@ let private updateStmt =
         -- ws
         -- +.expr
         -|> fun name expr -> name, expr
-    %% +.(zeroOrOne * withClause)
-    -? kw "UPDATE"
+    %% kw "UPDATE"
     -- +.(zeroOrOne * updateOr)
     -- +.qualifiedTableName
     -- kw "SET"
@@ -1138,7 +1140,7 @@ let private updateStmt =
     -- +.(zeroOrOne * whereClause)
     -- +.(zeroOrOne * orderBy)
     -- +.(zeroOrOne * limit)
-    -|> fun withClause updateOr table sets where orderBy limit ->
+    -|> fun updateOr table sets where orderBy limit withClause ->
         {   With = withClause
             UpdateTable = table
             Or = updateOr
@@ -1146,7 +1148,7 @@ let private updateStmt =
             Where = where
             OrderBy = orderBy
             Limit = limit
-        }
+        } |> UpdateStmt
 
 let private insertOr =
     let orPart =
@@ -1164,8 +1166,7 @@ let private insertOr =
     ]
 
 let private insertStmt =
-    %% +.(zeroOrOne * withClause)
-    -? +.insertOr
+    %% +.insertOr
     -- kw "INTO"
     -- +.objectName
     -- +.(zeroOrOne * parenthesizedColumnNames)
@@ -1173,13 +1174,13 @@ let private insertStmt =
             %% kw "DEFAULT" -- kw "VALUES" -|> None
             %% +.selectStmt -|> Some
         ]
-    -|> fun withClause insert table cols data ->
+    -|> fun insert table cols data withClause ->
         {   With = withClause
             Or = insert
             InsertInto = table
             Columns = cols
             Data = data
-        }
+        } |> InsertStmt
 
 let private createViewStmt =
     %% kw "CREATE"
@@ -1214,16 +1215,24 @@ let private dropObjectStmt =
     -|> fun dropType name ->
         { Drop = dropType; ObjectName = name }
 
+let private cteStmt =
+    %% +.(zeroOrOne * withClause)
+    -- +.[
+            deleteStmt
+            insertStmt
+            updateStmt
+            %% +.selectStmtWithoutCTE -|>
+                fun select withClause -> select withClause |> SelectStmt
+        ]
+    -|> (|>)
+
 let private stmt =
     %[  %% +.alterTableStmt -|> AlterTableStmt
         %% +.createIndexStmt -|> CreateIndexStmt
         %% +.createTableStmt -|> CreateTableStmt
         %% +.createViewStmt -|> CreateViewStmt
-        %% +.deleteStmt -|> DeleteStmt
         %% +.dropObjectStmt -|> DropObjectStmt
-        %% +.insertStmt -|> InsertStmt
-        %% +.selectStmt -|> SelectStmt
-        %% +.updateStmt -|> UpdateStmt
+        cteStmt
         beginStmt
         commitStmt
         rollbackStmt
