@@ -5,16 +5,6 @@ open FsUnit
 open Rezoom.SQL
 open Rezoom.SQL.Mapping
 
-let expectError (msg : string) (sql : string) =
-    let userModel = userModel1()
-    try
-        ignore <| CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
-        failwith "Should've thrown an exception!"
-    with
-    | :? SourceException as exn ->
-        printfn "\"%s\"" exn.Message
-        Assert.AreEqual(msg, exn.Reason)
-
 [<Test>]
 let ``incompatible types can't be compared for equality`` () =
     expectError "The types INT and STRING cannot be unified"

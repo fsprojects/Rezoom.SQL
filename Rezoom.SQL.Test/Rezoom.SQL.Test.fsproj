@@ -55,6 +55,7 @@
     <Compile Include="Environment.fs" />
     <Compile Include="TestTypeInference.fs" />
     <Compile Include="TestRoundTrip.fs" />
+    <Compile Include="TestParserErrors.fs" />
     <Compile Include="TestTypeErrors.fs" />
     <Compile Include="TestBlueprints.fs" />
     <Compile Include="TestCompositeReaders.fs" />

@@ -1240,6 +1240,8 @@ let private stmts = stmtsAtLeast 0
 let parseStatements sourceDescription source =
     match runParserOnString stmts () sourceDescription source with
     | Success (statements, _, _) -> statements
-    | Failure (reason, err, _) ->
+    | Failure (_, err, _) ->
         let sourceInfo = SourceInfo.OfPosition(translatePosition err.Position)
-        failAt sourceInfo reason
+        use writer = new System.IO.StringWriter()
+        err.WriteTo(writer, (fun _ _ _ _ -> ()))
+        failAt sourceInfo (string writer)
