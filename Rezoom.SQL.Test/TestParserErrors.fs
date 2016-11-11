@@ -7,7 +7,7 @@ open Rezoom.SQL.Mapping
 
 [<Test>]
 let ``invalid CTE`` () =
-    expectError "Expecting: whitespace, ')', '--' or '/*'\r\n"
+    expectError "Expecting: whitespace, ')', '--' or '/*'"
         """
             with cte ( as
             select * from Users u

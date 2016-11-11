@@ -20,5 +20,5 @@ let expectError (msg : string) (sql : string) =
     with
     | :? SourceException as exn ->
         printfn "\"%s\"" exn.Message
-        Assert.AreEqual(msg, exn.Reason)
+        Assert.AreEqual(msg, exn.Reason.Trim())
 
