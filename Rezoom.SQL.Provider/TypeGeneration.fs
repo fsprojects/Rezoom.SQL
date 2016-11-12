@@ -139,13 +139,19 @@ let private generateCommandMethod
     let commandData =
         let fragments = backend.ToCommandFragments(indexer, command.Statements) |> toFragmentArrayExpr
         let identity = generate.Namespace + generate.TypeName
-        let resultSetCount = command.ResultSets |> Seq.length
-        let dependencies = maskOfTables generate.UserModel command.ReadTables
-        let invalidations = maskOfTables generate.UserModel command.WriteTables
+        let resultSetCount = command.ResultSets() |> Seq.length
+        let cacheable, dependencies, invalidations =
+            match command.CacheInfo.Value with
+            | Some info ->
+                ( info.Idempotent
+                , maskOfTables generate.UserModel info.ReadTables
+                , maskOfTables generate.UserModel info.WriteTables
+                )
+            | None -> false, BitMask.Full, BitMask.Full // assume the worst
         <@@ {   ConnectionName = %%Quotations.Expr.Value(generate.UserModel.ConnectionName)
                 Identity = %%Quotations.Expr.Value(identity)
                 Fragments = (%%fragments : _ array) :> _ IReadOnlyList
-                Cacheable = %%Quotations.Expr.Value(command.Idempotent)
+                Cacheable = %%Quotations.Expr.Value(cacheable)
                 DependencyMask =
                     BitMask
                         ( %%Quotations.Expr.Value(dependencies.HighBits)
@@ -182,7 +188,7 @@ let generateSQLType (generate : GenerateType) (sql : string) =
     let lst (r : Type) = typedefof<_ IReadOnlyList>.MakeGenericType(r)
     let rowTypes, commandCtorMethod, commandType =
         let genRowType = generateRowType generate.UserModel
-        match commandEffect.ResultSets |> Seq.toList with
+        match commandEffect.ResultSets() |> Seq.toList with
         | [] ->
             []
             , commandCtor.GetMethod("Command0")

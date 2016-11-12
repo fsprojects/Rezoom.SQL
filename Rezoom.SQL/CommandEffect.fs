@@ -6,15 +6,20 @@ open System
 open System.Collections.Generic
 open Rezoom.SQL.InferredTypes
 
+type CommandEffectCacheInfo =
+    {   Idempotent : bool
+        // schema name * table name
+        WriteTables : (Name * Name) IReadOnlyList
+        ReadTables : (Name * Name) IReadOnlyList
+    }
+
 type CommandEffect =
     {   Statements : TTotalStmt IReadOnlyList
         Parameters : (BindParameter * ColumnType) IReadOnlyList
         ModelChange : Model option
-        Idempotent : bool
-        WriteTables : (Name * Name) seq
-        ReadTables : (Name * Name) seq
+        CacheInfo : CommandEffectCacheInfo option Lazy // if we have any vendor stmts this is unknown
     }
-    member this.ResultSets =
+    member this.ResultSets() =
         this.Statements
         |> Seq.collect (fun s -> s.SelectStmts())
         |> Seq.map (fun s -> s.Value.Info.Table.Query)
@@ -64,21 +69,25 @@ and private CommandEffectBuilder(model : Model) =
             inference.Parameters
             |> Seq.map (fun p -> p, inference.Concrete(inference.Variable(p)))
             |> toReadOnlyList
-        let references = ReadWriteReferences.references (stmts |> Seq.collect (fun s -> s.CoreStmts()))
-        let inline selectsIdempotent() =
-            stmts
-            |> Seq.collect (fun s -> s.SelectStmts())
-            |> Seq.forall (fun s -> s.Value.Info.Idempotent)
+        let cacheInfo =
+            lazy (
+                let vendorStmts = stmts |> Seq.choose (function | VendorStmt v -> Some v | _ -> None)
+                if vendorStmts |> Seq.forall (fun v -> Option.isSome v.ImaginaryStmts) then
+                    let references = ReadWriteReferences.references (stmts |> Seq.collect (fun s -> s.CoreStmts()))
+                    let toTuple (ref : SchemaTable) = ref.SchemaName, ref.TableName
+                    let inline selectsIdempotent() =
+                        stmts
+                        |> Seq.collect (fun s -> s.SelectStmts())
+                        |> Seq.forall (fun s -> s.Value.Info.Idempotent)
+                    {   WriteTables = references.TablesWritten |> Seq.map toTuple |> toReadOnlyList
+                        ReadTables = references.TablesRead |> Seq.map toTuple |> toReadOnlyList
+                        Idempotent = references.TablesWritten.Count <= 0 && selectsIdempotent()
+                    } |> Some
+                else
+                    None
+            )
         {   Statements = stmts
             ModelChange = newModel
             Parameters = pars
-            WriteTables =
-                seq {
-                    for ref in references.TablesWritten -> ref.SchemaName, ref.TableName
-                }
-            ReadTables =
-                seq {
-                    for ref in references.TablesRead -> ref.SchemaName, ref.TableName
-                }
-            Idempotent = references.TablesWritten.Count <= 0 && selectsIdempotent()
+            CacheInfo = cacheInfo
         }
