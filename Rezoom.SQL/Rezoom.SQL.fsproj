@@ -57,7 +57,8 @@
     <Compile Include="Utilities.fs" />
     <Compile Include="AST.fs" />
     <Compile Include="ASTMapping.fs" />
-    <Compile Include="Parser.fs" />
+    <Compile Include="CoreParser.fs" />
+    <Compile Include="TotalParser.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="ReadWriteReferences.fs" />
     <Compile Include="InferredTypes.fs" />

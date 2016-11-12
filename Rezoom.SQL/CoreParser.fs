@@ -1,4 +1,6 @@
-﻿module private Rezoom.SQL.Parser
+﻿// Parses our typechecked subset of the SQL language.
+
+module private Rezoom.SQL.Parser
 open System
 open System.Collections.Generic
 open System.Globalization
@@ -39,13 +41,13 @@ let private whitespaceUnit =
     ]
 
 /// Optional whitespace: 0 or more whitespace units
-let private ws = skipMany whitespaceUnit
+let ws = skipMany whitespaceUnit
 
 /// Add optional trailing whitespace to a parser.
 let inline private tws parser = %parser .>> ws
 
 /// Required whitespace: 1 or more whitespace units
-let private ws1 = skipMany1 whitespaceUnit
+let ws1 = skipMany1 whitespaceUnit
 
 /// A name wrapped in double quotes (standard SQL).
 let private quotedName =
@@ -120,7 +122,7 @@ let private unquotedName =
         else
             preturn ident
 
-let private name =
+let name =
     %[  quotedName
         bracketedName
         backtickedName
@@ -351,7 +353,7 @@ let private case expr =
     -- +.[ whenForm; ofForm ]
     -|> id
 
-let private expr, private exprImpl = createParserForwardedToRef<Expr<unit, unit>, unit>()
+let expr, private exprImpl = createParserForwardedToRef<Expr<unit, unit>, unit>()
 let private selectStmt, private selectStmtImpl = createParserForwardedToRef<SelectStmt<unit, unit>, unit>()
 
 let private binary op e1 e2 =
@@ -1244,7 +1246,7 @@ let private stmtsAtLeast min =
     -- eof
     -|> id
 
-let private stmts = stmtsAtLeast 0
+let stmts = stmtsAtLeast 0
 
 let parseStatements sourceDescription source =
     match runParserOnString stmts () sourceDescription source with

@@ -516,7 +516,17 @@ type DropObjectStmt<'t> =
         ObjectName : ObjectName<'t>
     }
 
-type Stmt<'t, 'e> =
+type VendorStmtFragment<'t, 'e> =
+    | VendorEmbeddedExpr of Expr<'t, 'e>
+    | VendorRaw of string
+
+type VendorStmt<'t, 'e> =
+    {   VendorName : Name
+        Fragments : VendorStmtFragment<'t, 'e> ResizeArray
+        ImaginaryStmts : Stmt<'t, 'e> ResizeArray option
+    }
+
+and Stmt<'t, 'e> =
     | AlterTableStmt of AlterTableStmt<'t, 'e>
     | CreateIndexStmt of CreateIndexStmt<'t, 'e>
     | CreateTableStmt of CreateTableStmt<'t, 'e>
@@ -529,6 +539,7 @@ type Stmt<'t, 'e> =
     | BeginStmt
     | CommitStmt
     | RollbackStmt
+    | VendorStmt of VendorStmt<'t, 'e>
 
 type ExprType = ExprType<unit, unit>
 type Expr = Expr<unit, unit>
