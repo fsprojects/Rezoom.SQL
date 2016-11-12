@@ -539,7 +539,18 @@ and Stmt<'t, 'e> =
     | BeginStmt
     | CommitStmt
     | RollbackStmt
+
+type TotalStmt<'t, 'e> =
+    | CoreStmt of Stmt<'t, 'e>
     | VendorStmt of VendorStmt<'t, 'e>
+    member this.CoreStmts() =
+        match this with
+        | CoreStmt stmt -> Seq.singleton stmt
+        | VendorStmt { ImaginaryStmts = None } -> Seq.empty
+        | VendorStmt { ImaginaryStmts = Some stmts } -> stmts :> _ seq
+    member this.SelectStmts() =
+        this.CoreStmts()
+        |> Seq.choose (function | SelectStmt s -> Some s | _ -> None)
 
 type ExprType = ExprType<unit, unit>
 type Expr = Expr<unit, unit>
@@ -591,5 +602,7 @@ type DeleteStmt = DeleteStmt<unit, unit>
 type DropObjectStmt = DropObjectStmt<unit>
 type UpdateStmt = UpdateStmt<unit, unit>
 type InsertStmt = InsertStmt<unit, unit>
+type VendorStmt = VendorStmt<unit, unit>
 type Stmt = Stmt<unit, unit>
-type Stmts = Stmt IReadOnlyList
+type TotalStmt = TotalStmt<unit, unit>
+type Stmts = TotalStmt IReadOnlyList

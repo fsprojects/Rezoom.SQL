@@ -136,7 +136,7 @@ let private mapStmts f (major : 'stmts MigrationMajorVersion) =
             } |> toReadOnlyList
     }
 
-let stringizeMajorVersion (backend : IBackend) (major : TStmts MigrationMajorVersion) =
+let stringizeMajorVersion (backend : IBackend) (major : TTotalStmts MigrationMajorVersion) =
     let indexer =
         { new IParameterIndexer with
             member this.ParameterIndex(parameter) = failwith "Migrations may not be parameterized"

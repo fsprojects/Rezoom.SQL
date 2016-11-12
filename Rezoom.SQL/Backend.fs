@@ -41,4 +41,4 @@ type IBackend =
     abstract member ParameterTransform
         : columnType : ColumnType -> ParameterTransform
     abstract member ToCommandFragments
-        : indexer : IParameterIndexer * stmts : TStmt IReadOnlyList -> CommandFragment IReadOnlyList
+        : indexer : IParameterIndexer * stmts : TTotalStmts -> CommandFragment IReadOnlyList

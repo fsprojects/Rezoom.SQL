@@ -137,7 +137,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
         | _ ->
             failAt create.TableName.Source <| sprintf "No such schema for table: ``%O``" create.TableName
             
-    member this.Statement(stmt : InfStmt) =
+    member this.Stmt(stmt : InfStmt) =
         match stmt with
         | AlterTableStmt alter -> this.AlterTable(alter)
         | CreateTableStmt create -> this.CreateTable(create)

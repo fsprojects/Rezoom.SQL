@@ -25,8 +25,8 @@ type DefaultBackend() =
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =
-            let translator = DefaultStatementTranslator(indexer)
-            translator.Statements(stmts)
+            let translator = DefaultStatementTranslator(Name("RZSQL"), indexer)
+            translator.TotalStatements(stmts)
             |> BackendUtilities.simplifyFragments
             |> ResizeArray
             :> _ IReadOnlyList

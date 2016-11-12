@@ -111,7 +111,7 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
                 }
 
 type private TSQLStatement(indexer : IParameterIndexer) as this =
-    inherit DefaultStatementTranslator(indexer)
+    inherit DefaultStatementTranslator(Name("TSQL"), indexer)
     let expr = TSQLExpression(this :> StatementTranslator, indexer)
     override __.Expr = upcast expr
     member this.SelectCoreWithTop(select : TSelectCore, top) =
@@ -202,7 +202,7 @@ type TSQLBackend() =
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =
             let translator = TSQLStatement(indexer)
-            translator.Statements(stmts)
+            translator.TotalStatements(stmts)
             |> BackendUtilities.simplifyFragments
             |> ResizeArray
             :> _ IReadOnlyList

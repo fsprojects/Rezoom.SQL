@@ -33,7 +33,7 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | DateTimeOffsetTypeName -> failwith <| sprintf "Unsupported type ``%A``" name
 
 type private SQLiteStatement(indexer : IParameterIndexer) as this =
-    inherit DefaultStatementTranslator(indexer)
+    inherit DefaultStatementTranslator(Name("SQLITE"), indexer)
     let expr = SQLiteExpression(this :> StatementTranslator, indexer)
     override __.Expr = upcast expr
 
@@ -55,7 +55,7 @@ type SQLiteBackend() =
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =
             let translator = SQLiteStatement(indexer)
-            translator.Statements(stmts)
+            translator.TotalStatements(stmts)
             |> BackendUtilities.simplifyFragments
             |> ResizeArray
             :> _ IReadOnlyList

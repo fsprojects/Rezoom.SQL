@@ -40,6 +40,7 @@ module private Parser =
                 %% [ ci "TSQL"; ci "MSSQL" ] -|> TSQL
                 %% ci "POSTGRES" -- zeroOrOne * ci "QL" -|> PostgreSQL
                 %% ci "MYSQL" -|> MySQL
+                %% ci "RZSQL" -|> Identity
             ]
         -- '"'
         -|> id

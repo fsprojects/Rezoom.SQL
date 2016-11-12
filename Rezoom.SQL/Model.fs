@@ -362,4 +362,6 @@ type TDropObjectStmt = DropObjectStmt<ColumnType ObjectInfo>
 type TUpdateStmt = UpdateStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TInsertStmt = InsertStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TStmt = Stmt<ColumnType ObjectInfo, ColumnType ExprInfo>
-type TStmts = TStmt IReadOnlyList
+type TVendorStmt = VendorStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
+type TTotalStmt = TotalStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
+type TTotalStmts = TTotalStmt IReadOnlyList

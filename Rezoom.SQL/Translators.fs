@@ -68,6 +68,9 @@ type StatementTranslator() =
     abstract member Rollback : Fragments
     abstract member Statement : TStmt -> Fragments
     abstract member Statements : TStmt seq -> Fragments
+    abstract member Vendor : TVendorStmt -> Fragments
+    abstract member TotalStatement : TTotalStmt -> Fragments
+    abstract member TotalStatements : TTotalStmt seq -> Fragments
 
 and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : IParameterIndexer) =
     abstract member Literal : LiteralTranslator

@@ -3,7 +3,7 @@ open Rezoom.SQL
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.BackendUtilities
 
-type DefaultStatementTranslator(indexer : IParameterIndexer) =
+type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterIndexer) =
     inherit StatementTranslator()
     override this.Expr = upcast DefaultExprTranslator(this, indexer)
     member this.Predicate(x) = this.Expr.Expr(x, Predicate)
@@ -590,6 +590,23 @@ type DefaultStatementTranslator(indexer : IParameterIndexer) =
         seq {
             for stmt in stmts do
                 yield! this.Statement(stmt)
+                yield text ";"
+        }
+    override this.Vendor(vendor) =
+        seq {
+            for fragment in vendor.Fragments do
+                match fragment with
+                | VendorRaw raw -> yield text raw
+                | VendorEmbeddedExpr expr -> yield! this.FirstClassValue(expr)
+        }
+    override this.TotalStatement(stmt) =
+        match stmt with
+        | CoreStmt stmt -> this.Statement(stmt)
+        | VendorStmt vendor -> this.Vendor(vendor)
+    override this.TotalStatements(stmts) =
+        seq {
+            for stmt in stmts do
+                yield! this.TotalStatement(stmt)
                 yield text ";"
         }
 

@@ -140,7 +140,7 @@ let private vendorStmt =
                 .>> closeDelim
             pipe2 (body .>> ws) (opt imaginary) (<|)
 
-let stmt = vendorStmt <|> coreStmt
+let stmt = vendorStmt <|> (coreStmt |>> CoreStmt)
 
 let stmts =
     %% ws

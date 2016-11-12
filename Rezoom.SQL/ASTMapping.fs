@@ -298,6 +298,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             OrderBy = Option.map (rmap this.OrderingTerm) update.OrderBy
             Limit = Option.map this.Limit update.Limit
         }
+
     member this.Stmt(stmt : Stmt<'t1, 'e1>) =
         match stmt with
         | AlterTableStmt alter ->
@@ -316,3 +317,17 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | BeginStmt -> BeginStmt
         | CommitStmt -> CommitStmt
         | RollbackStmt -> RollbackStmt
+
+    member this.Vendor(vendor : VendorStmt<'t1, 'e1>) =
+        let frag = function
+            | VendorEmbeddedExpr e -> VendorEmbeddedExpr (this.Expr(e))
+            | VendorRaw str -> VendorRaw str
+        {   VendorName = vendor.VendorName
+            Fragments = vendor.Fragments |> rmap frag
+            ImaginaryStmts = vendor.ImaginaryStmts |> Option.map (rmap this.Stmt)
+        }
+
+    member this.TotalStmt(stmt : TotalStmt<'t1, 'e1>) =
+        match stmt with
+        | CoreStmt core -> this.Stmt(core) |> CoreStmt
+        | VendorStmt vendor -> VendorStmt <| this.Vendor(vendor)

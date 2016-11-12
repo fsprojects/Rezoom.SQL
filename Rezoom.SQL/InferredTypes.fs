@@ -96,7 +96,8 @@ type InfDropObjectStmt = DropObjectStmt<InferredType ObjectInfo>
 type InfUpdateStmt = UpdateStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfInsertStmt = InsertStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfStmt = Stmt<InferredType ObjectInfo, InferredType ExprInfo>
-type InfStmts = InfStmt IReadOnlyList
+type InfVendorStmt = VendorStmt<InferredType ObjectInfo, InferredType ExprInfo>
+type InfTotalStmt = TotalStmt<InferredType ObjectInfo, InferredType ExprInfo>
 
 type ITypeInferenceContext =
     abstract member AnonymousVariable : unit -> InferredType
