@@ -1,6 +1,6 @@
 ﻿// Parses our typechecked subset of the SQL language.
 
-module private Rezoom.SQL.Parser
+module private Rezoom.SQL.CoreParser
 open System
 open System.Collections.Generic
 open System.Globalization
@@ -44,7 +44,7 @@ let private whitespaceUnit =
 let ws = skipMany whitespaceUnit
 
 /// Add optional trailing whitespace to a parser.
-let inline private tws parser = %parser .>> ws
+let inline tws parser = %parser .>> ws
 
 /// Required whitespace: 1 or more whitespace units
 let ws1 = skipMany1 whitespaceUnit
@@ -1228,7 +1228,7 @@ let private cteStmt =
         ]
     -|> (|>)
 
-let private stmt =
+let coreStmt =
     %[  %% +.alterTableStmt -|> AlterTableStmt
         %% +.createIndexStmt -|> CreateIndexStmt
         %% +.createTableStmt -|> CreateTableStmt
@@ -1240,19 +1240,7 @@ let private stmt =
         rollbackStmt
     ]
 
-let private stmtsAtLeast min =
+let coreStmts =
     %% ws
-    -- +.(qty.[min..] /. tws ';' * tws stmt)
-    -- eof
+    -- +.(qty.[0..] /. tws ';' * tws coreStmt)
     -|> id
-
-let stmts = stmtsAtLeast 0
-
-let parseStatements sourceDescription source =
-    match runParserOnString stmts () sourceDescription source with
-    | Success (statements, _, _) -> statements
-    | Failure (_, err, _) ->
-        let sourceInfo = SourceInfo.OfPosition(translatePosition err.Position)
-        use writer = new System.IO.StringWriter()
-        err.WriteTo(writer, (fun _ _ _ _ -> ()))
-        failAt sourceInfo (string writer)

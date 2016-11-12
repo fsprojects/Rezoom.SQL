@@ -1,13 +1,13 @@
 ﻿// Parses all AST statements.
 
-module private Rezoom.SQL.VendorStatementParser
+module private Rezoom.SQL.Parser
 open System
 open System.Collections.Generic
 open System.Globalization
 open FParsec
 open FParsec.Pipes
 open FParsec.Pipes.Precedence
-open Rezoom.SQL.Parser
+open Rezoom.SQL.CoreParser
 
 // Vendor statements allow embedding raw SQL written for a specific backend.
 // Sometimes the set of SQL we can typecheck is insufficient.
@@ -94,40 +94,64 @@ type private Delimiter =
     | OpenDelimiter
     | CloseDelimiter
 
-let private vendorFragments openDelim =
-    let closeDelim = flipDelimiter openDelim
-    if closeDelim = openDelim then
-        fail (sprintf "Opening and closing delimiters are the same (%s)" closeDelim)
-    else
-        let openDelim = pstring openDelim >>% OpenDelimiter
-        let closeDelim = pstring closeDelim >>% CloseDelimiter
-        let delim = openDelim <|> closeDelim
-        let exprWithClose = expr .>> ws .>> closeDelim
-        let onExpr str e next =
-            VendorRaw str
-            :: VendorEmbeddedExpr e
-            :: next
-        let self, selfRef = createParserForwardedToRef()
-        let onOpen str =
-            pipe2 exprWithClose self (onExpr str)
-        let onClose str =
-            preturn [ VendorRaw str ]
-        let onEither (str, delim) =
-            match delim with
-            | OpenDelimiter -> onOpen str
-            | CloseDelimiter -> onClose str
-        selfRef :=
-            manyCharsTillApply anyChar delim
-                (fun str delim -> str, delim)
-            >>= onEither
-        self |>> ResizeArray
+let private vendorFragments openDelim closeDelim =
+    let delim = openDelim <|> closeDelim
+    let exprWithClose = expr .>> ws .>> closeDelim
+    let onExpr str e next =
+        VendorRaw str
+        :: VendorEmbeddedExpr e
+        :: next
+    let self, selfRef = createParserForwardedToRef()
+    let onOpen str =
+        pipe2 exprWithClose self (onExpr str)
+    let onClose str =
+        preturn [ VendorRaw str ]
+    let onEither (str, delim) =
+        match delim with
+        | OpenDelimiter -> onOpen str
+        | CloseDelimiter -> onClose str
+    selfRef :=
+        manyCharsTillApply anyChar delim
+            (fun str delim -> str, delim)
+        >>= onEither
+    self |>> ResizeArray
 
 let private vendorStmt =
     vendorStmtStart
-    >>= fun (vendorName, delim) ->
-        vendorFragments delim
-        |>> fun frags ->
-            {   VendorName = vendorName
-                Fragments = frags
-                ImaginaryStmts = None
-            } |> VendorStmt
+    >>= fun (vendorName, openDelim) ->
+        let closeDelim = flipDelimiter openDelim
+        if closeDelim = openDelim then
+            fail (sprintf "Opening and closing delimiters are the same (%s)" closeDelim)
+        else
+            let openDelim = pstring openDelim >>% OpenDelimiter
+            let closeDelim = pstring closeDelim >>% CloseDelimiter
+            let body =
+                vendorFragments openDelim closeDelim
+                |>> fun frags imaginary ->
+                    {   VendorName = vendorName
+                        Fragments = frags
+                        ImaginaryStmts = imaginary
+                    } |> VendorStmt
+            let imaginary =
+                pstringCI "IMAGINARY"
+                >>. ws1
+                >>. openDelim
+                >>. coreStmts
+                .>> closeDelim
+            pipe2 (body .>> ws) (opt imaginary) (<|)
+
+let stmt = vendorStmt <|> coreStmt
+
+let stmts =
+    %% ws
+    -- +.(qty.[0..] /. tws ';' * tws stmt)
+    -|> id
+
+let parseStatements sourceDescription source =
+    match runParserOnString (stmts .>> eof) () sourceDescription source with
+    | Success (statements, _, _) -> statements
+    | Failure (_, err, _) ->
+        let sourceInfo = SourceInfo.OfPosition(translatePosition err.Position)
+        use writer = new System.IO.StringWriter()
+        err.WriteTo(writer, (fun _ _ _ _ -> ()))
+        failAt sourceInfo (string writer)
