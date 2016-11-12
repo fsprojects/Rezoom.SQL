@@ -59,9 +59,19 @@ open Rezoom.SQL.CoreParser
 //     select Name, 1 as Count from Users
 // }
 
-let private definingDelimiter =
-    many1Satisfy Char.IsPunctuation
-    
+let isDelimiterCharacter =
+    function
+    | '[' | ']'
+    | '{' | '}'
+    | '(' | ')'
+    | '<' | '>'
+    | '/' | '\\'
+    | ':' | '.' | ',' | '?' | '|'
+    | '!' | '@' | '#' | '$' | '%'
+    | '^' | '&' | '*' | '-' | '+'
+    | '=' | '~' -> true
+    | _ -> false
+
 let private flipChar =
     function
     | '[' -> ']'
@@ -85,9 +95,9 @@ let private flipDelimiter (delim : string) =
 let private vendorStmtStart =
     %% ci "VENDOR"
     -- ws1
-    -- +.name
+    -- +.withSource name
     -- ws1
-    -- +.definingDelimiter
+    -- +.many1Satisfy isDelimiterCharacter
     -|> fun vendorName delim -> vendorName, delim
 
 type private Delimiter =
@@ -96,7 +106,7 @@ type private Delimiter =
 
 let private vendorFragments openDelim closeDelim =
     let delim = openDelim <|> closeDelim
-    let exprWithClose = expr .>> ws .>> closeDelim
+    let exprWithClose = ws >>. expr .>> ws .>> closeDelim
     let onExpr str e next =
         VendorRaw str
         :: VendorEmbeddedExpr e
@@ -133,7 +143,7 @@ let private vendorStmt =
                         ImaginaryStmts = imaginary
                     } |> VendorStmt
             let imaginary =
-                pstringCI "IMAGINARY"
+                pstringCI "IMAGINE"
                 >>. ws1
                 >>. openDelim
                 >>. coreStmts

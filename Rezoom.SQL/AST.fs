@@ -521,7 +521,7 @@ type VendorStmtFragment<'t, 'e> =
     | VendorRaw of string
 
 type VendorStmt<'t, 'e> =
-    {   VendorName : Name
+    {   VendorName : Name WithSource
         Fragments : VendorStmtFragment<'t, 'e> ResizeArray
         ImaginaryStmts : Stmt<'t, 'e> ResizeArray option
     }

@@ -5,6 +5,7 @@ open FsUnit
 open System
 open System.Reflection
 open System.IO
+open System.Collections.Generic
 open Rezoom.SQL
 
 let userModel1() =
@@ -21,4 +22,17 @@ let expectError (msg : string) (sql : string) =
     | :? SourceException as exn ->
         printfn "\"%s\"" exn.Message
         Assert.AreEqual(msg, exn.Reason.Trim())
+
+let dispenserParameterIndexer() =
+    let dict = Dictionary()
+    let mutable last = -1
+    { new IParameterIndexer with
+        member __.ParameterIndex(par) =
+            let succ, value = dict.TryGetValue(par)
+            if succ then value
+            else
+                last <- last + 1
+                dict.[par] <- last
+                last
+    }
 

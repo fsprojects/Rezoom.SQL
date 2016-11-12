@@ -14,7 +14,7 @@ let private sourcePosition =
     -%> translatePosition
 
 /// Wraps any parser with source information.
-let private withSource (parser : Parser<'a, unit>) =
+let withSource (parser : Parser<'a, unit>) =
     %% +.sourcePosition
     -- +.parser
     -- +.sourcePosition
