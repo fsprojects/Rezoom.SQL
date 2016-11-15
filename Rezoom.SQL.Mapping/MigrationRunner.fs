@@ -2,7 +2,7 @@
 open System
 open System.Collections.Generic
 
-type MigrationName =
+type MigrationFileName =
     {   MajorVersion : int
         ParentName : string option
         Name : string
@@ -58,7 +58,7 @@ type private MigrationTreeBuilder<'src>(majorVersionNumber) =
                         node.Children |> Seq.map toTree |> ResizeArray
                 }
             toTree root         
-    member __.Add(name : MigrationName, source : 'src) =
+    member __.Add(name : MigrationFileName, source : 'src) =
         let succ, self = migrations.TryGetValue(name.Name)
         let self =
             if succ then
@@ -93,9 +93,9 @@ type private MigrationTreeBuilder<'src>(majorVersionNumber) =
                     }
                 migrations.[parentName] <- parent
 
-type MigrationTreeListBuilder() =
+type MigrationTreeListBuilder<'src>() =
     let majorVersions = Dictionary()
-    member __.Add(name : MigrationName, source : 'src) =
+    member __.Add(name : MigrationFileName, source : 'src) =
         let succ, found = majorVersions.TryGetValue(name.MajorVersion)
         let found =
             if succ then found else
@@ -132,7 +132,8 @@ let runMigrations config (backend : IMigrationBackend) (migrationTrees : string 
         for migration in migrationTree.Migrations() do
             let pair = migration.MajorVersion, migration.Name
             if not <| already.Contains(pair) then
-                if migration.MajorVersion < currentMajorVersion then
+                if migration.MajorVersion < currentMajorVersion
+                    && not config.AllowMigrationsFromOlderMajorVersions then
                     failwith "oh that's no good, you can't do that"
                 else
                     backend.RunMigration(migration)
