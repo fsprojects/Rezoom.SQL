@@ -17,6 +17,7 @@ type CommandEffect =
     {   Statements : TTotalStmt IReadOnlyList
         Parameters : (BindParameter * ColumnType) IReadOnlyList
         ModelChange : Model option
+        DestructiveUpdates : bool Lazy
         CacheInfo : CommandEffectCacheInfo option Lazy // if we have any vendor stmts this is unknown
     }
     member this.ResultSets() =
@@ -62,6 +63,29 @@ and private CommandEffectBuilder(model : Model) =
                 ImaginaryStmts = checkedImaginary
             } |> VendorStmt |> inferredStmts.Add
 
+    static member PerformsDestructiveUpdate(stmt : TStmt) =
+        match stmt with
+        | AlterTableStmt { Alteration = AddColumn _ }
+        | CreateIndexStmt _
+        | CreateTableStmt _
+        | SelectStmt _
+        | BeginStmt
+        | CommitStmt
+        | RollbackStmt
+        | CreateViewStmt _ -> false
+        | AlterTableStmt { Alteration = RenameTo _ }
+        | DeleteStmt _
+        | DropObjectStmt _
+        | InsertStmt _
+        | UpdateStmt _ -> true
+
+    static member PerformsDestructiveUpdate(stmt : TTotalStmt) =
+        match stmt with
+        | CoreStmt core -> CommandEffectBuilder.PerformsDestructiveUpdate(core)
+        | VendorStmt { ImaginaryStmts = Some stmts } ->
+            stmts |> Seq.exists CommandEffectBuilder.PerformsDestructiveUpdate
+        | VendorStmt { ImaginaryStmts = None } -> false
+
     member this.CommandEffect() =
         let mapping = concreteMapping inference
         let stmts = inferredStmts |> Seq.map mapping.TotalStmt |> toReadOnlyList
@@ -86,8 +110,10 @@ and private CommandEffectBuilder(model : Model) =
                 else
                     None
             )
+        let destructive = lazy (stmts |> Seq.exists CommandEffectBuilder.PerformsDestructiveUpdate)
         {   Statements = stmts
             ModelChange = newModel
             Parameters = pars
+            DestructiveUpdates = destructive
             CacheInfo = cacheInfo
         }

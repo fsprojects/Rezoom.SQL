@@ -4,7 +4,7 @@ open System.IO
 open System.Text.RegularExpressions
 open System.Collections.Generic
 open Rezoom.SQL
-open Rezoom.SQL.Mapping.MigrationRunner
+open Rezoom.SQL.Mapping.Migrations
 
 module private UserModelLoader =
     let private migrationPattern =
@@ -48,6 +48,16 @@ module private UserModelLoader =
                 let parsed = CommandEffect.ParseSQL(path, text)
                 builder.Add(migrationName, parsed)
         builder.ToTrees()
+
+    let nextModel initialModel (migrationTrees : Stmts MigrationTree seq) =
+        let folder isRoot (model : Model) (migration : Stmts Migration) =
+            let effect = CommandEffect.OfSQL(model, migration.Source)
+            if not isRoot && effect.DestructiveUpdates.Value then
+                failwith <| sprintf
+                    "The migration ``%s`` contains destructive statements. This requires a version bump."
+                    migration.FileName
+            effect.Statements, effect.ModelChange |? model
+        foldMigrations folder initialModel migrationTrees
 
     let tableIds (model : Model) =
         seq {
@@ -96,12 +106,11 @@ type UserModel =
         let migrations = loadMigrations migrationsDirectory
         let backend = config.Backend.ToBackend()
         let migrations, model = nextModel backend.InitialModel migrations
-        let migrations = migrations |> Seq.map (stringizeMajorVersion backend) |> toReadOnlyList
+        // let migrations = migrations |> Seq.map (stringizeMajorVersion backend) |> toReadOnlyList
         {   ConnectionName = config.ConnectionName
             MigrationsDirectory = migrationsDirectory
             ConfigDirectory = Path.GetFullPath(configDirectory)
             Backend = backend
             Model = model
-            Migrations = migrations
             TableIds = lazy tableIds model
         }

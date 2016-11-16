@@ -68,7 +68,7 @@
     <Compile Include="CompositeColumnGenerator.fs" />
     <Compile Include="ManyColumnGenerator.fs" />
     <Compile Include="StaticEntityReaderTemplate.fs" />
-    <Compile Include="MigrationRunner.fs" />
+    <Compile Include="Migrations.fs" />
     <Compile Include="Command.fs" />
     <Compile Include="CommandBatch.fs" />
     <Compile Include="Integration.fs" />

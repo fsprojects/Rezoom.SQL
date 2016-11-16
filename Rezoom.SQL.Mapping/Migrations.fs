@@ -1,4 +1,4 @@
-﻿module Rezoom.SQL.Mapping.MigrationRunner
+﻿module Rezoom.SQL.Mapping.Migrations
 open System
 open System.Collections.Generic
 
@@ -17,6 +17,7 @@ type Migration<'src> =
         Name : string
         Source : 'src
     }
+    member this.FileName = "V" + string this.MajorVersion + "." + this.Name
 
 type MigrationTree<'src> =
     {   Node : 'src Migration
@@ -28,6 +29,24 @@ type MigrationTree<'src> =
             for child in this.Children do
                 yield! child.Migrations()
         }
+
+let foldMigrations
+    (folder : bool -> 'acc -> 's1 Migration -> 's2 * 'acc)
+    (acc : 'acc)
+    (migrationTrees : 's1 MigrationTree seq) =
+    let mutable acc = acc
+    let rec mapFold root tree =
+        let s2, acc2 = folder root acc tree.Node
+        acc <- acc2
+        {   Node =
+                {   MajorVersion = tree.Node.MajorVersion
+                    Name = tree.Node.Name
+                    Source = s2
+                }
+            Children = tree.Children |> Seq.map (mapFold false) |> ResizeArray
+        }
+    let trees = [ for tree in migrationTrees -> mapFold true tree ]
+    trees, acc
 
 type private MigrationTreeBuilderNode<'src> =
     {   mutable Source : 'src option
