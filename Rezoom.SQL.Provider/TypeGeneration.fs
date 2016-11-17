@@ -161,8 +161,7 @@ let private generateCommandMethod
                         ( %%Quotations.Expr.Value(invalidations.HighBits)
                         , %%Quotations.Expr.Value(invalidations.LowBits))
                 ResultSetCount = Some (%%Quotations.Expr.Value(resultSetCount))
-            }
-        @@>
+            } @@>
     let methodParameters =
         [ for NamedParameter name, ty in parameters ->
             ProvidedParameter(name.Value, ty.CLRType)

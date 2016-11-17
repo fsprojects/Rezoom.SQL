@@ -154,6 +154,7 @@ type MigrationTreeListBuilder<'src>() =
         |> ResizeArray
 
 type IMigrationBackend =
+    abstract member Initialize : unit -> unit
     abstract member GetMigrationsRun : unit -> (int * string) seq
     abstract member RunMigration : string Migration -> unit
 
@@ -162,6 +163,7 @@ type MigrationConfig =
     }
 
 let runMigrations config (backend : IMigrationBackend) (migrationTrees : string MigrationTree seq) =
+    backend.Initialize()
     let already = HashSet(backend.GetMigrationsRun())
     let currentMajorVersion =
         already

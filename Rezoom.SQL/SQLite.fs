@@ -51,6 +51,7 @@ type SQLiteBackend() =
                 }
         }
     interface IBackend with
+        member this.MigrationBackend = <@ fun conn -> DefaultMigrationBackend(conn) :> Migrations.IMigrationBackend @>
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =

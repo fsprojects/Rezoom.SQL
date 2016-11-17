@@ -1,6 +1,7 @@
 ﻿namespace Rezoom.SQL.TSQL
 open System
 open System.Data
+open System.Data.Common
 open System.Collections.Generic
 open System.Globalization
 open Rezoom.SQL
@@ -184,6 +185,25 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield text "ROWS ONLY"
         }
 
+type TSQLMigrationBackend(conn : DbConnection) =
+    inherit DefaultMigrationBackend(conn)
+    override __.Initialize() =
+        use cmd = conn.CreateCommand()
+        cmd.CommandText <-
+            """
+                IF NOT EXISTS (
+                    SELECT * FROM sys.tables t
+                    JOIN sys.schemas s ON t.schema_id = s.schema_id
+                    WHERE s.name = 'dbo' and t.name = '__RZSQL_MIGRATIONS'
+                )
+                CREATE TABLE IF NOT EXISTS __RZSQL_MIGRATIONS
+                    ( MajorVersion int
+                    , Name varchar(256)
+                    , UNIQUE (MajorVersion, Name)
+                    );
+            """
+        ignore <| cmd.ExecuteNonQuery()
+
 type TSQLBackend() =
     static let initialModel =
         let main, temp = Name("dbo"), Name("temp")
@@ -198,6 +218,7 @@ type TSQLBackend() =
                 }
         }
     interface IBackend with
+        member this.MigrationBackend = <@ fun conn -> TSQLMigrationBackend(conn) :> Migrations.IMigrationBackend @>
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =
