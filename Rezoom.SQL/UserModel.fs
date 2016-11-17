@@ -50,8 +50,8 @@ module private UserModelLoader =
                 builder.Add(migrationName, parsed)
         builder.ToTrees()
 
-    let nextModel initialModel (migrationTrees : Stmts MigrationTree seq) =
-        let folder isRoot (model : Model) (migration : Stmts Migration) =
+    let nextModel initialModel (migrationTrees : TotalStmts MigrationTree seq) =
+        let folder isRoot (model : Model) (migration : TotalStmts Migration) =
             let effect = CommandEffect.OfSQL(model, migration.Source)
             if not isRoot && effect.DestructiveUpdates.Value then
                 failwith <| sprintf

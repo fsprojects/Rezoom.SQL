@@ -24,9 +24,9 @@ type CommandEffect =
         this.Statements
         |> Seq.collect (fun s -> s.SelectStmts())
         |> Seq.map (fun s -> s.Value.Info.Table.Query)
-    static member ParseSQL(descr: string, sql : string) : Stmts =
+    static member ParseSQL(descr: string, sql : string) : TotalStmts =
         Parser.parseStatements descr sql |> toReadOnlyList
-    static member OfSQL(model : Model, stmts : Stmts) =
+    static member OfSQL(model : Model, stmts : TotalStmts) =
         let builder = CommandEffectBuilder(model)
         for stmt in stmts do
             builder.AddTotalStmt(stmt)

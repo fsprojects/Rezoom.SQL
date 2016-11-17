@@ -605,4 +605,4 @@ type InsertStmt = InsertStmt<unit, unit>
 type VendorStmt = VendorStmt<unit, unit>
 type Stmt = Stmt<unit, unit>
 type TotalStmt = TotalStmt<unit, unit>
-type Stmts = TotalStmt IReadOnlyList
+type TotalStmts = TotalStmt IReadOnlyList
