@@ -1,6 +1,7 @@
 ﻿module Rezoom.SQL.Mapping.Migrations
 open System
 open System.Collections.Generic
+open FSharp.Quotations
 
 type MigrationFileName =
     {   MajorVersion : int
@@ -19,16 +20,40 @@ type Migration<'src> =
     }
     member this.FileName = "V" + string this.MajorVersion + "." + this.Name
 
+let private quotationizeMigration (migration : string Migration) =
+    <@@ {   MajorVersion = %%Expr.Value(migration.MajorVersion)
+            Name = %%Expr.Value(migration.Name)
+            Source = %%Expr.Value(migration.Source)
+        } : string Migration @@>
+
 type MigrationTree<'src> =
     {   Node : 'src Migration
         Children : 'src MigrationTree IReadOnlyList
     }
+    member this.Map(f) =
+        {   Node =
+                {   MajorVersion = this.Node.MajorVersion
+                    Name = this.Node.Name
+                    Source = f this.Node.Source
+                }
+            Children = this.Children |> Seq.map (fun t -> t.Map(f)) |> ResizeArray
+        }
     member this.Migrations() =
         seq {
             yield this.Node
             for child in this.Children do
                 yield! child.Migrations()
         }
+
+let rec quotationizeMigrationTree (tree : string MigrationTree) =
+    let children =
+        Expr.NewArray(typeof<string MigrationTree>,
+            [ for child in tree.Children ->
+                quotationizeMigrationTree child
+            ])
+    <@@ {   Node = %%quotationizeMigration tree.Node
+            Children = %%children :> string MigrationTree IReadOnlyList   
+        } @@>
 
 let foldMigrations
     (folder : bool -> 'acc -> 's1 Migration -> 's2 * 'acc)

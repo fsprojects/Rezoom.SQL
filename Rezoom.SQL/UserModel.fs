@@ -4,6 +4,7 @@ open System.IO
 open System.Text.RegularExpressions
 open System.Collections.Generic
 open Rezoom.SQL
+open Rezoom.SQL.Mapping
 open Rezoom.SQL.Mapping.Migrations
 
 module private UserModelLoader =
@@ -41,7 +42,7 @@ module private UserModelLoader =
     let loadMigrations migrationsFolder =
         let builder = MigrationTreeListBuilder()
         for path in Directory.GetFiles(migrationsFolder, "*.sql", SearchOption.AllDirectories) do
-            match parseMigrationInfo path with
+            match parseMigrationInfo <| Path.GetFileName(path) with
             | None -> ()
             | Some migrationName ->
                 let text = File.ReadAllText(path)
@@ -58,6 +59,18 @@ module private UserModelLoader =
                     migration.FileName
             effect.Statements, effect.ModelChange |? model
         foldMigrations folder initialModel migrationTrees
+
+    let stringizeMigrationTree (backend : IBackend) (migrationTrees : TTotalStmt IReadOnlyList MigrationTree seq) =
+        seq {
+            let indexer =
+                { new IParameterIndexer with
+                    member __.ParameterIndex(par) =
+                        failwith "Migrations cannot be parameterized"
+                }
+            for tree in migrationTrees ->
+                tree.Map(fun stmts ->
+                    backend.ToCommandFragments(indexer, stmts) |> CommandFragment.Stringize)
+        }
 
     let tableIds (model : Model) =
         seq {
@@ -80,6 +93,7 @@ type UserModel =
         Backend : IBackend
         Model : Model
         TableIds : Map<Name * Name, int> Lazy
+        Migrations : string MigrationTree IReadOnlyList
     }
     static member ConfigFileName = "rzsql.json"
     static member Load(resolutionFolder : string, modelPath : string) =
@@ -106,11 +120,12 @@ type UserModel =
         let migrations = loadMigrations migrationsDirectory
         let backend = config.Backend.ToBackend()
         let migrations, model = nextModel backend.InitialModel migrations
-        // let migrations = migrations |> Seq.map (stringizeMajorVersion backend) |> toReadOnlyList
+        let migrations = stringizeMigrationTree backend migrations |> toReadOnlyList
         {   ConnectionName = config.ConnectionName
             MigrationsDirectory = migrationsDirectory
             ConfigDirectory = Path.GetFullPath(configDirectory)
             Backend = backend
             Model = model
             TableIds = lazy tableIds model
+            Migrations = migrations
         }

@@ -239,7 +239,7 @@ let generateModelType (generate : GenerateType) =
     let migrationsField =
         ProvidedField
             ( "_migrations"
-            , typeof<string Migrations.MigrationMajorVersion array>
+            , typeof<string Migrations.MigrationTree array>
             )
     migrationsField.SetFieldAttributes(FieldAttributes.Static ||| FieldAttributes.Private)
     provided.AddMember <| migrationsField
@@ -249,14 +249,14 @@ let generateModelType (generate : GenerateType) =
         Expr.FieldSet
             ( migrationsField
             , Expr.NewArray
-                ( typeof<string Migrations.MigrationMajorVersion>
-                , generate.UserModel.Migrations |> Seq.map Migrations.quotationize |> Seq.toList
+                ( typeof<string Migrations.MigrationTree>
+                , generate.UserModel.Migrations |> Seq.map Migrations.quotationizeMigrationTree |> Seq.toList
                 ))
     provided.AddMember <| staticCtor
     provided.AddMember <|
         ProvidedProperty
             ( "Migrations"
-            , typeof<string Migrations.MigrationMajorVersion IReadOnlyList>
+            , typeof<string Migrations.MigrationTree IReadOnlyList>
             , GetterCode = fun _ -> Expr.FieldGet(migrationsField)
             , IsStatic = true
             )
