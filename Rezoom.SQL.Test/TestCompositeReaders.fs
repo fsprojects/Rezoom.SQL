@@ -35,6 +35,18 @@ type CompositeKeyType =
     }
 
 [<Test>]
+let ``read nothing`` () =   
+    let colMap =
+        [|
+            "UserId", ColumnType.Int32
+            "Name", ColumnType.String
+        |] |> ColumnMap.Parse
+    let reader = ReaderTemplate<User array>.Template().CreateReader()
+    reader.ProcessColumns(colMap)
+    let users = reader.ToEntity()
+    Assert.AreEqual([||], users)
+
+[<Test>]
 let ``read user`` () =
     let colMap =
         [|
