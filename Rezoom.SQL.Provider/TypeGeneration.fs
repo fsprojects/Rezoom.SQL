@@ -1,6 +1,7 @@
 ﻿module Rezoom.SQL.Provider.TypeGeneration
 open System
 open System.Data
+open System.Data.Common
 open System.Collections.Generic
 open System.IO
 open System.Text.RegularExpressions
@@ -226,6 +227,7 @@ let generateSQLType (generate : GenerateType) (sql : string) =
     provided
 
 let generateModelType (generate : GenerateType) =
+    let backend = generate.UserModel.Backend
     let provided =
         ProvidedTypeDefinition
             ( generate.Assembly
@@ -259,6 +261,23 @@ let generateModelType (generate : GenerateType) =
             , GetterCode = fun _ -> Expr.FieldGet(migrationsField)
             , IsStatic = true
             )
+    do
+        let pars =
+            [   ProvidedParameter("config", typeof<Migrations.MigrationConfig>)
+                ProvidedParameter("conn", typeof<DbConnection>)
+            ]
+        let meth = ProvidedMethod("Migrate", pars, typeof<unit>)
+        meth.IsStaticMethod <- true
+        meth.InvokeCode <- function
+            | [config; conn] -> 
+                <@@
+                    let migrationBackend : Migrations.IMigrationBackend =
+                        (%%(upcast backend.MigrationBackend)) (%%conn : DbConnection)
+                    let migrations : string Migrations.MigrationTree array = %%Expr.FieldGet(migrationsField)
+                    Migrations.runMigrations %%config migrationBackend migrations
+                @@>
+            | _ -> failwith "Invalid migrate argument list"
+        provided.AddMember meth
     provided
 
 let generateType (generate : GenerateType) =

@@ -52,6 +52,10 @@ let join separator (fragments : Fragments seq) =
 let join1 separator sequence = join separator (sequence |> Seq.map Seq.singleton)
 
 type DbMigration(majorVersion : int, name : string) =
+    [<BlueprintKey>]
+    member __.MajorVersion = majorVersion
+    [<BlueprintKey>]
+    member __.Name = name
     member __.ToTuple() = (majorVersion, name)
 
 type DefaultMigrationBackend(conn : DbConnection) =

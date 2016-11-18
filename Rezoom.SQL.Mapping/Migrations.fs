@@ -51,9 +51,10 @@ let rec quotationizeMigrationTree (tree : string MigrationTree) =
             [ for child in tree.Children ->
                 quotationizeMigrationTree child
             ])
+    let children = Expr.Coerce(children, typeof<string MigrationTree IReadOnlyList>)
     <@@ {   Node = %%quotationizeMigration tree.Node
-            Children = %%children :> string MigrationTree IReadOnlyList   
-        } @@>
+            Children = %%children
+        } : string MigrationTree @@>
 
 let foldMigrations
     (folder : bool -> 'acc -> 's1 Migration -> 's2 * 'acc)
@@ -160,6 +161,7 @@ type IMigrationBackend =
 
 type MigrationConfig =
     {   AllowMigrationsFromOlderMajorVersions : bool
+        LogMigrationRan : string Migration -> unit
     }
 
 let runMigrations config (backend : IMigrationBackend) (migrationTrees : string MigrationTree seq) =
@@ -183,5 +185,6 @@ let runMigrations config (backend : IMigrationBackend) (migrationTrees : string 
                     failwith "oh that's no good, you can't do that"
                 else
                     backend.RunMigration(migration)
+                    config.LogMigrationRan migration
                     ignore <| already.Add(pair) // actually we don't need this but ok
 
