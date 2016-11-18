@@ -193,7 +193,11 @@ type private ManyColumnGenerator
         keyInfo <- keyColumns.ColumnInfoFields builder name
         entDict <- builder.DefineField("_m_d_" + name, dictTy, FieldAttributes.Private)
         refReader <- builder.DefineField("_m_r_" + name, elemReaderTy, FieldAttributes.Private)
-        zero // don't initialize dictionary yet
+        cil {
+            yield ldarg 0
+            yield newobj0 (dictTy.GetConstructor(Type.EmptyTypes))
+            yield stfld entDict
+        }
     override __.DefineProcessColumns() =
         cil {
             let! skip = deflabel
@@ -268,16 +272,6 @@ type private ManyColumnGenerator
                 let! entReader = tmplocal elemReaderTy
                 yield dup
                 yield ldfld entDict
-                let! hasDict = deflabel
-                yield dup
-                yield brtrue's hasDict
-                yield pop
-                yield dup
-                yield newobj0 (dictTy.GetConstructor(Type.EmptyTypes))
-                yield stfld entDict
-                yield dup
-                yield ldfld entDict
-                yield mark hasDict
                 yield ldloc keyLocal
                 yield ldloca entReader
                 yield call3 (dictTy.GetMethod("TryGetValue"))
@@ -310,8 +304,6 @@ type private ManyColumnGenerator
             let! ncase = deflabel
             yield ldarg 0
             yield ldfld entDict
-            yield dup
-            yield brfalse's ncase
             yield call1 (dictTy.GetProperty("Values").GetGetMethod())
             match column with
             | None -> ()
@@ -326,5 +318,4 @@ type private ManyColumnGenerator
                     yield ldloc self
                     yield call3'void setReverse
             yield generalize conversion
-            yield mark ncase
         }

@@ -82,7 +82,7 @@ let ``read folder 1 level deep`` () =
     let folder = reader.ToEntity()
     Assert.IsNotNull(folder)
     Assert.AreEqual(1, folder.FolderId)
-    Assert.IsNull(folder.Children)
+    Assert.AreEqual(0, folder.Children.Length)
 
 [<Test>]
 let ``read folder 2 levels deep`` () =
@@ -101,8 +101,8 @@ let ``read folder 2 levels deep`` () =
     Assert.AreEqual(2, folder.Children.Length)
     Assert.AreEqual(2, folder.Children.[0].FolderId)
     Assert.AreEqual(3, folder.Children.[1].FolderId)
-    Assert.IsNull(folder.Children.[0].Children)
-    Assert.IsNull(folder.Children.[1].Children)
+    Assert.AreEqual(0, folder.Children.[0].Children.Length)
+    Assert.AreEqual(0, folder.Children.[1].Children.Length)
 
 [<Test>]
 let ``read person 1 level deep`` () =
