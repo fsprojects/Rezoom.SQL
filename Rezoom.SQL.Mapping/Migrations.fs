@@ -182,7 +182,10 @@ let runMigrations config (backend : IMigrationBackend) (migrationTrees : string 
             if not <| already.Contains(pair) then
                 if migration.MajorVersion < currentMajorVersion
                     && not config.AllowMigrationsFromOlderMajorVersions then
-                    failwith "oh that's no good, you can't do that"
+                    failwith <|
+                        sprintf "Can't run migration V%d.%s because database has a newer major version (V%d)"
+                            migration.MajorVersion migration.Name
+                            currentMajorVersion
                 else
                     backend.RunMigration(migration)
                     config.LogMigrationRan migration
