@@ -272,13 +272,10 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield text "REFERENCES"
             yield ws
             yield! this.Expr.ObjectName(clause.ReferencesTable)
-            match clause.ReferencesColumns with
-            | None -> ()
-            | Some columns ->
-                yield ws
-                yield text "("
-                yield! columns |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
-                yield text ")"
+            yield ws
+            yield text "("
+            yield! clause.ReferencesColumns |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
+            yield text ")"
             for rule in clause.Rules do
                 yield ws
                 yield! this.ForeignKeyRule(rule)
@@ -299,13 +296,10 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
         }
     override this.ColumnConstraint(constr) =
         seq {
-            match constr.Name with
-            | None -> ()
-            | Some name ->
-                yield text "CONSTRAINT"
-                yield ws
-                yield this.Expr.Name(name)
-                yield ws
+            yield text "CONSTRAINT"
+            yield ws
+            yield this.Expr.Name(constr.Name)
+            yield ws
             match constr.ColumnConstraintType with
             | NullableConstraint -> ()
             | PrimaryKeyConstraint pk ->

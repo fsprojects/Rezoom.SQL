@@ -878,7 +878,7 @@ let private foreignKeyDeferClause =
 let private foreignKeyClause =
     %% kw "REFERENCES"
     -- +.objectName
-    -- +.(zeroOrOne * parenthesizedColumnNames)
+    -- +.parenthesizedColumnNames
     -- +.(qty.[0..] * foreignKeyRule)
     -- +.(zeroOrOne * foreignKeyDeferClause)
     -|> fun table cols rules defer ->
@@ -938,7 +938,10 @@ let private columnConstraint =
     %% +.(zeroOrOne * constraintName)
     -- +.constraintType
     -- ws
-    -|> fun name cty -> { Name = name; ColumnConstraintType = cty }
+    -|> fun name cty columnName ->
+        {   Name = cty.DefaultName(columnName)
+            ColumnConstraintType = cty
+        }
 
 let private columnDef =
     %% +.nameOrKeyword
@@ -948,7 +951,7 @@ let private columnDef =
     -|> fun name typeName constraints ->
         {   Name = name
             Type = typeName
-            Constraints = constraints
+            Constraints = constraints |> rmap ((|>) name)
         }
 
 let private alterTableStmt =
@@ -1005,7 +1008,10 @@ let private tableConstraint =
     %% +.(zeroOrOne * constraintName)
     -- +.tableConstraintType
     -- ws
-    -|> fun name cty -> { Name = name; TableConstraintType = cty }
+    -|> fun name cty ->
+        {   Name = match name with | Some name -> name | None -> Name(cty.DefaultName())
+            TableConstraintType = cty
+        }
 
 let private createTableDefinition =
     let part =

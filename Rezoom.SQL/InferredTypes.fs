@@ -144,8 +144,7 @@ let inferredOfView (view : SchemaView) =
     concreteQuery.Map(ConcreteType)
 
 type InferredFromClause =
-    {
-        /// The tables named in the "from" clause of the query, if any.
+    {   /// The tables named in the "from" clause of the query, if any.
         /// These are keyed on the alias of the table, if any, or the table name.
         FromVariables : IReadOnlyDictionary<Name, InferredType ObjectInfo>
         /// All the objects involved in the from clause in order.

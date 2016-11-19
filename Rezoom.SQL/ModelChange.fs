@@ -34,7 +34,8 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                             Columns =
                                 this.CreateTableColumns(model, schema.SchemaName, tableName, select)
                                 |> mapBy (fun c -> c.ColumnName)
-                            Indexes = Map.empty // TODO what about implicit indexes from PKs, unique constraints?
+                            Indexes = Map.empty
+                            Constraints = Map.empty
                         }
                     | CreateAsDefinition def ->
                         SchemaTable.OfCreateDefinition(schema.SchemaName, tableName, def)

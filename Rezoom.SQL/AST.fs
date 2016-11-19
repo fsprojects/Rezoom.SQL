@@ -377,7 +377,7 @@ type ForeignKeyDeferClause =
 
 type ForeignKeyClause<'t> =
     {   ReferencesTable : ObjectName<'t>
-        ReferencesColumns : Name WithSource ResizeArray option
+        ReferencesColumns : Name WithSource ResizeArray
         Rules : ForeignKeyRule ResizeArray
         Defer : ForeignKeyDeferClause option
     }
@@ -395,9 +395,23 @@ type ColumnConstraintType<'t, 'e> =
     | DefaultConstraint of Expr<'t, 'e>
     | CollateConstraint of Name
     | ForeignKeyConstraint of ForeignKeyClause<'t>
+    member this.DefaultName(columnName : Name) =
+        match this with
+        | NullableConstraint -> columnName + "__NULL"
+        | PrimaryKeyConstraint _ -> columnName + "__PK"
+        | NotNullConstraint -> columnName + "__NOTNULL"
+        | UniqueConstraint -> columnName + "__UNIQUE"
+        | DefaultConstraint _ -> columnName + "__DEFAULT"
+        | CollateConstraint _ -> columnName + "__COLLATION"
+        | ForeignKeyConstraint fk ->
+            columnName
+            + "__FK__"
+            + fk.ReferencesTable.ObjectName.Value
+            + "__"
+            + String.concat "_" [ for c in fk.ReferencesColumns -> c.Value.Value ]
 
 type ColumnConstraint<'t, 'e> =
-    {   Name : Name option
+    {   Name : Name
         ColumnConstraintType : ColumnConstraintType<'t, 'e>
     }
 
@@ -429,9 +443,24 @@ type TableConstraintType<'t, 'e> =
     | TableIndexConstraint of TableIndexConstraintClause<'t, 'e>
     | TableForeignKeyConstraint of Name WithSource ResizeArray * ForeignKeyClause<'t>
     | TableCheckConstraint of Expr<'t, 'e>
+    member this.DefaultName() =
+        match this with
+        | TableIndexConstraint con ->
+            String.concat "_" [ for name, _ in con.IndexedColumns -> name.Value ]
+            + "__"
+            + (match con.Type with
+                | PrimaryKey -> "PK"
+                | Unique -> "UNIQUE")
+        | TableForeignKeyConstraint (names, fk) ->
+            String.concat "_" [ for name in names -> name.Value.Value ]
+            + "__FK__"
+            + fk.ReferencesTable.ObjectName.Value
+            + "__"
+            + String.concat "_" [ for c in fk.ReferencesColumns -> c.Value.Value ]
+        | TableCheckConstraint _ -> "CHECK"   
 
 type TableConstraint<'t, 'e> =
-    {   Name : Name option
+    {   Name : Name
         TableConstraintType : TableConstraintType<'t, 'e>
     }
 

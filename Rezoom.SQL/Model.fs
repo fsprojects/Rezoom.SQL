@@ -122,6 +122,7 @@ and SchemaTable =
         TableName : Name
         Columns : Map<Name, SchemaColumn>
         Indexes : Map<Name, SchemaIndex>
+        Constraints : Map<Name, SchemaConstraint>
     }
     member this.WithAdditionalColumn(col : ColumnDef<_, _>) =
         match this.Columns |> Map.tryFind col.Name with
@@ -155,25 +156,47 @@ and SchemaTable =
         let tableColumns =
             seq {
                 for column in def.Columns ->
-                let hasNotNullConstraint =
-                    column.Constraints
-                    |> Seq.exists(function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
-                let isPrimaryKey =
-                    tablePkColumns.Contains(column.Name)
-                    || column.Constraints |> Seq.exists(function
-                        | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true
-                        | _ -> false)
-                {   SchemaName = schemaName
-                    TableName = tableName
-                    PrimaryKey = isPrimaryKey
-                    ColumnName = column.Name
-                    ColumnType = ColumnType.OfTypeName(column.Type, not hasNotNullConstraint)
-                }
+                    let hasNotNullConstraint =
+                        column.Constraints
+                        |> Seq.exists(function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
+                    let isPrimaryKey =
+                        tablePkColumns.Contains(column.Name)
+                        || column.Constraints |> Seq.exists(function
+                            | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true
+                            | _ -> false)
+                    {   SchemaName = schemaName
+                        TableName = tableName
+                        PrimaryKey = isPrimaryKey
+                        ColumnName = column.Name
+                        ColumnType = ColumnType.OfTypeName(column.Type, not hasNotNullConstraint)
+                    }
+            }
+        let constraints =
+            seq {
+                for column in def.Columns do
+                    for constr in column.Constraints ->
+                        constr.Name, Set.singleton column.Name
+                for constr in def.Constraints ->
+                    constr.Name,
+                        match constr.TableConstraintType with
+                        | TableIndexConstraint constr -> constr.IndexedColumns |> Seq.map fst |> Set.ofSeq
+                        | TableForeignKeyConstraint (names, _) -> names |> Seq.map (fun v -> v.Value) |> Set.ofSeq
+                        | TableCheckConstraint _ -> Set.empty
             }
         {   SchemaName = schemaName
             TableName = tableName
             Columns = tableColumns |> mapBy (fun c -> c.ColumnName)
-            Indexes = Map.empty // TODO what about implicit indexes?
+            Indexes = Map.empty
+            Constraints =
+                seq {
+                    for constr, names in constraints ->
+                        constr,
+                            {   SchemaName = schemaName
+                                TableName = tableName
+                                ConstraintName = constr
+                                Columns = names
+                            }
+                } |> Map.ofSeq
         }
 
 and SchemaColumn =
