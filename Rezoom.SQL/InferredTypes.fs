@@ -118,13 +118,6 @@ type InferredQueryColumn() =
             FromAlias = fromAlias
         }
 
-let resultAt source result =
-    match result with
-    | Ok x -> x
-    | Error err -> failAt source err
-
-let resultOk source result = resultAt source result |> ignore
-
 let foundAt source nameResolution =
     match nameResolution with
     | Found x -> x

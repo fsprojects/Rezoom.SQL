@@ -65,6 +65,13 @@ type ResultBuilder() =
 
 let result = ResultBuilder()
 
+let resultAt source result =
+    match result with
+    | Ok x -> x
+    | Error err -> failAt source err
+
+let resultOk source result = resultAt source result |> ignore
+
 let appendLists (left : 'x IReadOnlyList) (right : 'x IReadOnlyList) =
     { new IReadOnlyList<'x> with
         member __.Count = left.Count + right.Count
