@@ -8,10 +8,14 @@ open System.IO
 open System.Collections.Generic
 open Rezoom.SQL
 
-let userModel1() =
+let userModelByName name =
     let assemblyFolder = Path.GetDirectoryName(Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath)
-    let resolutionFolder = Path.Combine(assemblyFolder, "../../user-model-1")
+    let resolutionFolder = Path.Combine(assemblyFolder, "../../" + name)
     UserModel.Load(resolutionFolder, ".")
+
+let userModel1() = userModelByName "user-model-1"
+
+let userModel2() = userModelByName "user-model-2"
 
 let expectError (msg : string) (sql : string) =
     let userModel = userModel1()
