@@ -14,10 +14,9 @@ type InferredType =
     static member Float = ConcreteType { Nullable = false; Type = FloatType Float32 }
     static member Integer = ConcreteType { Nullable = false; Type = IntegerType Integer8 }
     static member Number =
-        OneOfTypes
             [   { Nullable = false; Type = IntegerType Integer8 }
                 { Nullable = false; Type = FloatType Float32 }
-            ]
+            ] |> OneOfTypes
     static member String = ConcreteType { Nullable = false; Type = StringType }
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
     static member DateTime = ConcreteType { Nullable = false; Type = DateTimeType }
@@ -195,8 +194,7 @@ type InferredFromClause =
             | Ambiguous err -> Ambiguous err
 
 and InferredSelectScope =
-    {
-        /// If this scope is that of a subquery, the parent query's scope can also be used
+    {   /// If this scope is that of a subquery, the parent query's scope can also be used
         /// to resolve column and CTE names.
         ParentScope : InferredSelectScope option
         /// The model this select is running against.
@@ -211,8 +209,7 @@ and InferredSelectScope =
     }
 
     static member Root(model) =
-        {
-            ParentScope = None
+        {   ParentScope = None
             Model = model
             CTEVariables = Map.empty
             FromClause = None
