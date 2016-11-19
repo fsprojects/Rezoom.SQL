@@ -110,6 +110,13 @@ and SchemaIndex =
         Columns : Name Set
     }
 
+and SchemaConstraint =
+    {   SchemaName : Name
+        TableName : Name
+        ConstraintName : Name
+        Columns : Name Set
+    }
+
 and SchemaTable =
     {   SchemaName : Name
         TableName : Name
