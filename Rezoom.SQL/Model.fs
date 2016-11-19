@@ -120,11 +120,11 @@ and SchemaConstraint =
 and SchemaTable =
     {   SchemaName : Name
         TableName : Name
-        Columns : SchemaColumn Set
-        Indexes : SchemaIndex Set
+        Columns : Map<Name, SchemaColumn>
+        Indexes : Map<Name, SchemaIndex>
     }
     member this.WithAdditionalColumn(col : ColumnDef<_, _>) =
-        match this.Columns |> Seq.tryFind (fun c -> c.ColumnName = col.Name) with
+        match this.Columns |> Map.tryFind col.Name with
         | Some _ -> Error <| sprintf "Column ``%O`` already exists" col.Name
         | None ->
             let hasNotNullConstraint =
@@ -142,7 +142,7 @@ and SchemaTable =
                     ColumnName = col.Name
                     ColumnType = ColumnType.OfTypeName(col.Type, not hasNotNullConstraint)
                 }
-            Ok { this with Columns = this.Columns |> Set.add newCol }
+            Ok { this with Columns = this.Columns |> Map.add newCol.ColumnName newCol }
     static member OfCreateDefinition(schemaName, tableName, def : CreateTableDefinition<_, _>) =
         let tablePkColumns =
             seq {
@@ -172,8 +172,8 @@ and SchemaTable =
             }
         {   SchemaName = schemaName
             TableName = tableName
-            Columns = tableColumns |> Set.ofSeq
-            Indexes = Set.empty // TODO what about implicit indexes?
+            Columns = tableColumns |> mapBy (fun c -> c.ColumnName)
+            Indexes = Map.empty // TODO what about implicit indexes?
         }
 
 and SchemaColumn =

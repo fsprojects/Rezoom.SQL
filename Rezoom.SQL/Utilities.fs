@@ -130,3 +130,6 @@ let rec permutations (xs : 'a list) =
 /// Translates from FParsec's position type to our own.
 let internal translatePosition (pos : FParsec.Position) =
     { Index = int pos.Index; Line = int pos.Line; Column = int pos.Column }
+
+let mapBy keyFunction sequence =
+    sequence |> Seq.map (fun x -> keyFunction x, x) |> Map.ofSeq

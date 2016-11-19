@@ -32,8 +32,9 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                         {   SchemaName = schema.SchemaName
                             TableName = create.Name.ObjectName
                             Columns =
-                                this.CreateTableColumns(model, schema.SchemaName, tableName, select) |> Set.ofSeq
-                            Indexes = Set.empty // TODO what about implicit indexes from PKs, unique constraints?
+                                this.CreateTableColumns(model, schema.SchemaName, tableName, select)
+                                |> mapBy (fun c -> c.ColumnName)
+                            Indexes = Map.empty // TODO what about implicit indexes from PKs, unique constraints?
                         }
                     | CreateAsDefinition def ->
                         SchemaTable.OfCreateDefinition(schema.SchemaName, tableName, def)
@@ -123,7 +124,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 }
             let table =
                 { table with
-                    Indexes = Set.add index table.Indexes
+                    Indexes = Map.add index.IndexName index table.Indexes
                 }
             let schema =
                 { schema with

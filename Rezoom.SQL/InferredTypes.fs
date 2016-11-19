@@ -135,7 +135,7 @@ let foundAt source nameResolution =
 let inferredOfTable (table : SchemaTable) =
     {   Columns =
             table.Columns
-            |> Seq.map (fun c -> InferredQueryColumn.OfColumn(Some table.TableName, c))
+            |> Seq.map (function KeyValue(_, c) -> InferredQueryColumn.OfColumn(Some table.TableName, c))
             |> toReadOnlyList
     }
 
