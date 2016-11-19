@@ -469,6 +469,18 @@ type CreateTableDefinition<'t, 'e> =
         Constraints : TableConstraint<'t, 'e> ResizeArray
         WithoutRowId : bool
     }
+    member this.AllConstraints() =
+        seq {
+            for column in this.Columns do
+                for constr in column.Constraints ->
+                    constr.Name, Set.singleton column.Name
+            for constr in this.Constraints ->
+                constr.Name,
+                    match constr.TableConstraintType with
+                    | TableIndexConstraint constr -> constr.IndexedColumns |> Seq.map fst |> Set.ofSeq
+                    | TableForeignKeyConstraint (names, _) -> names |> Seq.map (fun v -> v.Value) |> Set.ofSeq
+                    | TableCheckConstraint _ -> Set.empty
+        }
 
 type CreateTableAs<'t, 'e> =
     | CreateAsDefinition of CreateTableDefinition<'t, 'e>

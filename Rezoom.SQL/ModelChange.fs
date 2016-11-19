@@ -61,8 +61,18 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     | Some existing ->
                         failAt alter.Table.Source <| sprintf "Object ``%O`` already exists" existing
                 | AddColumn col ->
-                    let newTbl = tbl.WithAdditionalColumn(col) |> resultAt alter.Table.Source |> SchemaTable
-                    let schema = { schema with Objects = schema.Objects |> Map.add tbl.TableName newTbl }
+                    let newTbl = tbl.WithAdditionalColumn(col) |> resultAt alter.Table.Source
+                    let constraints =
+                        col.Constraints
+                        |> Seq.fold (fun state con ->
+                            Map.add con.Name
+                                {   SchemaName = tbl.SchemaName
+                                    TableName = tbl.TableName
+                                    ConstraintName = con.Name
+                                    Columns = Set.singleton col.Name
+                                } state) newTbl.Constraints
+                    let newTbl = { newTbl with Constraints = constraints }
+                    let schema = { schema with Objects = schema.Objects |> Map.add tbl.TableName (SchemaTable newTbl) }
                     Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
             | Some _ -> failAt alter.Table.Source <| sprintf "Not a table: ``%O``" alter.Table
     member this.CreateView(create : InfCreateViewStmt) =

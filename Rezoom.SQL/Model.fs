@@ -171,25 +171,13 @@ and SchemaTable =
                         ColumnType = ColumnType.OfTypeName(column.Type, not hasNotNullConstraint)
                     }
             }
-        let constraints =
-            seq {
-                for column in def.Columns do
-                    for constr in column.Constraints ->
-                        constr.Name, Set.singleton column.Name
-                for constr in def.Constraints ->
-                    constr.Name,
-                        match constr.TableConstraintType with
-                        | TableIndexConstraint constr -> constr.IndexedColumns |> Seq.map fst |> Set.ofSeq
-                        | TableForeignKeyConstraint (names, _) -> names |> Seq.map (fun v -> v.Value) |> Set.ofSeq
-                        | TableCheckConstraint _ -> Set.empty
-            }
         {   SchemaName = schemaName
             TableName = tableName
             Columns = tableColumns |> mapBy (fun c -> c.ColumnName)
             Indexes = Map.empty
             Constraints =
                 seq {
-                    for constr, names in constraints ->
+                    for constr, names in def.AllConstraints() ->
                         constr,
                             {   SchemaName = schemaName
                                 TableName = tableName
