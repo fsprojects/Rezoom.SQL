@@ -137,61 +137,70 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     | Some tys -> cxt.Unify(avar, OneOfTypes tys) |> resultOk source
                     functionVars.[name] <- avar
                     avar
+            let aggregate = funcType.Aggregate func.Arguments
             let mutable argsAggregate = false
             let mutable argsIdempotent = true
             let args, output =
                 match func.Arguments with
                 | ArgumentWildcard ->
-                    if funcType.AllowWildcard then ArgumentWildcard, toInferred funcType.Output
-                    else failAt source <| sprintf "Function does not permit wildcards: ``%O``" func.FunctionName
+                    match aggregate with
+                    | None ->
+                        failAt source <|
+                            sprintf "Non-aggregate function does not permit wildcard: ``%O``" func.FunctionName
+                    | Some aggregate ->
+                        if aggregate.AllowWildcard then ArgumentWildcard, toInferred funcType.Output
+                        else failAt source <| sprintf "Function does not permit wildcards: ``%O``" func.FunctionName
                 | ArgumentList (distinct, args) ->
-                    if Option.isSome distinct && not funcType.AllowDistinct then
-                        failAt source <| sprintf "Function does not permit DISTINCT keyword: ``%O``" func.FunctionName
-                    else
-                        let outArgs = ResizeArray()
-                        let add expr =
-                            let arg = this.Expr(expr)
-                            outArgs.Add(arg)
-                            argsAggregate <- argsAggregate || arg.Info.Aggregate
-                            argsIdempotent <- argsIdempotent && arg.Info.Idempotent
-                            arg.Info.Type
-                        for i, expectedTy in funcType.FixedArguments |> Seq.indexed do
-                            if i >= args.Count then
-                                failAt source <|
-                                    sprintf "Function %O expects at least %d arguments but given only %d"
-                                        func.FunctionName
-                                        funcType.FixedArguments.Count
-                                        args.Count
-                            else
-                                cxt.Unify(toInferred expectedTy, add args.[i]) |> resultOk args.[i].Source
-                        let fixedCount = funcType.FixedArguments.Count
-                        let maxArgCount =
-                            match funcType.VariableArgument with
-                            | None -> Some fixedCount
-                            | Some { MaxCount = Some m } -> Some (fixedCount + m)
-                            | Some { MaxCount = None } -> None
-                        match maxArgCount with
-                        | None -> ()
-                        | Some maxArgCount ->
-                            if args.Count > maxArgCount then
-                                failAt args.[maxArgCount].Source <|
-                                    sprintf "Function %O does not accept more than %d arguments (given %d)"
-                                        func.FunctionName
-                                        maxArgCount
-                                        args.Count
+                    if Option.isSome distinct then
+                        match aggregate with
+                        | Some aggregate when aggregate.AllowDistinct -> ()
+                        | _ ->
+                            failAt source <|
+                                sprintf "Function does not permit DISTINCT keyword: ``%O``" func.FunctionName
+                    let outArgs = ResizeArray()
+                    let add expr =
+                        let arg = this.Expr(expr)
+                        outArgs.Add(arg)
+                        argsAggregate <- argsAggregate || arg.Info.Aggregate
+                        argsIdempotent <- argsIdempotent && arg.Info.Idempotent
+                        arg.Info.Type
+                    for i, expectedTy in funcType.FixedArguments |> Seq.indexed do
+                        if i >= args.Count then
+                            failAt source <|
+                                sprintf "Function %O expects at least %d arguments but given only %d"
+                                    func.FunctionName
+                                    funcType.FixedArguments.Count
+                                    args.Count
+                        else
+                            cxt.Unify(toInferred expectedTy, add args.[i]) |> resultOk args.[i].Source
+                    let fixedCount = funcType.FixedArguments.Count
+                    let maxArgCount =
                         match funcType.VariableArgument with
-                        | None -> ()
-                        | Some varArg ->
-                            let inferredArg = toInferred varArg.Type
-                            for i = fixedCount + 1 to args.Count - 1 do
-                                cxt.Unify(inferredArg, add args.[i]) |> resultOk args.[i].Source
-                        ArgumentList (distinct, outArgs), toInferred funcType.Output
+                        | None -> Some fixedCount
+                        | Some { MaxCount = Some m } -> Some (fixedCount + m)
+                        | Some { MaxCount = None } -> None
+                    match maxArgCount with
+                    | None -> ()
+                    | Some maxArgCount ->
+                        if args.Count > maxArgCount then
+                            failAt args.[maxArgCount].Source <|
+                                sprintf "Function %O does not accept more than %d arguments (given %d)"
+                                    func.FunctionName
+                                    maxArgCount
+                                    args.Count
+                    match funcType.VariableArgument with
+                    | None -> ()
+                    | Some varArg ->
+                        let inferredArg = toInferred varArg.Type
+                        for i = fixedCount + 1 to args.Count - 1 do
+                            cxt.Unify(inferredArg, add args.[i]) |> resultOk args.[i].Source
+                    ArgumentList (distinct, outArgs), toInferred funcType.Output
             {   Expr.Source = source
                 Value = { FunctionName = func.FunctionName; Arguments = args } |> FunctionInvocationExpr
                 Info =
                     {   Type = output
                         Idempotent = argsIdempotent && funcType.Idempotent
-                        Aggregate = argsAggregate || funcType.Aggregate
+                        Aggregate = argsAggregate || Option.isSome aggregate
                         Function = Some funcType
                         Column = None
                     }

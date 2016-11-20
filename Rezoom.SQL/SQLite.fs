@@ -39,6 +39,22 @@ type private SQLiteStatement(indexer : IParameterIndexer) as this =
 
 module SQLiteFunctions =
     open Rezoom.SQL.FunctionDeclarations
+    let private minmax name =
+        let num = a' |> constrained [ int64; float64; decimal ]
+        {   FunctionName = Name(name)
+            FixedArguments = [| num |]
+            VariableArgument = None
+            Output = a'
+            Aggregate =
+                function
+                | ArgumentWildcard -> None
+                | ArgumentList (_, exprs) ->
+                    if exprs.Count = 1 then
+                        Some { AllowWildcard = false; AllowDistinct = false }
+                    else
+                        None
+            Idempotent = false
+        } |> withVarArg a'
     let functions =
         let int = int64
         [|  // core functions from https://www.sqlite.org/lang_corefunc.html
@@ -58,8 +74,8 @@ module SQLiteFunctions =
             // no load_extension
             func "lower" [ string ] string
             func "ltrim" [ string ] string |> withOptArg string
-            func "max" [ a' ] a' |> withVarArg a' // TODO: aggregate with one argument, regular func otherwise?
-            func "min" [ a' ] a' |> withVarArg a' // TODO: aggregate with one argument, regular func otherwise?
+            minmax "max"
+            minmax "min"
             func "nullif" [ a'; a' ] a'
             func "printf" [ string ] string |> withVarArg any
             func "quote" [ any ] string
@@ -83,11 +99,11 @@ module SQLiteFunctions =
             func "zeroblob" [ int ] binary
 
             // aggregate functions from https://www.sqlite.org/lang_aggfunc.html
-            aggregate "avg" [ a' |> constrained [ int; float64 ] ] float64 |> withDistinct
-            aggregate "count" [ any ] int |> withWildcard |> withDistinct
-            aggregate "group_concat" [ string ] string |> withOptArg (* separator *) string |> withDistinct
-            aggregate "sum" [ a' ] a' |> withDistinct
-            aggregate "total" [ a' ] a' |> withDistinct
+            aggregate "avg" [ a' |> constrained [ int; decimal; float64 ] ] float64
+            aggregate "count" [ any ] int |> withWildcard
+            aggregate "group_concat" [ string ] string |> withOptArg (* separator *) string
+            aggregate "sum" [ a' ] a'
+            aggregate "total" [ a' ] a'
             // min/max excluded due to mention above in core functions
 
             // date and time functions from https://www.sqlite.org/lang_datefunc.html

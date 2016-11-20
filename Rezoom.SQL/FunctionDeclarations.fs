@@ -48,19 +48,16 @@ let inline proc name args ret =
         FixedArguments = args |> List.toArray
         VariableArgument = None
         Output = ret
-        AllowWildcard = false
-        AllowDistinct = false
-        Aggregate = false
+        Aggregate = fun _ -> None
         Idempotent = false
     }
 
 let inline func name args ret = { proc name args ret with Idempotent = true }
-let inline aggregate name args ret = { func name args ret with Aggregate = true }
+let inline aggregate name args ret =
+    { func name args ret with Aggregate = fun _ -> Some { AllowWildcard = false; AllowDistinct = true } }
 
-let inline withDistinct funcTy =
-    { funcTy with AllowDistinct = true }
-let inline withWildcard funcTy =
-    { funcTy with AllowWildcard = true }
+let inline withWildcard (funcTy : FunctionType) =
+    { funcTy with Aggregate = fun _ -> Some { AllowWildcard = true; AllowDistinct = true } }
 let inline withVarArg ty funcTy =
     { funcTy with VariableArgument = Some { MaxCount = None; Type = ty } }
 let inline withOptArg ty funcTy =

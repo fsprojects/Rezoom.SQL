@@ -72,14 +72,17 @@ type VariableArgument =
         Type : ArgumentType
     }
 
+type AggregateType =
+    {   AllowWildcard : bool
+        AllowDistinct : bool
+    }
+
 type FunctionType =
     {   FunctionName : Name
         FixedArguments : ArgumentType IReadOnlyList
         VariableArgument : VariableArgument option
         Output : ArgumentType
-        AllowWildcard : bool
-        AllowDistinct : bool
-        Aggregate : bool
+        Aggregate : FunctionArguments<unit, unit> -> AggregateType option
         Idempotent : bool
     }
 
