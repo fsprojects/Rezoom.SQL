@@ -66,10 +66,16 @@ type ArgumentType =
     | ArgumentConcrete of ColumnType
     | ArgumentTypeVariable of name : Name * constrained : ColumnType list option
 
+type VariableArgument =
+    {   /// Maximum # of times this argument can be supplied (no limit if None).
+        MaxCount : int option
+        Type : ArgumentType
+    }
+
 type FunctionType =
     {   FunctionName : Name
         FixedArguments : ArgumentType IReadOnlyList
-        VariableArgument : ArgumentType option
+        VariableArgument : VariableArgument option
         Output : ArgumentType
         AllowWildcard : bool
         AllowDistinct : bool

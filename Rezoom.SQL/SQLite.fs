@@ -52,12 +52,12 @@ module SQLiteFunctions =
             func "instr" [ a' |> constrained [ string; binary ]; a' ] int
             proc "last_insert_rowid" [] int
             func "length" [ a' |> constrained [ string; binary ] ] int
-            func "like" [ string; string ] boolean // TODO: allow ESCAPE clause?
+            func "like" [ string; string ] boolean |> withOptArg string
             func "likelihood" [ boolean; float64 ] boolean
             func "likely" [ boolean ] boolean
             // no load_extension
             func "lower" [ string ] string
-            func "ltrim" [ string; string ] string // TODO: optional chars argument
+            func "ltrim" [ string ] string |> withOptArg string
             func "max" [ a' ] a' |> withVarArg a' // TODO: aggregate with one argument, regular func otherwise?
             func "min" [ a' ] a' |> withVarArg a' // TODO: aggregate with one argument, regular func otherwise?
             func "nullif" [ a'; a' ] a'
@@ -66,16 +66,16 @@ module SQLiteFunctions =
             proc "random" [] int
             proc "randomblob" [] binary
             func "replace" [ string; string; string ] string
-            func "round" [ float64; int ] float64 // TODO: make precision argument optional
-            func "rtrim" [ string; string ] string // TODO: optional chars argument
+            func "round" [ float64 ] float64 |> withOptArg int
+            func "rtrim" [ string ] string |> withOptArg string
             func "soundex" [ string ] string
             func "sqlite_compileoption_get" [ int ] string
             func "sqlite_compileoption_used" [ string ] boolean
             func "sqlite_source_id" [] string
             func "sqlite_version" [] string
-            func "substr" [ string; int; int ] string // TODO: make length argument optional
+            func "substr" [ string; int ] string |> withOptArg int
             proc "total_changes" [] int
-            func "trim" [ string; string ] string // TODO: optional chars argument
+            func "trim" [ string ] string |> withOptArg int
             func "typeof" [ any ] string
             func "unicode" [ string ] int
             func "unlikely" [ boolean ] boolean
@@ -85,7 +85,7 @@ module SQLiteFunctions =
             // aggregate functions from https://www.sqlite.org/lang_aggfunc.html
             aggregate "avg" [ a' |> constrained [ int; float64 ] ] float64 |> withDistinct
             aggregate "count" [ any ] int |> withWildcard |> withDistinct
-            aggregate "group_concat" [ string; string ] string |> withDistinct // TODO: make separator optional
+            aggregate "group_concat" [ string ] string |> withOptArg (* separator *) string |> withDistinct
             aggregate "sum" [ a' ] a' |> withDistinct
             aggregate "total" [ a' ] a' |> withDistinct
             // min/max excluded due to mention above in core functions

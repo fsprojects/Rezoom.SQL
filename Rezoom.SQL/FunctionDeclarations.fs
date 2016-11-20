@@ -62,4 +62,6 @@ let inline withDistinct funcTy =
 let inline withWildcard funcTy =
     { funcTy with AllowWildcard = true }
 let inline withVarArg ty funcTy =
-    { funcTy with VariableArgument = Some ty }
+    { funcTy with VariableArgument = Some { MaxCount = None; Type = ty } }
+let inline withOptArg ty funcTy =
+    { funcTy with VariableArgument = Some { MaxCount = Some 1; Type = ty } }

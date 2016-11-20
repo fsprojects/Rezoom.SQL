@@ -155,7 +155,6 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                             argsAggregate <- argsAggregate || arg.Info.Aggregate
                             argsIdempotent <- argsIdempotent && arg.Info.Idempotent
                             arg.Info.Type
-                        let mutable lastIndex = 0
                         for i, expectedTy in funcType.FixedArguments |> Seq.indexed do
                             if i >= args.Count then
                                 failAt source <|
@@ -165,16 +164,27 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                                         args.Count
                             else
                                 cxt.Unify(toInferred expectedTy, add args.[i]) |> resultOk args.[i].Source
-                            lastIndex <- i
-                        for i = lastIndex + 1 to args.Count - 1 do
+                        let fixedCount = funcType.FixedArguments.Count
+                        let maxArgCount =
                             match funcType.VariableArgument with
-                            | None ->
-                                failAt args.[i].Source <|
-                                    sprintf "Function %O does not accept more than %d arguments"
+                            | None -> Some fixedCount
+                            | Some { MaxCount = Some m } -> Some (fixedCount + m)
+                            | Some { MaxCount = None } -> None
+                        match maxArgCount with
+                        | None -> ()
+                        | Some maxArgCount ->
+                            if args.Count > maxArgCount then
+                                failAt args.[maxArgCount].Source <|
+                                    sprintf "Function %O does not accept more than %d arguments (given %d)"
                                         func.FunctionName
-                                        funcType.FixedArguments.Count
-                            | Some varArg ->
-                                cxt.Unify(toInferred varArg, add args.[i]) |> resultOk args.[i].Source
+                                        maxArgCount
+                                        args.Count
+                        match funcType.VariableArgument with
+                        | None -> ()
+                        | Some varArg ->
+                            let inferredArg = toInferred varArg.Type
+                            for i = fixedCount + 1 to args.Count - 1 do
+                                cxt.Unify(inferredArg, add args.[i]) |> resultOk args.[i].Source
                         ArgumentList (distinct, outArgs), toInferred funcType.Output
             {   Expr.Source = source
                 Value = { FunctionName = func.FunctionName; Arguments = args } |> FunctionInvocationExpr
