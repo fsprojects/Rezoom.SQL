@@ -104,7 +104,6 @@ module SQLiteFunctions =
             aggregate "group_concat" [ string ] string |> withOptArg (* separator *) string
             aggregate "sum" [ a' ] a'
             aggregate "total" [ a' ] a'
-            // min/max excluded due to mention above in core functions
 
             // date and time functions from https://www.sqlite.org/lang_datefunc.html
             // for now we use strings to represent dates -- maybe should formalize this by using the datetime type
