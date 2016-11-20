@@ -2,10 +2,25 @@
 open System.Collections.Generic
 open Rezoom.SQL
 
-let a' = ArgumentTypeVariable (Name("a"))
-let b' = ArgumentTypeVariable (Name("b"))
-let c' = ArgumentTypeVariable (Name("c"))
-let d' = ArgumentTypeVariable (Name("d"))
+let a' = ArgumentTypeVariable (Name("a"), None)
+let b' = ArgumentTypeVariable (Name("b"), None)
+let c' = ArgumentTypeVariable (Name("c"), None)
+let d' = ArgumentTypeVariable (Name("d"), None)
+
+let constrained types arg =
+    let types =
+        [ for ty in types do
+            match ty with
+            | ArgumentConcrete t -> yield t
+            | ArgumentTypeVariable (_, Some vs) -> yield! vs
+            | ArgumentTypeVariable _ -> ()
+        ]
+    match arg with
+    | ArgumentConcrete _ -> arg
+    | ArgumentTypeVariable (name, Some constrs) ->
+        ArgumentTypeVariable (name, List.append constrs types |> Some)
+    | ArgumentTypeVariable (name, None) ->
+        ArgumentTypeVariable (name, Some types)
 
 let inline private concrete ty = ArgumentConcrete { Type = ty; Nullable = false }
 

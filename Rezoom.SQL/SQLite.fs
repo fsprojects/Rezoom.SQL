@@ -49,9 +49,9 @@ module SQLiteFunctions =
             func "glob" [ string; string ] boolean
             func "hex" [ binary ] string
             func "ifnull" [ a'; a' ] a'
-            func "instr" [ string; string ] int // TODO: allow binary too?
+            func "instr" [ a' |> constrained [ string; binary ]; a' ] int
             proc "last_insert_rowid" [] int
-            func "length" [ string ] int // TODO: allow binary too?
+            func "length" [ a' |> constrained [ string; binary ] ] int
             func "like" [ string; string ] boolean // TODO: allow ESCAPE clause?
             func "likelihood" [ boolean; float64 ] boolean
             func "likely" [ boolean ] boolean
@@ -83,7 +83,7 @@ module SQLiteFunctions =
             func "zeroblob" [ int ] binary
 
             // aggregate functions from https://www.sqlite.org/lang_aggfunc.html
-            aggregate "avg" [ float64 ] float64 |> withDistinct // TODO: allow integer inputs
+            aggregate "avg" [ a' |> constrained [ int; float64 ] ] float64 |> withDistinct
             aggregate "count" [ any ] int |> withWildcard |> withDistinct
             aggregate "group_concat" [ string; string ] string |> withDistinct // TODO: make separator optional
             aggregate "sum" [ a' ] a' |> withDistinct

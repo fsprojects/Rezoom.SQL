@@ -64,7 +64,7 @@ type ColumnType =
 
 type ArgumentType =
     | ArgumentConcrete of ColumnType
-    | ArgumentTypeVariable of Name
+    | ArgumentTypeVariable of name : Name * constrained : ColumnType list option
 
 type FunctionType =
     {   FunctionName : Name

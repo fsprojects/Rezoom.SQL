@@ -128,10 +128,13 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
             let toInferred (ty : ArgumentType) =
                 match ty with
                 | ArgumentConcrete t -> ConcreteType t
-                | ArgumentTypeVariable name ->
+                | ArgumentTypeVariable (name, constrs) ->
                     let succ, tvar = functionVars.TryGetValue(name)
                     if succ then tvar else
                     let avar = cxt.AnonymousVariable()
+                    match constrs with
+                    | None -> ()
+                    | Some tys -> cxt.Unify(avar, OneOfTypes tys) |> resultOk source
                     functionVars.[name] <- avar
                     avar
             let mutable argsAggregate = false
