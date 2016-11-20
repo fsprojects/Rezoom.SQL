@@ -67,7 +67,8 @@ type ArgumentType =
     | ArgumentTypeVariable of Name
 
 type FunctionType =
-    {   FixedArguments : ArgumentType IReadOnlyList
+    {   FunctionName : Name
+        FixedArguments : ArgumentType IReadOnlyList
         VariableArgument : ArgumentType option
         Output : ArgumentType
         AllowWildcard : bool

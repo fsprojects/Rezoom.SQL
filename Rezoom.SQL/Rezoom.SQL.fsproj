@@ -69,6 +69,7 @@
     <Compile Include="CommandEffect.fs" />
     <Compile Include="Backend.fs" />
     <Compile Include="BackendUtilities.fs" />
+    <Compile Include="FunctionDeclarations.fs" />
     <Compile Include="Translators.fs" />
     <Compile Include="DefaultLiteralTranslator.fs" />
     <Compile Include="DefaultExprTranslator.fs" />
