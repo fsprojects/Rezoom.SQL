@@ -193,7 +193,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 {   Table = SelectResults
                     Query = { Columns = infoColumns }
                 } |> TableLike
-        }
+        } |> AggregateChecker.check
 
     member this.CTE(cte : CommonTableExpression) =
         let knownShape = cte.ColumnNames |> Option.map (fun n -> cxt.AnonymousQueryInfo(n.Value))

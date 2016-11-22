@@ -55,3 +55,25 @@ let ``inserted columns must exist`` () =
         """
             insert into Users(Goober, Booger) values ('one', 'jim')
         """
+
+[<Test>]
+let ``aggregates without group must not be found with non-aggregates`` () =
+    let msg =
+        "Can't reference column outside of an aggregate function "
+        + "because this query uses aggregate functions without a GROUP BY clause"
+    expectError msg
+        """
+            select sum(Id) as Sum, Id from Users
+        """
+
+[<Test>]
+let ``aggregates with group by must not contain non-grouped column references`` () =
+    let msg =
+        "Can't reference column outside of an aggregate function "
+        + "because the GROUP BY clause does not include this column"
+    expectError msg
+        """
+            select Id, Name
+            from Users
+            group by Id
+        """
