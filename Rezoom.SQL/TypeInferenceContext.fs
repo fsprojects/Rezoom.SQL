@@ -91,15 +91,16 @@ type private TypeInferenceContext() =
             | OneOfTypes left, (ConcreteType right as concrete) ->
                 let unified =
                     left
-                    |> Seq.sortByDescending (fun t -> this.Preference t.Type)
-                    |> Seq.map (fun t -> this.Unify(ConcreteType t, concrete))
-                    |> Seq.tryPick (function | Error _ -> None | Ok t -> Some t)
+                    |> Seq.map (fun t -> t, this.Unify(ConcreteType t, concrete))
+                    |> Seq.choose (function | _, Error _ -> None | c, Ok t -> Some (c, t))
+                    |> Seq.toList
                 match unified with
-                | Some unified -> return unified
-                | None ->
+                | [ _, i ] -> return i
+                | [ ] ->
                     return! Error <|
                         sprintf "The type %O is not one of (%s)"
                             right.Type (left |> Seq.map (fun c -> string c.Type) |> Seq.distinct |> String.concat " | ")
+                | many -> return many |> List.map fst |> OneOfTypes
             | (ConcreteType _ as left), (OneOfTypes _ as right) -> return! this.Unify(right, left)
         }
     member private this.Preference(ty) =

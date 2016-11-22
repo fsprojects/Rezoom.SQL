@@ -56,6 +56,7 @@ module SQLiteFunctions =
         } |> withVarArg a'
     let functions =
         let int = int64
+        let numeric ty = ty |> constrained [ int; float64; decimal ]
         [|  // core functions from https://www.sqlite.org/lang_corefunc.html
             func "abs" [ a' ] a'
             proc "changes" [] int
@@ -101,8 +102,8 @@ module SQLiteFunctions =
             aggregate "avg" [ a' |> constrained [ int; decimal; float64 ] ] float64
             aggregate "count" [ any ] int |> withWildcard
             aggregate "group_concat" [ string ] string |> withOptArg (* separator *) string
-            aggregate "sum" [ a' ] a'
-            aggregate "total" [ a' ] a'
+            aggregate "sum" [ numeric a' ] a'
+            aggregate "total" [ numeric a' ] a'
 
             // date and time functions from https://www.sqlite.org/lang_datefunc.html
             // for now we use strings to represent dates -- maybe should formalize this by using the datetime type

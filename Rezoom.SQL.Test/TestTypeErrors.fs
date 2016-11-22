@@ -57,6 +57,13 @@ let ``inserted columns must exist`` () =
         """
 
 [<Test>]
+let ``sum argument must be numeric`` () =
+    expectError "The type STRING is not one of (INT64 | FLOAT64 | DECIMAL)"
+        """
+            select sum(Name) from Users
+        """
+
+[<Test>]
 let ``aggregates without group must not be found with non-aggregates`` () =
     let msg =
         "Can't reference column outside of an aggregate function "
