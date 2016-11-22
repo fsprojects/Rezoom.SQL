@@ -17,7 +17,7 @@ let vendor (sql : string) expected =
 [<Test>]
 let ``vendor without exprs or imaginary`` () =
     vendor """
-        vendor rzsql {
+        vendor sqlite {
             this is raw text
         }
     """
@@ -29,7 +29,7 @@ let ``vendor without exprs or imaginary`` () =
 [<Test>]
 let ``vendor without imaginary`` () =
     vendor """
-        vendor rzsql {
+        vendor sqlite {
             raw text {@param1} more raw {@param2}
         }
     """
@@ -45,7 +45,7 @@ let ``vendor without imaginary`` () =
 [<Test>]
 let ``vendor with imaginary`` () =
     vendor """
-        vendor rzsql {
+        vendor sqlite {
             raw text {@param1} more raw {@param2}
         } imagine {
             select Id from Users
@@ -63,7 +63,7 @@ let ``vendor with imaginary`` () =
 [<Test>]
 let ``vendor with wacky delimiters`` () =
     vendor """
-        vendor rzsql [:<#
+        vendor sqlite [:<#
             raw text [:<# @param1 #>:] more raw [:<# @param2 #>:]
         #>:] imagine [:<#
             select Id from Users
