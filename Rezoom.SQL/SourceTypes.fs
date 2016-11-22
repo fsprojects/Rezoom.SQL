@@ -1,5 +1,6 @@
 ﻿namespace Rezoom.SQL
 open System
+open System.Collections.Generic
 
 /// The position in the source query that a syntactic element appeared.
 type SourcePosition =
@@ -87,6 +88,8 @@ type SourceInfo =
         }
 
 /// `'a` with the positions in source that it spanned.
+[<NoComparison>]
+[<CustomEquality>]
 type WithSource<'a> =
     {   /// The position in source of the syntactic element
         Source : SourceInfo
@@ -94,6 +97,14 @@ type WithSource<'a> =
         Value : 'a
     }
     member this.Map(f) = { Source = this.Source; Value = f this.Value }
+    member this.Equals(other) = EqualityComparer<'a>.Default.Equals(this.Value, other.Value)
+    override this.Equals(other) =
+        match other with
+        | :? WithSource<'a> as other -> this.Equals(other)
+        | _ -> false
+    override this.GetHashCode() = (box this.Value).GetHashCode()
+    interface IEquatable<WithSource<'a>> with
+        member this.Equals(other) = this.Equals(other)
 
 type SourceInfoException(msg : string, pos : SourceInfo) =
     inherit Exception(msg)

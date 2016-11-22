@@ -140,3 +140,7 @@ let internal translatePosition (pos : FParsec.Position) =
 
 let mapBy keyFunction sequence =
     sequence |> Seq.map (fun x -> keyFunction x, x) |> Map.ofSeq
+
+let inline (+@+) x y =
+    let h1 = x.GetHashCode()
+    ((h1 <<< 5) + h1) ^^^ y.GetHashCode()

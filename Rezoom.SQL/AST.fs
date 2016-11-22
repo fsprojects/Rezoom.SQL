@@ -45,6 +45,8 @@ type TypeName =
     | DateTimeTypeName
     | DateTimeOffsetTypeName
 
+[<NoComparison>]
+[<CustomEquality>]
 type ObjectName<'t> =
     {   Source : SourceInfo
         SchemaName : Name option
@@ -56,6 +58,16 @@ type ObjectName<'t> =
         match this.SchemaName with
         | None -> this.ObjectName
         | Some schema -> schema + "." + this.ObjectName
+    member this.Equals(other) =
+        this.SchemaName = other.SchemaName
+        && this.ObjectName = other.ObjectName
+    override this.Equals(other) =
+        match other with
+        | :? ObjectName<'t> as other -> this.Equals(other)
+        | _ -> false
+    override this.GetHashCode() = this.SchemaName +@+ this.ObjectName
+    interface IEquatable<ObjectName<'t>> with
+        member this.Equals(other) = this.Equals(other)
 
 type ColumnName<'t> =
     {   Table : ObjectName<'t> option
@@ -139,11 +151,22 @@ type ExprType<'t, 'e> =
     | ScalarSubqueryExpr of SelectStmt<'t, 'e>
     | RaiseExpr of Raise
 
-and Expr<'t, 'e> =
+and
+    [<NoComparison>]
+    [<CustomEquality>]
+    Expr<'t, 'e> =
     {   Value : ExprType<'t, 'e>
         Info : 'e
         Source : SourceInfo
     }
+    member this.Equals(other) = this.Value = other.Value
+    override this.Equals(other) =
+        match other with
+        | :? Expr<'t, 'e> as other -> this.Equals(other)
+        | _ -> false
+    override this.GetHashCode() = this.Value.GetHashCode()
+    interface IEquatable<Expr<'t, 'e>> with
+        member this.Equals(other) = this.Equals(other)
 
 and InExpr<'t, 'e> =
     {   Invert : bool
@@ -218,13 +241,33 @@ and InSet<'t, 'e> =
     | InSelect of SelectStmt<'t, 'e>
     | InTable of TableInvocation<'t, 'e>
 
-and SelectStmtCore<'t, 'e> =
+and
+    [<NoComparison>]
+    [<CustomEquality>]
+    SelectStmtCore<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         Compound : CompoundExpr<'t, 'e>
         OrderBy : OrderingTerm<'t, 'e> ResizeArray option
         Limit : Limit<'t, 'e> option
         Info : 't
     }
+    member this.Equals(other) =
+        this.With = other.With
+        && this.Compound = other.Compound
+        && this.OrderBy = other.OrderBy
+        && this.Limit = other.Limit
+    override this.Equals(other) =
+        match other with
+        | :? SelectStmtCore<'t, 'e> as other -> this.Equals(other)
+        | _ -> false
+    override this.GetHashCode() =
+        this.With
+        +@+ this.Compound
+        +@+ this.OrderBy
+        +@+ this.Limit
+    interface IEquatable<SelectStmtCore<'t, 'e>> with
+        member this.Equals(other) = this.Equals(other)
+
 
 and SelectStmt<'t, 'e> = SelectStmtCore<'t, 'e> WithSource
 
@@ -233,12 +276,29 @@ and WithClause<'t, 'e> =
         Tables : CommonTableExpression<'t, 'e> ResizeArray
     }
 
-and CommonTableExpression<'t, 'e> =
+and
+    [<NoComparison>]
+    [<CustomEquality>]
+    CommonTableExpression<'t, 'e> =
     {   Name : Name
         ColumnNames : Name WithSource ResizeArray WithSource option
         AsSelect : SelectStmt<'t, 'e>
         Info : 't
     }
+    member this.Equals(other) =
+        this.Name = other.Name
+        && this.ColumnNames = other.ColumnNames
+        && this.AsSelect = other.AsSelect
+    override this.Equals(other) =
+        match other with
+        | :? CommonTableExpression<'t, 'e> as other -> this.Equals(other)
+        | _ -> false
+    override this.GetHashCode() =
+        this.Name
+        +@+ this.ColumnNames
+        +@+ this.AsSelect
+    interface IEquatable<CommonTableExpression<'t, 'e>> with
+        member this.Equals(other) = this.Equals(other)
 
 and OrderDirection =
     | Ascending
@@ -274,19 +334,50 @@ and CompoundTermCore<'t, 'e> =
     | Values of Expr<'t, 'e> ResizeArray WithSource ResizeArray
     | Select of SelectCore<'t, 'e>
 
-and CompoundTerm<'t, 'e> =
+and
+    [<NoComparison>]
+    [<CustomEquality>]
+    CompoundTerm<'t, 'e> =
     {   Value : CompoundTermCore<'t, 'e>
         Source : SourceInfo
         Info : 't
     }
+    member this.Equals(other) = other.Value = this.Value
+    override this.Equals(other) =
+        match other with
+        | :? CompoundTerm<'t, 'e> as other -> this.Equals(other)
+        | _ -> false
+    override this.GetHashCode() = this.Value.GetHashCode()
+    interface IEquatable<CompoundTerm<'t, 'e>> with
+        member this.Equals(other) = this.Equals(other)
 
-and SelectCore<'t, 'e> =
+and
+    [<NoComparison>]
+    [<CustomEquality>]
+    SelectCore<'t, 'e> =
     {   Columns : ResultColumns<'t, 'e>
         From : TableExpr<'t, 'e> option
         Where : Expr<'t, 'e> option
         GroupBy : GroupBy<'t, 'e> option
         Info : 't
     }
+    member this.Equals(other) =
+        this.Columns = other.Columns
+        && this.From = other.From
+        && this.Where = other.Where
+        && this.GroupBy = other.GroupBy
+    override this.Equals(other) =
+        match other with
+        | :? SelectCore<'t, 'e> as other -> this.Equals(other)
+        | _ -> false
+    override this.GetHashCode() =
+        this.Columns
+        +@+ this.From
+        +@+ this.Where
+        +@+ this.GroupBy
+    interface IEquatable<SelectCore<'t, 'e>> with
+        member this.Equals(other) = this.Equals(other)
+
 
 and GroupBy<'t, 'e> =
     {   By : Expr<'t, 'e> ResizeArray
@@ -326,11 +417,24 @@ and TableOrSubqueryType<'t, 'e> =
     | Table of TableInvocation<'t, 'e> * IndexHint option // note: an index hint is invalid if the table has args
     | Subquery of SelectStmt<'t, 'e>
 
-and TableOrSubquery<'t, 'e> =
+and
+    [<NoComparison>]
+    [<CustomEquality>]
+    TableOrSubquery<'t, 'e> =
     {   Table : TableOrSubqueryType<'t, 'e>
         Alias : Name option
         Info : 't
     }
+    member this.Equals(other) =
+        this.Table = other.Table
+        && this.Alias = other.Alias
+    override this.Equals(other) =
+        match other with
+        | :? TableOrSubquery<'t, 'e> as other -> this.Equals(other)
+        | _ -> false
+    override this.GetHashCode() = this.Table +@+ this.Alias
+    interface IEquatable<TableOrSubquery<'t, 'e>> with
+        member this.Equals(other) = this.Equals(other)
 
 and JoinType =
     | Inner

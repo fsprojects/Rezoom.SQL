@@ -64,6 +64,7 @@
     <Compile Include="InferredTypes.fs" />
     <Compile Include="TypeInferenceContext.fs" />
     <Compile Include="ExprTypeChecker.fs" />
+    <Compile Include="AggregateChecker.fs" />
     <Compile Include="TypeChecker.fs" />
     <Compile Include="ModelChange.fs" />
     <Compile Include="CommandEffect.fs" />
