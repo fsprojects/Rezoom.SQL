@@ -40,9 +40,8 @@ type private SQLiteStatement(indexer : IParameterIndexer) as this =
 module SQLiteFunctions =
     open Rezoom.SQL.FunctionDeclarations
     let private minmax name =
-        let num = a' |> constrained [ int64; float64; decimal ]
         {   FunctionName = Name(name)
-            FixedArguments = [| num |]
+            FixedArguments = [| a' |]
             VariableArgument = None
             Output = a'
             Aggregate =
