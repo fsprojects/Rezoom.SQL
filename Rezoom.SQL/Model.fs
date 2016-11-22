@@ -217,8 +217,6 @@ and ExprInfo<'t> =
         Type : 't
         /// Does this expression return the same value each time it's run?
         Idempotent : bool
-        /// Does this expression contain an aggregate? Not including window functions.
-        Aggregate : bool
         /// If this expression is a function call, the function that it calls.
         Function : FunctionType option
         /// If this expression accesses a column of a table in the schema, the column's information.
@@ -231,14 +229,12 @@ and ExprInfo<'t> =
     static member OfType(t : 't) =
         {   Type = t
             Idempotent = true
-            Aggregate = false
             Function = None
             Column = None
         }
     member this.Map(f : 't -> _) =
         {   Type = f this.Type
             Idempotent = this.Idempotent
-            Aggregate = this.Aggregate
             Function = this.Function
             Column = this.Column
         }
