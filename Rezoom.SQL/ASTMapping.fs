@@ -66,10 +66,10 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.Case(case : CaseExpr<'t1, 'e1>) =
         {   Input = Option.map this.Expr case.Input
             Cases =
-                seq {
+                [|
                     for whenExpr, thenExpr in case.Cases ->
                         this.Expr(whenExpr), this.Expr(thenExpr)
-                } |> ResizeArray
+                |]
             Else =
                 {   Source = case.Else.Source
                     Value = Option.map this.Expr case.Else.Value

@@ -124,7 +124,7 @@ let private vendorFragments openDelim closeDelim =
         manyCharsTillApply anyChar delim
             (fun str delim -> str, delim)
         >>= onEither
-    self |>> ResizeArray
+    self |>> List.toArray
 
 let private vendorStmt =
     vendorStmtStart
@@ -155,7 +155,7 @@ let stmt = vendorStmt <|> (coreStmt |>> CoreStmt)
 let stmts =
     %% ws
     -- +.(qty.[0..] /. tws ';' * tws stmt)
-    -|> id
+    -|> fun s -> s.ToArray()
 
 let parseStatements sourceDescription source =
     match runParserOnString (stmts .>> eof) () sourceDescription source with

@@ -212,7 +212,7 @@ and CastExpr<'t, 'e> =
  
 and TableInvocation<'t, 'e> =
     {   Table : ObjectName<'t>
-        Arguments : Expr<'t, 'e> ResizeArray option // we use an option to distinguish between schema.table and schema.table()
+        Arguments : Expr<'t, 'e> array option // we use an option to distinguish between schema.table and schema.table()
     }
 
 and FunctionInvocationExpr<'t, 'e> =
@@ -222,7 +222,7 @@ and FunctionInvocationExpr<'t, 'e> =
 
 and CaseExpr<'t, 'e> =
     {   Input : Expr<'t, 'e> option
-        Cases : (Expr<'t, 'e> * Expr<'t, 'e>) ResizeArray
+        Cases : (Expr<'t, 'e> * Expr<'t, 'e>) array
         Else : Expr<'t, 'e> option WithSource
     }
 
@@ -234,10 +234,10 @@ and DistinctColumns =
 
 and FunctionArguments<'t, 'e> =
     | ArgumentWildcard
-    | ArgumentList of (Distinct option * Expr<'t, 'e> ResizeArray)
+    | ArgumentList of (Distinct option * Expr<'t, 'e> array)
 
 and InSet<'t, 'e> =
-    | InExpressions of Expr<'t, 'e> ResizeArray
+    | InExpressions of Expr<'t, 'e> array
     | InSelect of SelectStmt<'t, 'e>
     | InTable of TableInvocation<'t, 'e>
 
@@ -247,7 +247,7 @@ and
     SelectStmtCore<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         Compound : CompoundExpr<'t, 'e>
-        OrderBy : OrderingTerm<'t, 'e> ResizeArray option
+        OrderBy : OrderingTerm<'t, 'e> array option
         Limit : Limit<'t, 'e> option
         Info : 't
     }
@@ -273,7 +273,7 @@ and SelectStmt<'t, 'e> = SelectStmtCore<'t, 'e> WithSource
 
 and WithClause<'t, 'e> =
     {   Recursive : bool
-        Tables : CommonTableExpression<'t, 'e> ResizeArray
+        Tables : CommonTableExpression<'t, 'e> array
     }
 
 and
@@ -281,7 +281,7 @@ and
     [<CustomEquality>]
     CommonTableExpression<'t, 'e> =
     {   Name : Name
-        ColumnNames : Name WithSource ResizeArray WithSource option
+        ColumnNames : Name WithSource array WithSource option
         AsSelect : SelectStmt<'t, 'e>
         Info : 't
     }
@@ -331,7 +331,7 @@ and CompoundExprCore<'t, 'e> =
 and CompoundExpr<'t, 'e> = CompoundExprCore<'t, 'e> WithSource
 
 and CompoundTermCore<'t, 'e> =
-    | Values of Expr<'t, 'e> ResizeArray WithSource ResizeArray
+    | Values of Expr<'t, 'e> array WithSource array
     | Select of SelectCore<'t, 'e>
 
 and
@@ -380,13 +380,13 @@ and
 
 
 and GroupBy<'t, 'e> =
-    {   By : Expr<'t, 'e> ResizeArray
+    {   By : Expr<'t, 'e> array
         Having : Expr<'t, 'e> option
     }
 
 and ResultColumns<'t, 'e> =
     {   Distinct : DistinctColumns option
-        Columns : ResultColumn<'t, 'e> ResizeArray
+        Columns : ResultColumn<'t, 'e> array
     }
 
 and ResultColumnCase<'t, 'e> =
@@ -481,8 +481,8 @@ type ForeignKeyDeferClause =
 
 type ForeignKeyClause<'t> =
     {   ReferencesTable : ObjectName<'t>
-        ReferencesColumns : Name WithSource ResizeArray
-        Rules : ForeignKeyRule ResizeArray
+        ReferencesColumns : Name WithSource array
+        Rules : ForeignKeyRule array
         Defer : ForeignKeyDeferClause option
     }
 
@@ -522,7 +522,7 @@ type ColumnConstraint<'t, 'e> =
 type ColumnDef<'t, 'e> =
     {   Name : Name
         Type : TypeName
-        Constraints : ColumnConstraint<'t, 'e> ResizeArray
+        Constraints : ColumnConstraint<'t, 'e> array
     }
 
 type AlterTableAlteration<'t, 'e> =
@@ -540,12 +540,12 @@ type TableIndexConstraintType =
 
 type TableIndexConstraintClause<'t, 'e> =
     {   Type : TableIndexConstraintType
-        IndexedColumns : (Name * OrderDirection) ResizeArray
+        IndexedColumns : (Name * OrderDirection) array
     }
 
 type TableConstraintType<'t, 'e> =
     | TableIndexConstraint of TableIndexConstraintClause<'t, 'e>
-    | TableForeignKeyConstraint of Name WithSource ResizeArray * ForeignKeyClause<'t>
+    | TableForeignKeyConstraint of Name WithSource array * ForeignKeyClause<'t>
     | TableCheckConstraint of Expr<'t, 'e>
     member this.DefaultName() =
         match this with
@@ -569,8 +569,8 @@ type TableConstraint<'t, 'e> =
     }
 
 type CreateTableDefinition<'t, 'e> =
-    {   Columns : ColumnDef<'t, 'e> ResizeArray
-        Constraints : TableConstraint<'t, 'e> ResizeArray
+    {   Columns : ColumnDef<'t, 'e> array
+        Constraints : TableConstraint<'t, 'e> array
         WithoutRowId : bool
     }
     member this.AllConstraints() =
@@ -600,7 +600,7 @@ type CreateIndexStmt<'t, 'e> =
     {   Unique : bool
         IndexName : ObjectName<'t>
         TableName : ObjectName<'t>
-        IndexedColumns : (Name * OrderDirection) ResizeArray
+        IndexedColumns : (Name * OrderDirection) array
         Where : Expr<'t, 'e> option
     }
 
@@ -608,7 +608,7 @@ type DeleteStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         DeleteFrom : QualifiedTableName<'t>
         Where : Expr<'t, 'e> option
-        OrderBy : OrderingTerm<'t, 'e> ResizeArray option
+        OrderBy : OrderingTerm<'t, 'e> array option
         Limit : Limit<'t, 'e> option
     }
 
@@ -623,9 +623,9 @@ type UpdateStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         UpdateTable : QualifiedTableName<'t>
         Or : UpdateOr option
-        Set : (Name WithSource * Expr<'t, 'e>) ResizeArray
+        Set : (Name WithSource * Expr<'t, 'e>) array
         Where : Expr<'t, 'e> option
-        OrderBy : OrderingTerm<'t, 'e> ResizeArray option
+        OrderBy : OrderingTerm<'t, 'e> array option
         Limit : Limit<'t, 'e> option
     }
 
@@ -640,14 +640,14 @@ type InsertStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         Or : InsertOr option
         InsertInto : ObjectName<'t>
-        Columns : Name WithSource ResizeArray option
+        Columns : Name WithSource array option
         Data : SelectStmt<'t, 'e> option // either select/values, or "default values" if none
     }
 
 type CreateViewStmt<'t, 'e> =
     {   Temporary : bool
         ViewName : ObjectName<'t>
-        ColumnNames : Name WithSource ResizeArray option
+        ColumnNames : Name WithSource array option
         AsSelect : SelectStmt<'t, 'e>
     }
 
@@ -667,8 +667,8 @@ type VendorStmtFragment<'t, 'e> =
 
 type VendorStmt<'t, 'e> =
     {   VendorName : Name WithSource
-        Fragments : VendorStmtFragment<'t, 'e> ResizeArray
-        ImaginaryStmts : Stmt<'t, 'e> ResizeArray option
+        Fragments : VendorStmtFragment<'t, 'e> array
+        ImaginaryStmts : Stmt<'t, 'e> array option
     }
 
 and Stmt<'t, 'e> =

@@ -6,8 +6,7 @@ open System.Collections.Generic
 
 let inline (|?) opt def = defaultArg opt def
 
-let rmap (f : 'a -> 'b) (list : 'a ResizeArray) =
-    list |> Seq.map f |> ResizeArray
+let inline rmap (f : 'a -> 'b) (list : 'a array) = Array.map f list
 
 let toReadOnlyList (values : 'a seq) =
     ResizeArray(values) :> IReadOnlyList<_>

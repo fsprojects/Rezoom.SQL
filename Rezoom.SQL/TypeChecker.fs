@@ -136,15 +136,14 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 (fun rc ->
                     this.ResultColumn(rc)
                     |> Seq.map (fun c -> { Source = rc.Source; Case = c; AliasPrefix = None }))
-            |> ResizeArray
+            |> Seq.toArray
         match knownShape with
         | Some shape ->
-            if columns.Count <> shape.Columns.Count then
-                let srcCols = columns
-                if srcCols.Count <= 0 then failwith "BUG: impossible, parser shouldn't have accepted this"
-                let source = srcCols.[srcCols.Count - 1].Source
-                failAt source <| sprintf "Expected %d columns but selected %d" shape.Columns.Count columns.Count
-            for i = 0 to columns.Count - 1 do
+            if columns.Length <> shape.Columns.Count then
+                if columns.Length <= 0 then failwith "BUG: impossible, parser shouldn't have accepted this"
+                let source = columns.[columns.Length - 1].Source
+                failAt source <| sprintf "Expected %d columns but selected %d" shape.Columns.Count columns.Length
+            for i = 0 to columns.Length - 1 do
                 let selected, alias as selectedCol = columns.[i].Case.AssumeColumn()
                 let shape = shape.Columns.[i]
                 cxt.Unify(selected.Info.Type, shape.Expr.Info.Type) |> resultOk selected.Source
@@ -210,15 +209,14 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
         let clause =
             {   Recursive = withClause.Recursive
                 Tables =
-                    seq {
-                        for cte in withClause.Tables ->
+                    [|  for cte in withClause.Tables ->
                             let cte = TypeChecker(cxt, scope).CTE(cte)
                             scope <-
                                 { scope with
                                     CTEVariables = scope.CTEVariables |> Map.add cte.Name cte.Info.Table.Query
                                 }
                             cte
-                    } |> ResizeArray
+                    |]
             }
         TypeChecker(cxt, scope), clause
 
@@ -240,10 +238,10 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 let columns =
                     seq {
                         for rowIndex, row in vals |> Seq.indexed do
-                            if row.Value.Count <> shape.Columns.Count then
+                            if row.Value.Length <> shape.Columns.Count then
                                 failAt row.Source <|
                                     sprintf "Incorrect number of columns (expected %d, got %d)"
-                                        shape.Columns.Count row.Value.Count
+                                        shape.Columns.Count row.Value.Length
                             for colVal, colShape in Seq.zip row.Value shape.Columns do
                                 cxt.Unify(colVal.Info.Type, colShape.Expr.Info.Type) |> resultOk row.Source
                                 if rowIndex > 0 then () else
@@ -480,7 +478,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
         let columns =
             knownShape.Columns
             |> Seq.map (fun c -> { WithSource.Source = c.Expr.Source; Value = c.ColumnName })
-            |> ResizeArray
+            |> Seq.toArray
         {   With = withClause
             Or = insert.Or
             InsertInto = table
@@ -500,8 +498,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             checker.WithScope
                 ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(updateTable.TableName) |> Some })
         let setColumns =
-            seq {
-                let cols = updateTable.TableName.Info.Query
+            [|  let cols = updateTable.TableName.Info.Query
                 for name, expr in update.Set do
                     match cols.ColumnByName(name.Value) with
                     | Found col ->
@@ -510,7 +507,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                         yield name, expr
                     | _ ->
                         failAt name.Source <| sprintf "No such column to set: ``%O``" name.Value
-            } |> ResizeArray
+            |]
         {   With = withClause
             UpdateTable = updateTable
             Or = update.Or

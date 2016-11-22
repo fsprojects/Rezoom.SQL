@@ -317,7 +317,7 @@ let private functionArguments (expr : Parser<Expr<unit, unit>, unit>) =
     %[  %% '*' -- ws -|> ArgumentWildcard
         %% +.((%% kw "DISTINCT" -- ws -|> Distinct) * zeroOrOne)
         -- +.(qty.[0..] / tws ',' * expr)
-        -|> fun distinct args -> ArgumentList (distinct, args)
+        -|> fun distinct args -> ArgumentList (distinct, args.ToArray())
     ]
 
 let private functionInvocation expr =
@@ -344,7 +344,7 @@ let private case expr =
         %% +.(whenClause * qty.[1..])
         -- +.withSource (elseClause * zeroOrOne)
         -- kw "END"
-        -|> fun cases els -> { Input = None; Cases = cases; Else = els }
+        -|> fun cases els -> { Input = None; Cases = cases.ToArray(); Else = els }
     let ofForm =
         %% +.expr
         -- +.whenForm
@@ -374,7 +374,7 @@ let private tableInvocation =
     %% +.objectName
     -- ws
     -- +.(args * zeroOrOne)
-    -|> fun name args -> { Table = name; Arguments = args }
+    -|> fun name args -> { Table = name; Arguments = args |> Option.map (fun r -> r.ToArray()) }
 
 let private collateOperator =
     %% kw "COLLATE"
@@ -401,7 +401,7 @@ let private inOperator =
                 --
                     +.[
                         %% +.selectStmt -|> InSelect
-                        %% +.(qty.[0..] / tws ',' * expr) -|> InExpressions
+                        %% +.(qty.[0..] / tws ',' * expr) -|> (fun exs -> exs.ToArray() |> InExpressions)
                     ]
                 -- ')'
                 -|> id
@@ -566,7 +566,7 @@ let private parenthesizedColumnNames =
     -- +.(qty.[0..] / tws ',' * tws (withSource name))
     -- ')'
     -- ws
-    -|> id
+    -|> fun vs -> vs.ToArray()
 
 let private commonTableExpression =
     %% +.nameOrKeyword
@@ -579,14 +579,18 @@ let private commonTableExpression =
     -- ')'
     -- ws
     -|> fun table cols asSelect ->
-        { Name = table; ColumnNames = cols; AsSelect = asSelect; Info = () }
+        {   Name = table
+            ColumnNames = cols
+            AsSelect = asSelect
+            Info = ()
+        }
 
 let private withClause =
     %% kw "WITH"
     -- +.(zeroOrOne * kw "RECURSIVE")
     -- +.(qty.[1..] / tws ',' * commonTableExpression)
     -|> fun recurs ctes ->
-        { Recursive = Option.isSome recurs; Tables = ctes }
+        { Recursive = Option.isSome recurs; Tables = ctes.ToArray() }
 
 let private asAlias =
     %% (zeroOrOne * kw "AS")
@@ -646,7 +650,7 @@ let private selectColumns =
             preturn None
         ]
     -- +.resultColumns
-    -|> fun distinct cols -> { Distinct = distinct; Columns = cols }
+    -|> fun distinct cols -> { Distinct = distinct; Columns = cols.ToArray() }
 
 let private indexHint =
     %[
@@ -724,13 +728,13 @@ let private valuesClause =
         -- +.(qty.[0..] / tws ',' * expr)
         -- ')'
         -- ws
-        -|> id
+        -|> fun vs -> vs.ToArray()
 
     %% kw "VALUES"
     -- ws
     -- +.(qty.[1..] / tws ',' * withSource valuesRow)
     -- ws
-    -|> id
+    -|> fun vs -> vs.ToArray()
 
 let private fromClause =
     %% kw "FROM"
@@ -752,7 +756,7 @@ let private groupByClause =
     -- kw "BY"
     -- +.(qty.[1..] / tws ',' * expr)
     -- +.(zeroOrOne * havingClause)
-    -|> fun by having -> { By = by; Having = having }
+    -|> fun by having -> { By = by.ToArray(); Having = having }
 
 let private selectCore =
     %% +.selectColumns
@@ -812,7 +816,7 @@ let private orderBy =
     %% kw "ORDER"
     -- kw "BY"
     -- +.(qty.[1..] / tws ',' * orderingTerm)
-    -|> id
+    -|> fun by -> by.ToArray()
 
 let private limit =
     let offset =
@@ -885,7 +889,7 @@ let private foreignKeyClause =
         {
             ReferencesTable = table
             ReferencesColumns = cols
-            Rules = rules
+            Rules = rules.ToArray()
             Defer = defer
         }
 
@@ -951,7 +955,7 @@ let private columnDef =
     -|> fun name typeName constraints ->
         {   Name = name
             Type = typeName
-            Constraints = constraints |> rmap ((|>) name)
+            Constraints = constraints |> Seq.map ((|>) name) |> Seq.toArray
         }
 
 let private alterTableStmt =
@@ -983,7 +987,7 @@ let private indexedColumns =
     -- +.(qty.[1..] / tws ',' * (%% +.nameOrKeyword -- +.orderDirection -%> auto))
     -- ')'
     -- ws
-    -|> id
+    -|> fun vs -> vs.ToArray()
 
 let private tableIndexConstraint =
     %% +.tableIndexConstraintType
@@ -1028,9 +1032,9 @@ let private createTableDefinition =
     -|> fun parts without ->
         {
             Columns =
-                parts |> Seq.choose (function | Choice2Of2 cdef -> Some cdef | Choice1Of2 _ -> None) |> ResizeArray
+                parts |> Seq.choose (function | Choice2Of2 cdef -> Some cdef | Choice1Of2 _ -> None) |> Seq.toArray
             Constraints =
-                parts |> Seq.choose (function | Choice1Of2 ct -> Some ct | Choice2Of2 _ -> None) |> ResizeArray
+                parts |> Seq.choose (function | Choice1Of2 ct -> Some ct | Choice2Of2 _ -> None) |> Seq.toArray
             WithoutRowId = Option.isSome without
         }
 
@@ -1152,7 +1156,7 @@ let private updateStmt =
         {   With = withClause
             UpdateTable = table
             Or = updateOr
-            Set = sets
+            Set = sets.ToArray()
             Where = where
             OrderBy = orderBy
             Limit = limit
@@ -1249,4 +1253,4 @@ let coreStmt =
 let coreStmts =
     %% ws
     -- +.(qty.[0..] /. tws ';' * tws coreStmt)
-    -|> id
+    -|> fun s -> s.ToArray()

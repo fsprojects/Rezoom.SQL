@@ -37,7 +37,7 @@ type StatementTranslator() =
     abstract member IndexHint : IndexHint -> Fragments
     abstract member CTE : cte : TCommonTableExpression -> Fragments
     abstract member With : withClause : TWithClause -> Fragments
-    abstract member Values : vals : TExpr ResizeArray WithSource ResizeArray -> Fragments
+    abstract member Values : vals : TExpr array WithSource array -> Fragments
     abstract member ResultColumn : expr : TExpr * alias : Alias -> Fragments
     abstract member ResultColumns : TResultColumns -> Fragments
     abstract member TableOrSubquery : TTableOrSubquery -> Fragments

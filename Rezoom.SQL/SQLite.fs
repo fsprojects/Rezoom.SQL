@@ -49,7 +49,7 @@ module SQLiteFunctions =
                 function
                 | ArgumentWildcard -> None
                 | ArgumentList (_, exprs) ->
-                    if exprs.Count = 1 then
+                    if exprs.Length = 1 then
                         Some { AllowWildcard = false; AllowDistinct = false }
                     else
                         None
