@@ -58,9 +58,12 @@ let ``inserted columns must exist`` () =
 
 [<Test>]
 let ``sum argument must be numeric`` () =
-    expectError "The type STRING is not one of (INT64 | FLOAT64 | DECIMAL)"
+    let msg =
+        "There is no intersection between the types (INT8 | INT16 | INT | INT64 " 
+        + "| FLOAT32 | FLOAT64 | DECIMAL) and (STRING)"
+    expectError msg
         """
-            select sum(Name) from Users
+            select sum(Name) as Sum from Users
         """
 
 [<Test>]

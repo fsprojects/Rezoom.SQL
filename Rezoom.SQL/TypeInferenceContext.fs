@@ -47,62 +47,54 @@ type private TypeInferenceContext() =
         variablesByParameter.Add(bindParameter, var)
         variablesById.Add(id, InferredType.Any)
         var
-    member this.Unify(left, right) =
-        result {
-            match left, right with
-            | ConcreteType left, ConcreteType right ->
-                let! col = TypeInferenceContext.UnifyColumnTypes(left, right)
-                return ConcreteType col
-            | TypeVariable left, right ->
-                let var = getVar left
-                let! unified = this.Unify(var, right)
-                variablesById.[left] <- unified
-                return unified
-            | left, TypeVariable right ->
-                let var = getVar right
-                let! unified = this.Unify(left, var)
-                variablesById.[right] <- unified
-                return unified
-            | DependentlyNullType (onType, colType), right ->
-                // pretend like it's not null for unification purposes
-                let! colType = this.Unify(colType, right)
-                return DependentlyNullType(onType, colType)
-            | left, DependentlyNullType (onType, colType) ->
-                let! colType = this.Unify(left, colType)
-                return DependentlyNullType(onType, colType)
-            | OneOfTypes left, OneOfTypes right ->
-                let leftTypes = left |> Seq.map (fun t -> t.Type) |> Set.ofSeq
-                let rightTypes = right |> Seq.map (fun t -> t.Type) |> Set.ofSeq
+    member this.Unify(source, left, right) =
+        match left, right with
+        | ConcreteType left, ConcreteType right ->
+            let col = TypeInferenceContext.UnifyColumnTypes(left, right) |> resultAt source
+            ConcreteType col
+        | TypeVariable left, right ->
+            let var = getVar left
+            let unified = this.Unify(source, var, right)
+            variablesById.[left] <- unified
+            unified
+        | left, TypeVariable right ->
+            let var = getVar right
+            let unified = this.Unify(source, left, var)
+            variablesById.[right] <- unified
+            unified
+        | DependentlyNullType (onType, colType), right ->
+            // pretend like it's not null for unification purposes
+            let colType = this.Unify(source, colType, right)
+            DependentlyNullType(onType, colType)
+        | left, DependentlyNullType (onType, colType) ->
+            let colType = this.Unify(source, left, colType)
+            DependentlyNullType(onType, colType)
+        | OneOfTypes left, OneOfTypes right ->
+            let leftTypes = left |> Seq.map (fun t -> t.Type) |> Set.ofSeq
+            let rightTypes = right |> Seq.map (fun t -> t.Type) |> Set.ofSeq
+            let possibleNulls =
+                let leftNulls = left |> Seq.map (fun t -> t.Nullable)
+                let rightNulls = right |> Seq.map (fun t -> t.Nullable)
+                Seq.append leftNulls rightNulls |> Seq.distinct
+            if Set.contains AnyType leftTypes then OneOfTypes right
+            elif Set.contains AnyType rightTypes then OneOfTypes left
+            else
                 let possibleTypes = Set.intersect leftTypes rightTypes
                 if Set.isEmpty possibleTypes then
-                    return! Error <|
+                    failAt source <|
                         sprintf "There is no intersection between the types (%s) and (%s)"
                             (leftTypes |> Seq.map string |> String.concat " | ")
                             (rightTypes |> Seq.map string |> String.concat " | ")
                 else
-                    let leftNulls = left |> Seq.map (fun t -> t.Nullable)
-                    let rightNulls = right |> Seq.map (fun t -> t.Nullable)
-                    let possibleNulls = Seq.append leftNulls rightNulls |> Seq.distinct
-                    return
-                        [ for nullable in possibleNulls do
-                            for ty in possibleTypes do
-                                yield { Nullable = nullable; Type = ty }
-                        ] |> OneOfTypes
-            | OneOfTypes left, (ConcreteType right as concrete) ->
-                let unified =
-                    left
-                    |> Seq.map (fun t -> t, this.Unify(ConcreteType t, concrete))
-                    |> Seq.choose (function | _, Error _ -> None | c, Ok t -> Some (c, t))
-                    |> Seq.toList
-                match unified with
-                | [ _, i ] -> return i
-                | [ ] ->
-                    return! Error <|
-                        sprintf "The type %O is not one of (%s)"
-                            right.Type (left |> Seq.map (fun c -> string c.Type) |> Seq.distinct |> String.concat " | ")
-                | many -> return many |> List.map fst |> OneOfTypes
-            | (ConcreteType _ as left), (OneOfTypes _ as right) -> return! this.Unify(right, left)
-        }
+                    [ for nullable in possibleNulls do
+                        for ty in possibleTypes do
+                            yield { Nullable = nullable; Type = ty }
+                    ] |> OneOfTypes
+        | (OneOfTypes _ as left), (ConcreteType right) ->
+            this.Unify(source, left, OneOfTypes [ right ])
+        | (ConcreteType left), (OneOfTypes _ as right) ->
+            this.Unify(source, OneOfTypes [ left ], right)
+
     member private this.Preference(ty) =
         // if given a choice between many types, we prefer to assume the one with the highest score here
         match ty with
@@ -138,37 +130,33 @@ type private TypeInferenceContext() =
     interface ITypeInferenceContext with
         member this.AnonymousVariable() = this.AnonymousVariable()
         member this.Variable(parameter) = this.Variable(parameter)
-        member this.Unify(left, right) = this.Unify(left, right)
+        member this.Unify(source, left, right) = this.Unify(source, left, right)
         member this.Concrete(inferred) = this.Concrete(inferred)
         member __.Parameters = variablesByParameter.Keys :> _ seq
  
 [<AutoOpen>]
 module private TypeInferenceExtensions =
     type ITypeInferenceContext with
-        member typeInference.Unify(inferredType, coreType : CoreColumnType) =
-            typeInference.Unify(inferredType, InferredType.Dependent(inferredType, coreType))
-        member typeInference.Unify(inferredType, resultType : Result<InferredType, string>) =
-            match resultType with
-            | Ok t -> typeInference.Unify(inferredType, t)
-            | Error _ as e -> e
-        member typeInference.Unify(types : InferredType seq) =
+        member typeInference.Unify(source : SourceInfo, inferredType, coreType : CoreColumnType) =
+            typeInference.Unify(source, inferredType, InferredType.Dependent(inferredType, coreType))
+        member typeInference.Unify(source : SourceInfo, types : InferredType seq) =
             types
             |> Seq.fold
-                (function | Ok s -> (fun t -> typeInference.Unify(s, t)) | Error _ as e -> (fun _ -> e))
-                (Ok InferredType.Any)
+                (fun s next -> typeInference.Unify(source, s, next))
+                InferredType.Any
         member typeInference.Concrete(inferred) = typeInference.Concrete(inferred)
-        member typeInference.Binary(op, left, right) =
+        member typeInference.Binary(source, op, left, right) =
             match op with
-            | Concatenate -> typeInference.Unify([ left; right; InferredType.String ])
+            | Concatenate -> typeInference.Unify(source, [ left; right; InferredType.String ])
             | Multiply
             | Divide
             | Add
-            | Subtract -> typeInference.Unify([ left; right; InferredType.Number ])
+            | Subtract -> typeInference.Unify(source, [ left; right; InferredType.Number ])
             | Modulo
             | BitShiftLeft
             | BitShiftRight
             | BitAnd
-            | BitOr -> typeInference.Unify([ left; right; InferredType.Integer ])
+            | BitOr -> typeInference.Unify(source, [ left; right; InferredType.Integer ])
             | LessThan
             | LessThanOrEqual
             | GreaterThan
@@ -177,19 +165,17 @@ module private TypeInferenceExtensions =
             | NotEqual
             | Is
             | IsNot ->
-                result {
-                    let! operandType = typeInference.Unify(left, right)
-                    return InferredType.Dependent(operandType, BooleanType)
-                }
+                let operandType = typeInference.Unify(source, left, right)
+                InferredType.Dependent(operandType, BooleanType)
             | And
-            | Or -> typeInference.Unify([ left; right; InferredType.Boolean ])
-        member typeInference.Unary(op, operandType) =
+            | Or -> typeInference.Unify(source, [ left; right; InferredType.Boolean ])
+        member typeInference.Unary(source, op, operandType) =
             match op with
             | Negative
-            | BitNot -> typeInference.Unify(operandType, InferredType.Number)
-            | Not -> typeInference.Unify(operandType, InferredType.Boolean)
+            | BitNot -> typeInference.Unify(source, operandType, InferredType.Number)
+            | Not -> typeInference.Unify(source, operandType, InferredType.Boolean)
             | IsNull
-            | NotNull -> result { return InferredType.Boolean }
+            | NotNull -> InferredType.Boolean
         member typeInference.AnonymousQueryInfo(columnNames) =
             {   Columns =
                     seq {

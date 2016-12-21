@@ -11,12 +11,24 @@ type InferredType =
     /// A type whose nullability depends on that of another type.
     | DependentlyNullType of ifNull: InferredType * thenNull: InferredType
     | TypeVariable of TypeVariableId
-    static member Float = ConcreteType { Nullable = false; Type = FloatType Float32 }
-    static member Integer = ConcreteType { Nullable = false; Type = IntegerType Integer8 }
+    static member Float =
+        [   FloatType Float32
+            FloatType Float64
+        ] |> List.map (fun f -> { Nullable = false; Type = f }) |> OneOfTypes
+    static member Integer =
+        [   IntegerType Integer8
+            IntegerType Integer16
+            IntegerType Integer32
+            IntegerType Integer64
+        ] |> List.map (fun f -> { Nullable = false; Type = f }) |> OneOfTypes
     static member Number =
-            [   { Nullable = false; Type = IntegerType Integer8 }
-                { Nullable = false; Type = FloatType Float32 }
-            ] |> OneOfTypes
+        [   IntegerType Integer8
+            IntegerType Integer16
+            IntegerType Integer32
+            IntegerType Integer64
+            FloatType Float32
+            FloatType Float64
+        ] |> List.map (fun f -> { Nullable = false; Type = f }) |> OneOfTypes
     static member String = ConcreteType { Nullable = false; Type = StringType }
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
     static member DateTime = ConcreteType { Nullable = false; Type = DateTimeType }
@@ -103,7 +115,7 @@ type ITypeInferenceContext =
     abstract member Variable : BindParameter -> InferredType
     /// Unify the two types (ensure they are compatible and add constraints)
     /// and produce the most specific type.
-    abstract member Unify : InferredType * InferredType -> Result<InferredType, string>
+    abstract member Unify : SourceInfo * InferredType * InferredType -> InferredType
     abstract member Concrete : InferredType -> ColumnType
     abstract member Parameters : BindParameter seq
 

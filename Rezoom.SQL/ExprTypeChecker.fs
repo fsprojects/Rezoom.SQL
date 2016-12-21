@@ -62,7 +62,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     Right = right
                 } |> BinaryExpr
             Info =
-                {   Type = cxt.Binary(binary.Operator, left.Info.Type, right.Info.Type) |> resultAt source
+                {   Type = cxt.Binary(source, binary.Operator, left.Info.Type, right.Info.Type)
                     Idempotent = left.Info.Idempotent && right.Info.Idempotent
                     Function = None
                     Column = None
@@ -77,7 +77,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     Operand = operand
                 } |> UnaryExpr
             Info =
-                {   Type = cxt.Unary(unary.Operator, operand.Info.Type) |> resultAt source
+                {   Type = cxt.Unary(source, unary.Operator, operand.Info.Type)
                     Idempotent = operand.Info.Idempotent
                     Function = None
                     Column = None
@@ -102,7 +102,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
 
     member this.Collation(source : SourceInfo, collation : CollationExpr) =
         let input = this.Expr(collation.Input)
-        cxt.Unify(input.Info.Type, InferredType.String) |> resultOk source
+        ignore <| cxt.Unify(source, input.Info.Type, InferredType.String)
         {   Expr.Source = source
             Value = 
                 {   Input = this.Expr(collation.Input)
@@ -130,7 +130,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     let avar = cxt.AnonymousVariable()
                     match constrs with
                     | None -> ()
-                    | Some tys -> cxt.Unify(avar, OneOfTypes tys) |> resultOk source
+                    | Some tys -> ignore <| cxt.Unify(source, avar, OneOfTypes tys)
                     functionVars.[name] <- avar
                     avar
             let aggregate = funcType.Aggregate func.Arguments
@@ -166,7 +166,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                                     funcType.FixedArguments.Count
                                     args.Length
                         else
-                            cxt.Unify(toInferred expectedTy, add args.[i]) |> resultOk args.[i].Source
+                            ignore <| cxt.Unify(args.[i].Source, toInferred expectedTy, add args.[i])
                     let fixedCount = funcType.FixedArguments.Count
                     let maxArgCount =
                         match funcType.VariableArgument with
@@ -187,7 +187,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     | Some varArg ->
                         let inferredArg = toInferred varArg.Type
                         for i = fixedCount + 1 to args.Length - 1 do
-                            cxt.Unify(inferredArg, add args.[i]) |> resultOk args.[i].Source
+                            ignore <| cxt.Unify(args.[i].Source, inferredArg, add args.[i])
                     ArgumentList (distinct, outArgs.ToArray()), toInferred funcType.Output
             {   Expr.Source = source
                 Value = { FunctionName = func.FunctionName; Arguments = args } |> FunctionInvocationExpr
@@ -204,15 +204,13 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
         let pattern = this.Expr(sim.Pattern)
         let escape = Option.map this.Expr sim.Escape
         let output =
-            result {
-                let! inputType = cxt.Unify(input.Info.Type, StringType)
-                let! patternType = cxt.Unify(pattern.Info.Type, StringType)
-                match escape with
-                | None -> ()
-                | Some escape -> ignore <| cxt.Unify(escape.Info.Type, StringType)
-                let! unified = cxt.Unify(inputType, patternType)
-                return InferredType.Dependent(unified, BooleanType)
-            } |> resultAt source
+            let inputType = cxt.Unify(source, input.Info.Type, StringType)
+            let patternType = cxt.Unify(source, pattern.Info.Type, StringType)
+            match escape with
+            | None -> ()
+            | Some escape -> ignore <| cxt.Unify(source, escape.Info.Type, StringType)
+            let unified = cxt.Unify(source, inputType, patternType)
+            InferredType.Dependent(unified, BooleanType)
         {   Expr.Source = source
             Value =
                 {   Invert = sim.Invert
@@ -236,7 +234,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
         {   Expr.Source = source
             Value = { Invert = between.Invert; Input = input; Low = low; High = high } |> BetweenExpr
             Info =
-                {   Type = cxt.Unify([ input.Info.Type; low.Info.Type; high.Info.Type ]) |> resultAt source
+                {   Type = cxt.Unify(source, [ input.Info.Type; low.Info.Type; high.Info.Type ])
                     Idempotent = input.Info.Idempotent && low.Info.Idempotent && high.Info.Idempotent
                     Function = None
                     Column = None
@@ -256,7 +254,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 let exprs = exprs |> rmap this.Expr
                 let involvedInfos =
                     Seq.append (Seq.singleton input) exprs |> Seq.map (fun e -> e.Info) |> toReadOnlyList
-                involvedInfos |> Seq.map (fun e -> e.Type) |> cxt.Unify |> resultOk inex.Set.Source
+                ignore <| cxt.Unify(inex.Set.Source, involvedInfos |> Seq.map (fun e -> e.Type))
                 InExpressions exprs,
                     (involvedInfos |> Seq.forall (fun i -> i.Idempotent))
             | InSelect select ->
@@ -301,14 +299,15 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 match case.Else.Value with
                 | None -> ()
                 | Some els -> yield els.Info.Type
-            } |> cxt.Unify |> resultAt source
-        seq {
-            yield
-                match case.Input with
-                | None -> InferredType.Boolean
-                | Some input -> input.Info.Type
-            for whenExpr, _ in case.Cases -> whenExpr.Info.Type
-        } |> cxt.Unify |> resultOk source
+            } |> fun s -> cxt.Unify(source, s)
+        cxt.Unify(source,
+            seq {
+                yield
+                    match case.Input with
+                    | None -> InferredType.Boolean
+                    | Some input -> input.Info.Type
+                for whenExpr, _ in case.Cases -> whenExpr.Info.Type
+            }) |> ignore
         let subExprs =
             seq {
                 match case.Input with
@@ -374,5 +373,5 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
 
     member this.Expr(expr : Expr, ty : CoreColumnType) =
         let expr = this.Expr(expr)
-        cxt.Unify(expr.Info.Type, ty) |> resultOk expr.Source
+        ignore <| cxt.Unify(expr.Source, expr.Info.Type, ty)
         expr

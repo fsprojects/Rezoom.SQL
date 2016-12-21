@@ -56,7 +56,7 @@ module SQLiteFunctions =
         } |> withVarArg a'
     let functions =
         let int = int64
-        let numeric ty = ty |> constrained [ int; float64; decimal ]
+        let numeric ty = ty |> constrained [ int64; int32; int16; int8; float32; float64; decimal ]
         [|  // core functions from https://www.sqlite.org/lang_corefunc.html
             func "abs" [ a' ] a'
             proc "changes" [] int
