@@ -55,19 +55,18 @@ module SQLiteFunctions =
             Idempotent = false
         } |> withVarArg a'
     let functions =
-        let int = int64
-        let numeric ty = ty |> constrained NumericType
+        let numeric ty = ty |> constrained NumericTypeClass
         [|  // core functions from https://www.sqlite.org/lang_corefunc.html
             func "abs" [ a' ] a'
-            proc "changes" [] int
-            func "char" [] string |> withVarArg int
+            proc "changes" [] int64
+            func "char" [] string |> withVarArg integral
             func "coalesce" [ a'; a' ] a' |> withVarArg a'
             func "glob" [ string; string ] boolean
             func "hex" [ binary ] string
             func "ifnull" [ a'; a' ] a'
-            func "instr" [ a' |> constrained StringishType; a' ] int
-            proc "last_insert_rowid" [] int
-            func "length" [ a' |> constrained StringishType ] int
+            func "instr" [ a' |> constrained StringishTypeClass; a' ] int64
+            proc "last_insert_rowid" [] int64
+            func "length" [ a' |> constrained StringishTypeClass ] int64
             func "like" [ string; string ] boolean |> withOptArg string
             func "likelihood" [ boolean; float64 ] boolean
             func "likely" [ boolean ] boolean
@@ -79,28 +78,28 @@ module SQLiteFunctions =
             func "nullif" [ a'; a' ] a'
             func "printf" [ string ] string |> withVarArg any
             func "quote" [ any ] string
-            proc "random" [] int
+            proc "random" [] int64
             proc "randomblob" [] binary
             func "replace" [ string; string; string ] string
-            func "round" [ float64 ] float64 |> withOptArg int
+            func "round" [ float64 ] float64 |> withOptArg integral
             func "rtrim" [ string ] string |> withOptArg string
             func "soundex" [ string ] string
-            func "sqlite_compileoption_get" [ int ] string
+            func "sqlite_compileoption_get" [ integral ] string
             func "sqlite_compileoption_used" [ string ] boolean
             func "sqlite_source_id" [] string
             func "sqlite_version" [] string
-            func "substr" [ string; int ] string |> withOptArg int
-            proc "total_changes" [] int
-            func "trim" [ string ] string |> withOptArg int
+            func "substr" [ string; integral ] string |> withOptArg integral
+            proc "total_changes" [] int64
+            func "trim" [ string ] string |> withOptArg integral
             func "typeof" [ any ] string
-            func "unicode" [ string ] int
+            func "unicode" [ string ] int64
             func "unlikely" [ boolean ] boolean
             func "upper" [ string ] string
-            func "zeroblob" [ int ] binary
+            func "zeroblob" [ integral ] binary
 
             // aggregate functions from https://www.sqlite.org/lang_aggfunc.html
             aggregate "avg" [ a' |> numeric ] float64
-            aggregate "count" [ any ] int |> withWildcard
+            aggregate "count" [ any ] int64 |> withWildcard
             aggregate "group_concat" [ string ] string |> withOptArg (* separator *) string
             aggregate "sum" [ numeric a' ] a'
             aggregate "total" [ numeric a' ] a'

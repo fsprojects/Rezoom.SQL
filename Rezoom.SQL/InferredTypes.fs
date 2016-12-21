@@ -10,20 +10,20 @@ type InferredType =
     /// A type whose nullability depends on that of another type.
     | DependentlyNullType of ifNull: InferredType * thenNull: InferredType
     | TypeVariable of TypeVariableId
-    static member Float = ConcreteType { Nullable = false; Type = FloatType Float64 }
-    static member Integer = ConcreteType { Nullable = false; Type = IntegerType Integer64 }
-    static member Number = ConcreteType { Nullable = false; Type = NumericType }
+    static member Float = ConcreteType { Nullable = false; Type = FractionalTypeClass }
+    static member Integer = ConcreteType { Nullable = false; Type = IntegralTypeClass }
+    static member Number = ConcreteType { Nullable = false; Type = NumericTypeClass }
     static member String = ConcreteType { Nullable = false; Type = StringType }
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
     static member DateTime = ConcreteType { Nullable = false; Type = DateTimeType }
     static member DateTimeOffset = ConcreteType { Nullable = false; Type = DateTimeOffsetType }
     static member Blob = ConcreteType { Nullable = false; Type = BinaryType }
-    static member Any = ConcreteType { Nullable = false; Type = AnyType }
+    static member Any = ConcreteType { Nullable = false; Type = AnyTypeClass }
     static member Dependent(ifNull : InferredType, outputType : CoreColumnType) =
         DependentlyNullType(ifNull, ConcreteType { Nullable = false; Type = outputType })
     static member OfLiteral(literal : Literal) =
         match literal with
-        | NullLiteral -> ConcreteType { Nullable = true; Type = AnyType }
+        | NullLiteral -> ConcreteType { Nullable = true; Type = AnyTypeClass }
         | BooleanLiteral _ -> InferredType.Boolean
         | StringLiteral _ -> InferredType.String
         | BlobLiteral _ -> InferredType.Blob

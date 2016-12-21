@@ -5,34 +5,38 @@ open System.Data.Common
 open System.Collections.Generic
 
 type CoreColumnType =
-    | AnyType
     | BooleanType
     | StringType
     | IntegerType of IntegerSize
     | FloatType of FloatSize
     | DecimalType
-    | NumericType
     | BinaryType
-    | StringishType
     | DateTimeType
     | DateTimeOffsetType
+    | StringishTypeClass
+    | NumericTypeClass
+    | IntegralTypeClass
+    | FractionalTypeClass
+    | AnyTypeClass
     member this.ParentType =
         match this with
-        | IntegerType Integer8 -> IntegerType Integer16
-        | IntegerType Integer16 -> IntegerType Integer32
-        | IntegerType Integer32 -> IntegerType Integer64
-        | IntegerType Integer64 -> NumericType
-        | FloatType Float32 -> FloatType Float64
-        | FloatType Float64 -> NumericType
-        | DecimalType -> NumericType
+        | IntegerType Integer8 -> IntegralTypeClass
+        | IntegerType Integer16 -> IntegerType Integer8
+        | IntegerType Integer32 -> IntegerType Integer16
+        | IntegerType Integer64 -> IntegerType Integer32
+        | FloatType Float32 -> FractionalTypeClass
+        | FloatType Float64 -> FloatType Float32
+        | DecimalType -> FractionalTypeClass
         | StringType
-        | BinaryType -> StringishType
+        | BinaryType -> StringishTypeClass
+        | IntegralTypeClass
+        | FractionalTypeClass -> NumericTypeClass
         | BooleanType
         | DateTimeType
         | DateTimeOffsetType
-        | NumericType
-        | StringishType
-        | AnyType -> AnyType
+        | NumericTypeClass
+        | StringishTypeClass
+        | AnyTypeClass -> AnyTypeClass
     member this.HasAncestor(candidate) =
         if this = candidate then true
         elif this.ParentType = this then false
@@ -58,9 +62,11 @@ type CoreColumnType =
         | BinaryType -> "BINARY"
         | DateTimeType -> "DATETIME"
         | DateTimeOffsetType -> "DATETIMEOFFSET"
-        | NumericType -> "<numeric>"
-        | StringishType -> "<stringish>"
-        | AnyType -> "<any>"
+        | FractionalTypeClass -> "<fractional>"
+        | IntegralTypeClass -> "<integral>"
+        | NumericTypeClass -> "<numeric>"
+        | StringishTypeClass -> "<stringish>"
+        | AnyTypeClass -> "<any>"
     static member OfTypeName(typeName : TypeName) =
         match typeName with
         | StringTypeName _ -> StringType
@@ -80,40 +86,29 @@ type ColumnType =
         {   Type = CoreColumnType.OfTypeName(typeName)
             Nullable = nullable
         }
-    member ty.DbType =
+    member private ty.TypeInfo =
         match ty.Type with
-        | IntegerType Integer8 -> DbType.SByte
-        | IntegerType Integer16 -> DbType.Int16
-        | IntegerType Integer32 -> DbType.Int32
-        | IntegerType Integer64 -> DbType.Int64
-        | FloatType Float32 -> DbType.Single
-        | FloatType Float64 -> DbType.Double
-        | BooleanType -> DbType.Boolean
-        | NumericType
-        | DecimalType -> DbType.Decimal
-        | DateTimeType -> DbType.DateTime
-        | DateTimeOffsetType -> DbType.DateTimeOffset
-        | StringishType
-        | StringType -> DbType.String
-        | BinaryType -> DbType.Binary
-        | AnyType -> DbType.Object
-    member ty.CLRType =
-        match ty.Type with
-        | IntegerType Integer8 -> if ty.Nullable then typeof<Nullable<sbyte>> else typeof<sbyte>
-        | IntegerType Integer16 -> if ty.Nullable then typeof<Nullable<int16>> else typeof<int16>
-        | IntegerType Integer32 -> if ty.Nullable then typeof<Nullable<int32>> else typeof<int32>
-        | IntegerType Integer64 -> if ty.Nullable then typeof<Nullable<int64>> else typeof<int64>
-        | FloatType Float32 -> if ty.Nullable then typeof<Nullable<single>> else typeof<single>
-        | FloatType Float64 -> if ty.Nullable then typeof<Nullable<double>> else typeof<double>
-        | BooleanType -> if ty.Nullable then typeof<Nullable<bool>> else typeof<bool>
-        | NumericType
-        | DecimalType -> if ty.Nullable then typeof<Nullable<decimal>> else typeof<decimal>
-        | DateTimeType -> if ty.Nullable then typeof<Nullable<DateTime>> else typeof<DateTime>
-        | DateTimeOffsetType -> if ty.Nullable then typeof<Nullable<DateTimeOffset>> else typeof<DateTimeOffset>
-        | StringishType
-        | StringType -> typeof<string>
-        | BinaryType -> typeof<byte array>
-        | AnyType -> typeof<obj>
+        | IntegerType Integer8 -> DbType.SByte, if ty.Nullable then typeof<Nullable<sbyte>> else typeof<sbyte>
+        | IntegerType Integer16 -> DbType.Int16, if ty.Nullable then typeof<Nullable<int16>> else typeof<int16>
+        | IntegralTypeClass
+        | IntegerType Integer32 -> DbType.Int32, if ty.Nullable then typeof<Nullable<int32>> else typeof<int32>
+        | IntegerType Integer64 -> DbType.Int64, if ty.Nullable then typeof<Nullable<int64>> else typeof<int64>
+        | FloatType Float32 -> DbType.Single, if ty.Nullable then typeof<Nullable<single>> else typeof<single>
+        | FloatType Float64 -> DbType.Double, if ty.Nullable then typeof<Nullable<double>> else typeof<double>
+        | BooleanType -> DbType.Boolean, if ty.Nullable then typeof<Nullable<bool>> else typeof<bool>
+        | FractionalTypeClass
+        | NumericTypeClass
+        | DecimalType -> DbType.Decimal, if ty.Nullable then typeof<Nullable<decimal>> else typeof<decimal>
+        | DateTimeType ->
+            DbType.DateTime, if ty.Nullable then typeof<Nullable<DateTime>> else typeof<DateTime>
+        | DateTimeOffsetType ->
+            DbType.DateTimeOffset, if ty.Nullable then typeof<Nullable<DateTimeOffset>> else typeof<DateTimeOffset>
+        | StringType -> DbType.String, typeof<string>
+        | BinaryType -> DbType.Binary, typeof<byte array>
+        | StringishTypeClass
+        | AnyTypeClass -> DbType.Object, typeof<obj>
+    member ty.CLRType = snd ty.TypeInfo
+    member ty.DbType = fst ty.TypeInfo
 
 type ArgumentType =
     | ArgumentConcrete of ColumnType

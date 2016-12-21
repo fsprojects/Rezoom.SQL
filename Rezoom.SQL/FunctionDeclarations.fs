@@ -17,11 +17,12 @@ let constrained ty arg =
 
 let inline private concrete ty = ArgumentConcrete { Type = ty; Nullable = false }
 
-let any = concrete AnyType
+let any = concrete AnyTypeClass
 let boolean = concrete BooleanType
 let string = concrete StringType
 let float64 = concrete (FloatType Float64)
 let float32 = concrete (FloatType Float32)
+let integral = concrete (IntegralTypeClass)
 let int64 = concrete (IntegerType Integer64)
 let int32 = concrete (IntegerType Integer32)
 let int16 = concrete (IntegerType Integer16)
