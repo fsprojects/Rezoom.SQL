@@ -7,20 +7,13 @@ let b' = ArgumentTypeVariable (Name("b"), None)
 let c' = ArgumentTypeVariable (Name("c"), None)
 let d' = ArgumentTypeVariable (Name("d"), None)
 
-let constrained types arg =
-    let types =
-        [ for ty in types do
-            match ty with
-            | ArgumentConcrete t -> yield t
-            | ArgumentTypeVariable (_, Some vs) -> yield! vs
-            | ArgumentTypeVariable _ -> ()
-        ]
+let constrained ty arg =
     match arg with
     | ArgumentConcrete _ -> arg
     | ArgumentTypeVariable (name, Some constrs) ->
-        ArgumentTypeVariable (name, List.append constrs types |> Some)
+        ArgumentTypeVariable (name, Some (constrs.Unify(ty) |> resultAt SourceInfo.Invalid))
     | ArgumentTypeVariable (name, None) ->
-        ArgumentTypeVariable (name, Some types)
+        ArgumentTypeVariable (name, Some ty)
 
 let inline private concrete ty = ArgumentConcrete { Type = ty; Nullable = false }
 

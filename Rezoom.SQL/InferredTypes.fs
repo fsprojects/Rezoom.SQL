@@ -7,28 +7,12 @@ type TypeVariableId = int
 
 type InferredType =
     | ConcreteType of ColumnType
-    | OneOfTypes of ColumnType list
     /// A type whose nullability depends on that of another type.
     | DependentlyNullType of ifNull: InferredType * thenNull: InferredType
     | TypeVariable of TypeVariableId
-    static member Float =
-        [   FloatType Float32
-            FloatType Float64
-        ] |> List.map (fun f -> { Nullable = false; Type = f }) |> OneOfTypes
-    static member Integer =
-        [   IntegerType Integer8
-            IntegerType Integer16
-            IntegerType Integer32
-            IntegerType Integer64
-        ] |> List.map (fun f -> { Nullable = false; Type = f }) |> OneOfTypes
-    static member Number =
-        [   IntegerType Integer8
-            IntegerType Integer16
-            IntegerType Integer32
-            IntegerType Integer64
-            FloatType Float32
-            FloatType Float64
-        ] |> List.map (fun f -> { Nullable = false; Type = f }) |> OneOfTypes
+    static member Float = ConcreteType { Nullable = false; Type = FloatType Float64 }
+    static member Integer = ConcreteType { Nullable = false; Type = IntegerType Integer64 }
+    static member Number = ConcreteType { Nullable = false; Type = NumericType }
     static member String = ConcreteType { Nullable = false; Type = StringType }
     static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
     static member DateTime = ConcreteType { Nullable = false; Type = DateTimeType }
@@ -52,10 +36,7 @@ type InferredType =
         match inputType with
         | TypeVariable _ as tv
         | DependentlyNullType (_ as tv, _) -> InferredType.Dependent(tv, affinity)
-        | OneOfTypes tys ->
-            ConcreteType { Type = affinity; Nullable = tys |> List.exists (fun t -> t.Nullable) }
-        | ConcreteType ty ->
-            ConcreteType { ty with Type = affinity }
+        | ConcreteType ty -> ConcreteType { ty with Type = affinity }
 
 type InfExprType = ExprType<InferredType ObjectInfo, InferredType ExprInfo>
 type InfExpr = Expr<InferredType ObjectInfo, InferredType ExprInfo>

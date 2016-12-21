@@ -1,5 +1,7 @@
 ﻿namespace Rezoom.SQL
 open System
+open System.Data
+open System.Data.Common
 open System.Collections.Generic
 
 type CoreColumnType =
@@ -9,12 +11,41 @@ type CoreColumnType =
     | IntegerType of IntegerSize
     | FloatType of FloatSize
     | DecimalType
+    | NumericType
     | BinaryType
+    | StringishType
     | DateTimeType
     | DateTimeOffsetType
+    member this.ParentType =
+        match this with
+        | IntegerType Integer8 -> IntegerType Integer16
+        | IntegerType Integer16 -> IntegerType Integer32
+        | IntegerType Integer32 -> IntegerType Integer64
+        | IntegerType Integer64 -> NumericType
+        | FloatType Float32 -> FloatType Float64
+        | FloatType Float64 -> NumericType
+        | DecimalType -> NumericType
+        | StringType
+        | BinaryType -> StringishType
+        | BooleanType
+        | DateTimeType
+        | DateTimeOffsetType
+        | NumericType
+        | StringishType
+        | AnyType -> AnyType
+    member this.HasAncestor(candidate) =
+        if this = candidate then true
+        elif this.ParentType = this then false
+        else this.ParentType.HasAncestor(candidate)
+    member left.Unify(right) =
+        if left.HasAncestor(right) then
+            Ok left
+        elif right.HasAncestor(left) then
+            Ok right
+        else
+            Error <| sprintf "The types %O and %O cannot be unified" left right
     override this.ToString() =
         match this with
-        | AnyType -> "ANY"
         | BooleanType -> "BOOL"
         | StringType -> "STRING"
         | IntegerType Integer8 -> "INT8"
@@ -27,6 +58,9 @@ type CoreColumnType =
         | BinaryType -> "BINARY"
         | DateTimeType -> "DATETIME"
         | DateTimeOffsetType -> "DATETIMEOFFSET"
+        | NumericType -> "<numeric>"
+        | StringishType -> "<stringish>"
+        | AnyType -> "<any>"
     static member OfTypeName(typeName : TypeName) =
         match typeName with
         | StringTypeName _ -> StringType
@@ -46,6 +80,23 @@ type ColumnType =
         {   Type = CoreColumnType.OfTypeName(typeName)
             Nullable = nullable
         }
+    member ty.DbType =
+        match ty.Type with
+        | IntegerType Integer8 -> DbType.SByte
+        | IntegerType Integer16 -> DbType.Int16
+        | IntegerType Integer32 -> DbType.Int32
+        | IntegerType Integer64 -> DbType.Int64
+        | FloatType Float32 -> DbType.Single
+        | FloatType Float64 -> DbType.Double
+        | BooleanType -> DbType.Boolean
+        | NumericType
+        | DecimalType -> DbType.Decimal
+        | DateTimeType -> DbType.DateTime
+        | DateTimeOffsetType -> DbType.DateTimeOffset
+        | StringishType
+        | StringType -> DbType.String
+        | BinaryType -> DbType.Binary
+        | AnyType -> DbType.Object
     member ty.CLRType =
         match ty.Type with
         | IntegerType Integer8 -> if ty.Nullable then typeof<Nullable<sbyte>> else typeof<sbyte>
@@ -55,16 +106,18 @@ type ColumnType =
         | FloatType Float32 -> if ty.Nullable then typeof<Nullable<single>> else typeof<single>
         | FloatType Float64 -> if ty.Nullable then typeof<Nullable<double>> else typeof<double>
         | BooleanType -> if ty.Nullable then typeof<Nullable<bool>> else typeof<bool>
+        | NumericType
         | DecimalType -> if ty.Nullable then typeof<Nullable<decimal>> else typeof<decimal>
         | DateTimeType -> if ty.Nullable then typeof<Nullable<DateTime>> else typeof<DateTime>
         | DateTimeOffsetType -> if ty.Nullable then typeof<Nullable<DateTimeOffset>> else typeof<DateTimeOffset>
+        | StringishType
         | StringType -> typeof<string>
         | BinaryType -> typeof<byte array>
         | AnyType -> typeof<obj>
 
 type ArgumentType =
     | ArgumentConcrete of ColumnType
-    | ArgumentTypeVariable of name : Name * constrained : ColumnType list option
+    | ArgumentTypeVariable of name : Name * constrained : CoreColumnType option
 
 type VariableArgument =
     {   /// Maximum # of times this argument can be supplied (no limit if None).

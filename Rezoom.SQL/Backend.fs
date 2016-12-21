@@ -18,21 +18,7 @@ type ParameterTransform =
         let transform (expr : Quotations.Expr) =
             let asObj = Expr.Coerce(expr, typeof<obj>)
             <@@ if %%asObj = null then box DBNull.Value else %%asObj @@>
-        let ty =
-            match columnType.Type with
-            | IntegerType Integer8 -> DbType.SByte
-            | IntegerType Integer16 -> DbType.Int16
-            | IntegerType Integer32 -> DbType.Int32
-            | IntegerType Integer64 -> DbType.Int64
-            | FloatType Float32 -> DbType.Single
-            | FloatType Float64 -> DbType.Double
-            | BooleanType -> DbType.Boolean
-            | DecimalType -> DbType.Decimal
-            | DateTimeType -> DbType.DateTime
-            | DateTimeOffsetType -> DbType.DateTimeOffset
-            | StringType -> DbType.String
-            | BinaryType -> DbType.Binary
-            | AnyType -> DbType.Object
+        let ty = columnType.DbType
         {   ParameterType = ty
             ValueTransform = transform
         }

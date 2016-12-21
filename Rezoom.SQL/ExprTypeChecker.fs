@@ -130,7 +130,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                     let avar = cxt.AnonymousVariable()
                     match constrs with
                     | None -> ()
-                    | Some tys -> ignore <| cxt.Unify(source, avar, OneOfTypes tys)
+                    | Some ty -> ignore <| cxt.Unify(source, avar, ConcreteType { Type = ty; Nullable = false })
                     functionVars.[name] <- avar
                     avar
             let aggregate = funcType.Aggregate func.Arguments

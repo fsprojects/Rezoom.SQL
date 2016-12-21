@@ -56,7 +56,7 @@ module SQLiteFunctions =
         } |> withVarArg a'
     let functions =
         let int = int64
-        let numeric ty = ty |> constrained [ int64; int32; int16; int8; float32; float64; decimal ]
+        let numeric ty = ty |> constrained NumericType
         [|  // core functions from https://www.sqlite.org/lang_corefunc.html
             func "abs" [ a' ] a'
             proc "changes" [] int
@@ -65,9 +65,9 @@ module SQLiteFunctions =
             func "glob" [ string; string ] boolean
             func "hex" [ binary ] string
             func "ifnull" [ a'; a' ] a'
-            func "instr" [ a' |> constrained [ string; binary ]; a' ] int
+            func "instr" [ a' |> constrained StringishType; a' ] int
             proc "last_insert_rowid" [] int
-            func "length" [ a' |> constrained [ string; binary ] ] int
+            func "length" [ a' |> constrained StringishType ] int
             func "like" [ string; string ] boolean |> withOptArg string
             func "likelihood" [ boolean; float64 ] boolean
             func "likely" [ boolean ] boolean
@@ -99,7 +99,7 @@ module SQLiteFunctions =
             func "zeroblob" [ int ] binary
 
             // aggregate functions from https://www.sqlite.org/lang_aggfunc.html
-            aggregate "avg" [ a' |> constrained [ int; decimal; float64 ] ] float64
+            aggregate "avg" [ a' |> numeric ] float64
             aggregate "count" [ any ] int |> withWildcard
             aggregate "group_concat" [ string ] string |> withOptArg (* separator *) string
             aggregate "sum" [ numeric a' ] a'
