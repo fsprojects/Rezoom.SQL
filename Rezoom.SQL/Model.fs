@@ -86,7 +86,7 @@ type ColumnType =
         {   Type = CoreColumnType.OfTypeName(typeName)
             Nullable = nullable
         }
-    member private ty.TypeInfo =
+    member inline private ty.TypeInfo =
         match ty.Type with
         | IntegerType Integer8 -> DbType.SByte, if ty.Nullable then typeof<Nullable<sbyte>> else typeof<sbyte>
         | IntegerType Integer16 -> DbType.Int16, if ty.Nullable then typeof<Nullable<int16>> else typeof<int16>

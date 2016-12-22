@@ -123,14 +123,14 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
             let functionVars = Dictionary()
             let toInferred (ty : ArgumentType) =
                 match ty with
-                | ArgumentConcrete t -> ConcreteType t
+                | ArgumentConcrete t -> InferredType.Of(t)
                 | ArgumentTypeVariable (name, constrs) ->
                     let succ, tvar = functionVars.TryGetValue(name)
                     if succ then tvar else
                     let avar = cxt.AnonymousVariable()
                     match constrs with
                     | None -> ()
-                    | Some ty -> ignore <| cxt.Unify(source, avar, ConcreteType { Type = ty; Nullable = false })
+                    | Some ty -> ignore <| cxt.Unify(source, avar, InferredType.Of({ Type = ty; Nullable = false }))
                     functionVars.[name] <- avar
                     avar
             let aggregate = funcType.Aggregate func.Arguments

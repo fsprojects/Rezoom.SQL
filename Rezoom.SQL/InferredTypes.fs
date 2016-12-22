@@ -5,25 +5,46 @@ open System.Collections.Generic
 
 type TypeVariableId = int
 
-type InferredType =
-    | ConcreteType of ColumnType
-    /// A type whose nullability depends on that of another type.
-    | DependentlyNullType of ifNull: InferredType * thenNull: InferredType
+type CoreInferredType =
+    | TypeKnown of CoreColumnType
     | TypeVariable of TypeVariableId
-    static member Float = ConcreteType { Nullable = false; Type = FractionalTypeClass }
-    static member Integer = ConcreteType { Nullable = false; Type = IntegralTypeClass }
-    static member Number = ConcreteType { Nullable = false; Type = NumericTypeClass }
-    static member String = ConcreteType { Nullable = false; Type = StringType }
-    static member Boolean = ConcreteType { Nullable = false; Type = BooleanType }
-    static member DateTime = ConcreteType { Nullable = false; Type = DateTimeType }
-    static member DateTimeOffset = ConcreteType { Nullable = false; Type = DateTimeOffsetType }
-    static member Blob = ConcreteType { Nullable = false; Type = BinaryType }
-    static member Any = ConcreteType { Nullable = false; Type = AnyTypeClass }
+
+type InferredNullable =
+    | NullableUnknown
+    | NullableKnown of bool
+    | NullableVariable of TypeVariableId
+    | NullableEither of InferredNullable * InferredNullable
+    static member Either(left, right) =
+        match left, right with
+        | (NullableUnknown | NullableKnown false), x
+        | x, (NullableUnknown | NullableKnown false) -> x
+        | NullableKnown true as t, _ -> t
+        | _, (NullableKnown true as t) -> t
+        | NullableVariable x as v, NullableVariable y -> v
+        | l, r -> NullableEither(l, r)
+
+type InferredType =
+    {   InferredType : CoreInferredType
+        InferredNullable : InferredNullable
+    }
+    static member Of(col) = { InferredNullable = NullableKnown col.Nullable; InferredType = TypeKnown col.Type }
+    static member Of(core) = { InferredNullable = NullableUnknown; InferredType = TypeKnown core }
+    static member Float = InferredType.Of(FractionalTypeClass)
+    static member Integer = InferredType.Of(IntegralTypeClass)
+    static member Number = InferredType.Of(NumericTypeClass)
+    static member String = InferredType.Of(StringType)
+    static member Boolean = InferredType.Of(BooleanType)
+    static member DateTime = InferredType.Of(DateTimeType)
+    static member DateTimeOffset = InferredType.Of(DateTimeOffsetType)
+    static member Blob = InferredType.Of(BinaryType)
+    static member Any = InferredType.Of(AnyTypeClass)
     static member Dependent(ifNull : InferredType, outputType : CoreColumnType) =
-        DependentlyNullType(ifNull, ConcreteType { Nullable = false; Type = outputType })
+        {   InferredNullable = ifNull.InferredNullable
+            InferredType = TypeKnown outputType
+        }
     static member OfLiteral(literal : Literal) =
         match literal with
-        | NullLiteral -> ConcreteType { Nullable = true; Type = AnyTypeClass }
+        | NullLiteral -> { InferredNullable = NullableKnown true; InferredType = TypeKnown AnyTypeClass }
         | BooleanLiteral _ -> InferredType.Boolean
         | StringLiteral _ -> InferredType.String
         | BlobLiteral _ -> InferredType.Blob
@@ -33,10 +54,9 @@ type InferredType =
         | DateTimeOffsetLiteral _ -> InferredType.DateTimeOffset
     static member OfTypeName(typeName : TypeName, inputType : InferredType) =
         let affinity = CoreColumnType.OfTypeName(typeName)
-        match inputType with
-        | TypeVariable _ as tv
-        | DependentlyNullType (_ as tv, _) -> InferredType.Dependent(tv, affinity)
-        | ConcreteType ty -> ConcreteType { ty with Type = affinity }
+        {   InferredNullable = inputType.InferredNullable
+            InferredType = TypeKnown affinity
+        }
 
 type InfExprType = ExprType<InferredType ObjectInfo, InferredType ExprInfo>
 type InfExpr = Expr<InferredType ObjectInfo, InferredType ExprInfo>
@@ -104,7 +124,7 @@ type InferredQueryColumn() =
     static member OfColumn(fromAlias : Name option, column : SchemaColumn) =
         {   Expr =
                 {   Source = SourceInfo.Invalid
-                    Info = { ExprInfo<_>.OfType(ConcreteType column.ColumnType) with Column = Some column }
+                    Info = { ExprInfo<_>.OfType(InferredType.Of(column.ColumnType)) with Column = Some column }
                     Value = ColumnNameExpr { ColumnName = column.ColumnName; Table = None }
                 }
             ColumnName = column.ColumnName
@@ -126,7 +146,7 @@ let inferredOfTable (table : SchemaTable) =
 
 let inferredOfView (view : SchemaView) =
     let concreteQuery = view.Definition.Value.Info.Query
-    concreteQuery.Map(ConcreteType)
+    concreteQuery.Map(InferredType.Of)
 
 type InferredFromClause =
     {   /// The tables named in the "from" clause of the query, if any.

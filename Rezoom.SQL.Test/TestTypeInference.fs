@@ -42,7 +42,7 @@ let ``simple select with parameter`` () =
     ")
     Assert.AreEqual(1, cmd.Parameters.Count)
     Assert.AreEqual
-        ( (NamedParameter (Name("id")), { Nullable = true; Type = IntegerType Integer32 })
+        ( (NamedParameter (Name("id")), { Nullable = false; Type = IntegerType Integer32 })
         , cmd.Parameters.[0])
     let results = cmd.ResultSets() |> toReadOnlyList
     Assert.AreEqual(1, results.Count)
