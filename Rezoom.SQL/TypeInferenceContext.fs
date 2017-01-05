@@ -18,10 +18,13 @@ type private TypeInferenceVariable(id : TypeVariableId) =
     member __.Unify(source, core : CoreColumnType) =
         let unified = currentType.Unify(core) |> resultAt source
         currentType <- unified
+    member __.ForceNullable() =
+        currentNullable <- NullableKnown true
 
 type private TypeInferenceContext() =
     let variablesByParameter = Dictionary<BindParameter, TypeVariableId>()
     let variablesById = Dictionary<TypeVariableId, TypeInferenceVariable>()
+    let deferredNullables = ResizeArray()
     let mutable nextVariableId = 0
     let getVar id =
         let succ, inferred = variablesById.TryGetValue(id)
@@ -66,7 +69,32 @@ type private TypeInferenceContext() =
             {   InferredType = TypeVariable leftId
                 InferredNullable = NullableVariable leftId
             }
+    member this.ForceNullable(source, nullable : InferredNullable) =
+        match nullable.Simplify() with
+        | NullableUnknown
+        | NullableKnown true -> ()
+        | NullableKnown false ->
+            failAt source "Expression is not nullable; but is required to be in this context"
+        | NullableVariable id -> (getVar id).ForceNullable()
+        | NullableEither _ ->
+            let rec allVars v =
+                match v with
+                | NullableUnknown
+                | NullableKnown true 
+                | NullableKnown false -> Seq.empty
+                | NullableVariable id -> Seq.singleton id
+                | NullableEither (l, r) -> Seq.append (allVars l) (allVars r)
+            deferredNullables.Add(ResizeArray(allVars nullable))
     member this.ResolveNullable(nullable) =
+        if deferredNullables.Count > 0 then
+            let triviallySatisfied r =
+                let t = NullableKnown true
+                r |> Seq.exists (fun v -> (getVar v).CurrentNullable = t)
+            ignore <| deferredNullables.RemoveAll(fun r -> triviallySatisfied r) // remove trivially satisfied reqs
+            for vs in deferredNullables do // remaining vars must all be forced null
+                for v in vs do
+                    (getVar v).ForceNullable()
+            deferredNullables.Clear()
         match nullable with
         | NullableUnknown -> false
         | NullableKnown t -> t
@@ -83,6 +111,7 @@ type private TypeInferenceContext() =
         member this.AnonymousVariable() = this.AnonymousVariable()
         member this.Variable(parameter) = this.Variable(parameter)
         member this.Unify(source, left, right) = this.Unify(source, left, right)
+        member this.ForceNullable(source, nullable) = this.ForceNullable(source, nullable)
         member this.Concrete(inferred) = this.Concrete(inferred)
         member __.Parameters = variablesByParameter.Keys :> _ seq
  

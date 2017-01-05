@@ -22,6 +22,19 @@ type InferredNullable =
         | _, (NullableKnown true as t) -> t
         | NullableVariable x as v, NullableVariable y -> v
         | l, r -> NullableEither(l, r)
+    member this.Simplify() =
+        match this with
+        | NullableUnknown -> NullableKnown false
+        | NullableKnown false
+        | NullableKnown true
+        | NullableVariable _ -> this
+        | NullableEither (l, r) ->
+            match l.Simplify(), r.Simplify() with
+            | NullableKnown true, _
+            | _, NullableKnown true -> NullableKnown true
+            | NullableKnown false, x -> x
+            | x, NullableKnown false -> x
+            | l, r -> NullableEither(l, r)
 
 type InferredType =
     {   InferredType : CoreInferredType
@@ -117,6 +130,7 @@ type ITypeInferenceContext =
     /// Unify the two types (ensure they are compatible and add constraints)
     /// and produce the most specific type.
     abstract member Unify : SourceInfo * InferredType * InferredType -> InferredType
+    abstract member ForceNullable : SourceInfo * InferredNullable -> unit
     abstract member Concrete : InferredType -> ColumnType
     abstract member Parameters : BindParameter seq
 
