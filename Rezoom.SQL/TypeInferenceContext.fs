@@ -143,10 +143,14 @@ module private TypeInferenceExtensions =
             | GreaterThan
             | GreaterThanOrEqual
             | Equal
-            | NotEqual
+            | NotEqual ->
+                let operandType = typeInference.Unify(source, left, right)
+                InferredType.Dependent(operandType, BooleanType)
             | Is
             | IsNot ->
                 let operandType = typeInference.Unify(source, left, right)
+                typeInference.ForceNullable(source, left.InferredNullable)
+                typeInference.ForceNullable(source, right.InferredNullable)
                 InferredType.Dependent(operandType, BooleanType)
             | And
             | Or -> typeInference.Unify(source, [ left; right; InferredType.Boolean ])
@@ -156,7 +160,9 @@ module private TypeInferenceExtensions =
             | BitNot -> typeInference.Unify(source, operandType, InferredType.Number)
             | Not -> typeInference.Unify(source, operandType, InferredType.Boolean)
             | IsNull
-            | NotNull -> InferredType.Boolean
+            | NotNull ->
+                typeInference.ForceNullable(source, operandType.InferredNullable)
+                InferredType.Boolean
         member typeInference.AnonymousQueryInfo(columnNames) =
             {   Columns =
                     seq {
