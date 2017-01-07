@@ -55,9 +55,27 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         | And -> "AND"
         | Or -> "OR"
         | Is
-        | IsNot
+        | IsNot -> bug "should have been handled for TSQL before we got here"
         | BitShiftLeft
         | BitShiftRight -> failwithf "Not supported by TSQL: %A" op
+    override this.Binary(bin) =
+        match bin.Operator with
+        | Is
+        | IsNot ->
+            seq {
+                if bin.Operator = IsNot then
+                    yield text "NOT"
+                    yield ws
+                yield text "EXISTS(SELECT"
+                yield ws
+                yield! this.Expr(bin.Left, FirstClassValue)
+                yield ws
+                yield text "INTERSECT SELECT"
+                yield ws
+                yield! this.Expr(bin.Right, FirstClassValue)
+                yield text ")"
+            }
+        | _ -> base.Binary(bin)
     override __.UnaryOperator(op) =
         CommandText <|
         match op with
@@ -65,7 +83,7 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         | Not -> "NOT"
         | NotNull -> "IS NOT NULL"
         | IsNull -> "IS NULL"
-        | BitNot -> failwithf "Not supported by TSQL: %A" op
+        | BitNot -> "~"
     override __.SimilarityOperator(op) =
         CommandText <|
         match op with
