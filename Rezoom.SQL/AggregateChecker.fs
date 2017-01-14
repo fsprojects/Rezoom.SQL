@@ -76,7 +76,7 @@ and private aggReferences (expr : InfExpr) =
             match inex.Set.Value with
             | InExpressions exs -> yield! Seq.collect aggReferences exs
             | InSelect sel -> yield! aggReferencesSelect sel
-            | InTable _ -> ()
+            | InTable _ | InParameter _ -> ()
         }
     | ScalarSubqueryExpr subq -> aggReferencesSelect subq
     | CastExpr cast -> aggReferences cast.Expression

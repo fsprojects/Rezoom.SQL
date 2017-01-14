@@ -18,6 +18,7 @@ type CoreColumnType =
     | IntegralTypeClass
     | FractionalTypeClass
     | AnyTypeClass
+    | ListType of CoreColumnType
     member this.ParentType =
         match this with
         | IntegerType Integer8 -> IntegralTypeClass
@@ -37,6 +38,7 @@ type CoreColumnType =
         | NumericTypeClass
         | StringishTypeClass
         | AnyTypeClass -> AnyTypeClass
+        | ListType t -> ListType t.ParentType
     member this.HasAncestor(candidate) =
         if this = candidate then true
         elif this.ParentType = this then false
@@ -67,6 +69,7 @@ type CoreColumnType =
         | NumericTypeClass -> "<numeric>"
         | StringishTypeClass -> "<stringish>"
         | AnyTypeClass -> "<any>"
+        | ListType t -> "[" + string t + "]"
     static member OfTypeName(typeName : TypeName) =
         match typeName with
         | StringTypeName _ -> StringType
@@ -86,7 +89,7 @@ type ColumnType =
         {   Type = CoreColumnType.OfTypeName(typeName)
             Nullable = nullable
         }
-    member inline private ty.TypeInfo =
+    member private ty.TypeInfo =
         match ty.Type with
         | IntegerType Integer8 -> DbType.SByte, if ty.Nullable then typeof<Nullable<sbyte>> else typeof<sbyte>
         | IntegerType Integer16 -> DbType.Int16, if ty.Nullable then typeof<Nullable<int16>> else typeof<int16>
@@ -107,6 +110,9 @@ type ColumnType =
         | BinaryType -> DbType.Binary, typeof<byte array>
         | StringishTypeClass
         | AnyTypeClass -> DbType.Object, typeof<obj>
+        | ListType t ->
+            let dbType, clrType = { Type = t; Nullable = ty.Nullable }.TypeInfo
+            dbType, clrType.MakeArrayType()
     member ty.CLRType = snd ty.TypeInfo
     member ty.DbType = fst ty.TypeInfo
 

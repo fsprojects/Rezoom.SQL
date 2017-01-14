@@ -44,12 +44,12 @@ type private TypeInferenceContext() =
         var
     member this.AnonymousVariable() =
         this.NextVariable().InferredType
-    member this.Variable(bindParameter) =
+    member private this.Variable(bindParameter) =
         let succ, v = variablesByParameter.TryGetValue(bindParameter)
-        if succ then (getVar v).InferredType else
+        if succ then getVar v else
         let var = this.NextVariable()
         variablesByParameter.[bindParameter] <- var.Id
-        var.InferredType
+        var
     member this.Unify(source, left, right) =
         match left.InferredType, right.InferredType with
         | TypeKnown lk, TypeKnown rk ->
@@ -69,6 +69,13 @@ type private TypeInferenceContext() =
             {   InferredType = TypeVariable leftId
                 InferredNullable = NullableVariable leftId
             }
+    member this.UnifyList(source, elem, list) =
+        let var = this.Variable(list)
+        match elem with
+        | TypeVariable varId ->
+            var.Unify(source, ListType (getVar varId).CurrentType)
+        | TypeKnown knownType ->
+            var.Unify(source, ListType knownType)
     member this.ForceNullable(source, nullable : InferredNullable) =
         match nullable.Simplify() with
         | NullableUnknown
@@ -109,7 +116,8 @@ type private TypeInferenceContext() =
         }
     interface ITypeInferenceContext with
         member this.AnonymousVariable() = this.AnonymousVariable()
-        member this.Variable(parameter) = this.Variable(parameter)
+        member this.Variable(parameter) = this.Variable(parameter).InferredType
+        member this.UnifyList(source, elem, list) = this.UnifyList(source, elem.InferredType, list)
         member this.Unify(source, left, right) = this.Unify(source, left, right)
         member this.ForceNullable(source, nullable) = this.ForceNullable(source, nullable)
         member this.Concrete(inferred) = this.Concrete(inferred)

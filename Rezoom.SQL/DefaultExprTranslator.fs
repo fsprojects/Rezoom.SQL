@@ -205,6 +205,8 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
                 yield text ")"
             | InTable tbl ->
                 yield! this.Table(tbl)
+            | InParameter par ->
+                yield this.BindParameter(par)
         }
     override this.Case(case) =
         seq {

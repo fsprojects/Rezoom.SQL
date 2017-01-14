@@ -240,6 +240,7 @@ and InSet<'t, 'e> =
     | InExpressions of Expr<'t, 'e> array
     | InSelect of SelectStmt<'t, 'e>
     | InTable of TableInvocation<'t, 'e>
+    | InParameter of BindParameter
 
 and
     [<NoComparison>]

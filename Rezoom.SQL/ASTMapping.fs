@@ -61,6 +61,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                         | InExpressions exprs -> exprs |> rmap this.Expr |> InExpressions
                         | InSelect select -> InSelect <| this.Select(select)
                         | InTable table -> InTable <| this.TableInvocation(table)
+                        | InParameter par -> InParameter par
                 }
         }
     member this.Case(case : CaseExpr<'t1, 'e1>) =

@@ -66,6 +66,7 @@ type private ReferenceFinder() =
         | InExpressions exprs -> for expr in exprs do this.Expr(expr)
         | InSelect select -> this.Select(select)
         | InTable table -> this.TableInvocation(table)
+        | InParameter _ -> ()
     member this.Case(case : TCaseExpr) =
         Option.iter this.Expr case.Input
         for whenExpr, thenExpr in case.Cases do

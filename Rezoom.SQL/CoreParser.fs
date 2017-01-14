@@ -400,6 +400,7 @@ let private inOperator =
                 -- ws
                 --
                     +.[
+                        %% +.bindParameter -|> InParameter
                         %% +.selectStmt -|> InSelect
                         %% +.(qty.[0..] / tws ',' * expr) -|> (fun exs -> exs.ToArray() |> InExpressions)
                     ]

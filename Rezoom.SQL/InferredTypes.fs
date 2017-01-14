@@ -130,6 +130,7 @@ type ITypeInferenceContext =
     /// Unify the two types (ensure they are compatible and add constraints)
     /// and produce the most specific type.
     abstract member Unify : SourceInfo * InferredType * InferredType -> InferredType
+    abstract member UnifyList : SourceInfo * elem : InferredType * list : BindParameter -> unit
     abstract member ForceNullable : SourceInfo * InferredNullable -> unit
     abstract member Concrete : InferredType -> ColumnType
     abstract member Parameters : BindParameter seq
