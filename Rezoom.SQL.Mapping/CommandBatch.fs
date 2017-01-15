@@ -29,10 +29,10 @@ type private CommandBatchBuilder(conn : DbConnection) =
             | :? Array as arr ->
                 let mutable j = 0
                 for elem in arr do
-                    addParam (parameterNameArray (parameterOffset + i) j) parameterType parameterValue
+                    addParam (parameterNameArray (parameterOffset + i) j) parameterType elem
                     j <- j + 1
             | _ ->
-                addParam (parameterName (parameterOffset + 1)) parameterType parameterValue
+                addParam (parameterName (parameterOffset + i)) parameterType parameterValue
         for fragment in command.Fragments do
             let fragmentString =
                 match fragment with
@@ -43,7 +43,7 @@ type private CommandBatchBuilder(conn : DbConnection) =
                     | :? Array as arr ->
                         let parNames =
                             seq {
-                                for j = 0 to arr.Length - 1 do yield parameterNameArray i j
+                                for j = 0 to arr.Length - 1 do yield parameterNameArray (parameterOffset + i) j
                             }
                         "(" + String.concat "," parNames + ")"
                     | _ -> parameterName (parameterOffset + i)

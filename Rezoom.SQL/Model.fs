@@ -45,9 +45,10 @@ type CoreColumnType =
             if elementParent = element then AnyTypeClass
             else ListType elementParent
     member this.HasAncestor(candidate) =
-        if this = candidate then true
-        elif this.ParentType = this then false
-        else this.ParentType.HasAncestor(candidate)
+        if this = candidate then true else
+        let parent = this.ParentType
+        if parent = this then false
+        else parent.HasAncestor(candidate)
     member left.Unify(right) =
         if left.HasAncestor(right) then
             Ok left
