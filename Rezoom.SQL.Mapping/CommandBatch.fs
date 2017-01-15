@@ -11,32 +11,53 @@ type private CommandBatchBuilder(conn : DbConnection) =
     static let terminatorColumn i = "RZSQL_TERMINATOR_" + string i
     static let terminator i = ";--'*/;SELECT NULL AS " + terminatorColumn i
     static let parameterName i = "@RZSQL_" + string i
+    static let parameterNameArray i j = "@RZSQL_" + string i + "_" + string j
     static let localName i name = "RZSQL_" + name + "_" + string i
     let commands = ResizeArray<Command>()
     let mutable evaluating = false
 
+    let addCommand (builder : StringBuilder) (dbCommand : DbCommand) (commandIndex : int) (command : Command) =
+        let parameterOffset = dbCommand.Parameters.Count
+        let addParam name dbType value =
+            let dbParam = dbCommand.CreateParameter()
+            dbParam.ParameterName <- name
+            dbParam.DbType <- dbType
+            dbParam.Value <- value
+            ignore <| dbCommand.Parameters.Add(dbParam)
+        for i, (parameterValue, parameterType) in command.Parameters |> Seq.indexed do
+            match parameterValue with
+            | :? Array as arr ->
+                let mutable j = 0
+                for elem in arr do
+                    addParam (parameterNameArray (parameterOffset + i) j) parameterType parameterValue
+                    j <- j + 1
+            | _ ->
+                addParam (parameterName (parameterOffset + 1)) parameterType parameterValue
+        for fragment in command.Fragments do
+            let fragmentString =
+                match fragment with
+                | LocalName name -> localName commandIndex name
+                | CommandText str -> str
+                | Parameter i ->
+                    match command.Parameters.[i] |> fst with
+                    | :? Array as arr ->
+                        let parNames =
+                            seq {
+                                for j = 0 to arr.Length - 1 do yield parameterNameArray i j
+                            }
+                        "(" + String.concat "," parNames + ")"
+                    | _ -> parameterName (parameterOffset + i)
+                | Whitespace -> " "
+            ignore <| builder.Append(fragmentString)
+        match command.ResultSetCount with
+        | Some _ -> () // no need to add terminator statement
+        | None when commandIndex + 1 >= commands.Count -> ()
+        | None ->
+            builder.Append(terminator commandIndex) |> ignore
     let buildCommand (dbCommand : DbCommand) =
         let builder = StringBuilder()
         for commandIndex, command in commands |> Seq.indexed do
-            let parameterOffset = dbCommand.Parameters.Count
-            for parameterValue, parameterType in command.Parameters do
-                let dbParam = dbCommand.CreateParameter()
-                dbParam.ParameterName <- parameterName dbCommand.Parameters.Count
-                dbParam.DbType <- parameterType
-                dbParam.Value <- parameterValue
-                ignore <| dbCommand.Parameters.Add(dbParam)
-            for fragment in command.Fragments do
-                builder.Append
-                    ( match fragment with
-                    | LocalName name -> localName commandIndex name
-                    | CommandText str -> str
-                    | Parameter i -> parameterName (parameterOffset + i)
-                    | Whitespace -> " ") |> ignore
-            match command.ResultSetCount with
-            | Some _ -> () // no need to add terminator statement
-            | None when commandIndex + 1 >= commands.Count -> ()
-            | None ->
-                builder.Append(terminator commandIndex) |> ignore
+            addCommand builder dbCommand commandIndex command
         dbCommand.CommandText <- builder.ToString()
 
     member __.Evaluate() =

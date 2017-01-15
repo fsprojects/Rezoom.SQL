@@ -17,6 +17,7 @@ type CoreColumnType =
     | NumericTypeClass
     | IntegralTypeClass
     | FractionalTypeClass
+    | ScalarTypeClass
     | AnyTypeClass
     | ListType of CoreColumnType
     member this.ParentType =
@@ -36,9 +37,13 @@ type CoreColumnType =
         | DateTimeType
         | DateTimeOffsetType
         | NumericTypeClass
-        | StringishTypeClass
+        | StringishTypeClass -> ScalarTypeClass
+        | ScalarTypeClass
         | AnyTypeClass -> AnyTypeClass
-        | ListType t -> ListType t.ParentType
+        | ListType element ->
+            let elementParent = element.ParentType
+            if elementParent = element then AnyTypeClass
+            else ListType elementParent
     member this.HasAncestor(candidate) =
         if this = candidate then true
         elif this.ParentType = this then false
@@ -68,6 +73,7 @@ type CoreColumnType =
         | IntegralTypeClass -> "<integral>"
         | NumericTypeClass -> "<numeric>"
         | StringishTypeClass -> "<stringish>"
+        | ScalarTypeClass -> "<scalar>"
         | AnyTypeClass -> "<any>"
         | ListType t -> "[" + string t + "]"
     static member OfTypeName(typeName : TypeName) =
@@ -109,6 +115,7 @@ type ColumnType =
         | StringType -> DbType.String, typeof<string>
         | BinaryType -> DbType.Binary, typeof<byte array>
         | StringishTypeClass
+        | ScalarTypeClass
         | AnyTypeClass -> DbType.Object, typeof<obj>
         | ListType t ->
             let dbType, clrType = { Type = t; Nullable = ty.Nullable }.TypeInfo

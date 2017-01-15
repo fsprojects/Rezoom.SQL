@@ -84,14 +84,11 @@ let ``simple select with parameter nullable id`` () =
 [<Test>]
 let ``simple select with parameter not null`` () =
     let cmd = 
-        seq {
-            for i in 1..1000 ->
-                CommandEffect.OfSQL(zeroModel, "anonymous", @"
-                    create table Users(id int primary key not null, name string(128), email string(128));
-                    select * from Users u
-                    where u.id = @id
-                ")
-        } |> Seq.head
+        CommandEffect.OfSQL(zeroModel, "anonymous", @"
+            create table Users(id int primary key not null, name string(128), email string(128));
+            select * from Users u
+            where u.id = @id
+        ")
     Assert.AreEqual(1, cmd.Parameters.Count)
     Assert.AreEqual
         ( (NamedParameter (Name("id")), { Nullable = false; Type = IntegerType Integer32 })
@@ -108,3 +105,13 @@ let ``simple select with parameter not null`` () =
     Assert.IsFalse(cs.[0].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("email"), cs.[0].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[0].Expr.Info.Type)
+
+[<Test>]
+let ``select where id in param`` () =
+    let cmd = 
+        CommandEffect.OfSQL(zeroModel, "anonymous", @"
+            create table Users(id int primary key not null, name string(128), email string(128));
+            select * from Users u
+            where u.id in @id
+        ")
+    Assert.AreEqual(1, cmd.Parameters.Count)

@@ -17,6 +17,11 @@ type Query = SQL<"""
     select * from Users u where u.id = @id
 """, "user-migrations">
 
+type QueryInPar = SQL<"""
+    select * from Users u where u.id in @id
+""", "user-migrations">
+
+
 let q : Command<_> = Query.Command(id = 1)
 printfn "%O" <| q.GetType()
 printfn "%A" <| q.Fragments
