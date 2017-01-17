@@ -139,7 +139,7 @@ let ``read person 2 levels deep`` () =
             "PersonId", ColumnType.Int32
             "Name", ColumnType.String
             "Parent.PersonId", ColumnType.Int32
-            "Name", ColumnType.String
+            "Parent.Name", ColumnType.String
         |] |> ColumnMap.Parse
     let reader = ReaderTemplate<Person>.Template().CreateReader()
     reader.ProcessColumns(colMap)

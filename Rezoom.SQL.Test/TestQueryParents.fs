@@ -27,9 +27,9 @@ let ``self-referential record equality stack overflows`` () =
             "Id", ColumnType.Int32
             "Name", ColumnType.String
             "ChildFolders$Id", ColumnType.Int32
-            "Name", ColumnType.String
+            "ChildFolders$Name", ColumnType.String
             "ChildFolders$ChildFolders$Id", ColumnType.Int32
-            "Name", ColumnType.String
+            "ChildFolders$ChildFolders$Name", ColumnType.String
         |] |> ColumnMap.Parse
     let reader = ReaderTemplate<RecordFolder list>.Template().CreateReader()
     reader.ProcessColumns(colMap)
@@ -77,7 +77,7 @@ let ``read record folders with parent backreferences`` () =
             "Id", ColumnType.Int32
             "Name", ColumnType.String
             "ChildFolders$Id", ColumnType.Int32
-            "Name", ColumnType.String
+            "ChildFolders$Name", ColumnType.String
         |] |> ColumnMap.Parse
     let reader = ReaderTemplate<RecordFolder array>.Template().CreateReader()
     reader.ProcessColumns(colMap)
@@ -141,7 +141,7 @@ let ``read class folders with parent backreferences`` () =
             "Id", ColumnType.Int32
             "Name", ColumnType.String
             "ChildFolders$Id", ColumnType.Int32
-            "Name", ColumnType.String
+            "ChildFolders$Name", ColumnType.String
         |] |> ColumnMap.Parse
     let reader = ReaderTemplate<ClassFolder array>.Template().CreateReader()
     reader.ProcessColumns(colMap)
@@ -207,7 +207,7 @@ let ``record folder joined parents shouldn't have children populated`` () =
             "Id", ColumnType.Int32
             "Name", ColumnType.String
             "ParentFolder$Id", ColumnType.Int32
-            "Name", ColumnType.String
+            "ParentFolder$Name", ColumnType.String
         |] |> ColumnMap.Parse
     let reader = ReaderTemplate<RecordFolder array>.Template().CreateReader()
     reader.ProcessColumns(colMap)
