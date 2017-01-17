@@ -19,13 +19,12 @@ type private CompileTimeColumnMap() =
     // TODO: use inline functions to have a single implementation for this load logic.
     // It's gross duplicating it between ColumnMap and CompileTimeColumnMap.
     member private this.Load(columns : ColumnType ColumnExprInfo IReadOnlyList) =
-        let root = this
-        let mutable current = this
         for i = 0 to columns.Count - 1 do
+            let mutable current = this
             let column = columns.[i]
             let path = column.ColumnName.Value.Split('.', '$')
             if path.Length > 1 then
-                current <- root
+                current <- this
                 for j = 0 to path.Length - 2 do
                     current <- current.GetOrCreateSubMap(path.[j])
             current.SetColumn(Array.last path, (int16 i, column))

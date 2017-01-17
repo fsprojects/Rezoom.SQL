@@ -62,13 +62,12 @@ type ColumnMap() =
     member private this.SetColumn(name, info) =
         columns.[name] <- info
     member private this.Load(columnNames : (string * ColumnType) array) =
-        let root = this
-        let mutable current = this
         for i = 0 to columnNames.Length - 1 do
+            let mutable current = this
             let name, rowValueType = columnNames.[i]
             let path = name.Split('.', '$')
             if path.Length > 1 then
-                current <- root
+                current <- this
                 for j = 0 to path.Length - 2 do
                     current <- current.GetOrCreateSubMap(path.[j])
             current.SetColumn(Array.last path, ColumnInfo(int16 i, rowValueType))
