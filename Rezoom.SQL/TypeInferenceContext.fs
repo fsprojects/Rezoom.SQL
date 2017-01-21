@@ -202,9 +202,7 @@ module private TypeInferenceExtensions =
                         functionVars.[name] <- avar
                         avar
                     let tvar = typeInference.Unify(source, tvar, termType.TypeConstraint)
-                    if termType.ForceNullable then
-                        typeInference.ForceNullable(source, tvar.InferredNullable)
-                    tvar
+                    { tvar with InferredNullable = NullableKnown termType.ForceNullable }
             match invoc with
             | ArgumentWildcard ->
                 match aggregate with
@@ -225,13 +223,14 @@ module private TypeInferenceExtensions =
                 func.ValidateArgs(source, args, (fun a -> a.Source), fun arg termTy ->
                     let term = term termTy
                     ignore <| typeInference.Unify(arg.Source, term, arg.Info.Type)
+                    if termTy.ForceNullable then
+                        typeInference.ForceNullable(arg.Source, arg.Info.Type.InferredNullable)
                     if termTy.InfectNullable then
                         nulls.Add(arg.Info.Type.InferredNullable))
                 let returnType = term func.Returns
                 let returnType =
-                    if nulls.Count > 0 && returnType.InferredNullable <> NullableKnown true then
+                    if func.Returns.ForceNullable then returnType else
                         { returnType with InferredNullable = InferredNullable.Any(nulls) }
-                    else returnType    
                 argumentList, returnType
 
     let inline implicitAlias column =

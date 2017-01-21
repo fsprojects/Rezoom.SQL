@@ -115,3 +115,31 @@ let ``select where id in param`` () =
             where u.id in @id
         ")
     Assert.AreEqual(1, cmd.Parameters.Count)
+
+[<Test>]
+let ``coalesce not null`` () =
+    let model = userModel1()
+    let cmd = 
+        CommandEffect.OfSQL(model.Model, "anonymous", @"
+            select coalesce(u.Name, u.Email, @default) as c
+            from Users u
+            where u.id in @id
+        ")
+    printfn "%A" cmd.Parameters
+    Assert.AreEqual(2, cmd.Parameters.Count)
+    Assert.IsFalse((snd cmd.Parameters.[0]).Nullable)
+    Assert.IsFalse((snd cmd.Parameters.[1]).Nullable)
+
+[<Test>]
+let ``coalesce null`` () =
+    let model = userModel1()
+    let cmd = 
+        CommandEffect.OfSQL(model.Model, "anonymous", @"
+            select coalesce(u.Name, @default, u.Email) as c
+            from Users u
+            where u.id in @id
+        ")
+    printfn "%A" cmd.Parameters
+    Assert.AreEqual(2, cmd.Parameters.Count)
+    Assert.IsTrue((snd cmd.Parameters.[0]).Nullable)
+    Assert.IsFalse((snd cmd.Parameters.[1]).Nullable)
