@@ -222,6 +222,56 @@ type TSQLMigrationBackend(conn : DbConnection) =
             """
         ignore <| cmd.ExecuteNonQuery()
 
+module TSQLFunctions =
+    open Rezoom.SQL.FunctionDeclarations
+    let functions =
+        let i = integral
+        let date = datetime // TODO? should we have a real date type
+        let numeric ty = ty |> constrained NumericTypeClass
+        [|  // date/time functions from https://msdn.microsoft.com/en-us/library/ms186724.aspx
+            func "sysdatetime" [] datetime
+            func "sysdatetimeoffset" [] datetimeoffset
+            func "sysutcdatetime" [] datetime
+            // no DATENAME, DATEPART because we can't represent datepart types
+            func "day" [ datetime ] i
+            func "month" [ datetime ] i
+            func "year" [ datetime ] i
+            func "datefromparts" [ i; i; i ] date
+            func "datetime2fromparts" [ i; i; i; i; i; i; i; i ] datetime
+            func "datetimefromparts" [ i; i; i; i; i; i; i ] datetime
+            func "datetimeoffsetfromparts"
+                [ i; i; i; i; i; i; i; i; i; i ] datetimeoffset
+            func "smalldatetimefromparts" [ i; i; i; i; i ] datetime
+            // no DATEDIFF because we can't represent datepart types
+            // logical funcs from https://msdn.microsoft.com/en-us/library/hh213226.aspx
+            func "choose" [ i; vararg (a') ] a'
+            func "iif" [ boolean; a'; a' ] a'
+            // math funcs from https://msdn.microsoft.com/en-us/library/ms177516.aspx
+            func "abs" [ numeric a' ] a'
+            func "acos" [ fractional ] float64
+            func "asin" [ fractional ] float64
+            func "atan" [ fractional ] float64
+            func "atn2" [ fractional; fractional ] float64
+            func "ceiling" [ numeric a' ] a'
+            func "cos" [ fractional] float64
+            func "cot" [ fractional ] float64
+            func "degrees" [ numeric a' ] a'
+            func "exp" [ fractional ] float64
+            func "floor" [ numeric a' ] a'
+            func "log" [ num; optional i ] float64
+            func "log10" [ num ] float64
+            func "pi" [] float64
+            func "power" [ numeric a'; num ] a'
+            func "radians" [ numeric a' ] a'
+            func "rand" [ optional i ] float64
+            func "round" [ numeric a'; i ] a'
+            func "sign" [ numeric a' ] a'
+            func "sin" [ fractional ] float64
+            func "sqrt" [ numeric a' ] float64
+            func "square" [ numeric a' ] float64
+            func "tan" [ fractional ] float64
+        |] |> mapBy (fun f -> f.FunctionName)
+
 type TSQLBackend() =
     static let initialModel =
         let main, temp = Name("dbo"), Name("temp")
@@ -232,7 +282,7 @@ type TSQLBackend() =
             DefaultSchema = main
             TemporarySchema = temp
             Builtin =
-                {   Functions = Map.empty
+                {   Functions = TSQLFunctions.functions
                 }
         }
     interface IBackend with
