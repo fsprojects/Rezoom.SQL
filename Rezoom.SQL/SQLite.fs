@@ -40,57 +40,53 @@ type private SQLiteStatement(indexer : IParameterIndexer) as this =
 module SQLiteFunctions =
     open Rezoom.SQL.FunctionDeclarations
     let private minmax name =
-        {   FunctionName = Name(name)
-            FixedArguments = [| a' |]
-            VariableArgument = None
-            Output = a'
-            Aggregate =
-                function
+        { new FunctionType(Name(name), [| a'; vararg a' |], a', idem = true) with
+            override __.Aggregate(arg) =
+                match arg with
                 | ArgumentWildcard -> None
                 | ArgumentList (_, exprs) ->
                     if exprs.Length = 1 then
                         Some { AllowWildcard = false; AllowDistinct = false }
                     else
                         None
-            Idempotent = false
-        } |> withVarArg a'
+        }
     let functions =
         let numeric ty = ty |> constrained NumericTypeClass
         [|  // core functions from https://www.sqlite.org/lang_corefunc.html
             func "abs" [ a' ] a'
             proc "changes" [] int64
-            func "char" [] string |> withVarArg integral
-            func "coalesce" [ a'; a' ] a' |> withVarArg a'
+            func "char" [ vararg string ] string
+            func "coalesce" [ nullable a'; vararg (nullable a'); infect a' ] a'
             func "glob" [ string; string ] boolean
             func "hex" [ binary ] string
             func "ifnull" [ a'; a' ] a'
             func "instr" [ a' |> constrained StringishTypeClass; a' ] int64
             proc "last_insert_rowid" [] int64
             func "length" [ a' |> constrained StringishTypeClass ] int64
-            func "like" [ string; string ] boolean |> withOptArg string
+            func "like" [ string; string; optional string ] boolean
             func "likelihood" [ boolean; float64 ] boolean
             func "likely" [ boolean ] boolean
             // no load_extension
             func "lower" [ string ] string
-            func "ltrim" [ string ] string |> withOptArg string
+            func "ltrim" [ string; optional string ] string
             minmax "max"
             minmax "min"
             func "nullif" [ a'; a' ] a'
-            func "printf" [ string ] string |> withVarArg any
+            func "printf" [ string; vararg any ] string
             func "quote" [ any ] string
             proc "random" [] int64
             proc "randomblob" [] binary
             func "replace" [ string; string; string ] string
-            func "round" [ float64 ] float64 |> withOptArg integral
-            func "rtrim" [ string ] string |> withOptArg string
+            func "round" [ float64; optional integral ] float64
+            func "rtrim" [ string; optional string ] string
             func "soundex" [ string ] string
             func "sqlite_compileoption_get" [ integral ] string
             func "sqlite_compileoption_used" [ string ] boolean
             func "sqlite_source_id" [] string
             func "sqlite_version" [] string
-            func "substr" [ string; integral ] string |> withOptArg integral
+            func "substr" [ string; integral; optional integral ] string
             proc "total_changes" [] int64
-            func "trim" [ string ] string |> withOptArg integral
+            func "trim" [ string; optional integral ] string
             func "typeof" [ any ] string
             func "unicode" [ string ] int64
             func "unlikely" [ boolean ] boolean
@@ -99,19 +95,19 @@ module SQLiteFunctions =
 
             // aggregate functions from https://www.sqlite.org/lang_aggfunc.html
             aggregate "avg" [ a' |> numeric ] float64
-            aggregate "count" [ any ] int64 |> withWildcard
-            aggregate "group_concat" [ string ] string |> withOptArg (* separator *) string
+            aggregateW "count" [ any ] int64
+            aggregate "group_concat" [ string; optional string ] string
             aggregate "sum" [ numeric a' ] a'
             aggregate "total" [ numeric a' ] a'
 
             // date and time functions from https://www.sqlite.org/lang_datefunc.html
             // for now we use strings to represent dates -- maybe should formalize this by using the datetime type
             // even though its underlying representation will be a string
-            func "date" [ string ] string |> withVarArg string
-            func "time" [ string ] string |> withVarArg string
-            func "datetime" [ string ] string |> withVarArg string
-            func "julianday" [ string ] string |> withVarArg string
-            func "strftime" [ string; string ] string |> withVarArg string
+            func "date" [ string; vararg string ] string
+            func "time" [ string; vararg string ] string
+            func "datetime" [ string; vararg string ] string
+            func "julianday" [ string; vararg string ] string
+            func "strftime" [ string; string; vararg string ] string
         |] |> mapBy (fun f -> f.FunctionName)
 
 type SQLiteBackend() =

@@ -14,6 +14,8 @@ type InferredNullable =
     | NullableKnown of bool
     | NullableVariable of TypeVariableId
     | NullableEither of InferredNullable * InferredNullable
+    static member Any(nulls) =
+        nulls |> Seq.fold (fun l r -> InferredNullable.Either(l, r)) NullableUnknown
     static member Either(left, right) =
         match left, right with
         | (NullableUnknown | NullableKnown false), x
@@ -84,6 +86,7 @@ type InfColumnName = ColumnName<InferredType ObjectInfo>
 type InfInSet = InSet<InferredType ObjectInfo, InferredType ExprInfo>
 type InfCaseExpr = CaseExpr<InferredType ObjectInfo, InferredType ExprInfo>
 type InfCastExpr = CastExpr<InferredType ObjectInfo, InferredType ExprInfo>
+type InfFunctionArguments = FunctionArguments<InferredType ObjectInfo, InferredType ExprInfo>
 type InfFunctionInvocationExpr = FunctionInvocationExpr<InferredType ObjectInfo, InferredType ExprInfo>
     
 type InfWithClause = WithClause<InferredType ObjectInfo, InferredType ExprInfo>

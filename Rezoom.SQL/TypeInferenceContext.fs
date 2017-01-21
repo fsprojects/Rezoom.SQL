@@ -185,6 +185,54 @@ module private TypeInferenceExtensions =
                             }
                     } |> toReadOnlyList
             }
+        member typeInference.Function(source : SourceInfo, func : FunctionType, invoc : InfFunctionArguments) =
+            let functionVars = Dictionary()
+            let aggregate = func.Aggregate(invoc)
+            let term (termType : FunctionTermType) =
+                match termType.TypeVariable with
+                | None ->
+                    {   InferredNullable = NullableKnown termType.ForceNullable
+                        InferredType = TypeKnown termType.TypeConstraint
+                    }
+                | Some name ->
+                    let succ, tvar = functionVars.TryGetValue(name)
+                    let tvar =
+                        if succ then tvar else
+                        let avar = typeInference.AnonymousVariable()
+                        functionVars.[name] <- avar
+                        avar
+                    let tvar = typeInference.Unify(source, tvar, termType.TypeConstraint)
+                    if termType.ForceNullable then
+                        typeInference.ForceNullable(source, tvar.InferredNullable)
+                    tvar
+            match invoc with
+            | ArgumentWildcard ->
+                match aggregate with
+                | None ->
+                    failAt source <|
+                        sprintf "Non-aggregate function does not permit wildcard: ``%O``" func.FunctionName
+                | Some aggregate ->
+                    if aggregate.AllowWildcard then ArgumentWildcard, term func.Returns
+                    else failAt source <| sprintf "Function does not permit wildcards: ``%O``" func.FunctionName
+            | ArgumentList (distinct, args) as argumentList ->
+                if Option.isSome distinct then
+                    match aggregate with
+                    | Some aggregate when aggregate.AllowDistinct -> ()
+                    | _ ->
+                        failAt source <|
+                            sprintf "Function does not permit DISTINCT keyword: ``%O``" func.FunctionName
+                let nulls = ResizeArray()
+                func.ValidateArgs(source, args, (fun a -> a.Source), fun arg termTy ->
+                    let term = term termTy
+                    ignore <| typeInference.Unify(arg.Source, term, arg.Info.Type)
+                    if termTy.InfectNullable then
+                        nulls.Add(arg.Info.Type.InferredNullable))
+                let returnType = term func.Returns
+                let returnType =
+                    if nulls.Count > 0 && returnType.InferredNullable <> NullableKnown true then
+                        { returnType with InferredNullable = InferredNullable.Any(nulls) }
+                    else returnType    
+                argumentList, returnType
 
     let inline implicitAlias column =
         match column with

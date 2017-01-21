@@ -2,20 +2,34 @@
 open System.Collections.Generic
 open Rezoom.SQL
 
-let a' = ArgumentTypeVariable (Name("a"), None)
-let b' = ArgumentTypeVariable (Name("b"), None)
-let c' = ArgumentTypeVariable (Name("c"), None)
-let d' = ArgumentTypeVariable (Name("d"), None)
+let private argumentTypeVariable name =
+    {   TypeConstraint = ScalarTypeClass
+        TypeVariable = Some (Name(name))
+        ForceNullable = false
+        InfectNullable = false
+        VarArg = None
+    }
+
+let a' = argumentTypeVariable "a"
+let b' = argumentTypeVariable "b"
+let c' = argumentTypeVariable "c"
+let d' = argumentTypeVariable "d"
 
 let constrained ty arg =
-    match arg with
-    | ArgumentConcrete _ -> arg
-    | ArgumentTypeVariable (name, Some constrs) ->
-        ArgumentTypeVariable (name, Some (constrs.Unify(ty) |> resultAt SourceInfo.Invalid))
-    | ArgumentTypeVariable (name, None) ->
-        ArgumentTypeVariable (name, Some ty)
+    { arg with
+        TypeConstraint =
+            match arg.TypeConstraint.Unify(ty) with
+            | Ok t -> t
+            | Error e -> bug e
+    }
 
-let inline private concrete ty = ArgumentConcrete { Type = ty; Nullable = false }
+let inline private concrete ty =
+    {   TypeConstraint = ty
+        TypeVariable = None
+        ForceNullable = false
+        InfectNullable = false
+        VarArg = None
+    }
 
 let any = concrete AnyTypeClass
 let boolean = concrete BooleanType
@@ -33,26 +47,39 @@ let datetimeoffset = concrete DateTimeOffsetType
 let decimal = concrete DecimalType
 
 let nullable arg =
-    match arg with
-    | ArgumentTypeVariable _ -> arg
-    | ArgumentConcrete con -> ArgumentConcrete { con with Nullable = true }
-
-let inline proc name args ret =
-    {   FunctionName = Name(name)
-        FixedArguments = args |> List.toArray
-        VariableArgument = None
-        Output = ret
-        Aggregate = fun _ -> None
-        Idempotent = false
+    { arg with
+        ForceNullable = true  
     }
 
-let inline func name args ret = { proc name args ret with Idempotent = true }
-let inline aggregate name args ret =
-    { func name args ret with Aggregate = fun _ -> Some { AllowWildcard = false; AllowDistinct = true } }
+let optional arg =
+    { arg with
+        VarArg = Some { MinArgCount = 0; MaxArgCount = Some 1 }
+    }
 
-let inline withWildcard (funcTy : FunctionType) =
-    { funcTy with Aggregate = fun _ -> Some { AllowWildcard = true; AllowDistinct = true } }
-let inline withVarArg ty funcTy =
-    { funcTy with VariableArgument = Some { MaxCount = None; Type = ty } }
-let inline withOptArg ty funcTy =
-    { funcTy with VariableArgument = Some { MaxCount = Some 1; Type = ty } }
+let vararg arg =
+    { arg with
+        VarArg = Some { MinArgCount = 0; MaxArgCount = None }
+    }
+
+let infect arg =
+    { arg with
+        InfectNullable = true
+    }
+
+type Procedure(name, args, ret) =
+    inherit FunctionType(name, args, ret, idem = false)
+    override __.Aggregate(_) = None
+
+type Function(name, args, ret) =
+    inherit FunctionType(name, args, ret, idem = true)
+    override __.Aggregate(_) = None
+
+type Aggregate(name, args, ret, allowWildcard, allowDistinct) =
+    inherit FunctionType(name, args, ret, idem = true)
+    override __.Aggregate(_) =
+        Some { AllowWildcard = allowWildcard; AllowDistinct = allowWildcard }
+
+let inline proc name args ret = Procedure(Name(name), List.toArray args, ret) :> FunctionType
+let inline func name args ret = Function(Name(name), List.toArray args, ret) :> FunctionType
+let inline aggregate name args ret = Aggregate(Name(name), List.toArray args, ret, false, true) :> FunctionType
+let inline aggregateW name args ret = Aggregate(Name(name), List.toArray args, ret, true, true) :> FunctionType

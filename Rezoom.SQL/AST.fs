@@ -711,6 +711,7 @@ type ColumnName = ColumnName<unit>
 type InSet = InSet<unit, unit>
 type CaseExpr = CaseExpr<unit, unit>
 type CastExpr = CastExpr<unit, unit>
+type FunctionArguments = FunctionArguments<unit, unit>
 type FunctionInvocationExpr = FunctionInvocationExpr<unit, unit>
     
 type WithClause = WithClause<unit, unit>
