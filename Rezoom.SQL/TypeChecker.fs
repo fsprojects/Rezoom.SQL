@@ -30,7 +30,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             | None -> failAt select.Source "Subquery requires an alias"
             | Some alias -> alias, this.Select(select, SelfQueryShape.Unknown).Value.Info
 
-    member private this.TableExprScope(dict : Dictionary<Name, InferredType ObjectInfo>, texpr : TableExpr) =
+    member private this.TableExprScope(dict : Dictionary<Name, InferredType ObjectInfo>, texpr : TableExpr, outerJoin) =
         let add name objectInfo =
             if dict.ContainsKey(name) then
                 failAt texpr.Source <| sprintf "Table name already in scope: ``%O``" name
@@ -39,14 +39,18 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
         match texpr.Value with
         | TableOrSubquery tsub ->
             let alias, objectInfo = this.TableOrSubqueryScope(tsub)
+            let objectInfo =
+                if outerJoin then
+                    objectInfo.Map(fun t -> { t with InferredNullable = NullableDueToJoin t.InferredNullable })
+                else objectInfo
             add alias objectInfo
         | Join join ->
-            this.TableExprScope(dict, join.LeftTable)
-            this.TableExprScope(dict, join.RightTable)
+            this.TableExprScope(dict, join.LeftTable, outerJoin = false)
+            this.TableExprScope(dict, join.RightTable, outerJoin = join.JoinType.IsOuter)
 
     member private this.TableExprScope(texpr : TableExpr) =
         let dict = Dictionary()
-        this.TableExprScope(dict, texpr)
+        this.TableExprScope(dict, texpr, outerJoin = false)
         { FromVariables = dict }
 
     member private this.TableOrSubquery(tsub : TableOrSubquery) =

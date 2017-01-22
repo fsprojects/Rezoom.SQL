@@ -442,6 +442,7 @@ and JoinType =
     | LeftOuter
     | Cross
     | Natural of JoinType
+    member this.IsOuter = this = LeftOuter
 
 and JoinConstraint<'t, 'e> =
     | JoinOn of Expr<'t, 'e>
