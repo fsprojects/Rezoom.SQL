@@ -170,12 +170,11 @@ type InferredFromClause =
     {   /// The tables named in the "from" clause of the query, if any.
         /// These are keyed on the alias of the table, if any, or the table name.
         FromVariables : IReadOnlyDictionary<Name, InferredType ObjectInfo>
-        /// All the objects involved in the from clause in order.
-        FromObjects : (Name * InferredType ObjectInfo) seq
     }
     static member FromSingleObject(tableName : InfObjectName) =
-        {   FromVariables = Dictionary() :> IReadOnlyDictionary<_, _>
-            FromObjects = (Name(""), tableName.Info) |> Seq.singleton
+        let d = Dictionary()
+        d.Add(Name(""), tableName.Info)
+        {   FromVariables = d :> IReadOnlyDictionary<_, _>
         }
     member this.ResolveTable(tableName : ObjectName) =
         match tableName.SchemaName with
@@ -190,7 +189,7 @@ type InferredFromClause =
         | None ->
             let matches =
                 seq {
-                    for tableAlias, objectInfo in this.FromObjects do
+                    for KeyValue(tableAlias, objectInfo) in this.FromVariables do
                         let table = objectInfo.Table
                         match table.Query.ColumnByName(name.ColumnName) with
                         | Found column ->

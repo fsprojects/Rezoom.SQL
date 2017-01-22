@@ -38,18 +38,16 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 dict.Add(name, objectInfo)
         match texpr.Value with
         | TableOrSubquery tsub ->
-            let (alias, objectInfo) as pair = this.TableOrSubqueryScope(tsub)
+            let alias, objectInfo = this.TableOrSubqueryScope(tsub)
             add alias objectInfo
-            Seq.singleton pair
         | Join join ->
-            seq {
-                yield! this.TableExprScope(dict, join.LeftTable)
-                yield! this.TableExprScope(dict, join.RightTable)
-            }
+            this.TableExprScope(dict, join.LeftTable)
+            this.TableExprScope(dict, join.RightTable)
 
     member private this.TableExprScope(texpr : TableExpr) =
         let dict = Dictionary()
-        { FromVariables = dict; FromObjects = this.TableExprScope(dict, texpr) |> ResizeArray }
+        this.TableExprScope(dict, texpr)
+        { FromVariables = dict }
 
     member private this.TableOrSubquery(tsub : TableOrSubquery) =
         let tbl, info =
@@ -109,7 +107,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             | None -> failAt resultColumn.Source "Must have a FROM clause to use * wildcard"
             | Some from ->
                 seq {
-                    for tableAlias, fromTable in from.FromObjects do
+                    for KeyValue(tableAlias, fromTable) in from.FromVariables do
                     for col in fromTable.Table.Query.Columns do
                         yield qualify tableAlias fromTable col
                 }
