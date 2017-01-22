@@ -14,6 +14,15 @@ type InferredNullable =
     | NullableKnown of bool
     | NullableVariable of TypeVariableId
     | NullableEither of InferredNullable * InferredNullable
+    | NullableDueToJoin of InferredNullable // outer joins make nulls that wouldn't otherwise happen
+    /// Remove one layer of nullability induced by an outer join.
+    member this.StripNullDueToJoin() =
+        match this with
+        | NullableUnknown
+        | NullableKnown _
+        | NullableVariable _ -> this
+        | NullableEither (l, r) -> NullableEither (l.StripNullDueToJoin(), r.StripNullDueToJoin())
+        | NullableDueToJoin n -> n
     static member Any(nulls) =
         nulls |> Seq.fold (fun l r -> InferredNullable.Either(l, r)) NullableUnknown
     static member Either(left, right) =
@@ -30,6 +39,7 @@ type InferredNullable =
         | NullableKnown false
         | NullableKnown true
         | NullableVariable _ -> this
+        | NullableDueToJoin n -> NullableDueToJoin (n.StripNullDueToJoin())
         | NullableEither (l, r) ->
             match l.Simplify(), r.Simplify() with
             | NullableKnown true, _

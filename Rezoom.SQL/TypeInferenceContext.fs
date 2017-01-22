@@ -78,6 +78,7 @@ type private TypeInferenceContext() =
             var.Unify(source, ListType knownType)
     member this.ForceNullable(source, nullable : InferredNullable) =
         match nullable.Simplify() with
+        | NullableDueToJoin _
         | NullableUnknown
         | NullableKnown true -> ()
         | NullableKnown false ->
@@ -88,7 +89,8 @@ type private TypeInferenceContext() =
                 match v with
                 | NullableUnknown
                 | NullableKnown true 
-                | NullableKnown false -> Seq.empty
+                | NullableKnown false
+                | NullableDueToJoin _ -> Seq.empty
                 | NullableVariable id -> Seq.singleton id
                 | NullableEither (l, r) -> Seq.append (allVars l) (allVars r)
             deferredNullables.Add(ResizeArray(allVars nullable))
@@ -104,6 +106,7 @@ type private TypeInferenceContext() =
             deferredNullables.Clear()
         match nullable with
         | NullableUnknown -> false
+        | NullableDueToJoin _ -> true
         | NullableKnown t -> t
         | NullableVariable id -> this.ResolveNullable((getVar id).CurrentNullable)
         | NullableEither (l, r) -> this.ResolveNullable(l) || this.ResolveNullable(r)
