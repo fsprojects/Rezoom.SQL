@@ -56,6 +56,7 @@
     <Compile Include="TestModel.fs" />
     <Compile Include="TestTypeInference.fs" />
     <Compile Include="TestVendorStatements.fs" />
+    <Compile Include="TestNavProperties.fs" />
     <Compile Include="TestRoundTrip.fs" />
     <Compile Include="TestParserErrors.fs" />
     <Compile Include="TestTypeErrors.fs" />

@@ -123,6 +123,8 @@ type ColumnType =
             dbType, clrType.MakeArrayType()
     member ty.CLRType = snd ty.TypeInfo
     member ty.DbType = fst ty.TypeInfo
+    override ty.ToString() =
+        string ty.Type + (if ty.Nullable then "?" else "")
 
 type FunctionTermType =
     {   TypeConstraint : CoreColumnType
