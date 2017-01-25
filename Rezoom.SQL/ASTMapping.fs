@@ -126,7 +126,12 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             | ColumnsWildcard -> ColumnsWildcard
             | TableColumnsWildcard tbl -> TableColumnsWildcard tbl
             | Column (expr, alias) -> Column (this.Expr(expr), alias)
-        { Case = case; Source = resultColumn.Source; AliasPrefix = resultColumn.AliasPrefix }
+            | ColumnNav nav ->
+                {   Cardinality = nav.Cardinality
+                    Name = nav.Name
+                    Columns = nav.Columns |> Array.map this.ResultColumn
+                } |> ColumnNav
+        { Case = case; Source = resultColumn.Source }
     member this.ResultColumns(resultColumns : ResultColumns<'t1, 'e1>) =
         {   Distinct = resultColumns.Distinct
             Columns = resultColumns.Columns |> rmap this.ResultColumn

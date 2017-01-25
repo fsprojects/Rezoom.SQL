@@ -598,51 +598,44 @@ let private asAlias =
     -? +.name
     -|> id
 
-let private resultColumnCase =
+let private resultColumnNavCardinality =
+    %[
+        %% kw "MANY" -|> NavMany
+        %% kw "ONE" -|> NavOne
+    ]
+
+let private resultColumnCase (resultColumns : Parser<_, unit>) =
+    let nav =
+        %% +.resultColumnNavCardinality
+        -? +.nameOrKeyword
+        -- ws
+        -- '('
+        -- ws
+        -- +.resultColumns
+        -- ')'
+        -- ws
+        -|> fun cardinality name cols ->
+            {   Cardinality = cardinality
+                Name = name
+                Columns = cols
+            } |> ColumnNav
     %% +.[
         %% '*' -|> ColumnsWildcard
+        nav
         %% +.name -- '.' -? '*' -|> TableColumnsWildcard
         %% +.expr -- +.(asAlias * zeroOrOne) -|> fun ex alias -> Column (ex, alias)
     ] -- ws -|> id
 
-let private resultColumnsQuantifier =
-    %[
-        %% kw "MANY" -|> "*"
-        %% kw "OPTIONAL" -|> "?"
-        %% kw "ONE" -|> ""
-    ]
-
 let private resultColumns =
-    let typical =
-        %% +.withSource resultColumnCase
-        -|> fun case ->
-            {   ResultColumn.Case = case.Value
-                Source = case.Source
-                AliasPrefix = None
-            } |> Seq.singleton
     precursive <| fun resultColumns ->
-        let quantified =
-            %% +.resultColumnsQuantifier
-            -? +.nameOrKeyword
-            -- ws
-            -- '('
-            -- ws
-            -- +.resultColumns
-            -- ')'
-            -- ws
-            -|> fun quantifier name cols ->
-                let prefix = name + quantifier + "$"
-                seq {
-                    for col in cols ->
-                        { col with
-                            AliasPrefix =
-                                match col.AliasPrefix with
-                                | None -> Some prefix
-                                | Some subPrefix -> Some <| prefix + subPrefix
-                        }
+        let column =
+            %% +.withSource (resultColumnCase resultColumns)
+            -|> fun case ->
+                {   ResultColumn.Case = case.Value
+                    Source = case.Source
                 }
-        %% +.(qty.[1..] /. tws ',' * [ quantified; typical ])
-        -|> (Seq.concat >> ResizeArray)
+        %% +.(qty.[1..] /. tws ',' * column)
+        -|> Seq.toArray
 
 let private selectColumns =
     %% kw "SELECT"
@@ -651,7 +644,7 @@ let private selectColumns =
             preturn None
         ]
     -- +.resultColumns
-    -|> fun distinct cols -> { Distinct = distinct; Columns = cols.ToArray() }
+    -|> fun distinct cols -> { Distinct = distinct; Columns = cols }
 
 let private indexHint =
     %[

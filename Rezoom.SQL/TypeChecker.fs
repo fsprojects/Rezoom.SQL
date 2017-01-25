@@ -87,7 +87,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
         let checker = TypeChecker(cxt, { scope with FromClause = Some <| this.TableExprScope(texpr) })
         checker, this.TableExpr(checker, texpr)
 
-    member this.ResultColumn(resultColumn : ResultColumn) =
+    member this.ResultColumn(aliasPrefix : Name option, resultColumn : ResultColumn) =
         let qualify (tableAlias : Name) fromTable (col : _ ColumnExprInfo) =
             Column
                 ({  Source = resultColumn.Source
@@ -102,7 +102,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                         } |> ColumnNameExpr
                     Info = col.Expr.Info
                 },
-                    match resultColumn.AliasPrefix with
+                    match aliasPrefix with
                     | None -> None
                     | Some prefix -> Some (prefix + col.ColumnName))
         match resultColumn.Case with
@@ -123,21 +123,29 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 if not succ then failAt resultColumn.Source <| sprintf "No such table: ``%O``" tbl
                 fromTable.Table.Query.Columns |> Seq.map (qualify tbl fromTable)
         | Column (expr, alias) ->
-            match resultColumn.AliasPrefix with
+            match aliasPrefix with
             | None -> Column (this.Expr(expr), alias) |> Seq.singleton
             | Some prefix -> 
                 let expr = this.Expr(expr)
                 match implicitAlias (expr.Value, alias) with
                 | None -> Column (expr, None) |> Seq.singleton
                 | Some a -> Column (expr, Some (prefix + a)) |> Seq.singleton
+        | ColumnNav nav ->
+            let subAliasPrefix =
+                let prev =
+                    match aliasPrefix with
+                    | Some prefix -> prefix.Value
+                    | None -> ""
+                Some <| Name(prev + nav.Name.Value + nav.Cardinality.Separator)
+            nav.Columns |> Seq.collect (fun c -> this.ResultColumn(subAliasPrefix, c))
                                      
     member this.ResultColumns(resultColumns : ResultColumns, knownShape : InferredQueryShape option) =
         let columns =
             resultColumns.Columns
             |> Seq.collect
                 (fun rc ->
-                    this.ResultColumn(rc)
-                    |> Seq.map (fun c -> { Source = rc.Source; Case = c; AliasPrefix = None }))
+                    this.ResultColumn(None, rc)
+                    |> Seq.map (fun c -> { Source = rc.Source; Case = c; }))
             |> Seq.toArray
         match knownShape with
         | Some shape ->

@@ -17,9 +17,10 @@ let rec private aggReferencesSelectCore (select : InfSelectCore) =
     seq {
         for col in select.Columns.Columns do
             match col.Case with
-            | ColumnsWildcard
-            | TableColumnsWildcard _ -> ()
             | Column (ex, _) -> yield! aggReferences ex
+            | ColumnsWildcard
+            | TableColumnsWildcard _
+            | ColumnNav _ -> bug "Typechecker should've eliminated these column cases"
         match select.Where with
         | None -> ()
         | Some where ->

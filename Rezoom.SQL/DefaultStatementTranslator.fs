@@ -86,12 +86,13 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield!
                 seq {
                     for col in cols.Columns do
-                        match col.AliasPrefix, col.Case with
-                        | Some prefix, _ -> failwith "Bug in typechecker: alias prefixes should've been built-in"
-                        | None, Column(expr, alias) ->
+                        match col.Case with
+                        | Column(expr, alias) ->
                             yield this.ResultColumn(expr, alias)
-                        | None, _ ->
-                            failwith "Bug in typechecker: wildcards should've been expanded"
+                        | ColumnNav _ ->
+                            bug "Bug in typechecker: nav columns should've been expanded"
+                        | _ ->
+                            bug "Bug in typechecker: wildcards should've been expanded"
                 } |> join ","
         }
     override this.TableOrSubquery(tbl) =

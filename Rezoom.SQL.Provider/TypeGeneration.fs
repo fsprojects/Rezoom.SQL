@@ -83,7 +83,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
             if name.EndsWith("*") then
                 typedefof<_ IReadOnlyList>.MakeGenericType(fieldTy), name.Substring(0, name.Length - 1)
             elif name.EndsWith("?") then
-                typedefof< _ option>.MakeGenericType(fieldTy), name.Substring(0, name.Length - 1)
+                typedefof<_ option>.MakeGenericType(fieldTy), name.Substring(0, name.Length - 1)
             else fieldTy, name
         let camel = toCamelCase propName
         let field = ProvidedField("_" + camel, fieldTy)

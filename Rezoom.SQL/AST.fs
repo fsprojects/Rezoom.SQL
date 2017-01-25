@@ -390,10 +390,25 @@ and ResultColumns<'t, 'e> =
         Columns : ResultColumn<'t, 'e> array
     }
 
+and ResultColumnNavCardinality =
+    | NavOne
+    | NavMany
+    member this.Separator =
+        match this with
+        | NavOne -> "$"
+        | NavMany -> "*$"
+
+and ResultColumnNav<'t, 'e> =
+    {   Cardinality : ResultColumnNavCardinality
+        Name : Name
+        Columns : ResultColumn<'t, 'e> array
+    }
+
 and ResultColumnCase<'t, 'e> =
     | ColumnsWildcard
     | TableColumnsWildcard of Name
     | Column of Expr<'t, 'e> * Alias
+    | ColumnNav of ResultColumnNav<'t, 'e>
     member this.AssumeColumn() =
         match this with
         | Column (expr, alias) -> expr, alias
@@ -401,7 +416,6 @@ and ResultColumnCase<'t, 'e> =
 
 and ResultColumn<'t, 'e> =
     {   Case : ResultColumnCase<'t, 'e>
-        AliasPrefix : Name option
         Source : SourceInfo
     }
 
