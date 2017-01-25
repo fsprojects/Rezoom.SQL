@@ -58,3 +58,35 @@ let ``1 user many groups left join no nav`` () =
             "GroupId", "INT?"
             "GroupName", "STRING?"
         ]
+
+[<Test>]
+let ``1 user many groups left join nav`` () =
+    columns
+        """
+            select u.Id, u.Name, many Groups(g.Id, g.Name)
+            from Users u
+            left join UserGroupMaps ugm on ugm.UserId = u.Id
+            left join Groups g on g.Id = ugm.GroupId
+        """
+        [   "Id", "INT"
+            "Name", "STRING?"
+            "Groups*$Id", "INT"
+            "Groups*$Name", "STRING?"
+        ]
+
+[<Test>]
+let ``1 user many maps many groups left join nav`` () =
+    columns
+        """
+            select u.Id, u.Name, many Maps(ugm.UserId, ugm.GroupId, one Group(g.Id, g.Name))
+            from Users u
+            left join UserGroupMaps ugm on ugm.UserId = u.Id
+            left join Groups g on g.Id = ugm.GroupId
+        """
+        [   "Id", "INT"
+            "Name", "STRING?"
+            "Maps*$UserId", "INT"
+            "Maps*$GroupId", "INT"
+            "Maps*$Group$Id", "INT"
+            "Maps*$Group$Name", "STRING?"
+        ]

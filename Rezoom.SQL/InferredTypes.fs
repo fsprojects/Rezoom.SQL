@@ -52,6 +52,7 @@ type InferredType =
     {   InferredType : CoreInferredType
         InferredNullable : InferredNullable
     }
+    member this.StripNullDueToJoin() = { this with InferredNullable = this.InferredNullable.StripNullDueToJoin() }
     static member Of(col) = { InferredNullable = NullableKnown col.Nullable; InferredType = TypeKnown col.Type }
     static member Of(core) = { InferredNullable = NullableUnknown; InferredType = TypeKnown core }
     static member Float = InferredType.Of(FractionalTypeClass)

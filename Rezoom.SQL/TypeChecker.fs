@@ -89,22 +89,21 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
 
     member this.ResultColumn(aliasPrefix : Name option, resultColumn : ResultColumn) =
         let qualify (tableAlias : Name) fromTable (col : _ ColumnExprInfo) =
-            Column
-                ({  Source = resultColumn.Source
-                    Value =
-                        {   ColumnName = col.ColumnName
-                            Table =
-                                {   Source = resultColumn.Source
-                                    ObjectName = tableAlias
-                                    SchemaName = None
-                                    Info = fromTable
-                                } |> Some
-                        } |> ColumnNameExpr
-                    Info = col.Expr.Info
-                },
-                    match aliasPrefix with
-                    | None -> None
-                    | Some prefix -> Some (prefix + col.ColumnName))
+            {   Expr.Source = resultColumn.Source
+                Value =
+                    {   ColumnName = col.ColumnName
+                        Table =
+                            {   Source = resultColumn.Source
+                                ObjectName = tableAlias
+                                SchemaName = None
+                                Info = fromTable
+                            } |> Some
+                    } |> ColumnNameExpr
+                Info = col.Expr.Info
+            },
+                match aliasPrefix with
+                | None -> None
+                | Some prefix -> Some (prefix + col.ColumnName)
         match resultColumn.Case with
         | ColumnsWildcard ->
             match scope.FromClause with
@@ -124,12 +123,12 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 fromTable.Table.Query.Columns |> Seq.map (qualify tbl fromTable)
         | Column (expr, alias) ->
             match aliasPrefix with
-            | None -> Column (this.Expr(expr), alias) |> Seq.singleton
+            | None -> (this.Expr(expr), alias) |> Seq.singleton
             | Some prefix -> 
                 let expr = this.Expr(expr)
                 match implicitAlias (expr.Value, alias) with
-                | None -> Column (expr, None) |> Seq.singleton
-                | Some a -> Column (expr, Some (prefix + a)) |> Seq.singleton
+                | None -> (expr, None) |> Seq.singleton
+                | Some a -> (expr, Some (prefix + a)) |> Seq.singleton
         | ColumnNav nav ->
             let subAliasPrefix =
                 let prev =
@@ -137,7 +136,10 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                     | Some prefix -> prefix.Value
                     | None -> ""
                 Some <| Name(prev + nav.Name.Value + nav.Cardinality.Separator)
-            nav.Columns |> Seq.collect (fun c -> this.ResultColumn(subAliasPrefix, c))
+            nav.Columns
+            |> Seq.collect (fun c -> this.ResultColumn(subAliasPrefix, c))
+            |> Seq.map (fun (expr, alias) -> // remove nullability introduced by outer joins
+                { expr with Info = { expr.Info with Type = expr.Info.Type.StripNullDueToJoin() } }, alias)
                                      
     member this.ResultColumns(resultColumns : ResultColumns, knownShape : InferredQueryShape option) =
         let columns =
@@ -145,7 +147,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             |> Seq.collect
                 (fun rc ->
                     this.ResultColumn(None, rc)
-                    |> Seq.map (fun c -> { Source = rc.Source; Case = c; }))
+                    |> Seq.map (fun (expr, alias) -> { Source = rc.Source; Case = Column (expr, alias); }))
             |> Seq.toArray
         match knownShape with
         | Some shape ->
