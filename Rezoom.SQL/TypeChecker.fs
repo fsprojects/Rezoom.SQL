@@ -30,7 +30,8 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             | None -> failAt select.Source "Subquery requires an alias"
             | Some alias -> alias, this.Select(select, SelfQueryShape.Unknown).Value.Info
 
-    member private this.TableExprScope(dict : Dictionary<Name, InferredType ObjectInfo>, texpr : TableExpr, outerJoin) =
+    member private this.TableExprScope
+        (dict : Dictionary<Name, InferredType ObjectInfo>, texpr : TableExpr, outerDepth) =
         let add name objectInfo =
             if dict.ContainsKey(name) then
                 failAt texpr.Source <| sprintf "Table name already in scope: ``%O``" name
@@ -40,17 +41,20 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
         | TableOrSubquery tsub ->
             let alias, objectInfo = this.TableOrSubqueryScope(tsub)
             let objectInfo =
-                if outerJoin then
-                    objectInfo.Map(fun t -> { t with InferredNullable = NullableDueToJoin t.InferredNullable })
+                if outerDepth > 0 then
+                    let nullable = NullableDueToJoin |> Seq.replicate outerDepth |> Seq.reduce (>>)
+                    objectInfo.Map(fun t -> { t with InferredNullable = nullable t.InferredNullable })
                 else objectInfo
             add alias objectInfo
+            outerDepth
         | Join join ->
-            this.TableExprScope(dict, join.LeftTable, outerJoin = false)
-            this.TableExprScope(dict, join.RightTable, outerJoin = join.JoinType.IsOuter)
+            let leftDepth = this.TableExprScope(dict, join.LeftTable, outerDepth)
+            let depthIncrement = if join.JoinType.IsOuter then 1 else 0
+            this.TableExprScope(dict, join.RightTable, leftDepth + depthIncrement)
 
     member private this.TableExprScope(texpr : TableExpr) =
         let dict = Dictionary()
-        this.TableExprScope(dict, texpr, outerJoin = false)
+        ignore <| this.TableExprScope(dict, texpr, outerDepth = 0)
         { FromVariables = dict }
 
     member private this.TableOrSubquery(tsub : TableOrSubquery) =

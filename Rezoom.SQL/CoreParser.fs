@@ -682,7 +682,7 @@ let private joinConstraint =
         preturn JoinUnconstrained
     ]
 
-let private tableExpr =
+let private tableExpr = // parses table expr (with left-associative joins)
     precursive <| fun tableExpr ->
         let term = tableOrSubquery tableExpr |> withSource
         let natural = %% kw "NATURAL" -|> ()   
