@@ -134,17 +134,44 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 | None -> (expr, None) |> Seq.singleton
                 | Some a -> (expr, Some (prefix + a)) |> Seq.singleton
         | ColumnNav nav ->
-            let subAliasPrefix =
-                let prev =
-                    match aliasPrefix with
-                    | Some prefix -> prefix.Value
-                    | None -> ""
-                Some <| Name(prev + nav.Name.Value + nav.Cardinality.Separator)
-            nav.Columns
-            |> Seq.collect (fun c -> this.ResultColumn(subAliasPrefix, c))
+            this.ColumnNav(aliasPrefix, resultColumn, nav)
+
+    member this.ColumnNav(aliasPrefix : Name option, resultColumn : ResultColumn, nav : ResultColumnNav<unit, unit>) =
+        let subAliasPrefix =
+            let prev =
+                match aliasPrefix with
+                | Some prefix -> prefix.Value
+                | None -> ""
+            Some <| Name(prev + nav.Name.Value + nav.Cardinality.Separator)
+        let columns =
+            seq {
+                for column in nav.Columns do
+                    let producedColumns = this.ResultColumn(subAliasPrefix, column)
+                    yield column, producedColumns |> ResizeArray
+            } |> ResizeArray
+        let keyExprs =
+            seq {
+                for source, producedColumns in columns do
+                    match source.Case with
+                    | ColumnNav _ -> () // ignore sub-nav props
+                    | _ ->
+                        for expr, _ in producedColumns do
+                            if expr.Info.PrimaryKey then yield expr    
+            } |> ResizeArray
+        if keyExprs.Count <= 0 then
+            failAt resultColumn.Source "A nav property selection must contain at least one key column"
+        else
+            let minDepthOfImmediateKey =
+                keyExprs
+                |> Seq.map (fun e -> e.Info.Type.InferredNullable.JoinInducedNullabilityDepth())
+                |> Seq.min
+            columns
+            |> Seq.collect snd
             |> Seq.map (fun (expr, alias) -> // remove nullability introduced by outer joins
-                { expr with Info = { expr.Info with Type = expr.Info.Type.StripNullDueToJoin() } }, alias)
-                                     
+                { expr with
+                    Info = { expr.Info with Type = expr.Info.Type.StripNullDueToJoin(minDepthOfImmediateKey) }
+                }, alias)
+                  
     member this.ResultColumns(resultColumns : ResultColumns, knownShape : InferredQueryShape option) =
         let columns =
             resultColumns.Columns

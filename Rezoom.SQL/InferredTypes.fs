@@ -15,14 +15,19 @@ type InferredNullable =
     | NullableVariable of TypeVariableId
     | NullableEither of InferredNullable * InferredNullable
     | NullableDueToJoin of InferredNullable // outer joins make nulls that wouldn't otherwise happen
-    /// Remove one layer of nullability induced by an outer join.
-    member this.StripNullDueToJoin() =
+    member this.JoinInducedNullabilityDepth() =
         match this with
-        | NullableUnknown
-        | NullableKnown _
-        | NullableVariable _ -> this
-        | NullableEither (l, r) -> NullableEither (l.StripNullDueToJoin(), r.StripNullDueToJoin())
-        | NullableDueToJoin n -> n
+        | NullableDueToJoin wrap -> 1 + wrap.JoinInducedNullabilityDepth()
+        | NullableEither (l, r) -> max (l.JoinInducedNullabilityDepth()) (r.JoinInducedNullabilityDepth())
+        | _ -> 0
+    /// Remove layers of nullability induced by an outer join.
+    member this.StripJoinInducedNullability(depth) =
+        if depth <= 0 then this else
+        match this with
+        | NullableEither (l, r) ->
+            NullableEither (l.StripJoinInducedNullability(depth), r.StripJoinInducedNullability(depth))
+        | NullableDueToJoin n -> n.StripJoinInducedNullability(depth - 1)
+        | _ -> this
     static member Any(nulls) =
         nulls |> Seq.fold (fun l r -> InferredNullable.Either(l, r)) NullableUnknown
     static member Either(left, right) =
@@ -39,7 +44,7 @@ type InferredNullable =
         | NullableKnown false
         | NullableKnown true
         | NullableVariable _ -> this
-        | NullableDueToJoin n -> NullableDueToJoin (n.StripNullDueToJoin())
+        | NullableDueToJoin n -> NullableDueToJoin (n.Simplify())
         | NullableEither (l, r) ->
             match l.Simplify(), r.Simplify() with
             | NullableKnown true, _
@@ -52,7 +57,8 @@ type InferredType =
     {   InferredType : CoreInferredType
         InferredNullable : InferredNullable
     }
-    member this.StripNullDueToJoin() = { this with InferredNullable = this.InferredNullable.StripNullDueToJoin() }
+    member this.StripNullDueToJoin(depth) =
+        { this with InferredNullable = this.InferredNullable.StripJoinInducedNullability(depth) }
     static member Of(col) = { InferredNullable = NullableKnown col.Nullable; InferredType = TypeKnown col.Type }
     static member Of(core) = { InferredNullable = NullableUnknown; InferredType = TypeKnown core }
     static member Float = InferredType.Of(FractionalTypeClass)

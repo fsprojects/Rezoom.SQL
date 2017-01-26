@@ -60,8 +60,6 @@ let ``1 user many groups left join no nav`` () =
         ]
 
 [<Test>]
-[<Ignore("temporarily ignored while I figure out how this should work")>]
-// We would like to be able to sometimes gloss over multiple levels of joining in nav property things.
 let ``1 user many groups left join nav`` () =
     columns
         """
