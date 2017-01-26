@@ -5,6 +5,8 @@ open Rezoom.SQL.InferredTypes
 
 type InferredQueryShape = InferredType QueryExprInfo
 type SelfQueryShape =
+    // this thing is for when we know ahead of time what the column names of a select statement are supposed to be
+    // so we don't want to require that they all be aliased manually.
     {   CTEName : Name option
         KnownShape : InferredQueryShape option
     }
