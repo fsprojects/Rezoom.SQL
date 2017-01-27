@@ -135,7 +135,7 @@ module private TypeInferenceExtensions =
             types
             |> Seq.fold
                 (fun s next -> typeInference.Unify(source, s, next))
-                InferredType.Any
+                InferredType.Scalar
         member typeInference.Concrete(inferred) = typeInference.Concrete(inferred)
         member typeInference.Binary(source, op, left, right) =
             match op with

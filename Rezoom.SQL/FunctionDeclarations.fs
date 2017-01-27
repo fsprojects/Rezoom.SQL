@@ -34,7 +34,7 @@ let inline private concrete ty =
         VarArg = None
     }
 
-let any = concrete ScalarTypeClass
+let scalar = concrete ScalarTypeClass
 let boolean = concrete BooleanType
 let string = concrete StringType
 let num = concrete NumericTypeClass

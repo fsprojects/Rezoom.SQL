@@ -60,7 +60,7 @@ module SQLiteFunctions =
             func "ifnull" [ nullable a'; infect a' ] a'
             func "instr" [ infect (stringish a'); infect a' ] int64
             proc "last_insert_rowid" [] int64
-            func "length" [ infect (stringish any) ] int64
+            func "length" [ infect (stringish scalar) ] int64
             func "like" [ infect string; infect string; optional (infect string) ] boolean
             func "likelihood" [ boolean; float64 ] boolean
             func "likely" [ boolean ] boolean
@@ -70,8 +70,8 @@ module SQLiteFunctions =
             minmax "max"
             minmax "min"
             func "nullif" [ a'; a' ] (nullable a')
-            func "printf" [ infect string; vararg any ] string
-            func "quote" [ any ] string
+            func "printf" [ infect string; vararg scalar ] string
+            func "quote" [ scalar ] string
             proc "random" [] int64
             proc "randomblob" [] binary
             func "replace" [ infect string; infect string; infect string ] string
@@ -85,7 +85,7 @@ module SQLiteFunctions =
             func "substr" [ infect string; infect integral; optional (infect integral) ] string
             proc "total_changes" [] int64
             func "trim" [ infect string; optional (infect integral) ] string
-            func "typeof" [ any ] string
+            func "typeof" [ scalar ] string
             func "unicode" [ infect string ] int64
             func "unlikely" [ boolean ] boolean
             func "upper" [ infect string ] string
@@ -93,7 +93,7 @@ module SQLiteFunctions =
 
             // aggregate functions from https://www.sqlite.org/lang_aggfunc.html
             aggregate "avg" [ numeric a' ] float64
-            aggregateW "count" [ any ] int64
+            aggregateW "count" [ scalar ] int64
             aggregate "group_concat" [ infect string; optional string ] string
             aggregate "sum" [ numeric a' ] a'
             aggregate "total" [ numeric a' ] a'

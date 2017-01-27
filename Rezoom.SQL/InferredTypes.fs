@@ -69,14 +69,14 @@ type InferredType =
     static member DateTime = InferredType.Of(DateTimeType)
     static member DateTimeOffset = InferredType.Of(DateTimeOffsetType)
     static member Blob = InferredType.Of(BinaryType)
-    static member Any = InferredType.Of(AnyTypeClass)
+    static member Scalar = InferredType.Of(ScalarTypeClass)
     static member Dependent(ifNull : InferredType, outputType : CoreColumnType) =
         {   InferredNullable = ifNull.InferredNullable
             InferredType = TypeKnown outputType
         }
     static member OfLiteral(literal : Literal) =
         match literal with
-        | NullLiteral -> { InferredNullable = NullableKnown true; InferredType = TypeKnown AnyTypeClass }
+        | NullLiteral -> { InferredNullable = NullableKnown true; InferredType = TypeKnown ScalarTypeClass }
         | BooleanLiteral _ -> InferredType.Boolean
         | StringLiteral _ -> InferredType.String
         | BlobLiteral _ -> InferredType.Blob

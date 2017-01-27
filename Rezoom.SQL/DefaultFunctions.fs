@@ -26,7 +26,7 @@ let builtins =
         erased "nullable" (nullable a') (nullable a')
         // Ignore the inferred type (but not inferred nullability) of its argument.
         // Lets you override the typechecker and treat values like whatever you feel they should be.
-        erased "unsafe_coerce" (infect any) any
+        erased "unsafe_coerce" (infect scalar) scalar
     |]
 
 let extendedBy backendFunctions =
