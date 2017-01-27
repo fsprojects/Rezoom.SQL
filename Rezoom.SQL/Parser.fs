@@ -7,6 +7,7 @@ open System.Globalization
 open FParsec
 open FParsec.Pipes
 open FParsec.Pipes.Precedence
+open Rezoom.SQL
 open Rezoom.SQL.CoreParser
 
 // Vendor statements allow embedding raw SQL written for a specific backend.
@@ -131,7 +132,7 @@ let private vendorStmt =
     >>= fun (vendorName, openDelim) ->
         let closeDelim = flipDelimiter openDelim
         if closeDelim = openDelim then
-            fail (sprintf "Opening and closing delimiters are the same (%s)" closeDelim)
+            fail (Error.sameVendorDelimiters closeDelim)
         else
             let openDelim = pstring openDelim >>% OpenDelimiter
             let closeDelim = pstring closeDelim >>% CloseDelimiter
@@ -164,4 +165,4 @@ let parseStatements sourceDescription source =
         let sourceInfo = SourceInfo.OfPosition(translatePosition err.Position)
         use writer = new System.IO.StringWriter()
         err.WriteTo(writer, (fun _ _ _ _ -> ()))
-        failAt sourceInfo (string writer)
+        failAt sourceInfo <| Error.parseError writer

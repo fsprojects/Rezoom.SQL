@@ -120,14 +120,6 @@ and private aggReferences (expr : InfExpr) =
             | None -> ()
         }
 
-let private noGroupByMsg =
-    "Can't reference column outside of an aggregate function"
-    + " because this query uses aggregate functions without a GROUP BY clause"
-
-let notGroupedByMsg =
-    "Can't reference column outside of an aggregate function"
-    + " because the GROUP BY clause does not include this column"
-
 let check (select : InfSelectCore) =
     let references = aggReferencesSelectCore select
     match select.GroupBy with
@@ -138,12 +130,12 @@ let check (select : InfSelectCore) =
             match references |> Seq.tryPick columnOutside with
             | None -> ()
             | Some { Source = src } ->
-                failAt src noGroupByMsg
+                failAt src Error.columnNotAggregated
     | Some group ->
         let legal = group.By |> HashSet
         let outside = references |> Seq.choose columnOutside
         for outsideExpr in outside do
             if not <| legal.Contains(outsideExpr) then
-                failAt outsideExpr.Source notGroupedByMsg
+                failAt outsideExpr.Source Error.columnNotGroupedBy
     select
 

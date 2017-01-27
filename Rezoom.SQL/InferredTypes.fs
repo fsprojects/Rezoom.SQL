@@ -196,11 +196,11 @@ type InferredFromClause =
     member this.ResolveTable(tableName : ObjectName) =
         match tableName.SchemaName with
         // We don't currently support referencing columns like "main.users.id". Use table aliases instead!
-        | Some schemaName -> Ambiguous <| sprintf "Unsupported schema name in column reference: ``%O``" tableName
+        | Some schemaName -> Ambiguous <| Error.schemaNameInColumnReference tableName
         | None ->
             let succ, query = this.FromVariables.TryGetValue(tableName.ObjectName)
             if succ then Found query
-            else NotFound <| sprintf "No such table in FROM clause: ``%O``" tableName.ObjectName
+            else NotFound <| Error.noSuchTableInFrom tableName.ObjectName
     member this.ResolveColumnReference(name : ColumnName) =
         match name.Table with
         | None ->
@@ -219,9 +219,9 @@ type InferredFromClause =
                 | Ok triple -> Found triple
                 | Error e -> Ambiguous e
             elif matches.Count <= 0 then
-                NotFound <| sprintf "No such column in FROM clause: ``%O``" name
+                NotFound <| Error.noSuchColumnInFrom name
             else
-                Ambiguous <| sprintf "Ambiguous column: ``%O``" name
+                Ambiguous <| Error.ambiguousColumn name
         | Some tableName ->
             match this.ResolveTable(tableName) with
             | Found objectInfo ->
@@ -262,7 +262,7 @@ and InferredSelectScope =
             { Table = TableReference tbl; Query = inferredOfTable(tbl) } |> TableLike |> Found
         | Some (SchemaView view) ->
             { Table = ViewReference view; Query = inferredOfView(view) } |> TableLike |> Found
-        | None -> NotFound <| sprintf "No such table in schema %O: ``%O``" schema.SchemaName name
+        | None -> NotFound <| Error.noSuchTable name
 
     /// Resolve a reference to a table which may occur as part of a TableExpr.
     /// This will resolve against the database model and CTEs, but not table aliases defined in the FROM clause.
@@ -289,10 +289,8 @@ and InferredSelectScope =
         let findFrom() =
             let thisLevel =
                 match this.FromClause with
-                | None ->
-                    NotFound <| sprintf "Cannot reference column name ``%O`` in query without a FROM clause" name
-                | Some fromClause ->
-                    fromClause.ResolveColumnReference(name)
+                | None -> NotFound <| Error.columnReferenceWithoutFrom name
+                | Some fromClause -> fromClause.ResolveColumnReference(name)
             match this.ParentScope, thisLevel with
             | Some parent, NotFound _ ->
                 parent.ResolveColumnReference(name)

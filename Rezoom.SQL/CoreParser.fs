@@ -7,6 +7,7 @@ open System.Globalization
 open FParsec
 open FParsec.Pipes
 open FParsec.Pipes.Precedence
+open Rezoom.SQL
 
 /// Get the source position the parser is currently at.
 let private sourcePosition =
@@ -118,7 +119,7 @@ let private unquotedNameOrKeyword =
 let private unquotedName =
     unquotedNameOrKeyword >>=? fun ident ->
         if sqlKeywords.Contains(ident.ToString()) then
-            fail (sprintf "Reserved keyword %O used as name" ident)
+            fail (Error.reservedKeywordAsName ident)
         else
             preturn ident
 

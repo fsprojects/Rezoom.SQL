@@ -29,14 +29,14 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             tsub.Alias |? tinvoc.Table.ObjectName, this.ObjectName(tinvoc.Table).Info
         | Subquery select ->
             match tsub.Alias with
-            | None -> failAt select.Source "Subquery requires an alias"
+            | None -> failAt select.Source Error.subqueryRequiresAnAlias
             | Some alias -> alias, this.Select(select, SelfQueryShape.Unknown).Value.Info
 
     member private this.TableExprScope
         (dict : Dictionary<Name, InferredType ObjectInfo>, texpr : TableExpr, outerDepth) =
         let add name objectInfo =
             if dict.ContainsKey(name) then
-                failAt texpr.Source <| sprintf "Table name already in scope: ``%O``" name
+                failAt texpr.Source <| Error.tableNameAlreadyInScope name
             else
                 dict.Add(name, objectInfo)
         match texpr.Value with
@@ -113,7 +113,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
         match resultColumn.Case with
         | ColumnsWildcard ->
             match scope.FromClause with
-            | None -> failAt resultColumn.Source "Must have a FROM clause to use * wildcard"
+            | None -> failAt resultColumn.Source Error.wildcardWithoutFromClause
             | Some from ->
                 seq {
                     for KeyValue(tableAlias, fromTable) in from.FromVariables do
@@ -122,10 +122,10 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 }
         | TableColumnsWildcard tbl ->
             match scope.FromClause with
-            | None -> failAt resultColumn.Source <| sprintf "Must have a FROM clause to use ``%O``" tbl
+            | None -> failAt resultColumn.Source <| Error.tableWildcardWithoutFromClause tbl
             | Some from ->
                 let succ, fromTable = from.FromVariables.TryGetValue(tbl)
-                if not succ then failAt resultColumn.Source <| sprintf "No such table: ``%O``" tbl
+                if not succ then failAt resultColumn.Source <| Error.noSuchTableInFrom tbl
                 fromTable.Table.Query.Columns |> Seq.map (qualify tbl fromTable)
         | Column (expr, alias) ->
             match aliasPrefix with
@@ -161,7 +161,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                             if expr.Info.PrimaryKey then yield expr    
             } |> ResizeArray
         if keyExprs.Count <= 0 then
-            failAt resultColumn.Source "A nav property selection must contain at least one key column"
+            failAt resultColumn.Source <| Error.navPropertyMissingKeys nav.Name
         else
             let minDepthOfImmediateKey =
                 keyExprs
@@ -187,7 +187,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             if columns.Length <> shape.Columns.Count then
                 if columns.Length <= 0 then failwith "BUG: impossible, parser shouldn't have accepted this"
                 let source = columns.[columns.Length - 1].Source
-                failAt source <| sprintf "Expected %d columns but selected %d" shape.Columns.Count columns.Length
+                failAt source <| Error.expectedKnownColumnCount columns.Length shape.Columns.Count
             for i = 0 to columns.Length - 1 do
                 let selected, alias as selectedCol = columns.[i].Case.AssumeColumn()
                 let shape = shape.Columns.[i]
@@ -224,11 +224,11 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                                 FromAlias = None
                                 ColumnName =
                                     match implicitAlias (expr.Value, alias) with
-                                    | None -> failAt column.Source "Expression-valued column requires an alias"
+                                    | None -> failAt column.Source Error.expressionRequiresAlias
                                     | Some alias -> alias
                             }
                      // typechecker should've eliminated alternatives
-                     | _ -> failwith "All wildcards must be expanded -- this is a typechecker bug"
+                     | _ -> bug "All wildcards must be expanded -- this is a typechecker bug"
             } |> toReadOnlyList
         {   Columns = columns
             From = from
@@ -284,9 +284,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                     seq {
                         for rowIndex, row in vals |> Seq.indexed do
                             if row.Value.Length <> shape.Columns.Count then
-                                failAt row.Source <|
-                                    sprintf "Incorrect number of columns (expected %d, got %d)"
-                                        shape.Columns.Count row.Value.Length
+                                failAt row.Source <| Error.expectedKnownColumnCount row.Value.Length shape.Columns.Count  
                             for colVal, colShape in Seq.zip row.Value shape.Columns do
                                 ignore <| cxt.Unify(row.Source, colVal.Info.Type, colShape.Expr.Info.Type)
                                 if rowIndex > 0 then () else
@@ -301,7 +299,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                         Query = { Columns = columns }
                     }, Values vals
             | Values vals, None ->
-                failAt term.Source "VALUES() clause can only be used when column names are implied by context"
+                failAt term.Source Error.valuesRequiresKnownShape
             | Select select, knownShape ->
                 let select = this.SelectCore(select, knownShape)
                 select.Info, Select select
@@ -403,7 +401,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 resultAt tableName.Source <|
                 match tableName.Info.Table.Table with
                 | TableReference schemaTable -> schemaTable.WithAdditionalColumn(cdef)
-                | _ -> Error <| sprintf "Not a table: %O" tableName
+                | _ -> Error <| Error.objectNotATable tableName
             let from =
                 InferredFromClause.FromSingleObject
                     ({ tableName with
@@ -551,7 +549,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                         ignore <| cxt.Unify(name.Source, col.Expr.Info.Type, expr.Info.Type)
                         yield name, expr
                     | _ ->
-                        failAt name.Source <| sprintf "No such column to set: ``%O``" name.Value
+                        failAt name.Source <| Error.noSuchColumnToSet updateTable.TableName name.Value
             |]
         {   With = withClause
             UpdateTable = updateTable

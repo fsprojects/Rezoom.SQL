@@ -7,7 +7,7 @@ open Rezoom.SQL.Mapping
 
 [<Test>]
 let ``incompatible types can't be compared for equality`` () =
-    expectError "The types INT and STRING cannot be unified"
+    expectError (Error.cannotUnify "INT" "STRING")
         """
             select g.*, u.*
             from Users u
@@ -18,7 +18,7 @@ let ``incompatible types can't be compared for equality`` () =
 
 [<Test>]
 let ``unioned queries must have the same number of columns`` () =
-    expectError "Expected 3 columns but selected 2"
+    expectError (Error.expectedKnownColumnCount 2 3)
         """
             select 1 a, 2 b, 3 c
             union all
@@ -27,7 +27,7 @@ let ``unioned queries must have the same number of columns`` () =
 
 [<Test>]
 let ``updates must set actual columns`` () =
-    expectError "No such column to set: ``Nane``"
+    expectError (Error.noSuchColumnToSet "Users" "Nane")
         """
             update Users
             set Id = 1, Nane = ''
@@ -36,7 +36,7 @@ let ``updates must set actual columns`` () =
 
 [<Test>]
 let ``updated column types must match`` () =
-    expectError "The types INT and STRING cannot be unified"
+    expectError (Error.cannotUnify "INT" "STRING")
         """
             update Users
             set Id = 'five'
@@ -44,41 +44,35 @@ let ``updated column types must match`` () =
 
 [<Test>]
 let ``inserted column types must match`` () =
-    expectError "The types STRING and INT cannot be unified"
+    expectError (Error.cannotUnify "STRING" "INT")
         """
             insert into Users(Id, Name) values ('one', 'jim')
         """
 
 [<Test>]
 let ``inserted columns must exist`` () =
-    expectError "No such column: ``Goober``"
+    expectError (Error.noSuchColumn "Goober")
         """
             insert into Users(Goober, Booger) values ('one', 'jim')
         """
 
 [<Test>]
 let ``sum argument must be numeric`` () =
-    expectError "The types <numeric> and STRING cannot be unified" 
+    expectError (Error.cannotUnify "<numeric>" "STRING")
         """
             select sum(Name) as Sum from Users
         """
 
 [<Test>]
 let ``aggregates without group must not be found with non-aggregates`` () =
-    let msg =
-        "Can't reference column outside of an aggregate function "
-        + "because this query uses aggregate functions without a GROUP BY clause"
-    expectError msg
+    expectError Error.columnNotAggregated
         """
             select sum(Id) as Sum, Id from Users
         """
 
 [<Test>]
 let ``aggregates with group by must not contain non-grouped column references`` () =
-    let msg =
-        "Can't reference column outside of an aggregate function "
-        + "because the GROUP BY clause does not include this column"
-    expectError msg
+    expectError Error.columnNotGroupedBy
         """
             select Id, Name
             from Users

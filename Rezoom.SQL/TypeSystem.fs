@@ -55,7 +55,7 @@ type CoreColumnType =
         elif right.HasAncestor(left) then
             Ok right
         else
-            Error <| sprintf "The types %O and %O cannot be unified" left right
+            Error <| Error.cannotUnify left right
     override this.ToString() =
         match this with
         | BooleanType -> "BOOL"
@@ -172,11 +172,7 @@ type FunctionType
         let mutable i = 0
         for par in parameters do
             if i >= argList.Count then
-                failAt source <|
-                    sprintf "Insufficient arguments to function ``%O`` (got %d, expected at least %d)"
-                        name
-                        argList.Count
-                        this.MinimumParameters
+                failAt source <| Error.insufficientArguments name argList.Count this.MinimumParameters
             match par.VarArg with
             | None ->
                 validate (argList.[i]) par
@@ -193,10 +189,6 @@ type FunctionType
                     validate (argList.[i]) par
                     i <- i + 1
                 if i - start < varg.MinArgCount then
-                    failAt source <|
-                        sprintf "Insufficient arguments to function ``%O`` (expected at least %d varargs)"
-                            name
-                            varg.MinArgCount
+                    failAt source <| Error.insufficientArguments name i this.MinimumParameters
         if i < argList.Count then
-            failAt (argSource argList.[i]) <|
-                sprintf "Too many arguments to function ``%O`` (expected at most %d)" name (i - 1)
+            failAt (argSource argList.[i]) <| Error.excessiveArguments name argList.Count (i - 1)

@@ -54,7 +54,7 @@ and SchemaTable =
     }
     member this.WithAdditionalColumn(col : ColumnDef<_, _>) =
         match this.Columns |> Map.tryFind col.Name with
-        | Some _ -> Error <| sprintf "Column ``%O`` already exists" col.Name
+        | Some _ -> Error <| Error.columnAlreadyExists col.Name
         | None ->
             let hasNotNullConstraint =
                 col.Constraints
@@ -181,7 +181,7 @@ and QueryExprInfo<'t> =
                 for { WithSource.Source = source; Value = name } in names do
                     let succ, found = mine.TryGetValue(name)
                     if succ then yield found
-                    else failAt source <| sprintf "No such column: ``%O``" name
+                    else failAt source <| Error.noSuchColumn name
             } |> toReadOnlyList
         { Columns = filtered }
     member this.ColumnByName(name) =
@@ -191,16 +191,14 @@ and QueryExprInfo<'t> =
             |> Seq.truncate 2
             |> Seq.toList
         match matches with
-        | [] -> NotFound <| sprintf "No such column: ``%O``" name
+        | [] -> NotFound <| Error.noSuchColumn name
         | [ single ] -> Found single
         | { FromAlias = Some a1 } :: { FromAlias = Some a2 } :: _ when a1 <> a2 ->
-            Ambiguous <|
-                sprintf "Ambiguous columm: ``%O`` (may refer to %O.%O or %O.%O)"
-                    name a1 name a2 name
-        | _ -> Ambiguous <| sprintf "Ambigous column: ``%O``" name
+            Ambiguous <| Error.ambiguousColumnBetween name a1 a2
+        | _ -> Ambiguous <| Error.ambiguousColumn name
     member this.RenameColumns(names : Name IReadOnlyList) =
         if names.Count <> this.Columns.Count then
-            Error <| sprintf "%d columns named for a query with %d columns" names.Count this.Columns.Count
+            Error <| Error.mismatchedColumnNameCount names.Count this.Columns.Count
         else
             let newColumns =
                 (this.Columns, names)
@@ -242,7 +240,7 @@ and ObjectInfo<'t> =
     member this.Table =
         match this with
         | TableLike t -> t
-        | other -> failwithf "Expected table, but found reference to %A" other
+        | other -> bug <| sprintf "Bug: expected table, but found reference to %A" other
     member this.Query = this.Table.Query
     member this.Columns = this.Query.Columns
     member this.Map<'t1>(f : 't -> 't1) : ObjectInfo<'t1> =

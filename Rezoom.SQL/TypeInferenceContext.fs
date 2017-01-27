@@ -209,19 +209,13 @@ module private TypeInferenceExtensions =
             match invoc with
             | ArgumentWildcard ->
                 match aggregate with
-                | None ->
-                    failAt source <|
-                        sprintf "Non-aggregate function does not permit wildcard: ``%O``" func.FunctionName
-                | Some aggregate ->
-                    if aggregate.AllowWildcard then ArgumentWildcard, term func.Returns
-                    else failAt source <| sprintf "Function does not permit wildcards: ``%O``" func.FunctionName
+                | Some aggregate when aggregate.AllowWildcard -> ArgumentWildcard, term func.Returns
+                | _ -> failAt source <| Error.functionDoesNotPermitWildcard func.FunctionName
             | ArgumentList (distinct, args) as argumentList ->
                 if Option.isSome distinct then
                     match aggregate with
                     | Some aggregate when aggregate.AllowDistinct -> ()
-                    | _ ->
-                        failAt source <|
-                            sprintf "Function does not permit DISTINCT keyword: ``%O``" func.FunctionName
+                    | _ -> failAt source <| Error.functionDoesNotPermitDistinct func.FunctionName
                 let nulls = ResizeArray()
                 func.ValidateArgs(source, args, (fun a -> a.Source), fun arg termTy ->
                     let term = term termTy

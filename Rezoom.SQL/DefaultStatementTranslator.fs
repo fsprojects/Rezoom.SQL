@@ -590,9 +590,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
     override this.Vendor(vendor) =
         if expectedVendorName <> vendor.VendorName.Value then
             failAt vendor.VendorName.Source <|
-                sprintf "Vendor-specific code for ``%O`` cannot be compiled for backend ``%O``"
-                    vendor.VendorName.Value
-                    expectedVendorName
+                Error.vendorMismatch vendor.VendorName.Value expectedVendorName
         seq {
             for fragment in vendor.Fragments do
                 match fragment with

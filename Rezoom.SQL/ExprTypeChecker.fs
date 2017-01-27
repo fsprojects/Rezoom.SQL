@@ -124,7 +124,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
 
     member this.FunctionInvocation(source : SourceInfo, func : FunctionInvocationExpr) =
         match scope.Model.Builtin.Functions.TryFind(func.FunctionName) with
-        | None -> failAt source <| sprintf "No such function: ``%O``" func.FunctionName
+        | None -> failAt source <| Error.noSuchFunction func.FunctionName
         | Some funcType ->
             let args, output = cxt.Function(source, funcType, this.FunctionArguments(func.Arguments))
             {   Expr.Source = source
@@ -211,7 +211,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 let select = queryChecker.Select(select)
                 let columnCount = select.Value.Info.Columns.Count
                 if columnCount <> 1 then
-                    failAt select.Source <| sprintf "Expected 1 column for IN query, but found %d" columnCount
+                    failAt select.Source <| Error.multipleColumnsForInSelect columnCount
                 InSelect select, (input.Info.Idempotent && select.Value.Info.Idempotent)
             | InTable table ->
                 let table = this.TableInvocation(table)
@@ -299,7 +299,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
         let select = queryChecker.Select(select)
         let tbl = select.Value.Info.Table.Query
         if tbl.Columns.Count <> 1 then
-            failAt source <| sprintf "Scalar subquery must have 1 column (this one has %d)" tbl.Columns.Count
+            failAt source <| Error.multipleColumnsForScalarSubquery tbl.Columns.Count
         {   Expr.Source = source
             Value = ScalarSubqueryExpr select
             Info = tbl.Columns.[0].Expr.Info

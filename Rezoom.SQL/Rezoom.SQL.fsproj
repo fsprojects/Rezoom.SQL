@@ -52,6 +52,7 @@
   <ItemGroup>
     <Content Include="packages.config" />
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Error.fs" />
     <Compile Include="SourceTypes.fs" />
     <Compile Include="Name.fs" />
     <Compile Include="Utilities.fs" />
