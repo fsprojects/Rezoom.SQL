@@ -59,9 +59,21 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         | BitShiftLeft
         | BitShiftRight -> failwithf "Not supported by TSQL: %A" op
     override this.Binary(bin) =
-        match bin.Operator with
-        | Is
-        | IsNot ->
+        match bin.Operator, bin.Right.Value with
+        | Is, LiteralExpr NullLiteral
+        | IsNot, LiteralExpr NullLiteral ->
+            seq {
+                yield! this.Expr(bin.Left, FirstClassValue)
+                yield ws
+                yield text "IS"
+                yield ws
+                if bin.Operator = IsNot then
+                    yield text "NOT"
+                    yield ws
+                yield text "NULL"
+            }
+        | Is, _
+        | IsNot, _ ->
             seq {
                 if bin.Operator = IsNot then
                     yield text "NOT"
