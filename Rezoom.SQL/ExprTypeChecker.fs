@@ -128,7 +128,15 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
         | Some funcType ->
             let args, output = cxt.Function(source, funcType, this.FunctionArguments(func.Arguments))
             {   Expr.Source = source
-                Value = { FunctionName = func.FunctionName; Arguments = args } |> FunctionInvocationExpr
+                Value =
+                    if funcType.Erased then
+                        match args with
+                        | ArgumentList (None, [| arg |]) -> arg.Value
+                        | _ ->
+                            bug <| sprintf "Bug in backend: erased function ``%O`` must take a single argument"
+                                func.FunctionName
+                    else
+                        { FunctionName = func.FunctionName; Arguments = args } |> FunctionInvocationExpr
                 Info =
                     {   Type = output
                         Idempotent =

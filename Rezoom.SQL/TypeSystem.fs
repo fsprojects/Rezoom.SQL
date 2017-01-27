@@ -157,7 +157,10 @@ type FunctionType
     member __.Parameters = parameters
     member __.Returns = returns
     member __.Idempotent = idem
-    abstract member Aggregate :  FunctionArguments<'t, 'e> -> AggregateType option
+    /// Whether this function (of one argument) is erased when translated, i.e. `f(x)` becomes just `x`.
+    abstract member Erased : bool
+    default __.Erased = false
+    abstract member Aggregate : FunctionArguments<'t, 'e> -> AggregateType option
     member __.MinimumParameters =
         parameters |> Seq.sumBy (fun p -> match p.VarArg with | None -> 1 | Some v -> v.MinArgCount)
     member internal this.ValidateArgs

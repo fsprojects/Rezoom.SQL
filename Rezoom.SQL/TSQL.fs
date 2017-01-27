@@ -239,7 +239,6 @@ module TSQLFunctions =
     let functions =
         let i = integral
         let date = datetime // TODO? should we have a real date type
-        let numeric ty = ty |> constrained NumericTypeClass
         [|  // date/time functions from https://msdn.microsoft.com/en-us/library/ms186724.aspx
             func "sysdatetime" [] datetime
             func "sysdatetimeoffset" [] datetimeoffset
@@ -257,9 +256,8 @@ module TSQLFunctions =
             // no DATEDIFF because we can't represent datepart types
             // logical funcs from https://msdn.microsoft.com/en-us/library/hh213226.aspx
             func "choose" [ i; vararg (a') ] a'
-            func "iif" [ boolean; a'; a' ] a'
+            // func "iif" [ boolean; a'; a' ] a' can't do this because it needs a where-clause style boolean
             // math funcs from https://msdn.microsoft.com/en-us/library/ms177516.aspx
-            func "abs" [ numeric a' ] a'
             func "acos" [ fractional ] float64
             func "asin" [ fractional ] float64
             func "atan" [ fractional ] float64
@@ -282,7 +280,7 @@ module TSQLFunctions =
             func "sqrt" [ numeric a' ] float64
             func "square" [ numeric a' ] float64
             func "tan" [ fractional ] float64
-        |] |> mapBy (fun f -> f.FunctionName)
+        |] |> DefaultFunctions.extendedBy
 
 type TSQLBackend() =
     static let initialModel =

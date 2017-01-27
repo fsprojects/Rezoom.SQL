@@ -23,6 +23,9 @@ let constrained ty arg =
             | Error e -> bug e
     }
 
+let numeric ty = ty |> constrained NumericTypeClass
+let stringish ty = ty |> constrained StringishTypeClass
+
 let inline private concrete ty =
     {   TypeConstraint = ty
         TypeVariable = None
@@ -31,7 +34,7 @@ let inline private concrete ty =
         VarArg = None
     }
 
-let any = concrete AnyTypeClass
+let any = concrete ScalarTypeClass
 let boolean = concrete BooleanType
 let string = concrete StringType
 let num = concrete NumericTypeClass
@@ -68,20 +71,23 @@ let infect arg =
         InfectNullable = true
     }
 
-type Procedure(name, args, ret) =
-    inherit FunctionType(name, args, ret, idem = false)
+type NonAggregateFunction(name, args, ret, idem) =
+    inherit FunctionType(name, args, ret, idem)
     override __.Aggregate(_) = None
 
-type Function(name, args, ret) =
-    inherit FunctionType(name, args, ret, idem = true)
-    override __.Aggregate(_) = None
-
-type Aggregate(name, args, ret, allowWildcard, allowDistinct) =
+type AggregateFunction(name, args, ret, allowWildcard, allowDistinct) =
     inherit FunctionType(name, args, ret, idem = true)
     override __.Aggregate(_) =
         Some { AllowWildcard = allowWildcard; AllowDistinct = allowWildcard }
 
-let inline proc name args ret = Procedure(Name(name), List.toArray args, ret) :> FunctionType
-let inline func name args ret = Function(Name(name), List.toArray args, ret) :> FunctionType
-let inline aggregate name args ret = Aggregate(Name(name), List.toArray args, ret, false, true) :> FunctionType
-let inline aggregateW name args ret = Aggregate(Name(name), List.toArray args, ret, true, true) :> FunctionType
+let inline proc name args ret = NonAggregateFunction(Name(name), List.toArray args, ret, idem = true) :> FunctionType
+let inline func name args ret = NonAggregateFunction(Name(name), List.toArray args, ret, idem = false) :> FunctionType
+let inline aggregate name args ret = AggregateFunction(Name(name), List.toArray args, ret, false, true) :> FunctionType
+let inline aggregateW name args ret = AggregateFunction(Name(name), List.toArray args, ret, true, true) :> FunctionType
+
+type ErasedFunction(name, arg, ret, idem) =
+    inherit FunctionType(name, [| arg |], ret, idem)
+    override __.Erased = true
+    override __.Aggregate(_) = None
+
+let inline erased name arg ret = ErasedFunction(Name(name), arg, ret, idem = true) :> FunctionType

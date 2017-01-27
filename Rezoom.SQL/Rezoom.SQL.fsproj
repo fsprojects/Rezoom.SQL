@@ -76,6 +76,7 @@
     <Compile Include="DefaultLiteralTranslator.fs" />
     <Compile Include="DefaultExprTranslator.fs" />
     <Compile Include="DefaultStatementTranslator.fs" />
+    <Compile Include="DefaultFunctions.fs" />
     <Compile Include="DefaultBackend.fs" />
     <Compile Include="SQLite.fs" />
     <Compile Include="TSQL.fs" />
