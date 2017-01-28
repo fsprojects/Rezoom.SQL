@@ -23,48 +23,41 @@ type private NullabilityVariable(id : TypeVariableId) =
     member __.ForceNullable() =
         currentNullable <- NullableKnown true
 
-type private TypeInferenceContext() =
+type private VariableTracker<'var>(init : TypeVariableId -> 'var, id : 'var -> TypeVariableId) =
     let variablesByParameter = Dictionary<BindParameter, TypeVariableId>()
-    let variablesById = ResizeArray<TypeInferenceVariable>()
-    let nullsByParameter = Dictionary<BindParameter, TypeVariableId>()
-    let nullsById = ResizeArray<NullabilityVariable>()
-    let deferredNullables = ResizeArray()
-    let getTypeVar id =
+    let variablesById = ResizeArray<'var>()
+    let getVar id =
         if id < 0 || id >= variablesById.Count then bug "Type variable not found"
         variablesById.[id]
-    let getNullVar id =
-        if id < 0 || id >= nullsById.Count then bug "Nullability variable not found"
-        nullsById.[id]
-    let nextTypeVar() =
-        let var = TypeInferenceVariable(variablesById.Count)
+    member this.BoundParameters = variablesByParameter.Keys
+    member this.NextVar() =
+        let var = init variablesById.Count
         variablesById.Add(var)
         var
-    let nextNullVar() =
-        let var = NullabilityVariable(nullsById.Count)
-        nullsById.Add(var)
+    member this.GetVar(id : TypeVariableId) = getVar id
+    member this.BindVar(bindParameter : BindParameter) =
+        let succ, v = variablesByParameter.TryGetValue(bindParameter)
+        if succ then getVar v else
+        let var = this.NextVar()
+        variablesByParameter.[bindParameter] <- id var
         var
+    member this.Replace(id : TypeVariableId, var : 'var) =
+        variablesById.[id] <- var
+
+type private TypeInferenceContext() =
+    let typeVariables = VariableTracker<TypeInferenceVariable>(TypeInferenceVariable, fun v -> v.Id)
+    let nullVariables= VariableTracker<NullabilityVariable>(NullabilityVariable, fun v -> v.Id)
+    let deferredNullables = ResizeArray()
     static member UnifyColumnTypes(left : ColumnType, right : ColumnType) =
         result {
             let nullable = max left.Nullable right.Nullable
             let! ty = left.Type.Unify(right.Type)
             return { Nullable = nullable; Type = ty }
         }
-    member this.AnonymousVariable() = nextTypeVar().InferredType
-    member private this.ParameterTypeVariable(bindParameter) =
-        let succ, v = variablesByParameter.TryGetValue(bindParameter)
-        if succ then getTypeVar v else
-        let var = nextTypeVar()
-        variablesByParameter.[bindParameter] <- var.Id
-        var
+    member this.AnonymousVariable() = typeVariables.NextVar().InferredType
     member private this.Variable(bindParameter) =
-        let inferredNull =
-            let succ, v = nullsByParameter.TryGetValue(bindParameter)
-            if succ then getNullVar v else
-            let var = nextNullVar()
-            nullsByParameter.[bindParameter] <- var.Id
-            var
-        {   InferredType = this.ParameterTypeVariable(bindParameter).InferredType
-            InferredNullable = inferredNull.InferredNullable
+        {   InferredType = typeVariables.BindVar(bindParameter).InferredType
+            InferredNullable = nullVariables.BindVar(bindParameter).InferredNullable
         }
     member this.Unify(source, left, right) =
         match left, right with
@@ -72,19 +65,19 @@ type private TypeInferenceContext() =
             lk.Unify(rk) |> resultAt source |> TypeKnown
         | TypeVariable varId, TypeKnown knownType
         | TypeKnown knownType, TypeVariable varId ->
-            let tvar = getTypeVar varId
+            let tvar = typeVariables.GetVar(varId)
             tvar.Unify(source, knownType)
             tvar.InferredType
         | TypeVariable leftId, TypeVariable rightId ->
-            let left, right = getTypeVar leftId, getTypeVar rightId
+            let left, right = typeVariables.GetVar(leftId), typeVariables.GetVar(rightId)
             left.Unify(source, right.CurrentType)
-            variablesById.[rightId] <- left
+            typeVariables.Replace(rightId, left)
             left.InferredType
     member this.UnifyList(source, elem, list) =
-        let var = this.ParameterTypeVariable(list)
+        let var = typeVariables.BindVar(list)
         match elem with
         | TypeVariable varId ->
-            var.Unify(source, ListType (getTypeVar varId).CurrentType)
+            var.Unify(source, ListType (typeVariables.GetVar(varId)).CurrentType)
         | TypeKnown knownType ->
             var.Unify(source, ListType knownType)
     member this.ForceNullable(source, nullable : InferredNullable) =
@@ -94,7 +87,7 @@ type private TypeInferenceContext() =
         | NullableKnown true -> ()
         | NullableKnown false ->
             failAt source Error.exprMustBeNullable
-        | NullableVariable id -> (getNullVar id).ForceNullable()
+        | NullableVariable id -> nullVariables.GetVar(id).ForceNullable()
         | NullableEither _ ->
             let rec allVars v =
                 match v with
@@ -109,24 +102,24 @@ type private TypeInferenceContext() =
         if deferredNullables.Count > 0 then
             let triviallySatisfied r =
                 let t = NullableKnown true
-                r |> Seq.exists (fun v -> (getNullVar v).CurrentNullable = t)
+                r |> Seq.exists (fun v -> nullVariables.GetVar(v).CurrentNullable = t)
             ignore <| deferredNullables.RemoveAll(fun r -> triviallySatisfied r) // remove trivially satisfied reqs
             for vs in deferredNullables do // remaining vars must all be forced null
                 for v in vs do
-                    (getNullVar v).ForceNullable()
+                    nullVariables.GetVar(v).ForceNullable()
             deferredNullables.Clear()
         match nullable with
         | NullableUnknown -> false
         | NullableDueToJoin _ -> true
         | NullableKnown t -> t
-        | NullableVariable id -> this.ResolveNullable((getNullVar id).CurrentNullable)
+        | NullableVariable id -> this.ResolveNullable(nullVariables.GetVar(id).CurrentNullable)
         | NullableEither (l, r) -> this.ResolveNullable(l) || this.ResolveNullable(r)
     member this.Concrete(inferred) =
         {   Nullable = this.ResolveNullable(inferred.InferredNullable)
             Type =
                 match inferred.InferredType with
                 | TypeKnown t -> t
-                | TypeVariable id -> (getTypeVar id).CurrentType
+                | TypeVariable id -> typeVariables.GetVar(id).CurrentType
         }
     interface ITypeInferenceContext with
         member this.AnonymousVariable() = this.AnonymousVariable()
@@ -135,7 +128,7 @@ type private TypeInferenceContext() =
         member this.Unify(source, left, right) = this.Unify(source, left, right)
         member this.ForceNullable(source, nullable) = this.ForceNullable(source, nullable)
         member this.Concrete(inferred) = this.Concrete(inferred)
-        member __.Parameters = variablesByParameter.Keys :> _ seq
+        member __.Parameters = typeVariables.BoundParameters :> _ seq
  
 [<AutoOpen>]
 module private TypeInferenceExtensions =
