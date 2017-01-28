@@ -18,7 +18,7 @@ type DefaultBackend() =
             DefaultSchema = main
             TemporarySchema = temp
             Builtin =
-                {   Functions = Map.empty
+                {   Functions = DefaultFunctions.extendedBy [||]
                 }
         }
 
