@@ -55,6 +55,7 @@
     <Compile Include="Environment.fs" />
     <Compile Include="TestModel.fs" />
     <Compile Include="TestTypeInference.fs" />
+    <Compile Include="TestNullInference.fs" />
     <Compile Include="TestVendorStatements.fs" />
     <Compile Include="TestNavProperties.fs" />
     <Compile Include="TestRoundTrip.fs" />

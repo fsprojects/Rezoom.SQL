@@ -36,7 +36,7 @@ type InferredNullable =
         | x, (NullableUnknown | NullableKnown false) -> x
         | NullableKnown true as t, _ -> t
         | _, (NullableKnown true as t) -> t
-        | NullableVariable x as v, NullableVariable y -> v
+        | NullableVariable x as v, NullableVariable y when x = y -> v
         | l, r -> NullableEither(l, r)
     member this.Simplify() =
         match this with
@@ -145,12 +145,12 @@ type InfVendorStmt = VendorStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfTotalStmt = TotalStmt<InferredType ObjectInfo, InferredType ExprInfo>
 
 type ITypeInferenceContext =
-    abstract member AnonymousVariable : unit -> InferredType
+    abstract member AnonymousVariable : unit -> CoreInferredType
     abstract member Variable : BindParameter -> InferredType
     /// Unify the two types (ensure they are compatible and add constraints)
     /// and produce the most specific type.
-    abstract member Unify : SourceInfo * InferredType * InferredType -> InferredType
-    abstract member UnifyList : SourceInfo * elem : InferredType * list : BindParameter -> unit
+    abstract member Unify : SourceInfo * CoreInferredType * CoreInferredType -> CoreInferredType
+    abstract member UnifyList : SourceInfo * elem : CoreInferredType * list : BindParameter -> unit
     abstract member ForceNullable : SourceInfo * InferredNullable -> unit
     abstract member Concrete : InferredType -> ColumnType
     abstract member Parameters : BindParameter seq

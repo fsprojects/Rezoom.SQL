@@ -217,7 +217,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
                 let table = this.TableInvocation(table)
                 InTable table, input.Info.Idempotent
             | InParameter par ->
-                cxt.UnifyList(inex.Set.Source, input.Info.Type, par)
+                cxt.UnifyList(inex.Set.Source, input.Info.Type.InferredType, par)
                 InParameter par, true
         {   Expr.Source = source
             Value =
