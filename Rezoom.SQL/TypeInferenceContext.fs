@@ -82,7 +82,7 @@ type private TypeInferenceContext() =
         | NullableUnknown
         | NullableKnown true -> ()
         | NullableKnown false ->
-            failAt source "Expression is not nullable; but is required to be in this context"
+            failAt source Error.exprMustBeNullable
         | NullableVariable id -> (getVar id).ForceNullable()
         | NullableEither _ ->
             let rec allVars v =

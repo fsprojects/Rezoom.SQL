@@ -78,3 +78,10 @@ let ``aggregates with group by must not contain non-grouped column references`` 
             from Users
             group by Id
         """
+
+[<Test>]
+let ``coalesce forces first arg nullable`` () =
+    expectError Error.exprMustBeNullable
+        """
+            select coalesce(1, null)
+        """
