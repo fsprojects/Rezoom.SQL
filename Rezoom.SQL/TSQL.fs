@@ -226,7 +226,7 @@ type TSQLMigrationBackend(conn : DbConnection) =
                     JOIN sys.schemas s ON t.schema_id = s.schema_id
                     WHERE s.name = 'dbo' and t.name = '__RZSQL_MIGRATIONS'
                 )
-                CREATE TABLE IF NOT EXISTS __RZSQL_MIGRATIONS
+                CREATE TABLE __RZSQL_MIGRATIONS
                     ( MajorVersion int
                     , Name varchar(256)
                     , UNIQUE (MajorVersion, Name)
