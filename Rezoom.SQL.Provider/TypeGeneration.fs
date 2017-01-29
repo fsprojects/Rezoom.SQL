@@ -211,6 +211,16 @@ let generateSQLType (generate : GenerateType) (sql : string) =
             [ rowType1; rowType2; rowType3 ]
             , commandCtor.GetMethod("Command3").MakeGenericMethod(lst rowType1, lst rowType2, lst rowType3)
             , cmd <| typedefof<ResultSets<_, _, _>>.MakeGenericType(lst rowType1, lst rowType2, lst rowType3)
+        | [ resultSet1; resultSet2; resultSet3; resultSet4 ] ->
+            let rowType1 = genRowType "Row1" resultSet1
+            let rowType2 = genRowType "Row2" resultSet2
+            let rowType3 = genRowType "Row3" resultSet3
+            let rowType4 = genRowType "Row4" resultSet4
+            [ rowType1; rowType2; rowType3; rowType4 ]
+            , commandCtor.GetMethod("Command3").MakeGenericMethod
+                (lst rowType1, lst rowType2, lst rowType3, lst rowType4)
+            , cmd <|
+                typedefof<ResultSets<_, _, _>>.MakeGenericType(lst rowType1, lst rowType2, lst rowType3, lst rowType4)
         | sets ->
             failwithf "Too many (%d) result sets from command." (List.length sets)
     let provided =

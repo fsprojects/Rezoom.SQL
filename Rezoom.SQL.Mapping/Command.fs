@@ -94,6 +94,15 @@ type ResultSets<'a, 'b, 'c>(a : 'a, b : 'b, c : 'c) =
     override __.AllResultSets =
         Seq.ofArray [| box a; box b; box c |]
 
+type ResultSets<'a, 'b, 'c, 'd>(a : 'a, b : 'b, c : 'c, d : 'd) =
+    inherit ResultSets()
+    member __.ResultSet1 = a
+    member __.ResultSet2 = b
+    member __.ResultSet3 = c
+    member __.ResultSet4 = d
+    override __.AllResultSets =
+        Seq.ofArray [| box a; box b; box c; box d |]
+
 /// A command which can be expected to produce `'output` when run.
 [<AbstractClass>]
 type Command<'output>(data, parameters) =
@@ -180,12 +189,34 @@ type private Command3<'a, 'b, 'c>(data, parameters) =
         upcast Command3({ data with ConnectionName = connectionName}, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor3<'a, 'b, 'c>()
 
+type private ResultSetProcessor4<'a, 'b, 'c, 'd>() =
+    inherit ResultSetProcessor<ResultSets<'a, 'b, 'c, 'd>>()
+    let aReader = ReaderTemplate<'a>.Template().CreateReader()
+    let bReader = ReaderTemplate<'b>.Template().CreateReader()
+    let cReader = ReaderTemplate<'c>.Template().CreateReader()
+    let dReader = ReaderTemplate<'d>.Template().CreateReader()
+    let proc = MultiResultSetProcessor([ aReader; bReader; cReader; dReader ])
+    let result =
+        lazy ResultSets<'a, 'b, 'c, 'd>
+            (aReader.ToEntity(), bReader.ToEntity(), cReader.ToEntity(), dReader.ToEntity())
+    override __.BeginResultSet(dataReader) = proc.BeginResultSet(dataReader)
+    override __.ProcessRow() = proc.ProcessRow()
+    override __.GetResult() = result.Value
+
+type private Command4<'a, 'b, 'c, 'd>(data, parameters) =
+    inherit Command<ResultSets<'a, 'b, 'c, 'd>>(data, parameters)
+    override __.WithConnectionName(connectionName) =
+        upcast Command4({ data with ConnectionName = connectionName}, parameters)
+    override __.ResultSetProcessor() = upcast ResultSetProcessor4<'a, 'b, 'c, 'd>()
+
 type CommandConstructor() =
     static member Command0(data, parameters) =
-        new Command0(data, parameters) :> _ Command
+        Command0(data, parameters) :> _ Command
     static member Command1<'a>(data, parameters) =
-        new Command1<'a>(data, parameters) :> _ Command
+        Command1<'a>(data, parameters) :> _ Command
     static member Command2<'a, 'b>(data, parameters) =
-        new Command2<'a, 'b>(data, parameters) :> _ Command
+        Command2<'a, 'b>(data, parameters) :> _ Command
     static member Command3<'a, 'b, 'c>(data, parameters) =
-        new Command3<'a, 'b, 'c>(data, parameters) :> _ Command
+        Command3<'a, 'b, 'c>(data, parameters) :> _ Command
+    static member Command4<'a, 'b, 'c, 'd>(data, parameters) =
+        Command4<'a, 'b, 'c, 'd>(data, parameters) :> _ Command
