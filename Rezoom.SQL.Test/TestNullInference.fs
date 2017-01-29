@@ -67,3 +67,21 @@ let ``coalesce(a + nullable(b), 1)`` () =
         [   "a", "<numeric>"
             "b", "<numeric>?"
         ]
+
+[<Test>]
+let ``case nullable`` () =
+    expect
+        """
+            select case when 1=1 then 1 else null end as c
+        """
+        [    "c", "<numeric>?"
+        ] []
+
+[<Test>]
+let ``case not nullable`` () =
+    expect
+        """
+            select case when null then 1 else 0 end as c
+        """
+        [   "c", "<numeric>"
+        ] []
