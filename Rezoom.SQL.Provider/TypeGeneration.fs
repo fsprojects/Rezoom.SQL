@@ -220,7 +220,8 @@ let generateSQLType (generate : GenerateType) (sql : string) =
             , commandCtor.GetMethod("Command3").MakeGenericMethod
                 (lst rowType1, lst rowType2, lst rowType3, lst rowType4)
             , cmd <|
-                typedefof<ResultSets<_, _, _>>.MakeGenericType(lst rowType1, lst rowType2, lst rowType3, lst rowType4)
+                typedefof<ResultSets<_, _, _, _>>.MakeGenericType
+                    (lst rowType1, lst rowType2, lst rowType3, lst rowType4)
         | sets ->
             failwithf "Too many (%d) result sets from command." (List.length sets)
     let provided =
