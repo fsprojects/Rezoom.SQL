@@ -250,7 +250,7 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
             seq {
                 for _, thenExpr in case.Cases -> thenExpr.Info.Type
                 match case.Else.Value with
-                | None -> ()
+                | None -> yield InferredType.OfLiteral(NullLiteral)
                 | Some els -> yield els.Info.Type
             } |> fun s -> cxt.Unify(source, s)
         cxt.Unify(source,

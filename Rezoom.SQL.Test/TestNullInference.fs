@@ -85,3 +85,14 @@ let ``case not nullable`` () =
         """
         [   "c", "<numeric>"
         ] []
+
+[<Test>]
+let ``case not handled means null`` () =
+    // TODO: TSQL backend should deny this syntax altogether
+    expect
+        """
+            select case when 1=0 then 1 end as c
+        """
+        [
+            "c", "<numeric>?"
+        ] []
