@@ -217,7 +217,7 @@ let generateSQLType (generate : GenerateType) (sql : string) =
             let rowType3 = genRowType "Row3" resultSet3
             let rowType4 = genRowType "Row4" resultSet4
             [ rowType1; rowType2; rowType3; rowType4 ]
-            , commandCtor.GetMethod("Command3").MakeGenericMethod
+            , commandCtor.GetMethod("Command4").MakeGenericMethod
                 (lst rowType1, lst rowType2, lst rowType3, lst rowType4)
             , cmd <|
                 typedefof<ResultSets<_, _, _, _>>.MakeGenericType
