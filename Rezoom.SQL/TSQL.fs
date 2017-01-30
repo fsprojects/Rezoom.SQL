@@ -236,50 +236,120 @@ type TSQLMigrationBackend(conn : DbConnection) =
 
 module TSQLFunctions =
     open Rezoom.SQL.FunctionDeclarations
+    let private noArgProc name ret = // TODO: translate to NAME
+        proc name [] ret
+    let private atAtProc name ret = // TODO: translate to @@name
+        proc name [] ret
+    let private datePartFunc name otherArgs ret = // TODO: translate to f(datepart, ...)
+        func name (string :: otherArgs) ret
+    let private i = integral
+    let private ii = infect i
+    let private date = datetime
     let functions =
-        let i = integral
-        let date = datetime // TODO? should we have a real date type
-        [|  // date/time functions from https://msdn.microsoft.com/en-us/library/ms186724.aspx
+        [|  atAtProc "datefirst" int8
+            atAtProc "dbts" binary
+            atAtProc "langid" int8
+            atAtProc "language" string
+            atAtProc "lock_timeout" int32
+            atAtProc "max_connections" int32
+            atAtProc "max_precision" int8
+            atAtProc "nestlevel" int32
+            atAtProc "options" int32
+            atAtProc "remserver" string
+            atAtProc "servername" string
+            atAtProc "servicename" string
+            atAtProc "spid" int8
+            atAtProc "textsize" int32
+            atAtProc "version" string
+            atAtProc "cursor_rows" int32
+            atAtProc "fetch_status" int32
+            // date/time functions from https://msdn.microsoft.com/en-us/library/ms186724.aspx
+            noArgProc "current_timestamp" datetime
             func "sysdatetime" [] datetime
             func "sysdatetimeoffset" [] datetimeoffset
             func "sysutcdatetime" [] datetime
-            // no DATENAME, DATEPART because we can't represent datepart types
-            func "day" [ datetime ] i
-            func "month" [ datetime ] i
-            func "year" [ datetime ] i
-            func "datefromparts" [ i; i; i ] date
-            func "datetime2fromparts" [ i; i; i; i; i; i; i; i ] datetime
-            func "datetimefromparts" [ i; i; i; i; i; i; i ] datetime
-            func "datetimeoffsetfromparts"
-                [ i; i; i; i; i; i; i; i; i; i ] datetimeoffset
-            func "smalldatetimefromparts" [ i; i; i; i; i ] datetime
-            // no DATEDIFF because we can't represent datepart types
-            // logical funcs from https://msdn.microsoft.com/en-us/library/hh213226.aspx
-            func "choose" [ i; vararg (a') ] a'
-            // func "iif" [ boolean; a'; a' ] a' can't do this because it needs a where-clause style boolean
+            func "getdate" [] datetime
+            func "getutcdate" [] datetime
+            datePartFunc "datename" [ infect datetime ] string
+            datePartFunc "dateadd" [ infect datetime ] string
+            datePartFunc "datediff" [ infect datetime; infect datetime ] int32
+            datePartFunc "datediff_big" [ infect datetime; infect datetime ] int64
+            datePartFunc "dateadd" [ infect i; infect datetime ] datetime
+            func "day" [ infect datetime ] i
+            func "month" [ infect datetime ] i
+            func "year" [ infect datetime ] i
+            func "datefromparts" [ ii; ii; ii ] date
+            func "datetime2fromparts" [ ii; ii; ii; ii; ii; ii; ii; ii ] datetime
+            func "datetimefromparts" [ ii; ii; ii; ii; ii; ii; ii ] datetime
+            func "datetimeoffsetfromparts" [ ii; ii; ii; ii; ii; ii; ii; ii; ii; ii ] datetimeoffset
+            func "smalldatetimefromparts" [ ii; ii; ii; ii; ii ] datetime
             // math funcs from https://msdn.microsoft.com/en-us/library/ms177516.aspx
-            func "acos" [ fractional ] float64
-            func "asin" [ fractional ] float64
-            func "atan" [ fractional ] float64
-            func "atn2" [ fractional; fractional ] float64
-            func "ceiling" [ numeric a' ] a'
-            func "cos" [ fractional] float64
-            func "cot" [ fractional ] float64
-            func "degrees" [ numeric a' ] a'
-            func "exp" [ fractional ] float64
-            func "floor" [ numeric a' ] a'
-            func "log" [ num; optional i ] float64
-            func "log10" [ num ] float64
+            func "acos" [ infect fractional ] float64
+            func "asin" [ infect fractional ] float64
+            func "atan" [ infect fractional ] float64
+            func "atn2" [ infect fractional; infect fractional ] float64
+            func "ceiling" [ infect (numeric a') ] a'
+            func "cos" [ infect fractional] float64
+            func "cot" [ infect fractional ] float64
+            func "degrees" [ infect (numeric a') ] a'
+            func "exp" [ infect fractional ] float64
+            func "floor" [ infect (numeric a') ] a'
+            func "log" [ infect num; infect (optional i) ] float64
+            func "log10" [ infect num ] float64
             func "pi" [] float64
-            func "power" [ numeric a'; num ] a'
-            func "radians" [ numeric a' ] a'
-            func "rand" [ optional i ] float64
-            func "round" [ numeric a'; i ] a'
-            func "sign" [ numeric a' ] a'
-            func "sin" [ fractional ] float64
-            func "sqrt" [ numeric a' ] float64
-            func "square" [ numeric a' ] float64
-            func "tan" [ fractional ] float64
+            func "power" [ infect (numeric a'); infect num ] a'
+            func "radians" [ infect (numeric a') ] a'
+            func "rand" [ infect (optional i) ] float64
+            func "round" [ infect (numeric a'); infect i ] a'
+            func "sign" [ infect (numeric a') ] a'
+            func "sin" [ infect fractional ] float64
+            func "sqrt" [ infect (numeric a') ] float64
+            func "square" [ infect (numeric a') ] float64
+            func "tan" [ infect fractional ] float64
+            // JSON functions from https://msdn.microsoft.com/en-us/library/dn921900.aspx
+            func "isjson" [ infect string ] boolean
+            func "json_value" [ infect string; infect string ] string
+            func "json_query" [ infect string; infect string ] string
+            func "json_modify" [ infect string; infect string; infect string ] string
+            // logical funcs from https://msdn.microsoft.com/en-us/library/hh213226.aspx
+            func "choose" [ infect i; vararg (infect a') ] a'
+            func "iif" [ boolean; infect a'; infect a' ] a'
+            // skip over "metadata functions" (for now) from https://msdn.microsoft.com/en-us/library/ms187812.aspx
+            // ...
+            // also "security functions" (for now) from https://msdn.microsoft.com/en-us/library/ms186236.aspx
+            // ...
+            // so onto string functions from https://msdn.microsoft.com/en-us/library/ms181984.aspx
+            func "ascii" [ infect string ] int32
+            func "concat" [ string; string; vararg string ] string
+            func "format" [ infect scalar; infect string; optional (infect string) ] string
+            func "lower" [ infect string ] string
+            func "upper" [ infect string ] string
+            func "patindex" [ infect string; infect string ] integral
+            func "replicate" [ infect string; infect integral ] string
+            func "rtrim" [ infect string ] string
+            func "ltrim" [ infect string ] string
+            func "str" [ infect fractional; optional integral; optional integral ] string
+            // func "string_split" [ infect string; infect string ] string_table // wait till we can do TVFs
+            func "translate" [ infect string; infect string; infect string ] string
+            func "char" [ infect integral ] string
+            func "concat_ws" [ infect string; scalar; scalar; vararg scalar ] string
+            func "left" [ infect string; infect integral ] string
+            func "right" [ infect string; infect integral ] string
+            func "quotename" [ infect string; optional (infect string) ] string
+            func "reverse" [ infect string ] string
+            func "soundex" [ infect string ] string
+            // func "string_agg" // wtf, how do we support this? it has its own special clause type...
+            func "stuff" [ infect (a' |> constrained StringishTypeClass); infect integral; infect integral; string ] a'
+            func "trim" [ infect string ] string // come on TSQL, "characters from"? cut it out...
+            func "charindex" [ infect string; infect string ; optional integral ] integral
+            func "difference" [ infect string; infect string ] int32
+            func "len" [ infect string ] integral
+            func "nchar" [ infect integral ] string
+            func "replace" [ infect string; infect string; infect string ] string
+            func "space" [ infect integral ] string
+            func "string_escape" [ infect string; infect string ] string // TODO: enforce literal on 2nd arg?
+            func "substring" [ infect a' |> constrained StringishTypeClass; infect integral; infect integral ] a'
+            func "unicode" [ infect string ] int32
         |] |> DefaultFunctions.extendedBy
 
 type TSQLBackend() =
