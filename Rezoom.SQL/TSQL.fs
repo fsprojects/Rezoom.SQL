@@ -214,6 +214,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield ws
             yield text "ROWS ONLY"
         }
+    override this.AutoIncrement = "IDENTITY(1,1)"
 
 type TSQLMigrationBackend(conn : DbConnection) =
     inherit DefaultMigrationBackend(conn)

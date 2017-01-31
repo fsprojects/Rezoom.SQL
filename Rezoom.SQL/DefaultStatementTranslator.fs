@@ -295,6 +295,8 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                     yield ws
                     yield text (if initially then "DEFERRED" else "IMMEDIATE")
         }
+    abstract member AutoIncrement : string
+    default __.AutoIncrement = "AUTOINCREMENT"
     override this.ColumnConstraint(constr) =
         seq {
             yield text "CONSTRAINT"
@@ -309,7 +311,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield this.OrderDirection(pk.Order)
                 if pk.AutoIncrement then
                     yield ws
-                    yield text "AUTOINCREMENT"
+                    yield text this.AutoIncrement
             | NotNullConstraint ->
                 yield text "NOT NULL"
             | UniqueConstraint ->
