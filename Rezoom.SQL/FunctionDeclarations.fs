@@ -66,6 +66,11 @@ let vararg arg =
         VarArg = Some { MinArgCount = 0; MaxArgCount = None }
     }
 
+let varargN count arg =
+    { arg with
+        VarArg = Some { MinArgCount = 0; MaxArgCount = Some count }
+    }
+
 let infect arg =
     { arg with
         InfectNullable = true

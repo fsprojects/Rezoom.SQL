@@ -38,7 +38,7 @@ type private SQLiteStatement(indexer : IParameterIndexer) as this =
     override __.Expr = upcast expr
     override __.ColumnsNullableByDefault = true
 
-module SQLiteFunctions =
+module private SQLiteFunctions =
     open Rezoom.SQL.FunctionDeclarations
     let private minmax name =
         { new FunctionType(Name(name), [| infect a'; vararg (infect a') |], a', idem = true) with

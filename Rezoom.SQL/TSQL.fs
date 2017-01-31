@@ -9,7 +9,7 @@ open Rezoom.SQL.Mapping
 open Rezoom.SQL.BackendUtilities
 open Rezoom.SQL.Translators
 
-module TSQLFunctions =
+module private TSQLFunctions =
     open Rezoom.SQL.FunctionDeclarations
     type CustomTranslator = ExprTranslator -> TFunctionInvocationExpr -> Fragments
     let private noArgProc name ret =
@@ -105,6 +105,9 @@ module TSQLFunctions =
             atAtProc "version" string
             atAtProc "cursor_rows" int32
             atAtProc "fetch_status" int32
+            atAtProc "identity" i
+            // identity
+            proc "scope_identity" [] i
             // date/time functions from https://msdn.microsoft.com/en-us/library/ms186724.aspx
             noArgProc "current_timestamp" datetime
             proc "sysdatetime" [] datetime
@@ -170,7 +173,7 @@ module TSQLFunctions =
             func "replicate" [ infect string; infect integral ] string
             func "rtrim" [ infect string ] string
             func "ltrim" [ infect string ] string
-            func "str" [ infect fractional; optional integral; optional integral ] string
+            func "str" [ infect fractional; varargN 2 integral ] string
             // func "string_split" [ infect string; infect string ] string_table // wait till we can do TVFs
             func "translate" [ infect string; infect string; infect string ] string
             func "char" [ infect integral ] string
