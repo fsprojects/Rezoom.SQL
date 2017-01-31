@@ -248,7 +248,21 @@ module TSQLFunctions =
     let private ii = infect i
     let private date = datetime
     let functions =
-        [|  atAtProc "datefirst" int8
+        [|  // aggregate functions
+            aggregate "avg" [ numeric a' ] (nullable a')
+            aggregateW "count" [ scalar ] int32
+            aggregateW "count_big" [ scalar ] int64
+            aggregate "grouping" [ scalar ] int8
+            aggregate "grouping_id" [ vararg scalar ] int32
+            aggregate "max" [ a' ] (nullable a')
+            aggregate "min" [ a' ] (nullable a')
+            aggregate "sum" [ numeric a' ] a'
+            aggregate "stdev" [ numeric scalar ] (nullable float64)
+            aggregate "stdevp" [ numeric scalar ] (nullable float64)
+            aggregate "var" [ numeric scalar ] (nullable float64)
+            aggregate "varp" [ numeric scalar ] (nullable float64)
+            // @@FUNCTIONNAME builtins
+            atAtProc "datefirst" int8
             atAtProc "dbts" binary
             atAtProc "langid" int8
             atAtProc "language" string
@@ -267,11 +281,11 @@ module TSQLFunctions =
             atAtProc "fetch_status" int32
             // date/time functions from https://msdn.microsoft.com/en-us/library/ms186724.aspx
             noArgProc "current_timestamp" datetime
-            func "sysdatetime" [] datetime
-            func "sysdatetimeoffset" [] datetimeoffset
-            func "sysutcdatetime" [] datetime
-            func "getdate" [] datetime
-            func "getutcdate" [] datetime
+            proc "sysdatetime" [] datetime
+            proc "sysdatetimeoffset" [] datetimeoffset
+            proc "sysutcdatetime" [] datetime
+            proc "getdate" [] datetime
+            proc "getutcdate" [] datetime
             datePartFunc "datename" [ infect datetime ] string
             datePartFunc "dateadd" [ infect datetime ] string
             datePartFunc "datediff" [ infect datetime; infect datetime ] int32
@@ -352,6 +366,7 @@ module TSQLFunctions =
             func "string_escape" [ infect string; infect string ] string // TODO: enforce literal on 2nd arg?
             func "substring" [ infect a' |> constrained StringishTypeClass; infect integral; infect integral ] a'
             func "unicode" [ infect string ] int32
+            // missing: system functions, system statistical functions, text and image functions
         |] |> DefaultFunctions.extendedBy
 
 type TSQLBackend() =

@@ -93,7 +93,7 @@ module SQLiteFunctions =
             func "zeroblob" [ integral ] binary
 
             // aggregate functions from https://www.sqlite.org/lang_aggfunc.html
-            aggregate "avg" [ numeric a' ] float64
+            aggregate "avg" [ numeric a' ] (nullable float64)
             aggregateW "count" [ scalar ] int64
             aggregate "group_concat" [ infect string; optional string ] string
             aggregate "sum" [ numeric a' ] a'
