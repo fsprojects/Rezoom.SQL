@@ -32,3 +32,14 @@ let ``datepart translation`` () =
         """select dateadd('day', 1, sysutcdatetime()) d"""
         """SELECT dateadd(day,1,sysutcdatetime()) AS [d];"""
 
+[<Test>]
+let ``bool to first class`` ()=
+    translate
+        """select 1 < 0 as b"""
+        """SELECT CAST((CASE WHEN (1 < 0) THEN 1 ELSE 0 END) AS BIT) AS [b];"""
+
+[<Test>]
+let ``first class to bool`` ()=
+    translate
+        """select 1 as col from Users where true"""
+        """SELECT 1 AS [col] FROM [Users] WHERE ((1)<>0);"""
