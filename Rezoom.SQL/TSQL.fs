@@ -206,6 +206,9 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
     let literal = DefaultLiteralTranslator()
     override __.Literal = upcast literal
+    override __.Name(name) =
+        "[" + name.Value.Replace("]", "]]") + "]"
+        |> text
     override __.TypeName(name) =
         (Seq.singleton << text) <|
             match name with
