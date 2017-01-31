@@ -102,7 +102,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         }
     override this.Invoke(func) =
         seq {
-            yield this.Name(func.FunctionName)
+            yield text func.FunctionName.Value
             yield text "("
             match func.Arguments with
             | ArgumentWildcard -> yield text "*"
