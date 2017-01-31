@@ -207,7 +207,7 @@ type private TSQLLiteral() =
 
 type private TSQLExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
-    let literal = DefaultLiteralTranslator()
+    let literal = TSQLLiteral()
     override __.Literal = upcast literal
     override __.Name(name) =
         "[" + name.Value.Replace("]", "]]") + "]"
