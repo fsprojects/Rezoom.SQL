@@ -35,7 +35,7 @@ module private TSQLFunctions =
         |] |> fun arr -> HashSet(arr, StringComparer.OrdinalIgnoreCase)
     let private datePartFunc name otherArgs ret =
         func name (string :: otherArgs) ret,
-            Some <| fun (stmt : ExprTranslator) (invoc : TFunctionInvocationExpr) ->
+            Some <| fun (expr : ExprTranslator) (invoc : TFunctionInvocationExpr) ->
                 seq {
                     yield text invoc.FunctionName.Value
                     yield text "("
@@ -52,10 +52,24 @@ module private TSQLFunctions =
                             failAt args.[0].Source "DATEPART argument must be a string literal"
                         for i = 1 to args.Length - 1 do
                             yield text ","
-                            yield! stmt.Expr(args.[i], FirstClassValue)
+                            yield! expr.Expr(args.[i], FirstClassValue)
                     | _ -> bug "Can't use datePartFunc with no args"
                     yield text ")"
                 }
+    let iifCustom =
+        func "iif" [ boolean; infect a'; infect a' ] a',
+            Some <| fun (expr : ExprTranslator) (invoc : TFunctionInvocationExpr) ->
+                match invoc.Arguments with
+                | ArgumentList (None, [| cond; ifTrue; ifFalse |]) ->
+                    [|  yield text "IIF("
+                        yield! expr.Expr(cond, Predicate)
+                        yield text ","
+                        yield! expr.Expr(ifTrue, FirstClassValue)
+                        yield text ","
+                        yield! expr.Expr(ifFalse, FirstClassValue)
+                        yield text ")"
+                    |] :> _ seq
+                | _ -> bug "Impossible arguments to iif"
     let private aggregate name args ret = aggregate name args ret, None
     let private aggregateW name args ret = aggregateW name args ret, None
     let private func name args ret = func name args ret, None
@@ -158,7 +172,7 @@ module private TSQLFunctions =
             func "json_modify" [ infect string; infect string; infect string ] string
             // logical funcs from https://msdn.microsoft.com/en-us/library/hh213226.aspx
             func "choose" [ infect i; vararg (infect a') ] a'
-            func "iif" [ boolean; infect a'; infect a' ] a'
+            iifCustom
             // skip over "metadata functions" (for now) from https://msdn.microsoft.com/en-us/library/ms187812.aspx
             // ...
             // also "security functions" (for now) from https://msdn.microsoft.com/en-us/library/ms186236.aspx

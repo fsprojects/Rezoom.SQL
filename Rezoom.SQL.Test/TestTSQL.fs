@@ -43,3 +43,15 @@ let ``first class to bool`` ()=
     translate
         """select 1 as col from Users where true"""
         """SELECT 1 AS [col] FROM [Users] WHERE ((1)<>0);"""
+
+[<Test>]
+let ``iif with predicate`` ()=
+    translate
+        """select IIF(1 > 0, 'a', 'b') as choice"""
+        """SELECT IIF((1 > 0),'a','b') AS [choice];"""
+
+[<Test>]
+let ``iif with first class value`` () =
+    translate
+        """select IIF(false, 'a', 'b') as choice"""
+        """SELECT IIF(((0)<>0),'a','b') AS [choice];"""
