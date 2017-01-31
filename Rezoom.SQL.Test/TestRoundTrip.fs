@@ -9,11 +9,12 @@ let roundtrip (sql : string) =
     let userModel = userModel1()
     let parsed = CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
     let indexer = { new IParameterIndexer with member __.ParameterIndex(_) = 0 }
-    let fragments = userModel.Backend.ToCommandFragments(indexer, parsed.Statements)
+    let backend = DefaultBackend() :> IBackend
+    let fragments = backend.ToCommandFragments(indexer, parsed.Statements)
     let str = CommandFragment.Stringize(fragments)
     Console.WriteLine(str)
     let parsedBack = CommandEffect.OfSQL(userModel.Model, "readback", str)
-    let fragmentsBack = userModel.Backend.ToCommandFragments(indexer, parsedBack.Statements)
+    let fragmentsBack = backend.ToCommandFragments(indexer, parsedBack.Statements)
     let strBack = CommandFragment.Stringize(fragmentsBack)
     Console.WriteLine(String('-', 80))
     Console.WriteLine(strBack)
@@ -64,7 +65,7 @@ let ``drop`` () =
 let ``create table with column list and fk`` () =
     roundtrip """
         create table Foo
-            ( bar int primary key not null
+            ( bar int primary key
             , baz float32
             , foreign key (bar, baz) references Users(Email, Name)
             );
@@ -74,7 +75,7 @@ let ``create table with column list and fk`` () =
 let ``alter table add column`` () =
     roundtrip """
         alter table UserGroupMaps
-            add Tag int not null
+            add Tag int null
     """
 
 [<Test>]

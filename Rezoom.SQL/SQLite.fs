@@ -36,6 +36,7 @@ type private SQLiteStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(Name("SQLITE"), indexer)
     let expr = SQLiteExpression(this :> StatementTranslator, indexer)
     override __.Expr = upcast expr
+    override __.ColumnsNullableByDefault = true
 
 module SQLiteFunctions =
     open Rezoom.SQL.FunctionDeclarations

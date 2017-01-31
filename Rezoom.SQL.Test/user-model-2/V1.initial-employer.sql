@@ -1,6 +1,6 @@
 create table Companies
-   ( Id int not null primary key
-   , Name string(128)
+   ( Id int primary key
+   , Name string(128) null
    );
 
 alter table Users

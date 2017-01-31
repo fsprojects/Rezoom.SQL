@@ -56,10 +56,6 @@ and SchemaTable =
         match this.Columns |> Map.tryFind col.Name with
         | Some _ -> Error <| Error.columnAlreadyExists col.Name
         | None ->
-            let hasNotNullConstraint =
-                col.Constraints
-                |> Seq.exists(
-                    function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
             let isPrimaryKey =
                 col.Constraints
                 |> Seq.exists(
@@ -69,7 +65,7 @@ and SchemaTable =
                     TableName = this.TableName
                     PrimaryKey = isPrimaryKey
                     ColumnName = col.Name
-                    ColumnType = ColumnType.OfTypeName(col.Type, not hasNotNullConstraint)
+                    ColumnType = ColumnType.OfTypeName(col.Type, col.Nullable)
                 }
             Ok { this with Columns = this.Columns |> Map.add newCol.ColumnName newCol }
     static member OfCreateDefinition(schemaName, tableName, def : CreateTableDefinition<_, _>) =
@@ -84,9 +80,6 @@ and SchemaTable =
         let tableColumns =
             seq {
                 for column in def.Columns ->
-                    let hasNotNullConstraint =
-                        column.Constraints
-                        |> Seq.exists(function | { ColumnConstraintType = NotNullConstraint _ } -> true | _ -> false)
                     let isPrimaryKey =
                         tablePkColumns.Contains(column.Name)
                         || column.Constraints |> Seq.exists(function
@@ -96,7 +89,7 @@ and SchemaTable =
                         TableName = tableName
                         PrimaryKey = isPrimaryKey
                         ColumnName = column.Name
-                        ColumnType = ColumnType.OfTypeName(column.Type, not hasNotNullConstraint)
+                        ColumnType = ColumnType.OfTypeName(column.Type, column.Nullable)
                     }
             }
         {   SchemaName = schemaName

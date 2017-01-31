@@ -1,5 +1,5 @@
 create table CompanyGroupMaps
-   ( CompanyId int not null primary key references Companies(Id)
-   , GroupId int not null primary key references Groups(Id)
+   ( CompanyId int primary key references Companies(Id)
+   , GroupId int primary key references Groups(Id)
    );
 

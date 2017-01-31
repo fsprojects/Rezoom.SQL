@@ -925,7 +925,6 @@ let private constraintType =
         ]
     %[
         %% +.primaryKeyClause -|> PrimaryKeyConstraint
-        %% kw "NOT"  -- kw "NULL" -|> NotNullConstraint
         %% kw "NULL" -|> NullableConstraint
         %% kw "UNIQUE" -|> UniqueConstraint
         %% kw "DEFAULT" -- +.defaultValue -|> DefaultConstraint

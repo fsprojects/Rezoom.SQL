@@ -304,7 +304,8 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield this.Expr.Name(constr.Name)
             yield ws
             match constr.ColumnConstraintType with
-            | NullableConstraint -> ()
+            | NullableConstraint ->
+                yield text "NULL"
             | PrimaryKeyConstraint pk ->
                 yield text "PRIMARY KEY"
                 yield ws
@@ -312,8 +313,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 if pk.AutoIncrement then
                     yield ws
                     yield text this.AutoIncrement
-            | NotNullConstraint ->
-                yield text "NOT NULL"
             | UniqueConstraint ->
                 yield text "UNIQUE"
             | DefaultConstraint expr ->
@@ -327,11 +326,15 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             | ForeignKeyConstraint fk ->
                 yield! this.ForeignKeyClause(fk)
         }
+    abstract member ColumnsNullableByDefault : bool
+    default __.ColumnsNullableByDefault = false
     override this.ColumnDefinition(col) =
         seq {
             yield this.Expr.Name(col.Name)
             yield ws
             yield! this.Expr.TypeName(col.Type)
+            if this.ColumnsNullableByDefault && not col.Nullable then
+                yield! [| ws; text "CONSTRAINT"; ws; this.Expr.Name(col.Name + "_NOTNULL"); ws; text "NOT NULL" |]
             for constr in col.Constraints do
                 yield ws
                 yield! this.ColumnConstraint(constr)

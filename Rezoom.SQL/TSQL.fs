@@ -145,6 +145,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(Name("TSQL"), indexer)
     let expr = TSQLExpression(this :> StatementTranslator, indexer)
     override __.Expr = upcast expr
+    override __.ColumnsNullableByDefault = true
     member this.SelectCoreWithTop(select : TSelectCore, top) =
         seq {
             yield text "SELECT"

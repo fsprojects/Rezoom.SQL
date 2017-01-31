@@ -380,7 +380,6 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 match constr.ColumnConstraintType with
                 | NullableConstraint -> NullableConstraint
                 | PrimaryKeyConstraint clause -> PrimaryKeyConstraint clause
-                | NotNullConstraint -> NotNullConstraint
                 | UniqueConstraint -> UniqueConstraint
                 | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
                 | CollateConstraint name -> CollateConstraint name

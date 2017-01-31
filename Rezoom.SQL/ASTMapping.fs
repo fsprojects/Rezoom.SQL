@@ -218,7 +218,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                 match constr.ColumnConstraintType with
                 | NullableConstraint -> NullableConstraint
                 | PrimaryKeyConstraint clause -> PrimaryKeyConstraint clause
-                | NotNullConstraint -> NotNullConstraint
                 | UniqueConstraint -> UniqueConstraint
                 | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
                 | CollateConstraint name -> CollateConstraint name

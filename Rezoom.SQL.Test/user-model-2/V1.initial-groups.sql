@@ -1,10 +1,10 @@
 create table Groups
-   ( Id int not null primary key
-   , Name string(128)
+   ( Id int primary key
+   , Name string(128) null
    );
 
 create table UserGroupMaps
-   ( UserId int not null primary key references Users(Id)
-   , GroupId int not null primary key references Groups(Id)
+   ( UserId int primary key references Users(Id)
+   , GroupId int primary key references Groups(Id)
    );
 

@@ -1,18 +1,18 @@
 create table Users
-   ( Id int not null primary key
-   , Name string(128)
-   , Email string(128)
-   , Password binary(64)
-   , Salt binary(64)
+   ( Id int primary key
+   , Name string(128) null
+   , Email string(128) null
+   , Password binary(64) null
+   , Salt binary(64) null
    );
 
 create table Groups
-   ( Id int not null primary key
-   , Name string(128)
+   ( Id int primary key
+   , Name string(128) null
    );
 
 create table UserGroupMaps
-   ( UserId int not null primary key references Users(Id)
-   , GroupId int not null primary key references Groups(Id)
+   ( UserId int primary key references Users(Id)
+   , GroupId int primary key references Groups(Id)
    );
 
