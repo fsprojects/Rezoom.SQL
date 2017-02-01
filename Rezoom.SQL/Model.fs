@@ -120,8 +120,9 @@ and SchemaColumn =
 and SchemaView =
     {   SchemaName : Name
         ViewName : Name
-        Definition : TSelectStmt
+        CreateDefinition : CreateViewStmt
     }
+    member this.Definition = this.CreateDefinition.AsSelect
 
 and ExprInfo<'t> =
     {   /// The inferred type of this expression.
@@ -205,7 +206,7 @@ and QueryExprInfo<'t> =
 
 and TableReference =
     | TableReference of SchemaTable
-    | ViewReference of SchemaView
+    | ViewReference of SchemaView * TCreateViewStmt
     | CTEReference of Name
     | FromClauseReference of Name
     | SelectClauseReference of Name
@@ -244,6 +245,7 @@ and ObjectInfo<'t> =
 
 
 and TSelectStmt = SelectStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
+and TCreateViewStmt = CreateViewStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 
 type TExprType = ExprType<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TExpr = Expr<ColumnType ObjectInfo, ColumnType ExprInfo>
@@ -289,7 +291,6 @@ type TAlterTableAlteration = AlterTableAlteration<ColumnType ObjectInfo, ColumnT
 type TCreateIndexStmt = CreateIndexStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TTableIndexConstraintClause = TableIndexConstraintClause<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TTableConstraint = TableConstraint<ColumnType ObjectInfo, ColumnType ExprInfo>
-type TCreateViewStmt = CreateViewStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TQualifiedTableName = QualifiedTableName<ColumnType ObjectInfo>
 type TDeleteStmt = DeleteStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TDropObjectStmt = DropObjectStmt<ColumnType ObjectInfo>

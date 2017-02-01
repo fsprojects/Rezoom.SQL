@@ -5,6 +5,7 @@ open Rezoom.SQL.InferredTypes
 
 type IQueryTypeChecker =
     abstract member Select : SelectStmt -> InfSelectStmt
+    abstract member CreateView : CreateViewStmt -> InfCreateViewStmt
 
 type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, queryChecker : IQueryTypeChecker) =
     member this.Scope = scope
@@ -14,12 +15,11 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
             ObjectName = objectName.ObjectName
             Source = objectName.Source
             Info =
-                match scope.ResolveObjectReference(objectName) with
+                let inferView view = (concreteMapping cxt).CreateView(queryChecker.CreateView(view))
+                match scope.ResolveObjectReference(objectName, inferView) with
                 | Ambiguous r -> failAt objectName.Source r
                 | Found f -> f
-                | NotFound r ->
-                    if not allowNotFound then failAt objectName.Source r
-                    else Missing
+                | NotFound r -> if not allowNotFound then failAt objectName.Source r else Missing
         }
 
     member this.ColumnName(source : SourceInfo, columnName : ColumnName) =

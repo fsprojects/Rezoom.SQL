@@ -336,3 +336,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         match stmt with
         | CoreStmt core -> this.Stmt(core) |> CoreStmt
         | VendorStmt vendor -> VendorStmt <| this.Vendor(vendor)
+
+type ASTMapping =
+    static member Stripper() = ASTMapping<_, _, unit, unit>((fun _ -> ()), fun _ -> ())

@@ -4,6 +4,7 @@ open System.IO
 open System.Text.RegularExpressions
 open System.Collections.Generic
 open Rezoom.SQL
+open Rezoom.SQL.InferredTypes
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Mapping.Migrations
 
@@ -50,6 +51,18 @@ module private UserModelLoader =
                 builder.Add(migrationName, parsed)
         builder.ToTrees()
 
+    let revalidateViews (model : Model) =
+        let inference = TypeInferenceContext()
+        let typeChecker = TypeChecker(inference, InferredSelectScope.Root(model))
+        let concrete = concreteMapping inference
+        for KeyValue(_, schema) in model.Schemas do
+            for KeyValue(_, obj) in schema.Objects do
+                match obj with
+                | SchemaView view ->
+                    let inferredDefinition = typeChecker.Select(view.CreateDefinition.AsSelect, SelfQueryShape.Unknown)
+                    ignore <| concrete.Select(inferredDefinition)
+                | _ -> ()
+
     let nextModel initialModel (migrationTrees : TotalStmts MigrationTree seq) =
         let folder isRoot (model : Model) (migration : TotalStmts Migration) =
             let effect = CommandEffect.OfSQL(model, migration.Source)
@@ -58,7 +71,9 @@ module private UserModelLoader =
                     "The migration ``%s`` contains destructive statements. This requires a version bump."
                     migration.FileName
             effect.Statements, effect.ModelChange |? model
-        foldMigrations folder initialModel migrationTrees
+        let _, finalModel as pair = foldMigrations folder initialModel migrationTrees
+        revalidateViews finalModel
+        pair
 
     let stringizeMigrationTree (backend : IBackend) (migrationTrees : TTotalStmt IReadOnlyList MigrationTree seq) =
         seq {

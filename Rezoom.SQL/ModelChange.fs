@@ -85,8 +85,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 let view =
                     {   SchemaName = schema.SchemaName
                         ViewName = viewName
-                        // Must make concrete for the schema.
-                        Definition = (concreteMapping inference).Select(create.AsSelect)
+                        CreateDefinition = ASTMapping.Stripper().CreateView(create)
                     } |> SchemaView
                 let schema = { schema with Objects = schema.Objects |> Map.add create.ViewName.ObjectName view }
                 Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }

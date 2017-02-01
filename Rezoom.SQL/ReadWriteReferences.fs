@@ -33,9 +33,9 @@ type private ReferenceFinder() =
         match name.Info with
         | TableLike { Table = TableReference schemaTable } ->
             addReference schemaTable reference
-        | TableLike { Table = ViewReference schemaView } ->
+        | TableLike { Table = ViewReference(schemaView, createDef) } ->
             if referencedViews.Add(schemaView.SchemaName, schemaView.ViewName) then
-                this.Select(schemaView.Definition)
+                this.Select(createDef.AsSelect)
         | _ -> ()
     member this.ReferenceColumn(reference : ReferenceType, column : TColumnName) =
         match column.Table with

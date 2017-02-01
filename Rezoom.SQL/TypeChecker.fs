@@ -470,7 +470,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
         }
 
     member this.CreateView(createView : CreateViewStmt) =
-        let knownShape = createView.ColumnNames |> Option.map (cxt.AnonymousQueryInfo)
+        let knownShape = createView.ColumnNames |> Option.map cxt.AnonymousQueryInfo
         {   Temporary = createView.Temporary
             ViewName = this.ObjectName(createView.ViewName, true)
             ColumnNames = createView.ColumnNames
@@ -581,3 +581,4 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
 
     interface IQueryTypeChecker with
         member this.Select(select) = this.Select(select, SelfQueryShape.Unknown)
+        member this.CreateView(view) = this.CreateView(view)

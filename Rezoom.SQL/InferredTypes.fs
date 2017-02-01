@@ -179,10 +179,6 @@ let inferredOfTable (table : SchemaTable) =
             |> toReadOnlyList
     }
 
-let inferredOfView (view : SchemaView) =
-    let concreteQuery = view.Definition.Value.Info.Query
-    concreteQuery.Map(InferredType.Of)
-
 type InferredFromClause =
     {   /// The tables named in the "from" clause of the query, if any.
         /// These are keyed on the alias of the table, if any, or the table name.
@@ -256,31 +252,33 @@ and InferredSelectScope =
             SelectClause = None
         }
 
-    member private this.ResolveObjectReferenceBySchema(schema : Schema, name : Name) =
+    member private this.ResolveObjectReferenceBySchema
+        (schema : Schema, name : Name, inferView : CreateViewStmt -> TCreateViewStmt) =
         match schema.Objects |> Map.tryFind name with
         | Some (SchemaTable tbl) ->
             { Table = TableReference tbl; Query = inferredOfTable(tbl) } |> TableLike |> Found
         | Some (SchemaView view) ->
-            { Table = ViewReference view; Query = inferredOfView(view) } |> TableLike |> Found
+            let def = inferView view.CreateDefinition
+            let query = def.AsSelect.Value.Info.Query.Map(InferredType.Of)
+            { Table = ViewReference(view, def); Query = query } |> TableLike |> Found
         | None -> NotFound <| Error.noSuchTable name
 
     /// Resolve a reference to a table which may occur as part of a TableExpr.
     /// This will resolve against the database model and CTEs, but not table aliases defined in the FROM clause.
-    member this.ResolveObjectReference(name : ObjectName) =
+    member this.ResolveObjectReference(name : ObjectName, inferView) =
         match name.SchemaName with
         | None ->
             match this.CTEVariables.TryFind(name.ObjectName) with
             | Some cte -> { Table = CTEReference name.ObjectName; Query = cte } |> TableLike |> Found
             | None ->
                 match this.ParentScope with
-                | Some parent ->
-                    parent.ResolveObjectReference(name)
+                | Some parent -> parent.ResolveObjectReference(name, inferView)
                 | None ->
                     let schema = this.Model.Schemas.[this.Model.DefaultSchema]
-                    this.ResolveObjectReferenceBySchema(schema, name.ObjectName)
+                    this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
         | Some schema ->
             let schema = this.Model.Schemas.[schema]
-            this.ResolveObjectReferenceBySchema(schema, name.ObjectName)
+            this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
 
     /// Resolve a column reference, which may be qualified with a table alias.
     /// This resolves against the tables referenced in the FROM clause, and the columns explicitly named
