@@ -8,12 +8,21 @@ open System.Threading.Tasks
 open FSharp.Control.Tasks.ContextInsensitive
 
 type private CommandBatchBuilder(conn : DbConnection) =
+    let maxParameters =
+        match conn.GetType().Namespace with
+        | "System.Data.SqlClient" -> 2100 // SQL server
+        | "System.Data.OracleClient"
+        | "Oracle.DataAccess.Client" -> 2000 // Oracle
+        | "Npgsql" -> 10000 // Postgres -- can support more but it's probably a bad idea
+        | "MySql.Data.MySqlClient" -> 10000 // MySQL -- can support more but it's probably a bad idea
+        | _ -> 999 // SQLite default, and probably the lowest of any DB
     static let terminatorColumn i = "RZSQL_TERMINATOR_" + string i
     static let terminator i = ";--'*/;SELECT NULL AS " + terminatorColumn i
     static let parameterName i = "@RZSQL_" + string i
     static let parameterNameArray i j = "@RZSQL_" + string i + "_" + string j
     static let localName i name = "RZSQL_" + name + "_" + string i
     let commands = ResizeArray<Command>()
+    let mutable parameterCount = 0
     let mutable evaluating = false
 
     let addCommand (builder : StringBuilder) (dbCommand : DbCommand) (commandIndex : int) (command : Command) =
@@ -60,6 +69,20 @@ type private CommandBatchBuilder(conn : DbConnection) =
             addCommand builder dbCommand commandIndex command
         dbCommand.CommandText <- builder.ToString()
 
+    member __.BatchCommand(cmd : Command) =
+        let mutable count = 0
+        for par in cmd.Parameters do
+            match fst par with
+            | :? Array as arr -> count <- count + arr.Length
+            | _ -> count <- count + 1
+        if parameterCount + count > maxParameters then
+            Nullable()
+        else
+            let index = commands.Count
+            commands.Add(cmd)
+            parameterCount <- parameterCount + count
+            Nullable(index)
+
     member __.Evaluate() =
         if evaluating then failwith "Already evaluating command"
         else evaluating <- true
@@ -103,18 +126,38 @@ type private CommandBatchBuilder(conn : DbConnection) =
             return processed
         }
 
-    member __.BatchCommand(cmd) =
-        let index = commands.Count
-        commands.Add(cmd)
-        index
-
 type CommandBatch(conn : DbConnection) =
-    let builder = CommandBatchBuilder(conn)
-    let evaluation = lazy builder.Evaluate()
+    let builders = ResizeArray<CommandBatchBuilder>()
+    let evaluation =
+        lazy
+            task {
+                let arr = Array.zeroCreate builders.Count
+                for i = 0 to builders.Count - 1 do
+                    let! resultSets = builders.[i].Evaluate() : obj ResizeArray Task
+                    arr.[i] <- resultSets
+                return arr
+            }
+    do
+        builders.Add(CommandBatchBuilder(conn))
     member __.Batch(cmd : #Command<'a>) =
-        let index = builder.BatchCommand(cmd)
-        fun () ->
-            evaluation.Value.ContinueWith
-                ( (fun (t : _ ResizeArray Task) -> t.Result.[index] |> Unchecked.unbox : 'a)
-                , TaskContinuationOptions.ExecuteSynchronously
-                )
+        let inline retrieveResult builderIndex resultsIndex =
+            fun () ->
+                evaluation.Value.ContinueWith
+                    ( (fun (t : _ ResizeArray array Task) ->
+                        t.Result.[builderIndex].[resultsIndex] |> Unchecked.unbox : 'a)
+                    , TaskContinuationOptions.ExecuteSynchronously
+                    )
+        let builderIndex = builders.Count - 1
+        let resultsIndex = builders.[builderIndex].BatchCommand(cmd)
+        if resultsIndex.HasValue then
+            retrieveResult builderIndex resultsIndex.Value
+        else
+            let next = CommandBatchBuilder(conn)
+            let builderIndex = builderIndex + 1
+            let resultsIndex = next.BatchCommand(cmd)
+            builders.Add(next)
+            if resultsIndex.HasValue then
+                retrieveResult builderIndex resultsIndex.Value
+            else
+                failwith "Command has too many parameters to run"
+
