@@ -182,3 +182,13 @@ let ``recursive CTE with implicit column names`` () =
             )
         select myname from nums;
     """
+
+[<Test>]
+let ``table with self-referential constraints`` () =
+    roundtrip """
+        create table Folders
+            ( Id int primary key autoincrement
+            , Name string(80)
+            , ParentId int references Folders(Id)
+            );
+    """

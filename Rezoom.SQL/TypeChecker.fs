@@ -367,14 +367,27 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 }
         }
 
-    member this.ForeignKey(foreignKey) =
-        {   ReferencesTable = this.ObjectName(foreignKey.ReferencesTable)
+    member this.ForeignKey(foreignKey, creating : CreateTableStmt option) =
+        let referencesTable, columnNames =
+            match creating with
+            | Some tbl when tbl.Name = foreignKey.ReferencesTable -> // self-referencing
+                this.ObjectName(foreignKey.ReferencesTable, allowNotFound = true),
+                    match tbl.As with
+                    | CreateAsDefinition cdef -> cdef.Columns |> Seq.map (fun c -> c.Name)
+                    | CreateAsSelect _ -> bug "Self-referencing constraints can't exist in a CREATE AS SELECT"
+            | _ ->
+                let name = this.ObjectName(foreignKey.ReferencesTable)
+                name, name.Info.Query.Columns |> Seq.map (fun c -> c.ColumnName)
+        for { Source = source; Value = referenceName } in foreignKey.ReferencesColumns do
+            if not (Seq.contains referenceName columnNames) then
+                failAt source <| Error.noSuchColumn referenceName
+        {   ReferencesTable = referencesTable
             ReferencesColumns = foreignKey.ReferencesColumns
             Rules = foreignKey.Rules
             Defer = foreignKey.Defer
         }
 
-    member this.ColumnConstraint(constr : ColumnConstraint) =
+    member this.ColumnConstraint(constr : ColumnConstraint, creating : CreateTableStmt option) =
         {   Name = constr.Name
             ColumnConstraintType =
                 match constr.ColumnConstraintType with
@@ -383,13 +396,13 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 | UniqueConstraint -> UniqueConstraint
                 | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
                 | CollateConstraint name -> CollateConstraint name
-                | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey)
+                | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey, creating)
         }
 
-    member this.ColumnDef(cdef : ColumnDef) =
+    member this.ColumnDef(cdef : ColumnDef, creating : CreateTableStmt option) =
         {   Name = cdef.Name
             Type = cdef.Type
-            Constraints = rmap this.ColumnConstraint cdef.Constraints
+            Constraints = cdef.Constraints |> rmap (fun con -> this.ColumnConstraint(con, creating))
         }
 
     member this.Alteration(tableName : InfObjectName, alteration : AlterTableAlteration) =
@@ -409,7 +422,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                                 Query = inferredOfTable(fake)
                             } |> TableLike })
             let this = this.WithScope({ scope with FromClause = Some from })
-            AddColumn <| this.ColumnDef(cdef)
+            AddColumn <| this.ColumnDef(cdef, None)
 
     member this.CreateIndex(createIndex : CreateIndexStmt) =
         let tableName = this.ObjectName(createIndex.TableName)
@@ -427,18 +440,19 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             IndexedColumns = constr.IndexedColumns
         }
 
-    member this.TableConstraint(constr : TableConstraint) =
+    member this.TableConstraint(constr : TableConstraint, creating) =
         {   Name = constr.Name
             TableConstraintType =
                 match constr.TableConstraintType with
                 | TableIndexConstraint clause ->
                     TableIndexConstraint <| this.TableIndexConstraint(clause)
                 | TableForeignKeyConstraint (names, foreignKey) ->
-                    TableForeignKeyConstraint (names, this.ForeignKey(foreignKey))
+                    TableForeignKeyConstraint (names, this.ForeignKey(foreignKey, creating))
                 | TableCheckConstraint expr -> TableCheckConstraint <| this.Expr(expr)
         }
 
-    member this.CreateTableDefinition(tableName : InfObjectName, createTable : CreateTableDefinition) =
+    member this.CreateTableDefinition
+        (tableName : InfObjectName, createTable : CreateTableDefinition, creating : CreateTableStmt) =
         let fake =
             SchemaTable.OfCreateDefinition
                 ( tableName.SchemaName |? scope.Model.DefaultSchema
@@ -453,9 +467,10 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                             Query = inferredOfTable(fake)
                         } |> TableLike })
         let this = this.WithScope({ scope with FromClause = Some from })
-        let columns = createTable.Columns |> rmap this.ColumnDef
+        let creating = Some creating
+        let columns = createTable.Columns |> rmap (fun col -> this.ColumnDef(col, creating))
         {   Columns = columns
-            Constraints = createTable.Constraints |> rmap this.TableConstraint
+            Constraints = createTable.Constraints |> rmap (fun con -> this.TableConstraint(con, creating))
             WithoutRowId = createTable.WithoutRowId
         }
 
@@ -466,7 +481,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             As =
                 match createTable.As with
                 | CreateAsSelect select -> CreateAsSelect <| this.Select(select, SelfQueryShape.Unknown)
-                | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(name, def)
+                | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(name, def, createTable)
         }
 
     member this.CreateView(createView : CreateViewStmt) =
