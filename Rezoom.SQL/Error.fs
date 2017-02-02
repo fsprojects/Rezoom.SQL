@@ -16,12 +16,12 @@ let excessiveArguments func got expected =
         func got expected
 let functionDoesNotPermitWildcard func =
     sprintf "SQ006: Function ``%O`` cannot take a wildcard (*) argument" func
+let jamesBond, jamesBondEasterEgg =
+    "SQ007: Expected martini shaken (found ``stirred``)", "CREATE VIEW TO A KILL"
 let functionDoesNotPermitDistinct func =
-    sprintf "SQ007: Function ``%O`` cannot take a DISTINCT argument" func
+    sprintf "SQ008: Function ``%O`` cannot take a DISTINCT argument" func
 let mismatchedColumnNameCount names cols =
-    sprintf "SQ008: %d columns named for a query for %d columns" names cols
-let jamesBond =
-    sprintf "SQ009: Expected martini shaken (found ``stirred``)"
+    sprintf "SQ009: %d columns named for a query for %d columns" names cols
 let schemaNameInColumnReference name =
     sprintf "SQ010: Unsupported schema name in column reference: ``%O``" name
 let noSuchObject ty name =

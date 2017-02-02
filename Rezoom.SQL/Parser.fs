@@ -159,6 +159,7 @@ let stmts =
     -|> fun s -> s.ToArray()
 
 let parseStatements sourceDescription source =
+    if source = Error.jamesBondEasterEgg then failwith Error.jamesBond
     match runParserOnString (stmts .>> eof) () sourceDescription source with
     | Success (statements, _, _) -> statements
     | Failure (_, err, _) ->
