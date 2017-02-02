@@ -21,22 +21,25 @@ type Enum64U =
     | One64U = 1UL
     | Two64U = 18446744073709551615UL
 
-let testCore (expected : 'a) ctype =
+let testXCore inRow (expected : 'a) ctype =
     let colMap =
         [|
             Guid.NewGuid().ToString("N"), ctype
         |] |> ColumnMap.Parse
-    let row = ObjectRow(box expected)
+    let row = ObjectRow([| box <| inRow expected |])
     let reader = ReaderTemplate<'a>.Template().CreateReader()
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let mat = reader.ToEntity()
     Assert.AreEqual(expected, mat)
+let testCore expected ctype = testXCore id expected ctype
 let testRef (expected : 'a) ctype =
     testCore expected ctype
     testCore expected ColumnType.Object
     testCore (null : 'a) ctype
     testCore (null : 'a) ColumnType.Object
+    testCore (None : 'a option) ColumnType.Object
+    testXCore Option.get (Some expected) ColumnType.Object
 let test (expected : 'a) ctype =
     testCore expected ctype
     testCore expected ColumnType.Object
@@ -44,6 +47,8 @@ let test (expected : 'a) ctype =
     testCore (Nullable<'a>(expected)) ColumnType.Object
     testCore (Nullable<'a>()) ctype
     testCore (Nullable<'a>()) ColumnType.Object
+    testCore (None : 'a option) ColumnType.Object
+    testXCore Option.get (Some expected) ColumnType.Object
 
 [<Test>]
 let ``read string`` () =

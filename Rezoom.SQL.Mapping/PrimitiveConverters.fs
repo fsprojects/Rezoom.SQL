@@ -235,37 +235,73 @@ let rec converter (ty : Type) : RowConversionMethod option =
                 yield converter
                 yield mark exit
             } |> Some
-    elif ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ Nullable> then
-        match ty.GetGenericArguments() with
-        | [| nTy |] ->
-            match converter nTy with
-            | None -> None
-            | Some innerConverter ->
-            cil {
-                let! colInfo = tmplocal typeof<ColumnInfo>
-                let! ncase = deflabel
-                let! exit = deflabel
-                yield stloc colInfo // row
-                yield dup // row, row
-                yield ldloc colInfo // row, row, col
-                yield ldfld columnIndexField // row, row, index
-                yield Ops.callvirt2 rowIsNullMethod // row, isnull
-                yield brtrue's ncase
-                yield cil {
-                    yield ldloc colInfo
-                    yield innerConverter
-                    yield newobj1 (ty.GetConstructor([| nTy |]))
-                    yield br's exit
-                }
-                yield mark ncase
-                yield cil {
-                    yield pop
-                    let! empty = tmplocal ty
-                    yield ldloca empty
-                    yield initobj ty
-                    yield ldloc empty
-                }
-                yield mark exit
-            } |> Some
-        | _ -> failwith "Cannot function in world where Nullable<T> doesn't have one type argument."
+    else genericConverter ty
+
+and genericConverter (ty : Type) : RowConversionMethod option =
+    if ty.IsConstructedGenericType then
+        let def = ty.GetGenericTypeDefinition()
+        if def = typedefof<_ Nullable> then
+            match ty.GetGenericArguments() with
+            | [| nTy |] ->
+                match converter nTy with
+                | None -> None
+                | Some innerConverter ->
+                cil {
+                    let! colInfo = tmplocal typeof<ColumnInfo>
+                    let! ncase = deflabel
+                    let! exit = deflabel
+                    yield stloc colInfo // row
+                    yield dup // row, row
+                    yield ldloc colInfo // row, row, col
+                    yield ldfld columnIndexField // row, row, index
+                    yield Ops.callvirt2 rowIsNullMethod // row, isnull
+                    yield brtrue's ncase
+                    yield cil {
+                        yield ldloc colInfo
+                        yield innerConverter
+                        yield newobj1 (ty.GetConstructor([| nTy |]))
+                        yield br's exit
+                    }
+                    yield mark ncase
+                    yield cil {
+                        yield pop
+                        let! empty = tmplocal ty
+                        yield ldloca empty
+                        yield initobj ty
+                        yield ldloc empty
+                    }
+                    yield mark exit
+                } |> Some
+            | _ -> failwith "Cannot function in world where Nullable<T> doesn't have one type argument."
+        elif def = typedefof<_ option> then
+            match ty.GetGenericArguments() with
+            | [| nTy |] ->
+                match converter nTy with
+                | None -> None
+                | Some innerConverter ->
+                cil {
+                    let! colInfo = tmplocal typeof<ColumnInfo>
+                    let! ncase = deflabel
+                    let! exit = deflabel
+                    yield stloc colInfo // row
+                    yield dup // row, row
+                    yield ldloc colInfo // row, row, col
+                    yield ldfld columnIndexField // row, row, index
+                    yield Ops.callvirt2 rowIsNullMethod // row, isnull
+                    yield brtrue's ncase
+                    yield cil {
+                        yield ldloc colInfo
+                        yield innerConverter
+                        yield newobj1 (ty.GetConstructor([| nTy |]))
+                        yield br's exit
+                    }
+                    yield mark ncase
+                    yield cil {
+                        yield pop
+                        yield ldnull // None
+                    }
+                    yield mark exit
+                } |> Some
+            | _ -> failwith "Cannot function in world where FSharpOption<T> doesn't have one type argument."
+        else None
     else None
