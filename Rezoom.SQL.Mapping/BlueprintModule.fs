@@ -163,7 +163,16 @@ let rec private compositeShapeOfType ty =
     }
 
 and private cardinalityOfType (ty : Type) =
+    // If our type is an interface, choose a concrete representative instead.
     let ty = CollectionConverters.representativeForInterface ty
+    if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
+        // Sadly must special-case this since option doesn't implement IEnumerable
+        let elemTy = ty.GetGenericArguments().[0]
+        match CollectionConverters.converter ty null elemTy with
+        | None -> failwith "Can't handle optional"
+        | Some converter ->
+            Many (elementOfType elemTy, converter)
+    else
     let ifaces = ty.GetInterfaces()
     // For this to be a collection, it must implement IEnumerable.
     if ifaces |> Array.contains (typeof<IEnumerable>) |> not then One (elementOfType ty) else

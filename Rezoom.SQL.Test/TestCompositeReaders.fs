@@ -34,6 +34,12 @@ type CompositeKeyType =
         MapName : string
     }
 
+type Employee =
+    {   Employer : Person option
+        EmployeeId : int
+        Name : string
+    }
+
 [<Test>]
 let ``read nothing`` () =   
     let colMap =
@@ -81,6 +87,29 @@ let ``read many users`` () =
             { UserId = 2; Name = "jerry" }
         ],
         users)
+
+[<Test>]
+let ``read employee (optional nav)`` () =
+    let colMap =
+        [|
+            "EmployeeId", ColumnType.Int32
+            "Name", ColumnType.String
+            "Employer$PersonId", ColumnType.Int32
+            "Employer$Name", ColumnType.String
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(1, "jim", 2, "michael")
+    let reader = ReaderTemplate<Employee>.Template().CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let jim = reader.ToEntity()
+    Assert.IsNotNull(jim)
+    Assert.AreEqual(1, jim.EmployeeId)
+    Assert.AreEqual("jim", jim.Name)
+    match jim.Employer with
+    | None -> failwith "shouldn't be None"
+    | Some michael ->
+        Assert.AreEqual(2, michael.PersonId)
+        Assert.AreEqual("michael", michael.Name)
 
 [<Test>]
 let ``read folder 1 level deep`` () =
@@ -175,4 +204,5 @@ let ``read objects with composite keys`` () =
             { FooId = 2; BarId = 1; MapName = "d" }
             { FooId = 2; BarId = 2; MapName = "e" }
         ], composites)
+
             
