@@ -175,6 +175,12 @@ module TaskBuilder =
         with
         | exn -> Task.FromException<_>(exn)
 
+    type UnitTask =
+        struct
+            val public Task : Task
+            new(task) = { Task = task }
+        end
+
     type TaskBuilder() =
         // These methods are consistent between the two builders.
         // Unfortunately, inline members do not work with inheritance.
@@ -199,12 +205,12 @@ module TaskBuilder =
 
         member inline __.ReturnFrom(task : _ Task) =
             bindTask task ret
-        member inline __.ReturnFrom(task : Task) =
-            bindVoidTask task ret
+        member inline __.ReturnFrom(task : UnitTask) =
+            bindVoidTask task.Task ret
         member inline __.Bind(task : _ Task, continuation) =
             bindTask task continuation
-        member inline __.Bind(task : Task, continuation) =
-            bindVoidTask task continuation
+        member inline __.Bind(task : UnitTask, continuation) =
+            bindVoidTask task.Task continuation
 
     type ContextInsensitiveTaskBuilder() =
         // These methods are consistent between the two builders.
@@ -230,12 +236,8 @@ module TaskBuilder =
 
         member inline __.ReturnFrom(task : _ Task) =
             bindConfiguredTask (task.ConfigureAwait(continueOnCapturedContext = false)) ret
-        member inline __.ReturnFrom(task : Task) =
-            bindVoidConfiguredTask (task.ConfigureAwait(continueOnCapturedContext = false)) ret
         member inline __.Bind(task : _ Task, continuation) =
             bindConfiguredTask (task.ConfigureAwait(continueOnCapturedContext = false)) continuation
-        member inline __.Bind(task : Task, continuation) =
-            bindVoidConfiguredTask (task.ConfigureAwait(continueOnCapturedContext = false)) continuation
 
 // Don't warn about our use of the "obsolete" module we just defined (see notes at start of file).
 #nowarn "44"
@@ -245,6 +247,7 @@ module ContextSensitive =
     /// Builds a `System.Threading.Tasks.Task<'a>` similarly to a C# async/await method.
     /// Use this like `task { let! taskResult = someTask(); return taskResult.ToString(); }`.
     let task = TaskBuilder.TaskBuilder()
+    let inline unitTask t = TaskBuilder.UnitTask(t)
 
 module ContextInsensitive =
     /// Builds a `System.Threading.Tasks.Task<'a>` similarly to a C# async/await method, but with
@@ -252,4 +255,4 @@ module ContextInsensitive =
     /// This is often preferable when writing library code that is not context-aware, but undesirable when writing
     /// e.g. code that must interact with user interface controls on the same thread as its caller.
     let task = TaskBuilder.ContextInsensitiveTaskBuilder()
-
+    let inline unitTask (t : Task) = t.ConfigureAwait(false)

@@ -100,19 +100,19 @@ type private CommandBatchBuilder(conn : DbConnection) =
                     processor.BeginResultSet(reader)
                     let mutable hasRows = true
                     while hasRows do
-                        let! hasRow = reader.ReadAsync() : bool Task
+                        let! hasRow = reader.ReadAsync()
                         if hasRow then
                             processor.ProcessRow()
                         else
                             hasRows <- false
                     resultSetCount <- resultSetCount + 1
-                    let! hasNextResult = reader.NextResultAsync() : bool Task
+                    let! hasNextResult = reader.NextResultAsync()
                     match cmd.ResultSetCount with
                     | None -> // check for terminator
                         if not hasNextResult || reader.FieldCount = 1 && reader.GetName(0) = terminatorColumn i then
                             resultSetCount <- -1
                         else
-                            let! hasNextResult = reader.NextResultAsync() : bool Task
+                            let! hasNextResult = reader.NextResultAsync()
                             if not hasNextResult then
                                 resultSetCount <- -1
                     | Some count ->
@@ -133,7 +133,7 @@ type CommandBatch(conn : DbConnection) =
             task {
                 let arr = Array.zeroCreate builders.Count
                 for i = 0 to builders.Count - 1 do
-                    let! resultSets = builders.[i].Evaluate() : obj ResizeArray Task
+                    let! resultSets = builders.[i].Evaluate()
                     arr.[i] <- resultSets
                 return arr
             }
