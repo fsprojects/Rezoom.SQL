@@ -61,6 +61,7 @@
     <Compile Include="TestRoundTrip.fs" />
     <Compile Include="TestParserErrors.fs" />
     <Compile Include="TestTypeErrors.fs" />
+    <Compile Include="TestAggregateErrors.fs" />
     <Compile Include="TestTSQL.fs" />
     <Compile Include="TestBlueprints.fs" />
     <Compile Include="TestCompositeReaders.fs" />
