@@ -86,3 +86,5 @@ let sameVendorDelimiters delim =
     sprintf "SQ037: Opening and closing delimiters for vendor statement are identical ``%s``" delim
 let exprMustBeNullable =
     sprintf "SQ038: Expression is not nullable; but is required to be in this context"
+let aggregateInWhereClause =
+    sprintf "SQ039: A WHERE clause cannot contain aggregates -- consider using a HAVING clause"

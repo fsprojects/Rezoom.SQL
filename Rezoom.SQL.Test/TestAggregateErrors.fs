@@ -22,9 +22,8 @@ let ``aggregates with group by must not contain non-grouped column references`` 
         """
 
 [<Test>]
-[<Ignore("fails right now, need an error for this")>]
 let ``aggregates may not appear in where clause`` () =
-    expectError ""
+    expectError Error.aggregateInWhereClause
         """
             select count(*) as x from Users
             where count(*) > 0

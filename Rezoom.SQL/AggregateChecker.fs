@@ -6,11 +6,11 @@ open System.Collections.Generic
 open Rezoom.SQL.InferredTypes
 
 type private AggReference =
-    | Aggregate
+    | Aggregate of SourceInfo
     | ColumnOutsideAggregate of InfExpr
 
 let private columnOutside = function
-    | Aggregate -> None
+    | Aggregate _ -> None
     | ColumnOutsideAggregate expr -> Some expr
 
 let rec private aggReferencesSelectCore (select : InfSelectCore) =
@@ -24,6 +24,11 @@ let rec private aggReferencesSelectCore (select : InfSelectCore) =
         match select.Where with
         | None -> ()
         | Some where ->
+            for ref in aggReferences where do
+                match ref with
+                | Aggregate source ->
+                    failAt source Error.aggregateInWhereClause
+                | _ -> ()
             yield! aggReferences where
     }
 
@@ -69,6 +74,7 @@ and private aggReferences (expr : InfExpr) =
     | ExistsExpr _
     | LiteralExpr _
     | BindParameterExpr _
+    | ScalarSubqueryExpr _ // scalar subqueries have been internally checked by typechecker
     | RaiseExpr _ -> Seq.empty
     | ColumnNameExpr _ -> Seq.singleton (ColumnOutsideAggregate expr)
     | InExpr inex ->
@@ -79,14 +85,13 @@ and private aggReferences (expr : InfExpr) =
             | InSelect sel -> yield! aggReferencesSelect sel
             | InTable _ | InParameter _ -> ()
         }
-    | ScalarSubqueryExpr subq -> aggReferencesSelect subq
     | CastExpr cast -> aggReferences cast.Expression
     | CollateExpr collate -> aggReferences collate.Input
     | FunctionInvocationExpr f ->
         let mapping = ASTMapping((fun _ -> ()), fun _ -> ())
         match expr.Info.Function with
         | Some funcInfo when mapping.FunctionInvocation(f).Arguments |> funcInfo.Aggregate |> Option.isSome ->
-            Seq.singleton Aggregate
+            Seq.singleton (Aggregate expr.Source)
         | _ ->
             match f.Arguments with
             | ArgumentWildcard -> Seq.empty
@@ -124,7 +129,7 @@ let check (select : InfSelectCore) =
     let references = aggReferencesSelectCore select
     match select.GroupBy with
     | None ->
-        if references |> Seq.contains Aggregate then
+        if references |> Seq.exists (function | Aggregate _ -> true | _ -> false) then
             // If we have aggregates, but we're not grouping by anything, we better
             // not have columns referenced outside the aggregates.
             match references |> Seq.tryPick columnOutside with
@@ -133,7 +138,11 @@ let check (select : InfSelectCore) =
                 failAt src Error.columnNotAggregated
     | Some group ->
         let legal = group.By |> HashSet
-        let outside = references |> Seq.choose columnOutside
+        let havingReferences =
+            match group.Having with
+            | None -> Seq.empty
+            | Some having -> aggReferences having
+        let outside = Seq.append references havingReferences |> Seq.choose columnOutside
         for outsideExpr in outside do
             if not <| legal.Contains(outsideExpr) then
                 failAt outsideExpr.Source Error.columnNotGroupedBy
