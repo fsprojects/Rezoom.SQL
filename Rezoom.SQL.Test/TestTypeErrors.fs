@@ -85,3 +85,12 @@ let ``coalesce forces first arg nullable`` () =
         """
             select coalesce(1, null)
         """
+
+[<Test>]
+let ``can't use list-parameter as a scalar result`` () =
+    expectError (Error.cannotUnify "<scalar>" "[INT]")
+        """
+            select @p as x
+            from Users
+            where Id in @p
+        """

@@ -196,7 +196,10 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                 | Some a when a = shape.ColumnName -> ()
                 | _ ->
                     columns.[i] <- { columns.[i] with Case = Column(selected, Some shape.ColumnName) }
-        | None -> ()
+        | None ->
+            for column in columns do
+                let selected, _ = column.Case.AssumeColumn()
+                ignore <| cxt.Unify(selected.Source, selected.Info.Type.InferredType, TypeKnown ScalarTypeClass)
         {   Distinct = resultColumns.Distinct
             Columns = columns
         }
