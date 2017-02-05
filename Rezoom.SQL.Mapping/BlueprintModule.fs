@@ -50,23 +50,26 @@ let private pickConstructor (ty : Type) =
 /// - the column named "ID"
 /// - the column named "{TypeName}ID"
 let private pickIdentity (ty : Type) (cols : IReadOnlyDictionary<string, Column>) =
-    let attributed =
-        seq {
-            for col in cols.Values do
-                match col.Getter with
-                | None -> ()
-                | Some getter ->
-                    let attr = getter.MemberInfo.GetCustomAttribute<BlueprintKeyAttribute>()
-                    if not (isNull attr) then yield col
-        } |> Seq.toArray
-    match attributed with
-    | [||] ->
-        let succ, id = cols.TryGetValue("ID")
-        if succ then [| id |] else
-        let succ, id = cols.TryGetValue(ty.Name + "ID")
-        if succ then [| id |] else
-        [||]
-    | identity -> identity
+    let noIdentity = ty.GetCustomAttribute<BlueprintNoKeyAttribute>()
+    if isNull noIdentity then
+        let attributed =
+            seq {
+                for col in cols.Values do
+                    match col.Getter with
+                    | None -> ()
+                    | Some getter ->
+                        let attr = getter.MemberInfo.GetCustomAttribute<BlueprintKeyAttribute>()
+                        if not (isNull attr) then yield col
+            } |> Seq.toArray
+        match attributed with
+        | [||] ->
+            let succ, id = cols.TryGetValue("ID")
+            if succ then [| id |] else
+            let succ, id = cols.TryGetValue(ty.Name + "ID")
+            if succ then [| id |] else
+            Array.empty
+        | identity -> identity
+    else Array.empty
 
 let private swapParentChild (me : string) (them : string) (name : string) =
     let swapper (m : Match) =

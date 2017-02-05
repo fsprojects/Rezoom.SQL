@@ -19,3 +19,9 @@ type BlueprintKeyAttribute() =
 type BlueprintColumnNameAttribute(name : string) =
     inherit Attribute()
     member __.Name = name
+
+/// Indicates that a class has no key properties and should not be de-duplicated.
+[<AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)>]
+[<AllowNullLiteral>]
+type BlueprintNoKeyAttribute() =
+    inherit Attribute()

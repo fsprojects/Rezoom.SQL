@@ -28,6 +28,7 @@ type private CompileTimeColumnMap() =
                 for j = 0 to path.Length - 2 do
                     current <- current.GetOrCreateSubMap(path.[j])
             current.SetColumn(Array.last path, (int16 i, column))
+    member this.HasSubMaps = subMaps.Count > 0
     member this.SubMaps = subMaps :> _ seq
     member this.Columns = columns :> _ seq
     static member Parse(columns) =

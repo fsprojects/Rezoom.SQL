@@ -20,8 +20,7 @@ type GenerateTypeCase =
     | GenerateModel
 
 type GenerateType =
-    {
-        UserModel : UserModel
+    {   UserModel : UserModel
         Assembly : Assembly
         Namespace : string
         TypeName : string
@@ -53,17 +52,21 @@ let private toRowTypeName (name : string) =
     // Must sanitize to remove things like * from the name.
     Regex.Replace(name, @"[^_a-zA-Z0-9]", fun m -> string (char (int m.Value.[0] % 26 + int 'A'))) + "Row"
 
+type private BlueprintNoKeyAttributeData() =
+    inherit CustomAttributeData()
+    override __.Constructor = typeof<BlueprintNoKeyAttributeData>.GetConstructor(Type.EmptyTypes)
+    override __.ConstructorArguments = [||] :> IList<_>
+    override __.NamedArguments = [||] :> IList<_>
+
 type private BlueprintKeyAttributeData() =
     inherit CustomAttributeData()
-    static let keyTy = typeof<BlueprintKeyAttribute>
-    override __.Constructor = keyTy.GetConstructor(Type.EmptyTypes)
+    override __.Constructor = typeof<BlueprintKeyAttribute>.GetConstructor(Type.EmptyTypes)
     override __.ConstructorArguments = [||] :> IList<_>
     override __.NamedArguments = [||] :> IList<_>
 
 type private BlueprintColumnNameAttributeData(name : string) =
     inherit CustomAttributeData()
-    static let colTy = typeof<BlueprintColumnNameAttribute>
-    override __.Constructor = colTy.GetConstructor([| typeof<string> |])
+    override __.Constructor = typeof<BlueprintColumnNameAttribute>.GetConstructor([| typeof<string> |])
     override __.ConstructorArguments =
         [|  CustomAttributeTypedArgument(typeof<string>, name)
         |] :> IList<_>
@@ -77,6 +80,8 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
             , IsErased = false
             , HideObjectMethods = true
             )
+    if not columnMap.HasSubMaps then
+        ty.AddCustomAttribute(BlueprintNoKeyAttributeData())
     let fields = ResizeArray()
     let addField pk (name : string) (fieldTy : Type) =
         let fieldTy, propName =
