@@ -16,8 +16,13 @@ type ParameterTransform =
     }
     static member Default(columnType : ColumnType) =
         let transform (expr : Quotations.Expr) =
+            let ty = expr.Type
             let asObj = Expr.Coerce(expr, typeof<obj>)
-            <@@ if %%asObj = null then box DBNull.Value else %%asObj @@>
+            if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
+                let invokeValue = Expr.PropertyGet(expr, ty.GetProperty("Value"))
+                <@@ if %%asObj = null then box DBNull.Value else %%invokeValue @@>
+            else
+                <@@ if %%asObj = null then box DBNull.Value else %%asObj @@>
         let ty = columnType.DbType
         {   ParameterType = ty
             ValueTransform = transform
