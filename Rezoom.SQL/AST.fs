@@ -392,10 +392,12 @@ and ResultColumns<'t, 'e> =
 
 and ResultColumnNavCardinality =
     | NavOne
+    | NavOptional
     | NavMany
     member this.Separator =
         match this with
         | NavOne -> "$"
+        | NavOptional -> "?$"
         | NavMany -> "*$"
 
 and ResultColumnNav<'t, 'e> =

@@ -15,6 +15,10 @@ type ConfigBackend =
         | TSQL -> TSQL.TSQLBackend() :> IBackend
         | _ -> failwithf "Unimplemented backend %A" this // TODO
 
+type ConfigOptionalStyle =
+    | CsStyle // optional value types get wrapped in Nullable, optional reference types untouched
+    | FsStyle // all optional types wrapped in FSharpOption
+
 type Config =
     {   /// Which backend to use.
         Backend : ConfigBackend
@@ -22,12 +26,15 @@ type Config =
         MigrationsPath : string
         /// Connection string name to use at runtime.
         ConnectionName : string
+        /// Type generation style for optionals.
+        Optionals : ConfigOptionalStyle
     }
 
 let defaultConfig =
     {   Backend = Identity
         MigrationsPath = "."
         ConnectionName = "rzsql"
+        Optionals = FsStyle
     }
 
 module private Parser =
@@ -35,12 +42,19 @@ module private Parser =
 
     let backend =
         %% '"'
-        -- +.[
-                %% ci "SQLITE" -|> SQLite
+        -- +.[  %% ci "SQLITE" -|> SQLite
                 %% [ ci "TSQL"; ci "MSSQL" ] -|> TSQL
                 %% ci "POSTGRES" -- zeroOrOne * ci "QL" -|> PostgreSQL
                 %% ci "MYSQL" -|> MySQL
                 %% ci "RZSQL" -|> Identity
+            ]
+        -- '"'
+        -|> id
+
+    let optionals =
+        %% '"'
+        -- +.[  %% ci "C#" -|> CsStyle
+                %% ci "F#" -|> FsStyle
             ]
         -- '"'
         -|> id
@@ -83,6 +97,7 @@ module private Parser =
             prop "BACKEND" (backend |>> fun backend config -> { config with Backend = backend })
             prop "MIGRATIONS" (stringLiteral |>> fun path config -> { config with MigrationsPath = path })
             prop "CONNECTIONNAME" (stringLiteral |>> fun conn config -> { config with ConnectionName = conn })
+            prop "OPTIONALS" (optionals |>> fun opts config -> { config with Optionals = opts })
         ]
 
     let config : Parser<Config, unit> =

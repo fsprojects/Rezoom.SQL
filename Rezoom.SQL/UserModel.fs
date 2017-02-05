@@ -104,6 +104,7 @@ open UserModelLoader
 type UserModel =
     {   ConnectionName : string
         ConfigDirectory : string
+        Config : Config.Config
         MigrationsDirectory : string
         Backend : IBackend
         Model : Model
@@ -139,6 +140,7 @@ type UserModel =
         {   ConnectionName = config.ConnectionName
             MigrationsDirectory = migrationsDirectory
             ConfigDirectory = Path.GetFullPath(configDirectory)
+            Config = config
             Backend = backend
             Model = model
             TableIds = lazy tableIds model

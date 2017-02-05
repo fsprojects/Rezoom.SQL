@@ -106,7 +106,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
         fields.Add(camel, field)
     for KeyValue(name, (_, column)) in columnMap.Columns do
         let info = column.Expr.Info
-        addField info.PrimaryKey name info.Type.CLRType
+        addField info.PrimaryKey name <| info.Type.CLRType(useOptional = (model.Config.Optionals = Config.FsStyle))
     for KeyValue(name, subMap) in columnMap.SubMaps do
         let subTy = generateRowTypeFromColumns model (toRowTypeName name) subMap
         ty.AddMember(subTy)
@@ -168,9 +168,10 @@ let private generateCommandMethod
                         , %%Quotations.Expr.Value(invalidations.LowBits))
                 ResultSetCount = Some (%%Quotations.Expr.Value(resultSetCount))
             } @@>
+    let useOptional = generate.UserModel.Config.Optionals = Config.FsStyle
     let methodParameters =
         [ for NamedParameter name, ty in parameters ->
-            ProvidedParameter(name.Value, ty.CLRType)
+            ProvidedParameter(name.Value, ty.CLRType(useOptional))
         ]
     let meth = ProvidedMethod("Command", methodParameters, retTy)
     meth.SetMethodAttrs(MethodAttributes.Static ||| MethodAttributes.Public)

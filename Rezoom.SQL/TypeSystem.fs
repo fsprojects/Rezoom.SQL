@@ -96,33 +96,38 @@ type ColumnType =
         {   Type = CoreColumnType.OfTypeName(typeName)
             Nullable = nullable
         }
-    member private ty.TypeInfo =
+    member private ty.TypeInfo(useOptional) =
+        let nullify (clrType : Type) =
+            if ty.Nullable then
+                if useOptional then typedefof<_ option>.MakeGenericType(clrType)
+                elif clrType.IsValueType then typedefof<_ Nullable>.MakeGenericType(clrType)
+                else clrType
+            else
+                clrType
         match ty.Type with
-        | IntegerType Integer8 -> DbType.SByte, if ty.Nullable then typeof<Nullable<sbyte>> else typeof<sbyte>
-        | IntegerType Integer16 -> DbType.Int16, if ty.Nullable then typeof<Nullable<int16>> else typeof<int16>
+        | IntegerType Integer8 -> DbType.SByte, nullify typeof<sbyte>
+        | IntegerType Integer16 -> DbType.Int16, nullify typeof<int16>
         | IntegralTypeClass
-        | IntegerType Integer32 -> DbType.Int32, if ty.Nullable then typeof<Nullable<int32>> else typeof<int32>
-        | IntegerType Integer64 -> DbType.Int64, if ty.Nullable then typeof<Nullable<int64>> else typeof<int64>
-        | FloatType Float32 -> DbType.Single, if ty.Nullable then typeof<Nullable<single>> else typeof<single>
-        | FloatType Float64 -> DbType.Double, if ty.Nullable then typeof<Nullable<double>> else typeof<double>
-        | BooleanType -> DbType.Boolean, if ty.Nullable then typeof<Nullable<bool>> else typeof<bool>
+        | IntegerType Integer32 -> DbType.Int32, nullify typeof<int32>
+        | IntegerType Integer64 -> DbType.Int64, nullify typeof<int64>
+        | FloatType Float32 -> DbType.Single, nullify typeof<float32>
+        | FloatType Float64 -> DbType.Double, nullify typeof<double>
+        | BooleanType -> DbType.Boolean, nullify typeof<bool>
         | FractionalTypeClass
         | NumericTypeClass
-        | DecimalType -> DbType.Decimal, if ty.Nullable then typeof<Nullable<decimal>> else typeof<decimal>
-        | DateTimeType ->
-            DbType.DateTime, if ty.Nullable then typeof<Nullable<DateTime>> else typeof<DateTime>
-        | DateTimeOffsetType ->
-            DbType.DateTimeOffset, if ty.Nullable then typeof<Nullable<DateTimeOffset>> else typeof<DateTimeOffset>
-        | StringType -> DbType.String, typeof<string>
-        | BinaryType -> DbType.Binary, typeof<byte array>
+        | DecimalType -> DbType.Decimal, nullify typeof<decimal>
+        | DateTimeType -> DbType.DateTime, nullify typeof<DateTime>
+        | DateTimeOffsetType -> DbType.DateTimeOffset, nullify typeof<DateTimeOffset>
+        | StringType -> DbType.String, nullify typeof<string>
+        | BinaryType -> DbType.Binary, nullify typeof<byte array>
         | StringishTypeClass
         | ScalarTypeClass
-        | AnyTypeClass -> DbType.Object, typeof<obj>
+        | AnyTypeClass -> DbType.Object, nullify typeof<obj>
         | ListType t ->
-            let dbType, clrType = { Type = t; Nullable = ty.Nullable }.TypeInfo
+            let dbType, clrType = { Type = t; Nullable = ty.Nullable }.TypeInfo(useOptional)
             dbType, clrType.MakeArrayType()
-    member ty.CLRType = snd ty.TypeInfo
-    member ty.DbType = fst ty.TypeInfo
+    member ty.CLRType(useOptional) = snd <| ty.TypeInfo(useOptional)
+    member ty.DbType = fst <| ty.TypeInfo(false)
     override ty.ToString() =
         string ty.Type + (if ty.Nullable then "?" else "")
 

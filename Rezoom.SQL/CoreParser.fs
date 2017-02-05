@@ -602,6 +602,7 @@ let private asAlias =
 let private resultColumnNavCardinality =
     %[
         %% kw "MANY" -|> NavMany
+        %% kw "OPTIONAL" -|> NavOptional
         %% kw "ONE" -|> NavOne
     ]
 
