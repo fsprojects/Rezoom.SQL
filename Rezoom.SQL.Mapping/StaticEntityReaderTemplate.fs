@@ -26,7 +26,11 @@ type private StaticEntityReaderTemplate =
         | One { Shape = Composite c } ->
             CompositeColumnGenerator(builder, column, c) :> EntityReaderColumnGenerator
         | Many (element, conversion) ->
-            ManyColumnGenerator(builder, Some column, element, conversion) :> EntityReaderColumnGenerator
+            match element.Shape with
+            | Composite c when c.Identity.Count > 0 ->
+                ManyEntityColumnGenerator(builder, Some column, element, conversion) :> EntityReaderColumnGenerator
+            | _ ->
+                ManyColumnGenerator(builder, Some column, element, conversion) :> EntityReaderColumnGenerator
 
     static member ImplementPrimitive(builder : TypeBuilder, ty : Type, primitive : Primitive, readerBuilder) =
         let info = builder.DefineField("_i", typeof<ColumnInfo>, FieldAttributes.Private)
@@ -68,7 +72,12 @@ type private StaticEntityReaderTemplate =
             } |> ignore
 
     static member ImplementMany(builder : TypeBuilder, element : ElementBlueprint, conversion, readerBuilder) =
-        let generator = ManyColumnGenerator(builder, None, element, conversion)
+        let generator =
+            match element.Shape with
+            | Composite c when c.Identity.Count > 0 ->
+                ManyEntityColumnGenerator(builder, None, element, conversion) :> EntityReaderColumnGenerator
+            | _ ->
+                ManyColumnGenerator(builder, None, element, conversion) :> EntityReaderColumnGenerator
         readerBuilder.Ctor ||> 
             cil {
                 yield ldarg 0

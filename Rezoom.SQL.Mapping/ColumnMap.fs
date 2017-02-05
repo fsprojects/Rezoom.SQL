@@ -21,6 +21,7 @@ type ColumnType =
 
 [<Struct>]
 type ColumnInfo =
+    // must be mutable to be able to access with ldfld from generated code
     val mutable public Index : int16
     val mutable public Type : ColumnType
     new (index, rowValueType) = { Index = index; Type = rowValueType }
@@ -47,12 +48,14 @@ type ColumnInfo =
         | _  -> invalidArg "type" "Unknown column type"
 
 [<AllowNullLiteral>]
-type ColumnMap() =
-    let columns = Dictionary<string, ColumnInfo>(StringComparer.OrdinalIgnoreCase)
-    let subMaps = Dictionary<string, ColumnMap>(StringComparer.OrdinalIgnoreCase)
+type ColumnMap(columns, subMaps) =
     static let columnMethod = typeof<ColumnMap>.GetMethod("Column")
     static let primaryColumnMethod = typeof<ColumnMap>.GetMethod("PrimaryColumn")
     static let subMapMethod = typeof<ColumnMap>.GetMethod("SubMap")
+    new() =
+        let columns = Dictionary<string, ColumnInfo>(StringComparer.OrdinalIgnoreCase)
+        let subMaps = Dictionary<string, ColumnMap>(StringComparer.OrdinalIgnoreCase)
+        ColumnMap(columns, subMaps)
     member private this.GetOrCreateSubMap(name) =
         let succ, sub = subMaps.TryGetValue(name)
         if succ then sub else
@@ -78,7 +81,14 @@ type ColumnMap() =
         columns.Values |> Seq.head
     member this.SubMap(name) =
         let succ, map = subMaps.TryGetValue(name)
-        if succ then map else null
+        if succ then map
+        else
+            let succ, info = columns.TryGetValue(name)
+            if succ then
+                let cols = Dictionary()
+                cols.[name] <- info
+                ColumnMap(cols, Dictionary())
+            else null
     member this.SubMaps = subMaps :> _ seq
     member this.Columns = columns :> _ seq
     static member Parse(columnNames) =

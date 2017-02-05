@@ -66,6 +66,7 @@
     <Compile Include="TestBlueprints.fs" />
     <Compile Include="TestCompositeReaders.fs" />
     <Compile Include="TestPrimitiveReaders.fs" />
+    <Compile Include="TestManyPrimitives.fs" />
     <Compile Include="TestQueryParents.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
