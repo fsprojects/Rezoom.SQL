@@ -21,7 +21,21 @@ type QueryInPar = SQL<"""
     select * from Users u where u.id in @id
 """, "user-migrations">
 
+type QueryWithNullablePar = SQL<"""
+    select * from Users u
+    where u.Name is @name
+""", "user-migrations">
+
 
 let q : Command<_> = Query.Command(id = 1)
 printfn "%O" <| q.GetType()
 printfn "%A" <| q.Fragments
+
+let qIn : Command<_> = QueryInPar.Command(id = [|1|])
+printfn "%O" <| qIn.GetType()
+printfn "%A" <| qIn.Fragments
+
+let qNull : Command<_> = QueryWithNullablePar.Command(name = Some "test")
+printfn "%O" <| qNull.GetType()
+printfn "%A" <| qNull.Fragments
+
