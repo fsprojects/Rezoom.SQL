@@ -19,10 +19,10 @@ type ParameterTransform =
             let ty = expr.Type
             let asObj = Expr.Coerce(expr, typeof<obj>)
             if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
-                let invokeValue = Expr.PropertyGet(expr, ty.GetProperty("Value"))
-                <@@ if %%asObj = null then box DBNull.Value else %%invokeValue @@>
+                let invokeValue = Expr.Coerce(Expr.PropertyGet(expr, ty.GetProperty("Value")), typeof<obj>)
+                <@@ if isNull %%asObj then box DBNull.Value else %%invokeValue @@>
             else
-                <@@ if %%asObj = null then box DBNull.Value else %%asObj @@>
+                <@@ if isNull %%asObj then box DBNull.Value else %%asObj @@>
         let ty = columnType.DbType
         {   ParameterType = ty
             ValueTransform = transform
