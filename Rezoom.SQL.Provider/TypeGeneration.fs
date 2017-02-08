@@ -54,7 +54,7 @@ let private toRowTypeName (name : string) =
 
 type private BlueprintNoKeyAttributeData() =
     inherit CustomAttributeData()
-    override __.Constructor = typeof<BlueprintNoKeyAttributeData>.GetConstructor(Type.EmptyTypes)
+    override __.Constructor = typeof<BlueprintNoKeyAttribute>.GetConstructor(Type.EmptyTypes)
     override __.ConstructorArguments = [||] :> IList<_>
     override __.NamedArguments = [||] :> IList<_>
 
