@@ -97,6 +97,13 @@ let ``create temp view with column names`` () =
     """
 
 [<Test>]
+let ``create temp view and select from it`` () =
+    roundtrip """
+        create temp view CoolUsers(id, name) as select 1, '' from users where name not like '%szany%';
+        select * from CoolUsers;
+    """
+
+[<Test>]
 let ``create table with composite PK`` () =
     roundtrip """
         create table Maps(UserId int, GroupId int, primary key(UserId, GroupId))
