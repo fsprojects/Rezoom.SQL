@@ -15,11 +15,12 @@ type ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope, q
             ObjectName = objectName.ObjectName
             Source = objectName.Source
             Info =
+                if allowNotFound then Missing else
                 let inferView view = (concreteMapping cxt).CreateView(queryChecker.CreateView(view))
                 match scope.ResolveObjectReference(objectName, inferView) with
-                | Ambiguous r -> failAt objectName.Source r
                 | Found f -> f
-                | NotFound r -> if not allowNotFound then failAt objectName.Source r else Missing
+                | Ambiguous r
+                | NotFound r -> failAt objectName.Source r
         }
 
     member this.ColumnName(source : SourceInfo, columnName : ColumnName) =
