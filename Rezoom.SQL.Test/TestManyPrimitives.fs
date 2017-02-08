@@ -4,6 +4,7 @@ open FsUnit
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Mapping.CodeGeneration
 open System
+open System.Collections.Generic
 
 type Friend = 
     {   Id : int
@@ -65,4 +66,37 @@ let ``read string pairs`` () =
                 { Left = "a"; Right = "1" }
             |]
         , pairs
+        )
+
+[<BlueprintNoKey>]
+type IgnoredIds =
+    {   [<BlueprintKey>]
+        Le : string
+        Ri : string
+    }
+
+[<Test>]
+let ``ignored ids`` () =
+    let colMap =
+        [|  "Le", ColumnType.String
+            "Ri", ColumnType.String
+        |] |> ColumnMap.Parse
+    let rows =
+        [   ObjectRow("a", "1")
+            ObjectRow("b", "2")
+            ObjectRow("b", "2") // duplicate should appear in results
+            ObjectRow("a", "1")
+        ]
+    let reader = ReaderTemplate<IgnoredIds IReadOnlyList>.Template().CreateReader()
+    reader.ProcessColumns(colMap)
+    for row in rows do
+        reader.Read(row)
+    let pairs = reader.ToEntity()
+    Assert.AreEqual
+        (   [|  { Le = "a"; Ri = "1" }
+                { Le = "b"; Ri = "2" }
+                { Le = "b"; Ri = "2" }
+                { Le = "a"; Ri = "1" }
+            |]
+        , pairs |> Array.ofSeq
         )
