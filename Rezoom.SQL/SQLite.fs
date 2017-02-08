@@ -23,7 +23,7 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | IntegerTypeName Integer8
             | IntegerTypeName Integer16
             | IntegerTypeName Integer32
-            | IntegerTypeName Integer64 -> "INT"
+            | IntegerTypeName Integer64 -> "INTEGER"
             | FloatTypeName Float32
             | FloatTypeName Float64 -> "FLOAT"
             | StringTypeName(_) -> "VARCHAR"
