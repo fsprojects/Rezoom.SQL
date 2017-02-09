@@ -10,6 +10,8 @@ open Rezoom
 [<AbstractClass>]
 type ConnectionProvider() =
     abstract member Open : name : string -> DbConnection
+    abstract member BeginTransaction : DbConnection -> DbTransaction
+    default __.BeginTransaction(conn) = conn.BeginTransaction()
 
 type DefaultConnectionProvider() =
     inherit ConnectionProvider()
@@ -29,22 +31,30 @@ type DefaultConnectionProvider() =
 type private ExecutionLocalConnections(provider : ConnectionProvider) =
     let connections = Dictionary()
     member __.GetConnection(name) =
-        let succ, conn = connections.TryGetValue(name)
+        let succ, (conn, _) = connections.TryGetValue(name)
         if succ then conn else
         let conn = provider.Open(name)
-        connections.Add(name, conn)
+        let tran = provider.BeginTransaction(conn)
+        connections.Add(name, (conn, tran))
         conn
-    member __.Dispose() = 
+    member __.Dispose(state) = 
         let mutable exn = null
-        for KeyValue(_, conn) in connections do
+        for conn, tran in connections.Values do
             try
-                conn.Dispose()
+                match state with
+                | ExecutionSuccess -> tran.Commit()
+                | ExecutionFault -> // don't explicitly rollback, tran.Dispose() should handle it
+                try
+                    tran.Dispose()
+                finally
+                    conn.Dispose()
             with
-            | e -> exn <- e
+            | e ->
+                if isNull exn then exn <- e
+                else exn <- AggregateException(exn, e)
         connections.Clear()
         if not (isNull exn) then raise exn
-    interface IDisposable with
-        member this.Dispose() = this.Dispose()
+    // don't implement IDisposable because we need exec. state to know how to end transactions
 
 type private ExecutionLocalConnectionsFactory() =
     inherit ServiceFactory<ExecutionLocalConnections>()
@@ -54,8 +64,8 @@ type private ExecutionLocalConnectionsFactory() =
             match cxt.Configuration.TryGetConfig<ConnectionProvider>() with
             | None -> DefaultConnectionProvider() :> ConnectionProvider
             | Some provider -> provider
-        new ExecutionLocalConnections(provider)
-    override __.DisposeService(svc) = svc.Dispose()
+        ExecutionLocalConnections(provider)
+    override __.DisposeService(state, svc) = svc.Dispose(state)
 
 type private StepLocalBatches(conns : ExecutionLocalConnections) =
     let batches = Dictionary()
@@ -71,7 +81,7 @@ type private StepLocalBatchesFactory() =
     inherit ServiceFactory<StepLocalBatches>()
     override __.ServiceLifetime = ServiceLifetime.StepLocal
     override __.CreateService(cxt) = StepLocalBatches(cxt.GetService<ExecutionLocalConnectionsFactory, _>())
-    override __.DisposeService(_) = ()
+    override __.DisposeService(_, _) = ()
 
 type private CommandErrandArgument(parameters : (obj * DbType) IReadOnlyList) =
     member __.Parameters = parameters
