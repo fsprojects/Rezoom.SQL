@@ -31,8 +31,8 @@ type DefaultConnectionProvider() =
 type private ExecutionLocalConnections(provider : ConnectionProvider) =
     let connections = Dictionary()
     member __.GetConnection(name) =
-        let succ, (conn, _) = connections.TryGetValue(name)
-        if succ then conn else
+        let succ, tuple = connections.TryGetValue(name)
+        if succ then fst tuple else
         let conn = provider.Open(name)
         let tran = provider.BeginTransaction(conn)
         connections.Add(name, (conn, tran))
