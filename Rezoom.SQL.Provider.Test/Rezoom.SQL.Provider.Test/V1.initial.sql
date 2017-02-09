@@ -1,5 +1,5 @@
 ﻿create table ToDos
-	( Id int primary key -- TODO: support autoincrement
+	( Id int primary key autoincrement
 	, ParentId int null references ToDos(Id)
 	, Heading string(256)
 	, Paragraph string(512) null

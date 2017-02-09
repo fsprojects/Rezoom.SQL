@@ -28,9 +28,10 @@ let cmdPlan (cmd : string) =
             for child in children do
                 printfn "%s: %s" child.Heading (defaultArg child.Paragraph "None")
         | "mk" ->
-            // TODO: infer nullable 2nd param
-            let! result = MakeChildTodo.Command("test heading", "test para").ExecutePlan()
+            let! result = MakeChildTodo.Command("test heading", Some "test para").ExecutePlan()
             printfn "Created TODO %d" result.[0].id
+        | "throw" ->
+            failwith "unhandled exn"
         | _ ->
             printfn "Unrecognized command ``%s``" cmd
     }
@@ -60,6 +61,10 @@ let main argv =
     let execute plan = Execution.execute ExecutionConfig.Default plan
     while true do
         let cmd = Console.ReadLine()
-        let plan = buildPlan cmd
-        (execute plan).Wait()
+        try
+            let plan = buildPlan cmd
+            (execute plan).Wait()
+        with
+        | exn ->
+            printfn "Plan failed with exn: %O" exn
     0 // return an integer exit code
