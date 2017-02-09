@@ -21,6 +21,18 @@ let expect (sql : string) expectedColumns expectedParams =
     Assert.AreEqual(expectedParams, pars)
 
 [<Test>]
+let ``coalesce forces all but last arg nullable`` () =
+    expect
+        """
+            select coalesce(@a, @b, @c, @d) as c
+        """
+        [   "c", "<scalar>"
+        ]
+        [   for p in "abc" -> (string p, "<scalar>?")
+            yield "d", "<scalar>"
+        ]
+
+[<Test>]
 let ``coalesce(a + b, 1)`` () =
     expect
         """

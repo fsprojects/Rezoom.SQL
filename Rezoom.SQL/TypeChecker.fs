@@ -191,7 +191,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
             for i = 0 to columns.Length - 1 do
                 let selected, alias as selectedCol = columns.[i].Case.AssumeColumn()
                 let shape = shape.Columns.[i]
-                ignore <| cxt.Unify(selected.Source, selected.Info.Type, shape.Expr.Info.Type)
+                cxt.UnifyLeftKnown(selected.Source, shape.Expr.Info.Type, selected.Info.Type)
                 match implicitAlias (selected.Value, alias) with
                 | Some a when a = shape.ColumnName -> ()
                 | _ ->
@@ -289,7 +289,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                             if row.Value.Length <> shape.Columns.Count then
                                 failAt row.Source <| Error.expectedKnownColumnCount row.Value.Length shape.Columns.Count  
                             for colVal, colShape in Seq.zip row.Value shape.Columns do
-                                ignore <| cxt.Unify(row.Source, colVal.Info.Type, colShape.Expr.Info.Type)
+                                cxt.UnifyLeftKnown(row.Source, colShape.Expr.Info.Type, colVal.Info.Type)
                                 if rowIndex > 0 then () else
                                 yield
                                     {   Expr = colVal
@@ -563,7 +563,7 @@ type TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScope) as th
                     match cols.ColumnByName(name.Value) with
                     | Found col ->
                         let expr = checker.Expr(expr)
-                        ignore <| cxt.Unify(name.Source, col.Expr.Info.Type, expr.Info.Type)
+                        cxt.UnifyLeftKnown(name.Source, col.Expr.Info.Type, expr.Info.Type)
                         yield name, expr
                     | _ ->
                         failAt name.Source <| Error.noSuchColumnToSet updateTable.TableName name.Value

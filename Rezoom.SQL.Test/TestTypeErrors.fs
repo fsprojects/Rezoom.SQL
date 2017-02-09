@@ -44,7 +44,7 @@ let ``updated column types must match`` () =
 
 [<Test>]
 let ``inserted column types must match`` () =
-    expectError (Error.cannotUnify "STRING" "INT")
+    expectError (Error.cannotUnify "INT" "STRING")
         """
             insert into Users(Id, Name) values ('one', 'jim')
         """
@@ -61,13 +61,6 @@ let ``sum argument must be numeric`` () =
     expectError (Error.cannotUnify "<numeric>" "STRING")
         """
             select sum(Name) as Sum from Users
-        """
-
-[<Test>]
-let ``coalesce forces first arg nullable`` () =
-    expectError Error.exprMustBeNullable
-        """
-            select coalesce(1, null)
         """
 
 [<Test>]

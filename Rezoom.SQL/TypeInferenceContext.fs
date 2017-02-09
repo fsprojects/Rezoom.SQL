@@ -84,9 +84,7 @@ type private TypeInferenceContext() =
         match nullable.Simplify() with
         | NullableDueToJoin _
         | NullableUnknown
-        | NullableKnown true -> ()
-        | NullableKnown false ->
-            failAt source Error.exprMustBeNullable
+        | NullableKnown _ -> () // even NullableKnown false is OK, we just want to force the NullableVariables
         | NullableVariable id -> nullVariables.GetVar(id).ForceNullable()
         | NullableEither _ ->
             let rec allVars v =
@@ -150,6 +148,12 @@ module private TypeInferenceExtensions =
             {   InferredType = typeInference.Unify(source, types |> Seq.map (fun t -> t.InferredType))
                 InferredNullable = InferredNullable.Any(types |> Seq.map (fun t -> t.InferredNullable))
             }
+        /// Unify a known type (e.g. from a table we're inserting into or a declared CTE)
+        /// with an inferred type. The inferred type is forced nullable if the known type is nullable.
+        member typeInference.UnifyLeftKnown(source : SourceInfo, left : InferredType, right : InferredType) =
+            ignore <| typeInference.Unify(source, left.InferredType, right.InferredType)
+            if left.InferredNullable = NullableKnown true then
+                typeInference.ForceNullable(source, right.InferredNullable)
         member typeInference.Concrete(inferred) = typeInference.Concrete(inferred)
         member typeInference.Binary(source, op, left, right) =
             match op with
