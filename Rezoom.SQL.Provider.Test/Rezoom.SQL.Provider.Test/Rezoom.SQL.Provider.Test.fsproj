@@ -61,6 +61,7 @@
     <None Include="App.config" />
     <None Include="V1.initial.sql" />
     <Content Include="packages.config" />
+    <None Include="rzsql.json" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="EntityFramework">
