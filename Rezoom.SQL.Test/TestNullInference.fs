@@ -135,3 +135,19 @@ let ``insert into nullable column with parameter from select should be nullable`
         [   "x", "INT"
             "y", "STRING?"
         ]
+
+[<Test>]
+let ``update into nullable column with parameter should be nullable`` () =
+    expect
+        """
+            update Users
+            set Id = @x
+              , Name = @y
+            where true;
+            select 0 as ignore;
+        """
+        [   "ignore", "<numeric>"
+        ]
+        [   "x", "INT"
+            "y", "STRING?"
+        ]
