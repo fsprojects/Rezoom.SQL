@@ -5,6 +5,7 @@ open System.Configuration
 open System.Collections.Generic
 open System.Data
 open System.Data.Common
+open System.Threading
 open Rezoom
 
 [<AbstractClass>]
@@ -111,4 +112,4 @@ type Command<'a> with
     member this.ExecutePlan() =
         CommandErrand(this) |> Plan.ofErrand
     member this.ExecuteAsync(conn : DbConnection) =
-        CommandBatch(conn).Batch(this)()
+        CommandBatch(conn).Batch(this)(CancellationToken())

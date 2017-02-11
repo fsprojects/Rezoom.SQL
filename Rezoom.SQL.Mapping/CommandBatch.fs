@@ -4,6 +4,7 @@ open System.Data
 open System.Data.Common
 open System.Collections.Generic
 open System.Text
+open System.Threading
 open System.Threading.Tasks
 open FSharp.Control.Tasks.ContextInsensitive
 
@@ -141,7 +142,7 @@ type CommandBatch(conn : DbConnection) =
         builders.Add(CommandBatchBuilder(conn))
     member __.Batch(cmd : #Command<'a>) =
         let inline retrieveResult builderIndex resultsIndex =
-            fun () ->
+            fun (token : CancellationToken) ->
                 evaluation.Value.ContinueWith
                     ( (fun (t : _ ResizeArray array Task) ->
                         t.Result.[builderIndex].[resultsIndex] |> Unchecked.unbox : 'a)
