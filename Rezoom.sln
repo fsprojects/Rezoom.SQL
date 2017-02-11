@@ -23,8 +23,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Provider", "Rezo
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL", "Rezoom.SQL\Rezoom.SQL.fsproj", "{87FCD04A-1F90-4D53-A428-CF5F5C532A22}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.Documentation", "Rezoom.Documentation\Rezoom.Documentation.fsproj", "{62669A70-A41C-44BC-B860-EDA3550018FA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -63,10 +61,6 @@ Global
 		{87FCD04A-1F90-4D53-A428-CF5F5C532A22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87FCD04A-1F90-4D53-A428-CF5F5C532A22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{87FCD04A-1F90-4D53-A428-CF5F5C532A22}.Release|Any CPU.Build.0 = Release|Any CPU
-		{62669A70-A41C-44BC-B860-EDA3550018FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{62669A70-A41C-44BC-B860-EDA3550018FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{62669A70-A41C-44BC-B860-EDA3550018FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{62669A70-A41C-44BC-B860-EDA3550018FA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
