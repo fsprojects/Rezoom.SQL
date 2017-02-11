@@ -107,6 +107,10 @@ type CommandErrand<'a>(command : Command<'a>) =
     override __.Prepare(cxt) =
         let batches = cxt.GetService<StepLocalBatchesFactory, _>()
         batches.GetBatch(command.ConnectionName).Batch(command)
+    override __.ToString() =
+        let all = CommandFragment.Stringize(command.Fragments)
+        let truncate = 80
+        if all.Length < truncate then all else all.Substring(0, truncate - 3) + "..."
 
 type Command<'a> with
     member this.ExecutePlan() =

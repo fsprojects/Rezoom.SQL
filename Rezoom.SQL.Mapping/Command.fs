@@ -24,7 +24,7 @@ type CommandFragment =
                 | LocalName name -> yield name
                 | CommandText text -> yield text
                 | Whitespace -> yield " "
-                | Parameter _ -> failwith "Parameter references cannot be converted to strings"
+                | Parameter i -> yield ("@P" + string i)
         } |> String.concat ""
 
 [<AbstractClass>]
