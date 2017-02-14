@@ -7,7 +7,7 @@ open Rezoom.SQL.Provider
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Mapping.Migrations
 
-type DataModel = Model
+type DataModel = SQLModel
 
 type GetChildTodos = SQL<"""
     select * from ActiveTodos where ParentId is @parentId

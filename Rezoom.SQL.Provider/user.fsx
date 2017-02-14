@@ -11,7 +11,7 @@
 open Rezoom.SQL.Provider
 open Rezoom.SQL.Mapping
 
-type M = Model
+type M = SQLModel
 
 type Query = SQL<"""
     select * from Users u where u.id = @id

@@ -48,7 +48,7 @@ type public Provider(cfg : TypeProviderConfig) as this =
 
     let modelTy =
         let modelTy =
-            ProvidedTypeDefinition(thisAssembly, rootNamespace, "Model", Some typeof<obj>, IsErased = false)
+            ProvidedTypeDefinition(thisAssembly, rootNamespace, "SQLModel", Some typeof<obj>, IsErased = false)
         let staticParams = [ ProvidedStaticParameter("model", typeof<string>, "") ]
         let buildModelFromStaticParams typeName (parameterValues : obj array) =
             match parameterValues with
