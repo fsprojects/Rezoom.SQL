@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -67,6 +67,11 @@
     <Compile Include="Provider.fs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Rezoom.SQL.Compiler\Rezoom.SQL.Compiler.fsproj">
+      <Name>Rezoom.SQL.Compiler</Name>
+      <Project>{87fcd04a-1f90-4d53-a428-cf5f5c532a22}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Rezoom\Rezoom.fsproj">
       <Name>Rezoom</Name>
       <Project>{d98acbeb-a039-4340-a7c5-6ed2b677268b}</Project>
@@ -83,11 +88,6 @@
     <ProjectReference Include="..\Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj">
       <Name>Rezoom.SQL.Mapping</Name>
       <Project>{6b6a06c5-157a-4fe3-8b4c-2a1ae6a15333}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Rezoom.SQL\Rezoom.SQL.fsproj">
-      <Name>Rezoom.SQL</Name>
-      <Project>{87fcd04a-1f90-4d53-a428-cf5f5c532a22}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

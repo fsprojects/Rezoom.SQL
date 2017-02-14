@@ -1,7 +1,7 @@
 ﻿module Rezoom.SQL.Test.TestTypeInference
 open NUnit.Framework
 open FsUnit
-open Rezoom.SQL
+open Rezoom.SQL.Compiler
 
 let zeroModel =
     {   Schemas =

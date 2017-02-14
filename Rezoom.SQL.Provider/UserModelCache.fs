@@ -2,7 +2,7 @@
 open System
 open System.Collections.Generic
 open System.IO
-open Rezoom.SQL
+open Rezoom.SQL.Compiler
 
 type UserModelCache() as this =
     let watchers = Dictionary()

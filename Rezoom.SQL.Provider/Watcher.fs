@@ -2,7 +2,7 @@
 open System
 open System.Threading
 open System.IO
-open Rezoom.SQL
+open Rezoom.SQL.Compiler
 
 type Watcher(path : string) as this =
     let fs = new FileSystemWatcher(path, IncludeSubdirectories = true)

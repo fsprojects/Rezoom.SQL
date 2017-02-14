@@ -1,7 +1,7 @@
 ﻿namespace Rezoom.SQL.Provider
 open System
 open System.Collections.Generic
-open Rezoom.SQL
+open Rezoom.SQL.Compiler
 
 /// Same mapping as Rezoom.SQL.Mapping.ColumnMap, but carries more metadata about the columns
 /// known from Rezoom.SQL.

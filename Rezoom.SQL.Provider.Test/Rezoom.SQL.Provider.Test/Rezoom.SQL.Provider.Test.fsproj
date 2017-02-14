@@ -88,8 +88,8 @@
     <Reference Include="Rezoom">
       <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.dll</HintPath>
     </Reference>
-    <Reference Include="Rezoom.SQL">
-      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.SQL.dll</HintPath>
+    <Reference Include="Rezoom.SQL.Compiler">
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.SQL.Compiler.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Mapping">
       <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.SQL.Mapping.dll</HintPath>

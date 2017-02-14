@@ -2,7 +2,7 @@
 open System
 open NUnit.Framework
 open FsUnit
-open Rezoom.SQL
+open Rezoom.SQL.Compiler
 open Rezoom.SQL.Mapping
 
 let expect (sql : string) expectedColumns expectedParams =

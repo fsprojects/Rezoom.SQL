@@ -13,7 +13,7 @@ open ProviderImplementation.ProvidedTypes
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open Rezoom
 open Rezoom.SQL.Mapping
-open Rezoom.SQL
+open Rezoom.SQL.Compiler
 
 type GenerateTypeCase =
     | GenerateSQL of string

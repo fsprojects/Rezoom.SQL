@@ -6,7 +6,7 @@ open System
 open System.Reflection
 open System.IO
 open System.Collections.Generic
-open Rezoom.SQL
+open Rezoom.SQL.Compiler
 
 let userModelByName name =
     let assemblyFolder = Path.GetDirectoryName(Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath)
