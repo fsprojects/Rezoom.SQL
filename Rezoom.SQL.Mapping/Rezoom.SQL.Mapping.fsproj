@@ -50,7 +50,6 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
-    <Content Include="packages.config" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CILHelpers.fs" />
     <Compile Include="Row.fs" />
@@ -73,10 +72,11 @@
     <Compile Include="Command.fs" />
     <Compile Include="CommandBatch.fs" />
     <Compile Include="Integration.fs" />
+    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="LicenseToCIL">
-      <HintPath>..\packages\LicenseToCIL.0.2.1\lib\net46\LicenseToCIL.dll</HintPath>
+      <HintPath>..\packages\LicenseToCIL.0.2.2\lib\net46\LicenseToCIL.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
@@ -88,8 +88,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Rezoom\Rezoom.fsproj">
       <Name>Rezoom</Name>
       <Project>{d98acbeb-a039-4340-a7c5-6ed2b677268b}</Project>
