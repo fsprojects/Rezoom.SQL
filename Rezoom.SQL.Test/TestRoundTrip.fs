@@ -36,6 +36,17 @@ let ``fancy select`` () =
     """
 
 [<Test>]
+let ``fancy select with order by`` () =
+    roundtrip """
+        select g.*, u.*
+        from Users u
+        left join UserGroupMaps gm on gm.UserId = u.Id
+        left join Groups g on g.Id = gm.GroupId
+        where g.Name like '%grp%' escape '%'
+        order by g.Id asc, u.Id desc
+    """
+
+[<Test>]
 let ``insert`` () =
     roundtrip """
         insert into Users(id, name)

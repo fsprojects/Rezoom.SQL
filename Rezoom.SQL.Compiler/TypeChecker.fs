@@ -233,15 +233,16 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                      // typechecker should've eliminated alternatives
                      | _ -> bug "All wildcards must be expanded -- this is a typechecker bug"
             } |> toReadOnlyList
-        {   Columns = columns
-            From = from
-            Where = Option.map checker.Expr select.Where
-            GroupBy = Option.map checker.GroupBy select.GroupBy
-            Info =
-                {   Table = SelectResults
-                    Query = { Columns = infoColumns }
-                } |> TableLike
-        } |> AggregateChecker.check
+        checker,
+            {   Columns = columns
+                From = from
+                Where = Option.map checker.Expr select.Where
+                GroupBy = Option.map checker.GroupBy select.GroupBy
+                Info =
+                    {   Table = SelectResults
+                        Query = { Columns = infoColumns }
+                    } |> TableLike
+            } |> AggregateChecker.check
 
     member this.CTE(cte : CommonTableExpression) =
         let knownShape = cte.ColumnNames |> Option.map (fun n -> cxt.AnonymousQueryInfo(n.Value))
@@ -278,8 +279,9 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             Offset = limit.Offset |> Option.map (fun e -> this.Expr(e, IntegerType Integer64))
         }
 
-    member this.CompoundTerm(term : CompoundTerm, knownShape : InferredQueryShape option) : InfCompoundTerm =
-        let info, value =
+    member this.CompoundTerm(term : CompoundTerm, knownShape : InferredQueryShape option)
+        : TypeChecker * InfCompoundTerm =
+        let info, fromChecker, value =
             match term.Value, knownShape with
             | Values vals, Some shape ->
                 let vals = vals |> rmap (fun w -> { WithSource.Value = rmap this.Expr w.Value; Source = w.Source })
@@ -300,56 +302,71 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 TableLike
                     {   Table = CompoundTermResults
                         Query = { Columns = columns }
-                    }, Values vals
+                    }, this, Values vals
             | Values vals, None ->
                 failAt term.Source Error.valuesRequiresKnownShape
             | Select select, knownShape ->
-                let select = this.SelectCore(select, knownShape)
-                select.Info, Select select
-        {   Source = term.Source
-            Value = value
-            Info = info
-        }
+                let checker, select = this.SelectCore(select, knownShape)
+                select.Info, checker, Select select
+        fromChecker, // pass up the typechecker for the "from" clause so "order by" can use it
+            {   Source = term.Source
+                Value = value
+                Info = info
+            }
 
-    member this.Compound(compound : CompoundExpr, knownShape : InferredQueryShape option) : InfCompoundExpr =
-        let nested leftCompound rightTerm =
+    member this.Compound(compound : CompoundExpr, knownShape : InferredQueryShape option)
+        : TypeChecker * InfCompoundExpr =
+        let nested f leftCompound rightTerm =
             match knownShape with
             | Some _ as shape ->
-                this.Compound(leftCompound, knownShape), this.CompoundTerm(rightTerm, knownShape)
+                let fromChecker, left = this.Compound(leftCompound, knownShape)
+                let _, right = this.CompoundTerm(rightTerm, knownShape)
+                fromChecker, f(left, right)
             | None ->
-                let leftCompound = this.Compound(leftCompound, None)
-                leftCompound, this.CompoundTerm(rightTerm, Some leftCompound.Value.Info.Query)
-        {   CompoundExpr.Source = compound.Source
-            Value =
-                match compound.Value with
-                | CompoundTerm term -> CompoundTerm <| this.CompoundTerm(term, knownShape)
-                | Union (expr, term) -> Union <| nested expr term
-                | UnionAll (expr, term) -> UnionAll <| nested expr term
-                | Intersect (expr, term) -> Intersect <| nested expr term
-                | Except (expr, term) -> Except <| nested expr term
-        }
+                let fromChecker, left = this.Compound(leftCompound, None)
+                let _, right = this.CompoundTerm(rightTerm, Some left.Value.Info.Query)
+                fromChecker, f(left, right)
+        let fromChecker, value =
+            match compound.Value with
+            | CompoundTerm term ->
+                let checker, term = this.CompoundTerm(term, knownShape)
+                checker, CompoundTerm term
+            | Union (expr, term) -> nested Union expr term
+            | UnionAll (expr, term) -> nested UnionAll expr term
+            | Intersect (expr, term) -> nested Intersect expr term
+            | Except (expr, term) -> nested Except expr term
+        fromChecker,
+            {   CompoundExpr.Source = compound.Source
+                Value = value
+            }
 
-    member this.CompoundTop(compound : CompoundExpr, selfShape : SelfQueryShape) : InfCompoundExpr =
+    member this.CompoundTop(compound : CompoundExpr, selfShape : SelfQueryShape)
+        : TypeChecker * InfCompoundExpr =
         match selfShape.CTEName with
         | None -> this.Compound(compound, selfShape.KnownShape)
-        | Some cteName ->
-            let nested leftCompound recursiveFinalTerm =
-                let leftCompound = this.Compound(leftCompound, selfShape.KnownShape)
+        | Some cteName -> // handle recursive references to own CTE in rightmost term
+            let nested f leftCompound recursiveFinalTerm =
+                let fromChecker, leftCompound = this.Compound(leftCompound, selfShape.KnownShape)
                 let leftQuery = leftCompound.Value.Info.Query
                 let rightChecker = 
                     { scope with
                         CTEVariables = scope.CTEVariables |> Map.add cteName leftQuery
                     } |> this.WithScope
-                leftCompound, rightChecker.CompoundTerm(recursiveFinalTerm, Some leftQuery)
-            {   CompoundExpr.Source = compound.Source
-                Value =
-                    match compound.Value with
-                    | CompoundTerm term -> CompoundTerm <| this.CompoundTerm(term, selfShape.KnownShape)
-                    | Union (expr, term) -> Union <| nested expr term
-                    | UnionAll (expr, term) -> UnionAll <| nested expr term
-                    | Intersect (expr, term) -> Intersect <| nested expr term
-                    | Except (expr, term) -> Except <| nested expr term
-            }
+                let _, right = rightChecker.CompoundTerm(recursiveFinalTerm, Some leftQuery)
+                fromChecker, f(leftCompound, right)
+            let fromChecker, value =
+                match compound.Value with
+                | CompoundTerm term ->
+                    let checker, term = this.CompoundTerm(term, selfShape.KnownShape)
+                    checker, CompoundTerm term
+                | Union (expr, term) -> nested Union expr term
+                | UnionAll (expr, term) -> nested UnionAll expr term
+                | Intersect (expr, term) -> nested Intersect expr term
+                | Except (expr, term) -> nested Except expr term
+            fromChecker,
+                {   CompoundExpr.Source = compound.Source
+                    Value = value
+                }
 
     member this.Select(select : SelectStmt, selfShape : SelfQueryShape) : InfSelectStmt =
         {   Source = select.Source
@@ -361,10 +378,10 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                     | Some withClause ->
                         let checker, withClause = this.WithClause(withClause)
                         checker, Some withClause
-                let compound = checker.CompoundTop(select.Compound, selfShape)
+                let fromChecker, compound = checker.CompoundTop(select.Compound, selfShape)
                 {   With = withClause
                     Compound = compound
-                    OrderBy = Option.map (rmap checker.OrderingTerm) select.OrderBy
+                    OrderBy = Option.map (rmap fromChecker.OrderingTerm) select.OrderBy
                     Limit = Option.map checker.Limit select.Limit
                     Info = compound.Value.Info
                 }
