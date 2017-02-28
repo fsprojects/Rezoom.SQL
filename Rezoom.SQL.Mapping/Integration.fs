@@ -114,7 +114,7 @@ type private CommandErrand<'a>(command : Command<'a>) =
         if all.Length < truncate then all else all.Substring(0, truncate - 3) + "..."
 
 type Command<'a> with
-    member this.ExecutePlan() =
+    member this.Plan() =
         CommandErrand(this) |> Plan.ofErrand
     member this.ExecuteAsync(conn : DbConnection) =
         CommandBatch(conn).Batch(this)(CancellationToken())
@@ -126,6 +126,6 @@ type ScalarCommandExtensions =
     [<Extension>]
     static member PlanScalar(cmd : Command<#IScalar<_>>) =
         plan {
-            let! planResult = cmd.ExecutePlan()
+            let! planResult = cmd.Plan()
             return planResult.ScalarValue
         }

@@ -23,7 +23,7 @@ let cmdPlan (cmd : string) =
     plan {
         match cmd with
         | "ls" ->
-            let! children = GetChildTodos.Command(None).ExecutePlan()
+            let! children = GetChildTodos.Command(None).Plan()
             printfn "%d children" children.Count
             for child in children do
                 printfn "%s: %s" child.Heading (defaultArg child.Paragraph "None")
