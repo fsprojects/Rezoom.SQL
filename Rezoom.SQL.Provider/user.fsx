@@ -4,7 +4,8 @@
 #r "FParsecCS.dll"
 #r "FParsec-Pipes.dll"
 #r "LicenseToCIL.dll"
-#r "Rezoom.SQL.dll"
+#r "Rezoom.dll"
+#r "Rezoom.SQL.Compiler.dll"
 #r "Rezoom.SQL.Mapping.dll"
 #r "Rezoom.SQL.Provider.dll"
 
