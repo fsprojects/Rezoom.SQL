@@ -44,16 +44,11 @@ let buildPlan (cmd : string) =
     }
 
 let migrate() =
-    let dbname = "test.db"
-    if not <| File.Exists(dbname) then
-        SQLiteConnection.CreateFile(dbname)
-    use conn = new SQLiteConnection("data source=" + dbname)
-    conn.Open()
     let config =
         {   AllowMigrationsFromOlderMajorVersions = false
-            LogMigrationRan = fun _ -> ()
+            LogMigrationRan = fun m -> printfn "%s" m.FileName
         }
-    DataModel.Migrate(config, conn)
+    DataModel.Migrate(config)
 
 [<EntryPoint>]
 let main argv =

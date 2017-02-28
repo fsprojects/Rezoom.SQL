@@ -269,6 +269,48 @@ let generateSQLType (generate : GenerateType) (sql : string) =
     provided.AddMember <| generateCommandMethod generate commandEffect commandType commandCtorMethod
     provided
 
+let generateMigrationMembers
+    (config : Config.Config) (backend : IBackend) (provided : ProvidedTypeDefinition) migrationsField =
+    provided.AddMember <|
+        ProvidedProperty
+            ( "Migrations"
+            , typeof<string Migrations.MigrationTree IReadOnlyList>
+            , GetterCode = fun _ -> Expr.FieldGet(migrationsField)
+            , IsStatic = true
+            )
+    do
+        let pars =
+            [   ProvidedParameter("config", typeof<Migrations.MigrationConfig>)
+                ProvidedParameter("conn", typeof<DbConnection>)
+            ]
+        let meth = ProvidedMethod("Migrate", pars, typeof<unit>)
+        meth.IsStaticMethod <- true
+        meth.InvokeCode <- function
+            | [ config; conn ] -> 
+                <@@ let migrations : string Migrations.MigrationTree array = %%Expr.FieldGet(migrationsField)
+                    migrations.Run(%%config, (fun () -> %%conn), %%(upcast backend.MigrationBackend))
+                @@>
+            | _ -> failwith "Invalid migrate argument list"
+        provided.AddMember meth
+    do
+        let connectionName = Quotations.Expr.Value(config.ConnectionName)
+        let pars =
+            [   ProvidedParameter("config", typeof<Migrations.MigrationConfig>)
+            ]
+        let meth = ProvidedMethod("Migrate", pars, typeof<unit>)
+        meth.IsStaticMethod <- true
+        meth.InvokeCode <- function
+            | [ config ] -> 
+                <@@ let migrations : string Migrations.MigrationTree array = %%Expr.FieldGet(migrationsField)
+                    migrations.Run
+                        ( %%config
+                        , (fun () -> DefaultConnectionProvider().Open(%%connectionName))
+                        , %%(upcast backend.MigrationBackend)
+                        )
+                @@>
+            | _ -> failwith "Invalid migrate argument list"
+        provided.AddMember meth
+
 let generateModelType (generate : GenerateType) =
     let backend = generate.UserModel.Backend
     let provided =
@@ -297,30 +339,7 @@ let generateModelType (generate : GenerateType) =
                 , generate.UserModel.Migrations |> Seq.map Migrations.quotationizeMigrationTree |> Seq.toList
                 ))
     provided.AddMember <| staticCtor
-    provided.AddMember <|
-        ProvidedProperty
-            ( "Migrations"
-            , typeof<string Migrations.MigrationTree IReadOnlyList>
-            , GetterCode = fun _ -> Expr.FieldGet(migrationsField)
-            , IsStatic = true
-            )
-    do
-        let pars =
-            [   ProvidedParameter("config", typeof<Migrations.MigrationConfig>)
-                ProvidedParameter("conn", typeof<DbConnection>)
-            ]
-        let meth = ProvidedMethod("Migrate", pars, typeof<unit>)
-        meth.IsStaticMethod <- true
-        meth.InvokeCode <- function
-            | [config; conn] -> 
-                <@@
-                    let migrationBackend : Migrations.IMigrationBackend =
-                        (%%(upcast backend.MigrationBackend)) (%%conn : DbConnection)
-                    let migrations : string Migrations.MigrationTree array = %%Expr.FieldGet(migrationsField)
-                    Migrations.runMigrations %%config migrationBackend migrations
-                @@>
-            | _ -> failwith "Invalid migrate argument list"
-        provided.AddMember meth
+    generateMigrationMembers generate.UserModel.Config backend provided migrationsField
     provided
 
 let generateType (generate : GenerateType) =
