@@ -69,6 +69,7 @@
     <Compile Include="ManyEntityColumnGenerator.fs" />
     <Compile Include="StaticEntityReaderTemplate.fs" />
     <Compile Include="Migrations.fs" />
+    <Compile Include="IScalar.fs" />
     <Compile Include="Command.fs" />
     <Compile Include="CommandBatch.fs" />
     <Compile Include="Integration.fs" />

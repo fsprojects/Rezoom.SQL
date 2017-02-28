@@ -209,7 +209,7 @@ type private Command4<'a, 'b, 'c, 'd>(data, parameters) =
         upcast Command4({ data with ConnectionName = connectionName}, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor4<'a, 'b, 'c, 'd>()
 
-type CommandConstructor() =
+type CommandConstructor =
     static member Command0(data, parameters) =
         Command0(data, parameters) :> _ Command
     static member Command1<'a>(data, parameters) =

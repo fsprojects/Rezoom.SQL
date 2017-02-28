@@ -210,12 +210,12 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         }
 
     member this.SelectCore(select : SelectCore, knownShape : InferredQueryShape option) =
-        let checker, from =
+        let checker, from, staticCount =
             match select.From with
-            | None -> this, None
+            | None -> this, None, Some 1
             | Some from ->
                 let checker, texpr = this.TableExpr(from)
-                checker, Some texpr
+                checker, Some texpr, None
         let columns = checker.ResultColumns(select.Columns, knownShape)
         let infoColumns =
             seq {
@@ -240,7 +240,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 GroupBy = Option.map checker.GroupBy select.GroupBy
                 Info =
                     {   Table = SelectResults
-                        Query = { Columns = infoColumns }
+                        Query = { Columns = infoColumns; StaticRowCount = staticCount }
                     } |> TableLike
             } |> AggregateChecker.check
 
@@ -301,7 +301,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                     } |> toReadOnlyList
                 TableLike
                     {   Table = CompoundTermResults
-                        Query = { Columns = columns }
+                        Query = { Columns = columns; StaticRowCount = Some vals.Length }
                     }, this, Values vals
             | Values vals, None ->
                 failAt term.Source Error.valuesRequiresKnownShape

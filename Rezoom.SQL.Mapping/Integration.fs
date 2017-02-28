@@ -1,5 +1,6 @@
 ﻿[<AutoOpen>]
 module Rezoom.SQL.Mapping.Integration
+open System.Runtime.CompilerServices
 open System
 open System.Configuration
 open System.Collections.Generic
@@ -98,7 +99,7 @@ type private CommandErrandArgument(parameters : (obj * DbType) IReadOnlyList) =
         | :? CommandErrandArgument as other -> this.Equals(other)
         | _ -> false
 
-type CommandErrand<'a>(command : Command<'a>) =
+type private CommandErrand<'a>(command : Command<'a>) =
     inherit AsynchronousErrand<'a>()
     let cacheArgument = CommandErrandArgument(command.Parameters)
     override __.CacheInfo = command.CacheInfo
@@ -117,3 +118,14 @@ type Command<'a> with
         CommandErrand(this) |> Plan.ofErrand
     member this.ExecuteAsync(conn : DbConnection) =
         CommandBatch(conn).Batch(this)(CancellationToken())
+
+// Have to use a C#-style extension method to support the scalar constraint.
+
+[<Extension>]
+type ScalarCommandExtensions =
+    [<Extension>]
+    static member PlanScalar(cmd : Command<#IScalar<_>>) =
+        plan {
+            let! planResult = cmd.ExecutePlan()
+            return planResult.ScalarValue
+        }

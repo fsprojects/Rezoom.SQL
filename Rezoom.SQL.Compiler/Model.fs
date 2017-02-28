@@ -165,7 +165,10 @@ and ColumnExprInfo<'t> =
         }
 
 and QueryExprInfo<'t> =
-    { Columns : 't ColumnExprInfo IReadOnlyList }
+    {   Columns : 't ColumnExprInfo IReadOnlyList
+        /// If we know ahead of time how many rows will be returned, this is that.
+        StaticRowCount : int option
+    }
     member this.Idempotent =
         this.Columns |> Seq.forall (fun e -> e.Expr.Info.Idempotent)
     member this.ColumnsWithNames(names) =
@@ -177,7 +180,7 @@ and QueryExprInfo<'t> =
                     if succ then yield found
                     else failAt source <| Error.noSuchColumn name
             } |> toReadOnlyList
-        { Columns = filtered }
+        { this with Columns = filtered }
     member this.ColumnByName(name) =
         let matches =
             this.Columns
@@ -198,11 +201,15 @@ and QueryExprInfo<'t> =
                 (this.Columns, names)
                 ||> Seq.map2 (fun col newName -> { col with ColumnName = newName })
                 |> toReadOnlyList
-            Ok { Columns = newColumns }
+            Ok { this with Columns = newColumns }
     member this.Append(right : 't QueryExprInfo) =
-        { Columns = appendLists this.Columns right.Columns }
+        {   Columns = appendLists this.Columns right.Columns
+            StaticRowCount = None
+        }
     member this.Map(f : 't -> _) =
-        { Columns = this.Columns |> Seq.map (fun c -> c.Map(f)) |> toReadOnlyList }
+        {   Columns = this.Columns |> Seq.map (fun c -> c.Map(f)) |> toReadOnlyList
+            StaticRowCount = this.StaticRowCount
+        }
 
 and TableReference =
     | TableReference of SchemaTable

@@ -177,6 +177,7 @@ let inferredOfTable (table : SchemaTable) =
             table.Columns
             |> Seq.map (function KeyValue(_, c) -> InferredQueryColumn.OfColumn(Some table.TableName, c))
             |> toReadOnlyList
+        StaticRowCount = None
     }
 
 type InferredFromClause =

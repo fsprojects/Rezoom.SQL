@@ -29,7 +29,7 @@ let cmdPlan (cmd : string) =
                 printfn "%s: %s" child.Heading (defaultArg child.Paragraph "None")
         | "mk" ->
             let! result = MakeChildTodo.Command("test heading", Some "test para").ExecutePlan()
-            printfn "Created TODO %d" result.[0].id
+            printfn "Created TODO %d" result.id
         | "throw" ->
             failwith "unhandled exn"
         | _ ->
