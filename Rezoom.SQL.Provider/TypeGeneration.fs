@@ -72,6 +72,25 @@ type private BlueprintColumnNameAttributeData(name : string) =
         |] :> IList<_>
     override __.NamedArguments = [||] :> IList<_>
 
+let private addScalarInterface (ty : ProvidedTypeDefinition) (field : ProvidedField) =
+    let getterMethod =
+        ProvidedMethod("get_ScalarValue", [], field.FieldType, InvokeCode =
+            function
+            | [ this ] -> Expr.FieldGet(this, field)
+            | _ -> failwith "Invalid getter argument list")
+    let flags =
+        MethodAttributes.Virtual
+        ||| MethodAttributes.Private
+        ||| MethodAttributes.Final
+        ||| MethodAttributes.NewSlot
+        ||| MethodAttributes.HasSecurity
+    getterMethod.SetMethodAttrs(flags)
+    let scalarInterface = typedefof<_ IScalar>.MakeGenericType(field.FieldType)
+    let getScalarValue = scalarInterface.GetMethod("get_ScalarValue")
+    ty.AddInterfaceImplementation(scalarInterface)
+    ty.DefineMethodOverride(getterMethod, getScalarValue)
+    ty.AddMember(getterMethod)
+
 let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap : CompileTimeColumnMap) =
     let ty =
         ProvidedTypeDefinition
@@ -122,6 +141,8 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
                 (Quotations.Expr.Value(()))
         | _ -> failwith "Invalid ctor argument list"
     ty.AddMember(ctor)
+    if fields.Count = 1 then
+        addScalarInterface ty (snd fields.[0])
     ty
 
 let private generateRowType (model : UserModel) (name : string) (query : ColumnType QueryExprInfo) =
