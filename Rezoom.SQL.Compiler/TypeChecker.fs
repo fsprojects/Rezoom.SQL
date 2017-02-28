@@ -324,7 +324,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 fromChecker, f(left, right)
             | None ->
                 let fromChecker, left = this.Compound(leftCompound, None)
-                let _, right = this.CompoundTerm(rightTerm, Some left.Value.Info.Query)
+                let _, right = this.CompoundTerm(rightTerm, Some left.Value.LeftmostInfo.Query)
                 fromChecker, f(left, right)
         let fromChecker, value =
             match compound.Value with
@@ -347,7 +347,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         | Some cteName -> // handle recursive references to own CTE in rightmost term
             let nested f leftCompound recursiveFinalTerm =
                 let fromChecker, leftCompound = this.Compound(leftCompound, selfShape.KnownShape)
-                let leftQuery = leftCompound.Value.Info.Query
+                let leftQuery = leftCompound.Value.LeftmostInfo.Query
                 let rightChecker = 
                     { scope with
                         CTEVariables = scope.CTEVariables |> Map.add cteName leftQuery
@@ -379,11 +379,22 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                         let checker, withClause = this.WithClause(withClause)
                         checker, Some withClause
                 let fromChecker, compound = checker.CompoundTop(select.Compound, selfShape)
+                let merge attemptAdd (leftInfo : _ ObjectInfo) (rightInfo : _ ObjectInfo) =
+                    match attemptAdd, leftInfo, rightInfo with
+                    | true,
+                        TableLike({ Query = { StaticRowCount = Some left } as leftQuery } as leftTable),
+                        TableLike { Query = { StaticRowCount = Some right } } ->
+                            { leftTable with
+                                Query = { leftQuery with StaticRowCount = Some (left + right) }
+                            } |> TableLike
+                    | _, TableLike ({ Query = q } as o), _ ->
+                        TableLike { o with Query = { q with StaticRowCount = None } }
+                    | _ , left, _ -> left
                 {   With = withClause
                     Compound = compound
                     OrderBy = Option.map (rmap fromChecker.OrderingTerm) select.OrderBy
                     Limit = Option.map checker.Limit select.Limit
-                    Info = compound.Value.Info
+                    Info = compound.Value.MergeInfo(merge true, merge false)
                 }
         }
 

@@ -321,13 +321,20 @@ and CompoundExprCore<'t, 'e> =
     | UnionAll of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
     | Intersect of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
     | Except of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
-    member this.Info =
+    member this.LeftmostInfo =
         match this with
         | CompoundTerm term -> term.Info
         | Union (ex, _)
         | UnionAll (ex, _)
         | Intersect (ex, _)
-        | Except (ex, _) -> ex.Value.Info
+        | Except (ex, _) -> ex.Value.LeftmostInfo
+    member this.MergeInfo(add, unknown) =
+        match this with
+        | CompoundTerm term -> term.Info
+        | UnionAll (ex, t) -> add (ex.Value.MergeInfo(add, unknown)) t.Info
+        | Union (ex, t)
+        | Intersect (ex, t)
+        | Except (ex, t) -> unknown (ex.Value.MergeInfo(add, unknown)) t.Info
 
 and CompoundExpr<'t, 'e> = CompoundExprCore<'t, 'e> WithSource
 
