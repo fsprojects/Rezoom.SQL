@@ -60,3 +60,13 @@ let ``select from select`` () =
         // even though this could be 1, we play it safe and say None, since there could be a where etc.
         // in the subquery
         """select 1 as x from (select 1 as y) q"""
+
+[<Test>]
+let ``select 1 with where`` () =
+    resultSets None
+        """select 1 as x where false"""
+
+[<Test>]
+let ``select 1 with limit`` () =
+    resultSets None
+        """select 1 as x limit 0"""

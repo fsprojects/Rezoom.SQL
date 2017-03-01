@@ -212,7 +212,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
     member this.SelectCore(select : SelectCore, knownShape : InferredQueryShape option) =
         let checker, from, staticCount =
             match select.From with
-            | None -> this, None, Some 1
+            | None -> this, None, (if Option.isNone select.Where then Some 1 else None)
             | Some from ->
                 let checker, texpr = this.TableExpr(from)
                 checker, Some texpr, None
@@ -379,22 +379,30 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                         let checker, withClause = this.WithClause(withClause)
                         checker, Some withClause
                 let fromChecker, compound = checker.CompoundTop(select.Compound, selfShape)
-                let merge attemptAdd (leftInfo : _ ObjectInfo) (rightInfo : _ ObjectInfo) =
-                    match attemptAdd, leftInfo, rightInfo with
-                    | true,
-                        TableLike({ Query = { StaticRowCount = Some left } as leftQuery } as leftTable),
-                        TableLike { Query = { StaticRowCount = Some right } } ->
-                            { leftTable with
-                                Query = { leftQuery with StaticRowCount = Some (left + right) }
-                            } |> TableLike
-                    | _, TableLike ({ Query = q } as o), _ ->
-                        TableLike { o with Query = { q with StaticRowCount = None } }
-                    | _ , left, _ -> left
+                let limit = Option.map checker.Limit select.Limit
+                let info =
+                    let merge attemptAdd (leftInfo : _ ObjectInfo) (rightInfo : _ ObjectInfo) =
+                        match attemptAdd, leftInfo, rightInfo with
+                        | true,
+                            TableLike({ Query = { StaticRowCount = Some left } as leftQuery } as leftTable),
+                            TableLike { Query = { StaticRowCount = Some right } } ->
+                                { leftTable with
+                                    Query = { leftQuery with StaticRowCount = Some (left + right) }
+                                } |> TableLike
+                        | _, TableLike ({ Query = q } as o), _ ->
+                            TableLike { o with Query = { q with StaticRowCount = None } }
+                        | _ , left, _ -> left
+                    match limit, compound.Value.MergeInfo(merge true, merge false) with
+                    | Some _, TableLike ({ Query = { StaticRowCount = Some _ } as query } as table) ->
+                        // if we have any limit expr, drop the static row count
+                        // technically we could figure it out if we're dealing w/ constants, but it's not worth it
+                        TableLike { table with Query = { query with StaticRowCount = None } }
+                    | _, other -> other
                 {   With = withClause
                     Compound = compound
                     OrderBy = Option.map (rmap fromChecker.OrderingTerm) select.OrderBy
-                    Limit = Option.map checker.Limit select.Limit
-                    Info = compound.Value.MergeInfo(merge true, merge false)
+                    Limit = limit
+                    Info = info
                 }
         }
 
