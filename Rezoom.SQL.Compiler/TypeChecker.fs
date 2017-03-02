@@ -559,7 +559,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             ObjectName = this.ObjectName(drop.ObjectName)
         }
 
-    member this.Insert(insert : InsertStmt) = // TODO: verify that we insert into all cols w/o default values
+    member this.Insert(insert : InsertStmt) =
         let checker, withClause =
             match insert.With with
             | None -> this, None
@@ -595,7 +595,8 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 |> Seq.toArray
             if missingColumns.Length > 0 then
                 failAt insert.Columns.[0].Source (Error.insertMissingColumns missingColumns)
-        | _ -> ()
+        | _ ->
+            failAt insert.InsertInto.Source Error.insertIntoNonTable
         {   With = withClause
             Or = insert.Or
             InsertInto = table

@@ -86,3 +86,10 @@ let ``insert without columns required in table`` () =
         """
             insert into Users(Name) values ('x')
         """
+
+[<Test>]
+let ``insert into view bad`` () =
+    expectError Error.insertIntoNonTable
+        """
+            insert into ViewUsers(Id) values (1)
+        """
