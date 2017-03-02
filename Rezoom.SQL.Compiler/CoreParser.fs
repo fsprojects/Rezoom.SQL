@@ -1176,7 +1176,7 @@ let private insertStmt =
     %% +.insertOr
     -- kw "INTO"
     -- +.objectName
-    -- +.(zeroOrOne * parenthesizedColumnNames)
+    -- +.parenthesizedColumnNames
     -- +.[
             %% kw "DEFAULT" -- kw "VALUES" -|> None
             %% +.selectStmt -|> Some

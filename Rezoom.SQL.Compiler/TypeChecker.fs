@@ -567,18 +567,39 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 let checker, withClause = this.WithClause(withClause)
                 checker, Some withClause
         let table = checker.ObjectName(insert.InsertInto)
-        let knownShape =
-            match insert.Columns with
-            | None -> table.Info.Query
-            | Some cols -> table.Info.Query.ColumnsWithNames(cols)
+        let knownShape = table.Info.Query.ColumnsWithNames(insert.Columns)
         let columns =
             knownShape.Columns
             |> Seq.map (fun c -> { WithSource.Source = c.Expr.Source; Value = c.ColumnName })
             |> Seq.toArray
+        match table.Info with
+        | TableLike { Table = TableReference tbl } ->
+            let optionalColumns =
+                tbl.Constraints
+                |> Seq.filter (fun c ->
+                    match c.Value.ConstraintType with
+                    | NullableConstraintType
+                    | DefaultConstraintType
+                    | PrimaryKeyConstraintType true -> true
+                    | _ -> false)
+                |> Seq.map (fun c -> c.Value.Columns)
+                |> Seq.fold Set.union Set.empty
+            let suppliedColumns =
+                columns
+                |> Seq.map (fun c -> c.Value)
+                |> Set.ofSeq
+            let missingColumns =
+                tbl.Columns
+                |> Seq.map (fun c -> c.Key)
+                |> Seq.filter (fun c -> not (Set.contains c optionalColumns) && not (Set.contains c suppliedColumns))
+                |> Seq.toArray
+            if missingColumns.Length > 0 then
+                failAt insert.Columns.[0].Source (Error.insertMissingColumns missingColumns)
+        | _ -> ()
         {   With = withClause
             Or = insert.Or
             InsertInto = table
-            Columns = Some columns // we *must* specify these because our order might not match DB's
+            Columns = columns // we *must* specify these because our order might not match DB's
             Data = insert.Data |> Option.map (fun data -> checker.Select(data, SelfQueryShape.Known(knownShape)))
         }
 

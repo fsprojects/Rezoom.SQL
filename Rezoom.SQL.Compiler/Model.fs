@@ -38,12 +38,46 @@ and SchemaIndex =
         Columns : Name Set
     }
 
+and SchemaConstraintType =
+    | DefaultConstraintType
+    | PrimaryKeyConstraintType of auto : bool
+    | ForeignKeyConstraintType
+    | NullableConstraintType
+    | OtherConstraintType
+
 and SchemaConstraint =
-    {   SchemaName : Name
+    {   ConstraintType : SchemaConstraintType
+        SchemaName : Name
         TableName : Name
         ConstraintName : Name
+        /// Which columns this constraint relates to in the table.
         Columns : Name Set
     }
+    static member Constraint (constr, columnName) =
+        let ty =
+            match constr.ColumnConstraintType with
+            | PrimaryKeyConstraint { AutoIncrement = auto } -> PrimaryKeyConstraintType auto
+            | DefaultConstraint _ -> DefaultConstraintType
+            | ForeignKeyConstraint _ -> ForeignKeyConstraintType
+            | NullableConstraint -> NullableConstraintType
+            | _ -> OtherConstraintType
+        ty, constr.Name, Set.singleton columnName
+    static member AllConstraints (createTable : CreateTableDefinition<_, _>) =
+        seq {
+            for column in createTable.Columns do
+                for constr in column.Constraints ->
+                    SchemaConstraint.Constraint(constr, column.Name)
+            for constr in createTable.Constraints ->
+                let ty =
+                    match constr.TableConstraintType with
+                    | TableForeignKeyConstraint _ -> ForeignKeyConstraintType
+                    | _ -> OtherConstraintType
+                ty, constr.Name,
+                    match constr.TableConstraintType with
+                    | TableIndexConstraint constr -> constr.IndexedColumns |> Seq.map fst |> Set.ofSeq
+                    | TableForeignKeyConstraint (names, _) -> names |> Seq.map (fun v -> v.Value) |> Set.ofSeq
+                    | TableCheckConstraint _ -> Set.empty
+        }
 
 and SchemaTable =
     {   SchemaName : Name
@@ -98,9 +132,10 @@ and SchemaTable =
             Indexes = Map.empty
             Constraints =
                 seq {
-                    for constr, names in def.AllConstraints() ->
+                    for ty, constr, names in SchemaConstraint.AllConstraints(def) ->
                         constr,
-                            {   SchemaName = schemaName
+                            {   ConstraintType = ty
+                                SchemaName = schemaName
                                 TableName = tableName
                                 ConstraintName = constr
                                 Columns = names

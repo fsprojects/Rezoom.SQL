@@ -112,8 +112,8 @@ let ``case not handled means null`` () =
 let ``insert into nullable column with parameter should be nullable`` () =
     expect
         """
-            insert into Users(Id, Name)
-            values (@x, @y);
+            insert into Users(Id, Name, Email)
+            values (@x, @y, '');
             select 0 as ignore;
         """
         [   "ignore", "<numeric>"
@@ -126,8 +126,9 @@ let ``insert into nullable column with parameter should be nullable`` () =
 let ``insert into nullable column with parameter from select should be nullable`` () =
     expect
         """
-            insert into Users(Id, Name)
-            select @x, @y;
+            insert into Users(Id, Name, Email)
+                select @x, @y, '';
+
             select 0 as ignore;
         """
         [   "ignore", "<numeric>"

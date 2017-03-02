@@ -599,18 +599,6 @@ type CreateTableDefinition<'t, 'e> =
         Constraints : TableConstraint<'t, 'e> array
         WithoutRowId : bool
     }
-    member this.AllConstraints() =
-        seq {
-            for column in this.Columns do
-                for constr in column.Constraints ->
-                    constr.Name, Set.singleton column.Name
-            for constr in this.Constraints ->
-                constr.Name,
-                    match constr.TableConstraintType with
-                    | TableIndexConstraint constr -> constr.IndexedColumns |> Seq.map fst |> Set.ofSeq
-                    | TableForeignKeyConstraint (names, _) -> names |> Seq.map (fun v -> v.Value) |> Set.ofSeq
-                    | TableCheckConstraint _ -> Set.empty
-        }
 
 type CreateTableAs<'t, 'e> =
     | CreateAsDefinition of CreateTableDefinition<'t, 'e>
@@ -666,7 +654,7 @@ type InsertStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         Or : InsertOr option
         InsertInto : ObjectName<'t>
-        Columns : Name WithSource array option
+        Columns : Name WithSource array
         Data : SelectStmt<'t, 'e> option // either select/values, or "default values" if none
     }
 

@@ -3,7 +3,7 @@ open System
 open System.Collections.Generic
 open Rezoom.SQL.Compiler.InferredTypes
 
-type private ModelChange(model : Model, inference : ITypeInferenceContext) = 
+type private ModelChange(model : Model, inference : ITypeInferenceContext) =
     member private this.CreateTableColumns(model, schemaName : Name, tableName : Name, asSelect : InfSelectStmt) =
         let query = asSelect.Value.Info.Query
         [| for column in query.Columns ->
@@ -41,6 +41,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     { schema with Objects = schema.Objects |> Map.add table.TableName (SchemaTable table) }
                 Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
     member this.AlterTable(alter : InfAlterTableStmt) =
+        let stripper = ASTMapping.Stripper()
         match model.Schema(alter.Table.SchemaName) with
         | None -> failAt alter.Table.Source <| Error.noSuchSchema alter.Table
         | Some schema ->
@@ -63,11 +64,13 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     let constraints =
                         col.Constraints
                         |> Seq.fold (fun state con ->
+                            let ty, name, cols = SchemaConstraint.Constraint(con, col.Name)
                             Map.add con.Name
-                                {   SchemaName = tbl.SchemaName
+                                {   ConstraintType = ty
+                                    SchemaName = tbl.SchemaName
                                     TableName = tbl.TableName
                                     ConstraintName = con.Name
-                                    Columns = Set.singleton col.Name
+                                    Columns = cols
                                 } state) newTbl.Constraints
                     let newTbl = { newTbl with Constraints = constraints }
                     let schema = { schema with Objects = schema.Objects |> Map.add tbl.TableName (SchemaTable newTbl) }

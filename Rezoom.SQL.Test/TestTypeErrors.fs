@@ -46,7 +46,8 @@ let ``updated column types must match`` () =
 let ``inserted column types must match`` () =
     expectError (Error.cannotUnify "INT" "STRING")
         """
-            insert into Users(Id, Name) values ('one', 'jim')
+            insert into Users(Id, Name, Email, Password, Salt)
+            values ('one', 'jim', 'jim@example.com', x'', x'')
         """
 
 [<Test>]
@@ -70,4 +71,18 @@ let ``can't use list-parameter as a scalar result`` () =
             select @p as x
             from Users
             where Id in @p
+        """
+
+[<Test>]
+let ``insert without values for columns`` () =
+    expectError (Error.expectedKnownColumnCount 1 5)
+        """
+            insert into Users(Id, Name, Email, Password, Salt) values (1)
+        """
+
+[<Test>]
+let ``insert without columns required in table`` () =
+    expectError (Error.insertMissingColumns ["Email"])
+        """
+            insert into Users(Name) values ('x')
         """

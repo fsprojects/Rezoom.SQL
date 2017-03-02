@@ -470,12 +470,9 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield text "INTO"
             yield ws
             yield! this.Expr.ObjectName(insert.InsertInto)
-            match insert.Columns with
-            | None -> ()
-            | Some columns ->
-                yield text "("
-                yield! columns |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
-                yield text ")"
+            yield text "("
+            yield! insert.Columns |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
+            yield text ")"
             yield ws
             match insert.Data with
             | None -> yield text "DEFAULT VALUES"

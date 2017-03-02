@@ -49,15 +49,15 @@ let ``fancy select with order by`` () =
 [<Test>]
 let ``insert`` () =
     roundtrip """
-        insert into Users(id, name)
-        values (0, 'ben')
+        insert into Users(id, name, email)
+        values (0, 'ben', 'ben@example.com')
     """
 
 [<Test>]
 let ``insert from select`` () =
     roundtrip """
-        insert into Groups
-        select * from Groups
+        insert into Groups(Id, Name)
+        select Id, Name from Groups
     """
 
 [<Test>]

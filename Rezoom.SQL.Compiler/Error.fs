@@ -88,3 +88,6 @@ let sameVendorDelimiters delim =
     sprintf "SQ038: Expression is not nullable; but is required to be in this context" *)
 let aggregateInWhereClause =
     sprintf "SQ039: A WHERE clause cannot contain aggregates -- consider using a HAVING clause"
+let insertMissingColumns (missing : 'a seq) =
+    sprintf "SQ040: INSERT statement missing columns: ``%s``"
+        (missing |> Seq.map (fun x -> (x :> obj).ToString()) |> String.concat "``, ``")
