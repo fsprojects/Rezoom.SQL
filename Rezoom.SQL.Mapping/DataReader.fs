@@ -1,6 +1,7 @@
 ﻿module Rezoom.SQL.Mapping.DataReader
 open System
 open System.Data
+open System.Globalization
 
 let private columnTypes =
     [|
@@ -38,10 +39,10 @@ type DataReaderRow(reader : IDataReader) =
     override __.GetInt16(i) = reader.GetInt16(int i)
     override __.GetInt32(i) = reader.GetInt32(int i)
     override __.GetInt64(i) = reader.GetInt64(int i)
-    override __.GetSByte(i) = reader.GetValue(int i) |> Convert.ToSByte
-    override __.GetUInt16(i) = reader.GetValue(int i) |> Convert.ToUInt16
-    override __.GetUInt32(i) = reader.GetValue(int i) |> Convert.ToUInt32
-    override __.GetUInt64(i) = reader.GetValue(int i) |> Convert.ToUInt64
+    override __.GetSByte(i) = Convert.ToSByte(reader.GetValue(int i), CultureInfo.InvariantCulture)
+    override __.GetUInt16(i) = Convert.ToUInt16(reader.GetValue(int i), CultureInfo.InvariantCulture)
+    override __.GetUInt32(i) = Convert.ToUInt32(reader.GetValue(int i), CultureInfo.InvariantCulture)
+    override __.GetUInt64(i) = Convert.ToUInt64(reader.GetValue(int i), CultureInfo.InvariantCulture)
     override __.GetSingle(i) = reader.GetFloat(int i)
     override __.GetDouble(i) = reader.GetDouble(int i)
     override __.GetDecimal(i) = reader.GetDecimal(int i)

@@ -4,8 +4,12 @@ open LicenseToCIL
 open LicenseToCIL.Ops
 open System
 open System.Collections.Generic
+open System.Globalization
 open System.Reflection
 open System.Reflection.Emit
+
+let inline private convertVia convertFunction =
+    fun o -> convertFunction(o, CultureInfo.InvariantCulture)
 
 let inline private toNumeric
     (row : Row)
@@ -24,7 +28,7 @@ let inline private toNumeric
     fromDouble
     fromDecimal =
     match col.Type with
-    | ColumnType.Object -> row.GetObject(col.Index) |> fromObj
+    | ColumnType.Object -> row.GetObject(col.Index) |> convertVia fromObj
     | ColumnType.String -> row.GetString(col.Index) |> fromString
     | ColumnType.Byte -> row.GetByte(col.Index) |> fromByte
     | ColumnType.Int16 -> row.GetInt16(col.Index) |> fromInt16
@@ -47,7 +51,7 @@ type Converters =
         | _ ->
             match row.GetObject(col.Index) with
             | null -> null
-            | o -> Convert.ToString(o)
+            | o -> Convert.ToString(o, CultureInfo.InvariantCulture)
     static member ToByteArray(row : Row, col : ColumnInfo) =
         row.GetObject(col.Index)
         |> Unchecked.unbox : byte array
@@ -120,7 +124,7 @@ type Converters =
     static member ToDateTime(row : Row, col : ColumnInfo) : DateTime =
         match col.Type with
         | ColumnType.DateTime -> row.GetDateTime(col.Index)
-        | ColumnType.Object -> Convert.ToDateTime(row.GetObject(col.Index))
+        | ColumnType.Object -> Convert.ToDateTime(row.GetObject(col.Index), CultureInfo.InvariantCulture)
         | x -> failwithf "Invalid column type %A for DateTime" x
 
 let private convertersByType =
