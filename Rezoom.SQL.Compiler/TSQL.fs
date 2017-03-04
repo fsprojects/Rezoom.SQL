@@ -241,6 +241,20 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
             | DecimalTypeName -> "NUMERIC(38, 19)"
             | DateTimeTypeName -> "DATETIME2"
             | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
+    override this.ObjectName name =
+        seq {
+            match name.SchemaName with
+            | Some schema ->
+                if schema = Name("main") then
+                    yield text ("dbo.")
+                    yield this.Name(name.ObjectName) 
+                elif schema = Name("temp") then
+                    yield this.Name("#" + name.ObjectName)
+                else
+                    yield text (schema.Value + ".")
+                    yield this.Name(name.ObjectName) 
+            | None -> yield this.Name(name.ObjectName) 
+        }
     override __.BinaryOperator(op) =
         CommandText <|
         match op with
@@ -426,6 +440,24 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield text "ROWS ONLY"
         }
     override this.AutoIncrement = "IDENTITY(1,1)"
+    override this.CreateTable(create) =
+        seq {
+            match create.As with
+            | CreateAsSelect select ->
+                yield text "SELECT * INTO"
+                yield ws
+                yield! this.Expr.ObjectName(create.Name)
+                yield ws
+                yield text "FROM ("
+                yield! this.Select(select)
+                yield text ") __rzsubquery"
+            | CreateAsDefinition def ->
+                yield text "CREATE TABLE"
+                yield ws
+                yield! this.Expr.ObjectName(create.Name)
+                yield ws
+                yield! this.CreateTableDefinition(def)
+        }
 
 type TSQLMigrationBackend(conn : DbConnection) =
     inherit DefaultMigrationBackend(conn)

@@ -515,6 +515,11 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
 
     member this.CreateTable(createTable : CreateTableStmt) =
         let name = this.ObjectName(createTable.Name, true)
+        let name =
+            match createTable.Temporary, name.SchemaName with
+            | true, None ->
+                { name with SchemaName = Some scope.Model.TemporarySchema }
+            | _ -> name
         {   Temporary = createTable.Temporary
             Name = name
             As =

@@ -55,3 +55,16 @@ let ``iif with first class value`` () =
     translate
         """select IIF(false, 'a', 'b') as choice"""
         """SELECT IIF(((0)<>0),'a','b') AS [choice];"""
+
+[<Test>]
+let ``temp table`` () =
+    translate
+        """create temp table x(a int);"""
+        """CREATE TABLE [#x] ([a] INT CONSTRAINT [a_NOTNULL] NOT NULL);"""
+
+[<Test>]
+let ``temp table from select`` () =
+    translate
+        """create temp table x as select Id, Email from Users where Id > 0"""
+        ( """SELECT * INTO [#x] FROM (SELECT [Users].[Id],[Users].[Email]"""
+        + """ FROM [Users] WHERE ([Users].[Id] > 0)) __rzsubquery;""")
