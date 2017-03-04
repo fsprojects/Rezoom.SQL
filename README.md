@@ -4,7 +4,7 @@
 
 Rezoom is a library intended to reduce the pain of dealing with data that lives across a latency boundary.
 
-![Horrors of latency](https://raw.githubusercontent.com/rspeele/Rezoom/master/Documentation/Resources/Latency.gif)
+![Horrors of latency](https://raw.githubusercontent.com/rspeele/Rezoom/master/Documentation/Resources/Latency.png)
 
 Common examples of this nightmare include SQL databases, NoSQL databases, and web APIs.
 
