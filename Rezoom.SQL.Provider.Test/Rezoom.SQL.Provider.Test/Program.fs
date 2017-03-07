@@ -28,7 +28,7 @@ let cmdPlan (cmd : string) =
             for child in children do
                 printfn "%s: %s" child.Heading (defaultArg child.Paragraph "None")
         | "mk" ->
-            let! result = MakeChildTodo.Command("test heading", Some "test para").PlanScalar()
+            let! result = MakeChildTodo.Command("test heading", Some "test para").Scalar()
             printfn "Created TODO %d" result
         | "throw" ->
             failwith "unhandled exn"

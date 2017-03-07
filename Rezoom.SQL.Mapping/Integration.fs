@@ -125,10 +125,32 @@ type Command<'a> with
 [<Extension>]
 type ScalarCommandExtensions =
     [<Extension>]
-    static member PlanScalar(cmd : Command<#IScalar<_>>) =
+    static member Scalar(cmd : Command<#IScalar<_>>) =
         plan {
             let! planResult = cmd.Plan()
             return planResult.ScalarValue
+        }
+
+    [<Extension>]
+    static member TryExactlyOne(cmd : Command<#IReadOnlyList<_>>) =
+        plan {
+            let! planResult = cmd.Plan()
+            return
+                if planResult.Count > 1 then
+                    failwith "Expected no more than one result from SQL command"
+                elif planResult.Count = 0 then None
+                else Some <| planResult.[0]
+        }
+
+    [<Extension>]
+    static member ExactlyOne(cmd : Command<#IReadOnlyList<_>>) =
+        plan {
+            let! planResult = cmd.Plan()
+            return
+                if planResult.Count <> 1 then
+                    failwith "Expected exactly one result from SQL command"
+                else
+                    planResult.[0]
         }
 
     [<Extension>]
