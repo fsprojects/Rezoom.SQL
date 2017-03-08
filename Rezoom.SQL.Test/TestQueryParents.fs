@@ -19,8 +19,8 @@ type ClassFolder() =
     member val ChildFolders = null : ClassFolder array with get, set
     member val ParentFolder = null : ClassFolder with get, set
 
-[<Test>]
-[<Ignore("Expected to always stack overflow and crash VS test engine. Fun to run only as a curiousity.")>]
+// Not a test: expected to always stack overflow and crash VS test engine. Fun to run only as a curiousity.
+// [<Test>]
 let ``self-referential record equality stack overflows`` () =
     let colMap =
         [|
