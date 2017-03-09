@@ -3,17 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom", "Rezoom\Rezoom.fsproj", "{D98ACBEB-A039-4340-A7C5-6ED2B677268B}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.Test", "Rezoom.Test\Rezoom.Test.fsproj", "{F5167029-2918-46B5-A3A6-AB4A91B231A1}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3CFAC282-AFAA-4B7A-879F-D2BDF9EC631B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Integrations", "Integrations", "{B021A795-0151-4404-B592-0D375821890F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rezoom.IPGeo", "Rezoom.IPGeo\Rezoom.IPGeo.csproj", "{CEB9E01B-71C6-468B-8C3E-A1617F036370}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.IPGeo.Test", "Rezoom.IPGeo.Test\Rezoom.IPGeo.Test.fsproj", "{97D70AE4-41FB-47D0-B518-589799F093D5}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Mapping", "Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj", "{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}"
 EndProject
