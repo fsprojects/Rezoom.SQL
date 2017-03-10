@@ -3,8 +3,8 @@ open System
 open System.Collections.Generic
 open Rezoom.SQL.Compiler.InferredTypes
 
-type InferredQueryShape = InferredType QueryExprInfo
-type SelfQueryShape =
+type private InferredQueryShape = InferredType QueryExprInfo
+type private SelfQueryShape =
     // this thing is for when we know ahead of time what the column names of a select statement are supposed to be
     // so we don't want to require that they all be aliased manually.
     {   CTEName : Name option
