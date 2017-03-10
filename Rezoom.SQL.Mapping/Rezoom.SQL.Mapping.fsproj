@@ -82,7 +82,6 @@
   <ItemGroup>
     <Reference Include="LicenseToCIL">
       <HintPath>..\packages\LicenseToCIL.0.2.2\lib\net46\LicenseToCIL.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

@@ -51,7 +51,6 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
-    <Content Include="packages.config" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Error.fs" />
     <Compile Include="SourceTypes.fs" />
@@ -84,19 +83,17 @@
     <Compile Include="TSQL.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="UserModel.fs" />
+    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
       <HintPath>..\packages\FParsec.1.0.2\lib\net40-client\FParsec.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="FParsec-Pipes">
       <HintPath>..\packages\FParsec-Pipes.0.3.1.0\lib\net45\FParsec-Pipes.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="FParsecCS">
       <HintPath>..\packages\FParsec.1.0.2\lib\net40-client\FParsecCS.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -109,8 +106,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj">
       <Name>Rezoom.SQL.Mapping</Name>
       <Project>{6b6a06c5-157a-4fe3-8b4c-2a1ae6a15333}</Project>
