@@ -4,8 +4,8 @@ open System.Data.SQLite
 open Rezoom
 open Rezoom.Execution
 open Rezoom.SQL.Provider
-open Rezoom.SQL.Mapping
-open Rezoom.SQL.Mapping.Migrations
+open Rezoom.SQL.Migrations
+open Rezoom.SQL.Plans
 
 type DataModel = SQLModel
 
