@@ -7,6 +7,7 @@ open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.BackendUtilities
 open Rezoom.SQL.Compiler.Translators
 open Rezoom.SQL.Mapping
+open Rezoom.SQL.Migrations
 
 type private SQLiteLiteral() =
     inherit DefaultLiteralTranslator()
@@ -123,7 +124,7 @@ type SQLiteBackend() =
                 }
         }
     interface IBackend with
-        member this.MigrationBackend = <@ fun conn -> DefaultMigrationBackend(conn) :> Migrations.IMigrationBackend @>
+        member this.MigrationBackend = <@ fun conn -> DefaultMigrationBackend(conn) :> IMigrationBackend @>
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =

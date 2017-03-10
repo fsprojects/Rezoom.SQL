@@ -6,7 +6,7 @@ open System.Collections.Generic
 open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.InferredTypes
 open Rezoom.SQL.Mapping
-open Rezoom.SQL.Mapping.Migrations
+open Rezoom.SQL.Migrations
 
 module private UserModelLoader =
     let private migrationPattern =
@@ -71,7 +71,7 @@ module private UserModelLoader =
                     "The migration ``%s`` contains destructive statements. This requires a version bump."
                     migration.FileName
             effect.Statements, effect.ModelChange |? model
-        let _, finalModel as pair = foldMigrations folder initialModel migrationTrees
+        let _, finalModel as pair = MigrationUtilities.foldMigrations folder initialModel migrationTrees
         revalidateViews finalModel
         pair
 

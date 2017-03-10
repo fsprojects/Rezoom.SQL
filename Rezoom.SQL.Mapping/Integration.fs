@@ -8,7 +8,7 @@ open System.Data
 open System.Data.Common
 open System.Threading
 open Rezoom
-open Rezoom.SQL.Mapping.Migrations
+open Rezoom.SQL.Migrations
 
 [<AbstractClass>]
 type ConnectionProvider() =
@@ -155,11 +155,11 @@ type ScalarCommandExtensions =
 
     [<Extension>]
     static member Run
-        ( migrations : string Migrations.MigrationTree array
+        ( migrations : string MigrationTree array
         , config : MigrationConfig
         , conn : unit -> DbConnection
         , backend : DbConnection -> IMigrationBackend
         ) =
         use conn = conn()
         let migrationBackend = backend conn
-        runMigrations config migrationBackend migrations
+        MigrationUtilities.runMigrations config migrationBackend migrations

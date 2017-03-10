@@ -13,6 +13,7 @@ open ProviderImplementation.ProvidedTypes
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open Rezoom
 open Rezoom.SQL.Mapping
+open Rezoom.SQL.Migrations
 open Rezoom.SQL.Compiler
 
 type GenerateTypeCase =
@@ -274,20 +275,20 @@ let generateMigrationMembers
     provided.AddMember <|
         ProvidedProperty
             ( "Migrations"
-            , typeof<string Migrations.MigrationTree IReadOnlyList>
+            , typeof<string MigrationTree IReadOnlyList>
             , GetterCode = fun _ -> Expr.FieldGet(migrationsField)
             , IsStatic = true
             )
     do
         let pars =
-            [   ProvidedParameter("config", typeof<Migrations.MigrationConfig>)
+            [   ProvidedParameter("config", typeof<MigrationConfig>)
                 ProvidedParameter("conn", typeof<DbConnection>)
             ]
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>)
         meth.IsStaticMethod <- true
         meth.InvokeCode <- function
             | [ config; conn ] -> 
-                <@@ let migrations : string Migrations.MigrationTree array = %%Expr.FieldGet(migrationsField)
+                <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
                     migrations.Run(%%config, (fun () -> %%conn), %%(upcast backend.MigrationBackend))
                 @@>
             | _ -> failwith "Invalid migrate argument list"
@@ -295,13 +296,13 @@ let generateMigrationMembers
     do
         let connectionName = Quotations.Expr.Value(config.ConnectionName)
         let pars =
-            [   ProvidedParameter("config", typeof<Migrations.MigrationConfig>)
+            [   ProvidedParameter("config", typeof<MigrationConfig>)
             ]
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>)
         meth.IsStaticMethod <- true
         meth.InvokeCode <- function
             | [ config ] -> 
-                <@@ let migrations : string Migrations.MigrationTree array = %%Expr.FieldGet(migrationsField)
+                <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
                     migrations.Run
                         ( %%config
                         , (fun () -> DefaultConnectionProvider().Open(%%connectionName))
@@ -325,7 +326,7 @@ let generateModelType (generate : GenerateType) =
     let migrationsField =
         ProvidedField
             ( "_migrations"
-            , typeof<string Migrations.MigrationTree array>
+            , typeof<string MigrationTree array>
             )
     migrationsField.SetFieldAttributes(FieldAttributes.Static ||| FieldAttributes.Private)
     provided.AddMember <| migrationsField
@@ -335,8 +336,10 @@ let generateModelType (generate : GenerateType) =
         Expr.FieldSet
             ( migrationsField
             , Expr.NewArray
-                ( typeof<string Migrations.MigrationTree>
-                , generate.UserModel.Migrations |> Seq.map Migrations.quotationizeMigrationTree |> Seq.toList
+                ( typeof<string MigrationTree>
+                , generate.UserModel.Migrations
+                    |> Seq.map MigrationUtilities.quotationizeMigrationTree
+                    |> Seq.toList
                 ))
     provided.AddMember <| staticCtor
     generateMigrationMembers generate.UserModel.Config backend provided migrationsField

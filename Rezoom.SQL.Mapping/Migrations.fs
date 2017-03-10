@@ -1,4 +1,4 @@
-﻿module Rezoom.SQL.Mapping.Migrations
+﻿namespace Rezoom.SQL.Migrations
 open System
 open System.Collections.Generic
 open FSharp.Quotations
@@ -20,12 +20,6 @@ type Migration<'src> =
     }
     member this.FileName = "V" + string this.MajorVersion + "." + this.Name
 
-let private quotationizeMigration (migration : string Migration) =
-    <@@ {   MajorVersion = %%Expr.Value(migration.MajorVersion)
-            Name = %%Expr.Value(migration.Name)
-            Source = %%Expr.Value(migration.Source)
-        } : string Migration @@>
-
 type MigrationTree<'src> =
     {   Node : 'src Migration
         Children : 'src MigrationTree IReadOnlyList
@@ -44,35 +38,6 @@ type MigrationTree<'src> =
             for child in this.Children do
                 yield! child.Migrations()
         }
-
-let rec quotationizeMigrationTree (tree : string MigrationTree) =
-    let children =
-        Expr.NewArray(typeof<string MigrationTree>,
-            [ for child in tree.Children ->
-                quotationizeMigrationTree child
-            ])
-    let children = Expr.Coerce(children, typeof<string MigrationTree IReadOnlyList>)
-    <@@ {   Node = %%quotationizeMigration tree.Node
-            Children = %%children
-        } : string MigrationTree @@>
-
-let foldMigrations
-    (folder : bool -> 'acc -> 's1 Migration -> 's2 * 'acc)
-    (acc : 'acc)
-    (migrationTrees : 's1 MigrationTree seq) =
-    let mutable acc = acc
-    let rec mapFold root tree =
-        let s2, acc2 = folder root acc tree.Node
-        acc <- acc2
-        {   Node =
-                {   MajorVersion = tree.Node.MajorVersion
-                    Name = tree.Node.Name
-                    Source = s2
-                }
-            Children = tree.Children |> Seq.map (mapFold false) |> ResizeArray
-        }
-    let trees = [ for tree in migrationTrees -> mapFold true tree ]
-    trees, acc
 
 type private MigrationTreeBuilderNode<'src> =
     {   mutable Source : 'src option
@@ -164,30 +129,66 @@ type MigrationConfig =
         LogMigrationRan : string Migration -> unit
     }
 
-let runMigrations config (backend : IMigrationBackend) (migrationTrees : string MigrationTree seq) =
-    backend.Initialize()
-    let already = HashSet(backend.GetMigrationsRun())
-    let currentMajorVersion =
-        already
-        |> Seq.map fst
-        |> Seq.sortByDescending id
-        |> Seq.tryHead
-    let currentMajorVersion =
-        match currentMajorVersion with
-        | Some version -> version
-        | None -> Int32.MinValue
-    for migrationTree in migrationTrees do
-        for migration in migrationTree.Migrations() do
-            let pair = migration.MajorVersion, migration.Name
-            if not <| already.Contains(pair) then
-                if migration.MajorVersion < currentMajorVersion
-                    && not config.AllowMigrationsFromOlderMajorVersions then
-                    failwith <|
-                        sprintf "Can't run migration V%d.%s because database has a newer major version (V%d)"
-                            migration.MajorVersion migration.Name
-                            currentMajorVersion
-                else
-                    backend.RunMigration(migration)
-                    config.LogMigrationRan migration
-                    ignore <| already.Add(pair) // actually we don't need this but ok
+module MigrationUtilities =
+    let private quotationizeMigration (migration : string Migration) =
+        <@@ {   MajorVersion = %%Expr.Value(migration.MajorVersion)
+                Name = %%Expr.Value(migration.Name)
+                Source = %%Expr.Value(migration.Source)
+            } : string Migration @@>
+
+    let rec quotationizeMigrationTree (tree : string MigrationTree) =
+        let children =
+            Expr.NewArray(typeof<string MigrationTree>,
+                [ for child in tree.Children ->
+                    quotationizeMigrationTree child
+                ])
+        let children = Expr.Coerce(children, typeof<string MigrationTree IReadOnlyList>)
+        <@@ {   Node = %%quotationizeMigration tree.Node
+                Children = %%children
+            } : string MigrationTree @@>
+
+    let foldMigrations
+        (folder : bool -> 'acc -> 's1 Migration -> 's2 * 'acc)
+        (acc : 'acc)
+        (migrationTrees : 's1 MigrationTree seq) =
+        let mutable acc = acc
+        let rec mapFold root tree =
+            let s2, acc2 = folder root acc tree.Node
+            acc <- acc2
+            {   Node =
+                    {   MajorVersion = tree.Node.MajorVersion
+                        Name = tree.Node.Name
+                        Source = s2
+                    }
+                Children = tree.Children |> Seq.map (mapFold false) |> ResizeArray
+            }
+        let trees = [ for tree in migrationTrees -> mapFold true tree ]
+        trees, acc
+
+    let runMigrations config (backend : IMigrationBackend) (migrationTrees : string MigrationTree seq) =
+        backend.Initialize()
+        let already = HashSet(backend.GetMigrationsRun())
+        let currentMajorVersion =
+            already
+            |> Seq.map fst
+            |> Seq.sortByDescending id
+            |> Seq.tryHead
+        let currentMajorVersion =
+            match currentMajorVersion with
+            | Some version -> version
+            | None -> Int32.MinValue
+        for migrationTree in migrationTrees do
+            for migration in migrationTree.Migrations() do
+                let pair = migration.MajorVersion, migration.Name
+                if not <| already.Contains(pair) then
+                    if migration.MajorVersion < currentMajorVersion
+                        && not config.AllowMigrationsFromOlderMajorVersions then
+                        failwith <|
+                            sprintf "Can't run migration V%d.%s because database has a newer major version (V%d)"
+                                migration.MajorVersion migration.Name
+                                currentMajorVersion
+                    else
+                        backend.RunMigration(migration)
+                        config.LogMigrationRan migration
+                        ignore <| already.Add(pair) // actually we don't need this but ok
 

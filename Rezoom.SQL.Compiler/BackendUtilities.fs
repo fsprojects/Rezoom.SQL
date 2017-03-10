@@ -6,7 +6,7 @@ open System.Text
 open System.Globalization
 open System.Collections.Generic
 open Rezoom.SQL.Mapping
-open Rezoom.SQL.Mapping.Migrations
+open Rezoom.SQL.Migrations
 open Rezoom.SQL.Compiler
 
 type Fragment = CommandFragment
