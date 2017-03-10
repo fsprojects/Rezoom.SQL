@@ -77,11 +77,6 @@
       <Project>{87fcd04a-1f90-4d53-a428-cf5f5c532a22}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Rezoom\Rezoom.fsproj">
-      <Name>Rezoom</Name>
-      <Project>{d98acbeb-a039-4340-a7c5-6ed2b677268b}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <Reference Include="FSharp.Core">
       <HintPath>..\packages\FSharp.Core.4.0.0.1\lib\net40\FSharp.Core.dll</HintPath>
       <Private>True</Private>
@@ -102,6 +97,9 @@
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="Rezoom">
+      <HintPath>..\packages\Rezoom.0.1.0\lib\net46\Rezoom.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
