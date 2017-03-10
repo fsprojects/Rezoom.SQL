@@ -1,14 +1,12 @@
-﻿[<AutoOpen>]
-module Rezoom.SQL.Mapping.Integration
+﻿namespace Rezoom.SQL.Plans
 open System.Runtime.CompilerServices
 open System
 open System.Configuration
 open System.Collections.Generic
 open System.Data
 open System.Data.Common
-open System.Threading
 open Rezoom
-open Rezoom.SQL.Migrations
+open Rezoom.SQL.Mapping
 
 [<AbstractClass>]
 type ConnectionProvider() =
@@ -114,16 +112,14 @@ type private CommandErrand<'a>(command : Command<'a>) =
         let truncate = 80
         if all.Length < truncate then all else all.Substring(0, truncate - 3) + "..."
 
-type Command<'a> with
-    member this.Plan() =
-        CommandErrand(this) |> Plan.ofErrand
-    member this.ExecuteAsync(conn : DbConnection) =
-        CommandBatch(conn).Batch(this)(CancellationToken())
-
 // Have to use a C#-style extension method to support the scalar constraint.
 
 [<Extension>]
 type ScalarCommandExtensions =
+    [<Extension>]
+    static member Plan(cmd : Command<'a>) =
+        CommandErrand(cmd) |> Plan.ofErrand
+
     [<Extension>]
     static member Scalar(cmd : Command<#IScalar<_>>) =
         plan {
@@ -152,14 +148,3 @@ type ScalarCommandExtensions =
                 else
                     planResult.[0]
         }
-
-    [<Extension>]
-    static member Run
-        ( migrations : string MigrationTree array
-        , config : MigrationConfig
-        , conn : unit -> DbConnection
-        , backend : DbConnection -> IMigrationBackend
-        ) =
-        use conn = conn()
-        let migrationBackend = backend conn
-        MigrationUtilities.runMigrations config migrationBackend migrations

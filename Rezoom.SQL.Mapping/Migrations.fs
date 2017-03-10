@@ -1,6 +1,8 @@
 ﻿namespace Rezoom.SQL.Migrations
 open System
 open System.Collections.Generic
+open System.Data.Common
+open System.Runtime.CompilerServices
 open FSharp.Quotations
 
 type MigrationFileName =
@@ -191,4 +193,17 @@ module MigrationUtilities =
                         backend.RunMigration(migration)
                         config.LogMigrationRan migration
                         ignore <| already.Add(pair) // actually we don't need this but ok
+
+[<Extension>]
+ type MigrationExtensions =
+    [<Extension>]
+    static member Run
+        ( migrations : string MigrationTree array
+        , config : MigrationConfig
+        , conn : unit -> DbConnection
+        , backend : DbConnection -> IMigrationBackend
+        ) =
+        use conn = conn()
+        let migrationBackend = backend conn
+        MigrationUtilities.runMigrations config migrationBackend migrations
 

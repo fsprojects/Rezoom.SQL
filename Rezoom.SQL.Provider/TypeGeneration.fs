@@ -12,9 +12,11 @@ open FSharp.Reflection
 open ProviderImplementation.ProvidedTypes
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open Rezoom
+open Rezoom.SQL.Plans
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 open Rezoom.SQL.Compiler
+open Rezoom.SQL
 
 type GenerateTypeCase =
     | GenerateSQL of string
