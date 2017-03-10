@@ -5,13 +5,22 @@ open FsUnit
 open Rezoom.SQL.Compiler
 open Rezoom.SQL.Mapping
 
+let normalizeFragments fragments =
+    fragments
+    |> Seq.map (function
+        | CommandText t -> CommandText <| t.Replace("\r\n", "\n")
+        | x -> x)
+    |> List.ofSeq
+
 let vendor (sql : string) expected =
     let userModel = userModel1()
     let parsed = CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
     let indexer = dispenserParameterIndexer()
-    let fragments = userModel.Backend.ToCommandFragments(indexer, parsed.Statements) |> List.ofSeq
+    let fragments =
+        userModel.Backend.ToCommandFragments(indexer, parsed.Statements)
+        |> normalizeFragments
     printfn "%A" fragments
-    if fragments <> expected then
+    if fragments <> normalizeFragments expected then
         failwith "Mismatch"
 
 [<Test>]
