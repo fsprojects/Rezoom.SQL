@@ -1,4 +1,4 @@
-﻿module Rezoom.SQL.Provider.TypeGeneration
+﻿module private Rezoom.SQL.Provider.TypeGeneration
 open System
 open System.Data
 open System.Data.Common

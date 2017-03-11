@@ -1,12 +1,8 @@
 ﻿namespace Rezoom.SQL.Provider
-open System
-open System.Collections.Generic
 open System.IO
 open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
-open Microsoft.FSharp.Quotations
 open ProviderImplementation.ProvidedTypes
-open Rezoom.SQL
 open Rezoom.SQL.Provider.TypeGeneration
 
 [<TypeProvider>]

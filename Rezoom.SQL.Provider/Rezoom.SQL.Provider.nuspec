@@ -14,4 +14,17 @@
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data sqlite tsql sqlserver fsharp typeprovider</tags>
   </metadata>
+  <files>
+    <!-- Include our dependencies in the folder so that the type provider can actually work -->
+    <file src="bin\Release\Rezoom.dll" target="lib\net46"/>
+    <file src="bin\Release\Rezoom.xml" target="lib\net46"/>
+    <file src="bin\Release\LicenseToCIL.dll" target="lib\net46"/>
+    <file src="bin\Release\LicenseToCIL.xml" target="lib\net46"/>
+    <file src="bin\Release\FParsec.dll" target="lib\net46"/>
+    <file src="bin\Release\FParsec.xml" target="lib\net46"/>
+    <file src="bin\Release\FParsecCS.dll" target="lib\net46"/>
+    <file src="bin\Release\FParsecCS.xml" target="lib\net46"/>
+    <file src="bin\Release\FParsec-Pipes.dll" target="lib\net46"/>
+    <file src="bin\Release\FParsec-Pipes.xml" target="lib\net46"/>
+  </files>
 </package>

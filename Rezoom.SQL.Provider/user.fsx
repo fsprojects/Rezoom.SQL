@@ -1,5 +1,4 @@
 #I "bin/Debug"
-#r "FSharp.Core.dll"
 #r "FParsec.dll"
 #r "FParsecCS.dll"
 #r "FParsec-Pipes.dll"
@@ -27,16 +26,19 @@ type QueryWithNullablePar = SQL<"""
     where u.Name is @name
 """, "user-migrations">
 
+try
+  let q : Command<_> = Query.Command(id = 1)
+  printfn "%O" <| q.GetType()
+  printfn "%A" <| q.Fragments
 
-let q : Command<_> = Query.Command(id = 1)
-printfn "%O" <| q.GetType()
-printfn "%A" <| q.Fragments
+  let qIn : Command<_> = QueryInPar.Command(id = [|1|])
+  printfn "%O" <| qIn.GetType()
+  printfn "%A" <| qIn.Fragments
 
-let qIn : Command<_> = QueryInPar.Command(id = [|1|])
-printfn "%O" <| qIn.GetType()
-printfn "%A" <| qIn.Fragments
-
-let qNull : Command<_> = QueryWithNullablePar.Command(name = Some "test")
-printfn "%O" <| qNull.GetType()
-printfn "%A" <| qNull.Fragments
-
+  let qNull : Command<_> = QueryWithNullablePar.Command(name = Some "test")
+  printfn "%O" <| qNull.GetType()
+  printfn "%A" <| qNull.Fragments
+with
+| ex ->
+  printfn "%O" ex
+  ignore <| System.Console.ReadLine()

@@ -25,9 +25,9 @@
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>bin\Debug\Rezoom.SQL.Provider.XML</DocumentationFile>
     <StartAction>Program</StartAction>
-    <StartProgram>C:\Program Files (x86)\Microsoft SDKs\F#\4.0\Framework\v4.0\Fsi.exe</StartProgram>
+    <StartProgram>C:\Program Files (x86)\Microsoft SDKs\F#\4.1\Framework\v4.0\Fsi.exe</StartProgram>
     <StartArguments>user.fsx</StartArguments>
-    <StartWorkingDirectory>D:\src\Rezoom\Rezoom.SQL.Provider\</StartWorkingDirectory>
+    <StartWorkingDirectory>D:\src\Rezoom.SQL\Rezoom.SQL.Provider\</StartWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -56,6 +56,7 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
+    <None Include="Rezoom.SQL.Provider.nuspec" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Watcher.fs" />
     <Compile Include="UserModelCache.fs" />
