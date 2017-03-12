@@ -66,6 +66,7 @@
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
     <Compile Include="TypeGeneration.fs" />
+    <Compile Include="AssemblyResolver.fs" />
     <Compile Include="Provider.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
@@ -80,7 +81,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Rezoom">
-      <HintPath>..\packages\Rezoom.0.1.0\lib\net46\Rezoom.dll</HintPath>
+      <HintPath>..\packages\Rezoom.0.2.1\lib\net46\Rezoom.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -91,6 +92,9 @@
       <Project>{6b6a06c5-157a-4fe3-8b4c-2a1ae6a15333}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="System.ValueTuple">
+      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

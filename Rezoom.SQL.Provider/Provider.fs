@@ -60,5 +60,9 @@ type public Provider(cfg : TypeProviderConfig) as this =
         modelCache.Invalidated.Add(fun _ -> this.Invalidate())
         this.Disposing.Add(fun _ -> modelCache.Dispose())
 
+    static do
+        System.AppDomain.CurrentDomain.add_AssemblyResolve(fun _ args ->
+            AssemblyResolver.resolve args.Name |> Option.toObj)
+
 [<TypeProviderAssembly>]
 do ()
