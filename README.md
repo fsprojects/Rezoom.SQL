@@ -50,7 +50,10 @@ If you flub a name in this query -- say you wrote `Usres` instead of `Users`, yo
 error when you try to compile your program. You'll also get an error if you do something that
 doesn't make sense from a type standpoint, like writing `sqrt(u.Name)`.
 
-What can you do with the `MyQuery` type?
+When you have a large codebase, this is much nicer than having to run the queries to find these problems.
+
+## What can you do with the example `MyQuery` type?
+
 Rezoom.SQL knows that the command needs a string parameter (for `@search`), and it knows the column names
 and types that the query will output. So you can use it without any of the effort of manually creating
 `SqlParameter`s and processing `SqlDataReader`s.
