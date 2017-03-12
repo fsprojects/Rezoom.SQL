@@ -3,7 +3,8 @@
 Rezoom.SQL is an F# ORM for SQL databases.
 
 It integrates with the F# compiler via a type provider to statically typecheck its own dialect of SQL.
-It knows how to translate this SQL dialect to various backends (SQLite, )
+It knows how to translate this SQL dialect to various backends. Currently it supports SQLite and SQL Server,
+but PostgreSQL and MySQL support are coming soon.
 
 This means that it can infer your database model from your migration scripts
 (CREATE TABLE, CREATE VIEW, ALTER TABLE, etc.). Then, based on that model, it can validate
