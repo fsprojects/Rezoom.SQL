@@ -979,7 +979,7 @@ let private tableIndexConstraintType =
 let private indexedColumns =
     %% '('
     -- ws
-    -- +.(qty.[1..] / tws ',' * (%% +.nameOrKeyword -- +.orderDirection -%> auto))
+    -- +.(qty.[1..] / tws ',' * (%% +.nameOrKeyword -- ws -- +.orderDirection -%> auto))
     -- ')'
     -- ws
     -|> fun vs -> vs.ToArray()

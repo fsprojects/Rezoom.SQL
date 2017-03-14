@@ -468,7 +468,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         let checker =
             this.WithScope({ scope with FromClause = Some <| InferredFromClause.FromSingleObject(tableName) })
         {   Unique = createIndex.Unique
-            IndexName = this.ObjectName(createIndex.IndexName)
+            IndexName = this.ObjectName(createIndex.IndexName, allowNotFound = true)
             TableName = tableName
             IndexedColumns = createIndex.IndexedColumns
             Where = createIndex.Where |> Option.map checker.Expr

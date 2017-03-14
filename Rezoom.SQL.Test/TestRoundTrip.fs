@@ -83,6 +83,13 @@ let ``create table with column list and fk`` () =
     """
 
 [<Test>]
+let ``create index`` () =
+    roundtrip """
+        create index IX_User on Users
+            (Id, Name);
+    """
+
+[<Test>]
 let ``alter table add column`` () =
     roundtrip """
         alter table UserGroupMaps
