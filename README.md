@@ -77,3 +77,5 @@ You can use Rezoom.SQL by itself, as in the example code above.
 
 But as the name implies, it's designed to work with
 [Rezoom](https://github.com/rspeele/Rezoom). When you use it with Rezoom, you can
+take advantage of automatic caching and combine units of business logic to share round trips
+to the database.
