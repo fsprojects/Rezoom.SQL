@@ -70,3 +70,10 @@ let main argv =
 		let groupName = result.GroupName // statically typed as string
 		printfn "%d %s %s" userId userName groupName
 ```
+
+# Integration with Rezoom
+
+You can use Rezoom.SQL by itself, as in the example code above.
+
+But as the name implies, it's designed to work with
+[Rezoom](https://github.com/rspeele/Rezoom). When you use it with Rezoom, you can
