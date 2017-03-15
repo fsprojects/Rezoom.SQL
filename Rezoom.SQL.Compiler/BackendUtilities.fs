@@ -101,10 +101,12 @@ type DefaultMigrationBackend(conn : DbConnection) =
         use tx = conn.BeginTransaction()
         do
             use cmd = conn.CreateCommand()
+            cmd.Transaction <- tx
             cmd.CommandText <- migration.Source
             ignore <| cmd.ExecuteNonQuery()
         do
             use cmd = conn.CreateCommand()
+            cmd.Transaction <- tx
             cmd.CommandText <-
                 """
                     INSERT INTO __RZSQL_MIGRATIONS
