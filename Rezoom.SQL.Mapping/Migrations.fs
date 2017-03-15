@@ -122,6 +122,7 @@ type MigrationTreeListBuilder<'src>() =
         |> ResizeArray
 
 type IMigrationBackend =
+    inherit IDisposable
     abstract member Initialize : unit -> unit
     abstract member GetMigrationsRun : unit -> (int * string) seq
     abstract member RunMigration : string Migration -> unit
@@ -200,10 +201,8 @@ module MigrationUtilities =
     static member Run
         ( migrations : string MigrationTree array
         , config : MigrationConfig
-        , conn : unit -> DbConnection
-        , backend : DbConnection -> IMigrationBackend
+        , backend : unit -> IMigrationBackend
         ) =
-        use conn = conn()
-        let migrationBackend = backend conn
-        MigrationUtilities.runMigrations config migrationBackend migrations
+        use backend = backend()
+        MigrationUtilities.runMigrations config backend migrations
 

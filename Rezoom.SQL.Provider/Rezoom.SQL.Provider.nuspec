@@ -14,6 +14,7 @@
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data sqlite tsql sqlserver fsharp typeprovider</tags>
     <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System.Configuration" />
       <frameworkAssembly assemblyName="System.Data" />
       <frameworkAssembly assemblyName="System.Transactions" />
     </frameworkAssemblies>

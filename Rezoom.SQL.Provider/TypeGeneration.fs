@@ -284,14 +284,19 @@ let generateMigrationMembers
     do
         let pars =
             [   ProvidedParameter("config", typeof<MigrationConfig>)
-                ProvidedParameter("conn", typeof<DbConnection>)
+                ProvidedParameter("connectionName", typeof<string>)
             ]
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>)
         meth.IsStaticMethod <- true
         meth.InvokeCode <- function
-            | [ config; conn ] -> 
+            | [ config; connectionName ] -> 
+                let backend =
+                    <@ fun () ->
+                        (%backend.MigrationBackend)
+                            (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
+                    @>
                 <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
-                    migrations.Run(%%config, (fun () -> %%conn), %%(upcast backend.MigrationBackend))
+                    migrations.Run(%%config, %%(upcast backend))
                 @@>
             | _ -> failwith "Invalid migrate argument list"
         provided.AddMember meth
@@ -303,13 +308,14 @@ let generateMigrationMembers
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>)
         meth.IsStaticMethod <- true
         meth.InvokeCode <- function
-            | [ config ] -> 
+            | [ config ] ->
+                let backend =
+                    <@ fun () ->
+                        (%backend.MigrationBackend)
+                            (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
+                    @>
                 <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
-                    migrations.Run
-                        ( %%config
-                        , (fun () -> DefaultConnectionProvider().Open(%%connectionName))
-                        , %%(upcast backend.MigrationBackend)
-                        )
+                    migrations.Run(%%config, %%(upcast backend))
                 @@>
             | _ -> failwith "Invalid migrate argument list"
         provided.AddMember meth

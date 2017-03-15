@@ -2,6 +2,7 @@
 open System
 open System.Data
 open System.Data.Common
+open System.Configuration
 open System.Collections.Generic
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
@@ -31,7 +32,7 @@ type ParameterTransform =
 
 type IBackend =
     abstract member InitialModel : Model
-    abstract member MigrationBackend : Quotations.Expr<DbConnection -> IMigrationBackend>
+    abstract member MigrationBackend : Quotations.Expr<ConnectionStringSettings -> IMigrationBackend>
     abstract member ParameterTransform
         : columnType : ColumnType -> ParameterTransform
     abstract member ToCommandFragments

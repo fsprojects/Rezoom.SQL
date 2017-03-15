@@ -9,12 +9,12 @@
     <licenseUrl>https://raw.githubusercontent.com/rspeele/Rezoom.SQL/master/LICENSE.txt</licenseUrl>
     <projectUrl>https://github.com/rspeele/Rezoom.SQL</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Adds config for using Rezoom.SQL.Provder with MS SQL Server</description>
+    <description>Adds config for using Rezoom.SQL.Provider with MS SQL Server.</description>
     <releaseNotes>Initial pre-pre-release.</releaseNotes>
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data tsql fsharp typeprovider</tags>
     <dependencies>
-      <dependency id="Rezoom.SQL.Provider" version="0.1.0" />
+      <dependency id="Rezoom.SQL.Provider" version="0.1.1" />
     </dependencies>
   </metadata>
 </package>

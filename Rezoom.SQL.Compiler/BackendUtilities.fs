@@ -1,5 +1,6 @@
 ﻿module Rezoom.SQL.Compiler.BackendUtilities
 open System
+open System.Configuration
 open System.Data
 open System.Data.Common
 open System.Text
@@ -59,10 +60,17 @@ type DbMigration(majorVersion : int, name : string) =
     member __.ToTuple() = (majorVersion, name)
 
 type DefaultMigrationBackend(conn : DbConnection) =
+    new(settings : ConnectionStringSettings) =
+        let provider = DbProviderFactories.GetFactory(settings.ProviderName)
+        let conn = provider.CreateConnection()
+        conn.ConnectionString <- settings.ConnectionString
+        new DefaultMigrationBackend(conn)
+    member __.Connection = conn
     abstract member Initialize : unit -> unit
     abstract member GetMigrationsRun : unit -> (int * string) seq
     abstract member RunMigration : string Migration -> unit
     default __.Initialize() =
+        conn.Open()
         use cmd = conn.CreateCommand()
         cmd.CommandText <-
             """
@@ -120,3 +128,4 @@ type DefaultMigrationBackend(conn : DbConnection) =
         member this.Initialize() = this.Initialize()
         member this.GetMigrationsRun() = this.GetMigrationsRun()
         member this.RunMigration(migration) = this.RunMigration(migration)
+        member this.Dispose() = conn.Dispose()

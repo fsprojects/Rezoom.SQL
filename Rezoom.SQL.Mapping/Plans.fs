@@ -16,13 +16,17 @@ type ConnectionProvider() =
 
 type DefaultConnectionProvider() =
     inherit ConnectionProvider()
-    override __.Open(name) =
+    static member ResolveConnectionString(name : string) =
         let connectionStrings = ConfigurationManager.ConnectionStrings
         if isNull connectionStrings then
             failwith "No <connectionStrings> element in config"
         let connectionString = connectionStrings.[name]
         if isNull connectionString then
             failwith "No connection string by the expected name"
+        else
+            connectionString
+    override __.Open(name) =
+        let connectionString = DefaultConnectionProvider.ResolveConnectionString(name)
         let provider = DbProviderFactories.GetFactory(connectionString.ProviderName)
         let conn = provider.CreateConnection()
         conn.ConnectionString <- connectionString.ConnectionString

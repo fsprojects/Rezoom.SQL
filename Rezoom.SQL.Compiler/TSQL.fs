@@ -1,6 +1,8 @@
 ﻿namespace Rezoom.SQL.Compiler.TSQL
 open System
+open System.Configuration
 open System.Data
+open System.Data.SqlClient
 open System.Data.Common
 open System.Collections.Generic
 open System.Globalization
@@ -460,10 +462,28 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield! this.CreateTableDefinition(def)
         }
 
-type TSQLMigrationBackend(conn : DbConnection) =
-    inherit DefaultMigrationBackend(conn)
-    override __.Initialize() =
-        use cmd = conn.CreateCommand()
+type TSQLMigrationBackend(settings : ConnectionStringSettings) =
+    inherit DefaultMigrationBackend(settings)
+    override this.Initialize() =
+        let builder = SqlConnectionStringBuilder(settings.ConnectionString)
+        let catalog = builder.InitialCatalog
+        if not (String.IsNullOrEmpty(catalog)) then
+            builder.InitialCatalog <- "master"
+            this.Connection.ConnectionString <- builder.ConnectionString
+            this.Connection.Open()
+            use dbCmd = this.Connection.CreateCommand()
+            dbCmd.CommandText <-
+                // do we care about injection attacks here? probably not... it's our own connection string
+                sprintf
+                    """
+                        IF DB_ID('%s') IS NULL
+                            CREATE DATABASE %s;
+                        USE %s;
+                    """ catalog catalog catalog
+            ignore <| dbCmd.ExecuteNonQuery()
+        else
+            this.Connection.Open()
+        use cmd = this.Connection.CreateCommand()
         cmd.CommandText <-
             """
                 IF NOT EXISTS (
