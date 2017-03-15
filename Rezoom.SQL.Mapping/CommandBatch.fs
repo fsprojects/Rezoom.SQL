@@ -8,7 +8,7 @@ open System.Threading
 open System.Threading.Tasks
 open FSharp.Control.Tasks.ContextInsensitive
 
-type private CommandBatchBuilder(conn : DbConnection) =
+type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
     let maxParameters =
         match conn.GetType().Namespace with
         | "System.Data.SqlClient" -> 2100 // SQL server
@@ -65,6 +65,7 @@ type private CommandBatchBuilder(conn : DbConnection) =
         | None ->
             builder.Append(terminator commandIndex) |> ignore
     let buildCommand (dbCommand : DbCommand) =
+        dbCommand.Transaction <- tran
         let builder = StringBuilder()
         for commandIndex, command in commands |> Seq.indexed do
             addCommand builder dbCommand commandIndex command
@@ -127,7 +128,7 @@ type private CommandBatchBuilder(conn : DbConnection) =
             return processed
         }
 
-type CommandBatch(conn : DbConnection) =
+type CommandBatch(conn : DbConnection, tran : DbTransaction) =
     let builders = ResizeArray<CommandBatchBuilder>()
     let evaluation =
         lazy
@@ -139,7 +140,7 @@ type CommandBatch(conn : DbConnection) =
                 return arr
             }
     do
-        builders.Add(CommandBatchBuilder(conn))
+        builders.Add(CommandBatchBuilder(conn, tran))
     member __.Batch(cmd : #Command<'a>) =
         let inline retrieveResult builderIndex resultsIndex =
             fun (token : CancellationToken) ->
@@ -153,7 +154,7 @@ type CommandBatch(conn : DbConnection) =
         if resultsIndex.HasValue then
             retrieveResult builderIndex resultsIndex.Value
         else
-            let next = CommandBatchBuilder(conn)
+            let next = CommandBatchBuilder(conn, tran)
             let builderIndex = builderIndex + 1
             let resultsIndex = next.BatchCommand(cmd)
             builders.Add(next)

@@ -35,13 +35,14 @@ type DefaultConnectionProvider() =
 
 type private ExecutionLocalConnections(provider : ConnectionProvider) =
     let connections = Dictionary()
-    member __.GetConnection(name) =
+    member __.GetConnection(name) : DbConnection * DbTransaction =
         let succ, tuple = connections.TryGetValue(name)
-        if succ then fst tuple else
+        if succ then tuple else
         let conn = provider.Open(name)
         let tran = provider.BeginTransaction(conn)
-        connections.Add(name, (conn, tran))
-        conn
+        let tuple = conn, tran
+        connections.Add(name, tuple)
+        tuple
     member __.Dispose(state) = 
         let mutable exn = null
         for conn, tran in connections.Values do
@@ -77,8 +78,8 @@ type private StepLocalBatches(conns : ExecutionLocalConnections) =
     member __.GetBatch(name) =
         let succ, batch = batches.TryGetValue(name)
         if succ then batch else
-        let conn = conns.GetConnection(name)
-        let batch = CommandBatch(conn)
+        let conn, tran = conns.GetConnection(name)
+        let batch = CommandBatch(conn, tran)
         batches.Add(name, batch)
         batch
 

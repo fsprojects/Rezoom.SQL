@@ -11,7 +11,7 @@ type Extensions =
     [<Extension>]
     static member Execute(cmd : Command<'a>, conn : DbConnection, token : CancellationToken) =
         task {
-            let batch = CommandBatch(conn)
+            let batch = CommandBatch(conn, null) // TODO: allow passing txn
             return! batch.Batch cmd token
         }
 
