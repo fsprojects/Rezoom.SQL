@@ -470,16 +470,20 @@ type TSQLMigrationBackend(settings : ConnectionStringSettings) =
             builder.InitialCatalog <- "master"
             this.Connection.ConnectionString <- builder.ConnectionString
             this.Connection.Open()
-            use dbCmd = this.Connection.CreateCommand()
-            dbCmd.CommandText <-
-                // do we care about injection attacks here? probably not... it's our own connection string
-                sprintf
-                    """
-                        IF DB_ID('%s') IS NULL
-                            CREATE DATABASE %s;
-                        USE %s;
-                    """ catalog catalog catalog
-            ignore <| dbCmd.ExecuteNonQuery()
+            do
+                use dbCmd = this.Connection.CreateCommand()
+                dbCmd.CommandText <-
+                    // do we care about injection attacks here? probably not... it's our own connection string
+                    sprintf
+                        """
+                            IF DB_ID('%s') IS NULL
+                                CREATE DATABASE [%s];
+                        """ catalog catalog
+                ignore <| dbCmd.ExecuteNonQuery()
+            do
+                use useCmd = this.Connection.CreateCommand()
+                useCmd.CommandText <- sprintf "USE %s;" catalog
+                ignore <| useCmd.ExecuteNonQuery()
         else
             this.Connection.Open()
         use cmd = this.Connection.CreateCommand()
