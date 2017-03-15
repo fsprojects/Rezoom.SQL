@@ -68,3 +68,18 @@ let ``temp table from select`` () =
         """create temp table x as select Id, Email from Users where Id > 0"""
         ( """SELECT * INTO [#x] FROM (SELECT [Users].[Id],[Users].[Email]"""
         + """ FROM [Users] WHERE ([Users].[Id] > 0)) __rzsubquery;""")
+
+[<Test>]
+let ``create xusers`` () =
+    translate
+        """
+create table XUsers
+    ( Id int primary key autoincrement
+    , Email string(254) unique
+    , Name string(64) null
+    );
+        """
+        ( "CREATE TABLE [XUsers] "
+        + "([Id] INT CONSTRAINT [Id_NOTNULL] NOT NULL CONSTRAINT [Id__PK] PRIMARY KEY IDENTITY(1,1)"
+        + ",[Email] NVARCHAR(254) CONSTRAINT [Email_NOTNULL] NOT NULL CONSTRAINT [Email__UNIQUE] UNIQUE"
+        + ",[Name] NVARCHAR(64) CONSTRAINT [Name__NULL] NULL);")

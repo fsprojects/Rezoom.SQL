@@ -444,6 +444,33 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield text "ROWS ONLY"
         }
     override this.AutoIncrement = "IDENTITY(1,1)"
+    override this.ColumnConstraint(constr) =
+        seq {
+            yield text "CONSTRAINT"
+            yield ws
+            yield this.Expr.Name(constr.Name)
+            yield ws
+            match constr.ColumnConstraintType with
+            | NullableConstraint ->
+                yield text "NULL"
+            | PrimaryKeyConstraint pk ->
+                yield text "PRIMARY KEY" // no order clause
+                if pk.AutoIncrement then
+                    yield ws
+                    yield text this.AutoIncrement
+            | UniqueConstraint ->
+                yield text "UNIQUE"
+            | DefaultConstraint expr ->
+                yield text "DEFAULT("
+                yield! this.FirstClassValue(expr)
+                yield text ")"
+            | CollateConstraint name ->
+                yield text "COLLATE"
+                yield ws
+                yield this.Expr.Name(name)
+            | ForeignKeyConstraint fk ->
+                yield! this.ForeignKeyClause(fk)
+        }
     override this.CreateTable(create) =
         seq {
             match create.As with
