@@ -1,8 +1,9 @@
 ﻿namespace Rezoom.SQL.Compiler.SQLite
 open System
-open System.Data
 open System.Collections.Generic
-open System.Globalization
+open System.Configuration
+open System.Data.Common
+open System.IO
 open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.BackendUtilities
 open Rezoom.SQL.Compiler.Translators
@@ -110,6 +111,19 @@ module private SQLiteFunctions =
             func "strftime" [ string; string; vararg string ] (nullable string)
         |] |> DefaultFunctions.extendedBy
 
+type SQLiteMigrationBackend(settings : ConnectionStringSettings) =
+    inherit DefaultMigrationBackend(settings)
+    override this.Initialize() =
+        let builder = DbConnectionStringBuilder(ConnectionString = settings.ConnectionString)
+        let dataSource = "Data Source"
+        if builder.ContainsKey(dataSource) then
+            match builder.[dataSource] with
+            | :? string as dataSource ->
+                if not <| File.Exists(dataSource) then
+                    File.WriteAllBytes(dataSource, [||])
+            | _ -> ()
+        base.Initialize()
+
 type SQLiteBackend() =
     static let initialModel =
         let main, temp = Name("main"), Name("temp")
@@ -124,7 +138,7 @@ type SQLiteBackend() =
                 }
         }
     interface IBackend with
-        member this.MigrationBackend = <@ fun settings -> new DefaultMigrationBackend(settings) :> IMigrationBackend @>
+        member this.MigrationBackend = <@ fun settings -> new SQLiteMigrationBackend(settings) :> IMigrationBackend @>
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =

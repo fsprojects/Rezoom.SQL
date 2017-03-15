@@ -1,10 +1,9 @@
 ﻿namespace Rezoom.SQL.Compiler.TSQL
 open System
+open System.Collections.Generic
 open System.Configuration
-open System.Data
 open System.Data.SqlClient
 open System.Data.Common
-open System.Collections.Generic
 open System.Globalization
 open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.BackendUtilities
@@ -513,7 +512,7 @@ type TSQLBackend() =
                 }
         }
     interface IBackend with
-        member this.MigrationBackend = <@ fun conn -> TSQLMigrationBackend(conn) :> IMigrationBackend @>
+        member this.MigrationBackend = <@ fun conn -> new TSQLMigrationBackend(conn) :> IMigrationBackend @>
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =
