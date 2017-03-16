@@ -443,33 +443,15 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield ws
             yield text "ROWS ONLY"
         }
-    override this.AutoIncrement = "IDENTITY(1,1)"
-    override this.ColumnConstraint(constr) =
+    override this.ConstraintName(table, constr) =
+        // constraint names must be unique across the db, so qualify w/ table name
+        table.ObjectName + "_" + constr
+    override this.PrimaryKeyClause(pk) =
         seq {
-            yield text "CONSTRAINT"
-            yield ws
-            yield this.Expr.Name(constr.Name)
-            yield ws
-            match constr.ColumnConstraintType with
-            | NullableConstraint ->
-                yield text "NULL"
-            | PrimaryKeyConstraint pk ->
-                yield text "PRIMARY KEY" // no order clause
-                if pk.AutoIncrement then
-                    yield ws
-                    yield text this.AutoIncrement
-            | UniqueConstraint ->
-                yield text "UNIQUE"
-            | DefaultConstraint expr ->
-                yield text "DEFAULT("
-                yield! this.FirstClassValue(expr)
-                yield text ")"
-            | CollateConstraint name ->
-                yield text "COLLATE"
+            yield text "PRIMARY KEY"
+            if pk.AutoIncrement then
                 yield ws
-                yield this.Expr.Name(name)
-            | ForeignKeyConstraint fk ->
-                yield! this.ForeignKeyClause(fk)
+                yield text "IDENTITY(1,1)"
         }
     override this.CreateTable(create) =
         seq {
@@ -487,7 +469,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield! this.Expr.ObjectName(create.Name)
                 yield ws
-                yield! this.CreateTableDefinition(def)
+                yield! this.CreateTableDefinition(create.Name, def)
         }
 
 type TSQLMigrationBackend(settings : ConnectionStringSettings) =

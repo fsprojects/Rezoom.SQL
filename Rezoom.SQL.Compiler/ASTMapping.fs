@@ -256,7 +256,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.CreateTableDefinition(createTable : CreateTableDefinition<'t1, 'e1>) =
         {   Columns = createTable.Columns |> rmap this.ColumnDef
             Constraints = createTable.Constraints |> rmap this.TableConstraint
-            WithoutRowId = createTable.WithoutRowId
         }
     member this.CreateTable(createTable : CreateTableStmt<'t1, 'e1>) =
         {   Temporary = createTable.Temporary

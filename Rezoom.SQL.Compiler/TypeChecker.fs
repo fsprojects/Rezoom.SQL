@@ -510,7 +510,6 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         let columns = createTable.Columns |> rmap (fun col -> this.ColumnDef(col, creating))
         {   Columns = columns
             Constraints = createTable.Constraints |> rmap (fun con -> this.TableConstraint(con, creating))
-            WithoutRowId = createTable.WithoutRowId
         }
 
     member this.CreateTable(createTable : CreateTableStmt) =

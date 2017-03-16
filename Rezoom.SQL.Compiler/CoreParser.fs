@@ -1023,14 +1023,11 @@ let private createTableDefinition =
     -- +.(qty.[0..] /. tws ',' * part)
     -- ')'
     -- ws
-    -- +.(zeroOrOne * (%% kw "WITHOUT" -- kw "ROWID" -- ws -|> ()))
-    -|> fun parts without ->
-        {
-            Columns =
+    -|> fun parts ->
+        {   Columns =
                 parts |> Seq.choose (function | Choice2Of2 cdef -> Some cdef | Choice1Of2 _ -> None) |> Seq.toArray
             Constraints =
                 parts |> Seq.choose (function | Choice1Of2 ct -> Some ct | Choice2Of2 _ -> None) |> Seq.toArray
-            WithoutRowId = Option.isSome without
         }
 
 let private createTableAs =

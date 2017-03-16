@@ -60,7 +60,7 @@ let ``iif with first class value`` () =
 let ``temp table`` () =
     translate
         """create temp table x(a int);"""
-        """CREATE TABLE [#x] ([a] INT CONSTRAINT [a_NOTNULL] NOT NULL);"""
+        """CREATE TABLE [#x] ([a] INT CONSTRAINT [x_a_NOTNULL] NOT NULL);"""
 
 [<Test>]
 let ``temp table from select`` () =
@@ -80,6 +80,27 @@ create table XUsers
     );
         """
         ( "CREATE TABLE [XUsers] "
-        + "([Id] INT CONSTRAINT [Id_NOTNULL] NOT NULL CONSTRAINT [Id__PK] PRIMARY KEY IDENTITY(1,1)"
-        + ",[Email] NVARCHAR(254) CONSTRAINT [Email_NOTNULL] NOT NULL CONSTRAINT [Email__UNIQUE] UNIQUE"
-        + ",[Name] NVARCHAR(64) CONSTRAINT [Name__NULL] NULL);")
+        + "([Id] INT CONSTRAINT [XUsers_Id_NOTNULL] NOT NULL CONSTRAINT [XUsers_Id_PK] PRIMARY KEY IDENTITY(1,1)"
+        + ",[Email] NVARCHAR(254) CONSTRAINT [XUsers_Email_NOTNULL] NOT NULL CONSTRAINT [XUsers_Email_UNIQUE] UNIQUE"
+        + ",[Name] NVARCHAR(64) CONSTRAINT [XUsers_Name_NULL] NULL);")
+
+[<Test>]
+let ``create xusers table constraints`` () =
+    translate
+        """
+create table XUsers
+    ( Id int
+    , Email string(254)
+    , Name string(64) null
+    , unique(Email, Name)
+    , primary key(Id)
+    , check(Id > 0)
+    );
+        """
+        ( "CREATE TABLE [XUsers] "
+        + "([Id] INT CONSTRAINT [XUsers_Id_NOTNULL] NOT NULL"
+        + ",[Email] NVARCHAR(254) CONSTRAINT [XUsers_Email_NOTNULL] NOT NULL"
+        + ",[Name] NVARCHAR(64) CONSTRAINT [XUsers_Name_NULL] NULL"
+        + ",CONSTRAINT [XUsers_Email_Name_UNIQUE] UNIQUE([Email] ASC,[Name] ASC)"
+        + ",CONSTRAINT [XUsers_Id_PK] PRIMARY KEY([Id] ASC)"
+        + ",CONSTRAINT [XUsers_CHECK] CHECK(([Id] > 0)));")

@@ -525,16 +525,16 @@ type ColumnConstraintType<'t, 'e> =
     | ForeignKeyConstraint of ForeignKeyClause<'t>
     member this.DefaultName(columnName : Name) =
         match this with
-        | NullableConstraint -> columnName + "__NULL"
-        | PrimaryKeyConstraint _ -> columnName + "__PK"
-        | UniqueConstraint -> columnName + "__UNIQUE"
-        | DefaultConstraint _ -> columnName + "__DEFAULT"
-        | CollateConstraint _ -> columnName + "__COLLATION"
+        | NullableConstraint -> columnName + "_NULL"
+        | PrimaryKeyConstraint _ -> columnName + "_PK"
+        | UniqueConstraint -> columnName + "_UNIQUE"
+        | DefaultConstraint _ -> columnName + "_DEFAULT"
+        | CollateConstraint _ -> columnName + "_COLLATION"
         | ForeignKeyConstraint fk ->
             columnName
-            + "__FK__"
+            + "_FK_"
             + fk.ReferencesTable.ObjectName.Value
-            + "__"
+            + "_"
             + String.concat "_" [ for c in fk.ReferencesColumns -> c.Value.Value ]
 
 type ColumnConstraint<'t, 'e> =
@@ -577,15 +577,15 @@ type TableConstraintType<'t, 'e> =
         match this with
         | TableIndexConstraint con ->
             String.concat "_" [ for name, _ in con.IndexedColumns -> name.Value ]
-            + "__"
+            + "_"
             + (match con.Type with
                 | PrimaryKey -> "PK"
                 | Unique -> "UNIQUE")
         | TableForeignKeyConstraint (names, fk) ->
             String.concat "_" [ for name in names -> name.Value.Value ]
-            + "__FK__"
+            + "_FK_"
             + fk.ReferencesTable.ObjectName.Value
-            + "__"
+            + "_"
             + String.concat "_" [ for c in fk.ReferencesColumns -> c.Value.Value ]
         | TableCheckConstraint _ -> "CHECK"   
 
@@ -597,7 +597,6 @@ type TableConstraint<'t, 'e> =
 type CreateTableDefinition<'t, 'e> =
     {   Columns : ColumnDef<'t, 'e> array
         Constraints : TableConstraint<'t, 'e> array
-        WithoutRowId : bool
     }
 
 type CreateTableAs<'t, 'e> =

@@ -52,9 +52,10 @@ type StatementTranslator() =
     abstract member Select : select : TSelectStmt -> Fragments
     abstract member ForeignKeyRule : rule : ForeignKeyRule -> Fragments
     abstract member ForeignKeyClause : clause : TForeignKeyClause -> Fragments
-    abstract member ColumnConstraint : constr : TColumnConstraint -> Fragments
-    abstract member ColumnDefinition : col : TColumnDef -> Fragments
-    abstract member CreateTableDefinition : create : TCreateTableDefinition -> Fragments
+    abstract member TableConstraint : table : TObjectName * constr : TTableConstraint -> Fragments
+    abstract member ColumnConstraint : table : TObjectName * constr : TColumnConstraint -> Fragments
+    abstract member ColumnDefinition : table : TObjectName * col : TColumnDef -> Fragments
+    abstract member CreateTableDefinition : table : TObjectName * create : TCreateTableDefinition -> Fragments
     abstract member CreateTable : create : TCreateTableStmt -> Fragments
     abstract member AlterTable : alter : TAlterTableStmt -> Fragments
     abstract member CreateView : create : TCreateViewStmt -> Fragments

@@ -295,24 +295,36 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                     yield ws
                     yield text (if initially then "DEFERRED" else "IMMEDIATE")
         }
-    abstract member AutoIncrement : string
-    default __.AutoIncrement = "AUTOINCREMENT"
-    override this.ColumnConstraint(constr) =
+    abstract member ConstraintName : TObjectName * Name -> Name
+    default __.ConstraintName(_, name) = name
+    abstract member IndexedColumn : name : Name * dir : OrderDirection -> Fragments
+    default this.IndexedColumn(name, dir) =
+        seq {
+            yield this.Expr.Name(name)
+            yield ws
+            yield this.OrderDirection(dir)
+        }
+    abstract member PrimaryKeyClause : pk : PrimaryKeyClause -> Fragments
+    default this.PrimaryKeyClause(pk) =
+        seq {
+            yield text "PRIMARY KEY"
+            yield ws
+            yield this.OrderDirection(pk.Order)
+            if pk.AutoIncrement then
+                yield ws
+                yield text "AUTOINCREMENT"
+        }
+    override this.ColumnConstraint(table, constr) =
         seq {
             yield text "CONSTRAINT"
             yield ws
-            yield this.Expr.Name(constr.Name)
+            yield this.Expr.Name(this.ConstraintName(table, constr.Name))
             yield ws
             match constr.ColumnConstraintType with
             | NullableConstraint ->
                 yield text "NULL"
             | PrimaryKeyConstraint pk ->
-                yield text "PRIMARY KEY"
-                yield ws
-                yield this.OrderDirection(pk.Order)
-                if pk.AutoIncrement then
-                    yield ws
-                    yield text this.AutoIncrement
+                yield! this.PrimaryKeyClause(pk)
             | UniqueConstraint ->
                 yield text "UNIQUE"
             | DefaultConstraint expr ->
@@ -326,23 +338,55 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             | ForeignKeyConstraint fk ->
                 yield! this.ForeignKeyClause(fk)
         }
+    override this.TableConstraint(table, constr) =
+        seq {
+            yield text "CONSTRAINT"
+            yield ws
+            yield this.Expr.Name(this.ConstraintName(table, constr.Name))
+            yield ws
+            match constr.TableConstraintType with
+            | TableIndexConstraint indexClause ->
+                yield
+                    text <|
+                    match indexClause.Type with
+                    | PrimaryKey -> "PRIMARY KEY"
+                    | Unique -> "UNIQUE"
+                yield text "("
+                yield! indexClause.IndexedColumns |> Seq.map this.IndexedColumn |> join ","
+                yield text ")"
+            | TableForeignKeyConstraint (names, references) ->
+                yield text "FOREIGN KEY("
+                yield! names |> Seq.map (fun n -> this.Expr.Name(n.Value)) |> join1 ","
+                yield text ")"
+                yield! this.ForeignKeyClause(references)
+            | TableCheckConstraint ex ->
+                yield text "CHECK("
+                yield! this.Predicate(ex)
+                yield text ")"
+        }
     abstract member ColumnsNullableByDefault : bool
     default __.ColumnsNullableByDefault = false
-    override this.ColumnDefinition(col) =
+    override this.ColumnDefinition(table, col) =
         seq {
             yield this.Expr.Name(col.Name)
             yield ws
             yield! this.Expr.TypeName(col.Type)
             if this.ColumnsNullableByDefault && not col.Nullable then
-                yield! [| ws; text "CONSTRAINT"; ws; this.Expr.Name(col.Name + "_NOTNULL"); ws; text "NOT NULL" |]
+                yield!
+                    [|  ws; text "CONSTRAINT"; ws
+                        this.Expr.Name(this.ConstraintName(table, col.Name + "_NOTNULL"))
+                        ws; text "NOT NULL"
+                    |]
             for constr in col.Constraints do
                 yield ws
-                yield! this.ColumnConstraint(constr)
+                yield! this.ColumnConstraint(table, constr)
         }
-    override this.CreateTableDefinition(create) =
+    override this.CreateTableDefinition(table, create) =
         seq {
             yield text "("
-            yield! create.Columns |> Seq.map this.ColumnDefinition |> join ","
+            let columns = create.Columns |> Seq.map (fun c -> this.ColumnDefinition(table, c))
+            let constraints = create.Constraints |> Seq.map (fun c -> this.TableConstraint(table, c))
+            yield! Seq.append columns constraints |> join ","
             yield text ")"
         }
     override this.CreateTable(create) =
@@ -362,7 +406,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield! this.Select(select)
             | CreateAsDefinition def ->
-                yield! this.CreateTableDefinition(def)
+                yield! this.CreateTableDefinition(create.Name, def)
         }
     override this.AlterTable(alter) =
         seq {
@@ -378,7 +422,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             | AddColumn columnDef ->
                 yield text "ADD COLUMN"
                 yield ws
-                yield! this.ColumnDefinition(columnDef)
+                yield! this.ColumnDefinition(alter.Table, columnDef)
         }
     override this.CreateView(create) =
         seq {
@@ -417,15 +461,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield ws
             yield! this.Expr.ObjectName(create.TableName)
             yield text "("
-            yield!
-                seq {
-                    for name, dir in create.IndexedColumns ->
-                        seq {
-                            yield this.Expr.Name(name)
-                            yield ws
-                            yield this.OrderDirection(dir)
-                        }
-                } |> join ","
+            yield! create.IndexedColumns |> Seq.map this.IndexedColumn |> join ","
             yield text ")"
             match create.Where with
             | None -> ()
