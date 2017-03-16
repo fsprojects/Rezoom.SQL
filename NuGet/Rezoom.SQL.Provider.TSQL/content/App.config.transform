@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <connectionStrings>
-    <add name="rzsql" providerName="System.Data.SqlClient" connectionString="Data Source=(LocalDB)\v11.0;AttachDbFileName=|DataDirectory|\rzsql.mdf;InitialCatalog=rzsql;Integrated Security=True;MultipleActiveResultSets=True" />
+    <add
+      name="rzsql"
+      providerName="System.Data.SqlClient"
+      connectionString="Data Source=.\SQLEXPRESS;Integrated Security=SSPI;Initial Catalog=rzsql"
+    />
   </connectionStrings>
   <system.data>
     <DbProviderFactories>
       <remove invariant="System.Data.SqlClient" />
       <add
-          name="SqlClient Data Provider"
-          invariant="System.Data.SqlClient"
-          description=".Net Framework Data Provider for SqlServer"
-          type="System.Data.SqlClient.SqlClientFactory, System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-          />
+        name="SqlClient Data Provider"
+        invariant="System.Data.SqlClient"
+        description=".Net Framework Data Provider for SqlServer"
+        type="System.Data.SqlClient.SqlClientFactory, System.Data, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+      />
     </DbProviderFactories>
   </system.data>
 </configuration>

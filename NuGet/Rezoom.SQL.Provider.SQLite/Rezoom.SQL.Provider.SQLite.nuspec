@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Rezoom.SQL.Provider.SQLite</id>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <title>Rezoom.SQL.Provider.SQLite</title>
     <authors>Robert Peele</authors>
     <owners>humbobst</owners>
@@ -10,11 +10,11 @@
     <projectUrl>https://github.com/rspeele/Rezoom.SQL</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Adds config for using Rezoom.SQL.Provider with SQLite.</description>
-    <releaseNotes>Initial pre-pre-release.</releaseNotes>
+    <releaseNotes>Use latest provider for migrations.</releaseNotes>
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data sqlite fsharp typeprovider</tags>
     <dependencies>
-      <dependency id="Rezoom.SQL.Provider" version="0.1.1" />
+      <dependency id="Rezoom.SQL.Provider" version="0.1.2" />
       <dependency id="System.Data.SQLite.Core" version="1.0.104" />
     </dependencies>
   </metadata>
