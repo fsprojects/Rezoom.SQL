@@ -4,7 +4,7 @@ open System.Threading
 open System.IO
 open Rezoom.SQL.Compiler
 
-type Watcher(path : string) as this =
+type private Watcher(path : string) as this =
     let fs = new FileSystemWatcher(path, IncludeSubdirectories = true)
     let invalidating = Event<EventHandler, EventArgs>()
     let invalidated = Event<EventHandler, EventArgs>()

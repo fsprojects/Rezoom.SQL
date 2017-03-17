@@ -76,6 +76,7 @@
       <Link>TaskBuilder.fs</Link>
     </Compile>
     <Compile Include="CommandBatch.fs" />
+    <Compile Include="ConnectionProvider.fs" />
     <Compile Include="Asynchronous.fs" />
     <Compile Include="Synchronous.fs" />
     <Compile Include="Plans.fs" />

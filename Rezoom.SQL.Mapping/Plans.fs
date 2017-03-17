@@ -1,37 +1,12 @@
 ﻿namespace Rezoom.SQL.Plans
 open System.Runtime.CompilerServices
 open System
-open System.Configuration
 open System.Collections.Generic
 open System.Data
 open System.Data.Common
 open Rezoom
+open Rezoom.SQL
 open Rezoom.SQL.Mapping
-
-[<AbstractClass>]
-type ConnectionProvider() =
-    abstract member Open : name : string -> DbConnection
-    abstract member BeginTransaction : DbConnection -> DbTransaction
-    default __.BeginTransaction(conn) = conn.BeginTransaction()
-
-type DefaultConnectionProvider() =
-    inherit ConnectionProvider()
-    static member ResolveConnectionString(name : string) =
-        let connectionStrings = ConfigurationManager.ConnectionStrings
-        if isNull connectionStrings then
-            failwith "No <connectionStrings> element in config"
-        let connectionString = connectionStrings.[name]
-        if isNull connectionString then
-            failwith "No connection string by the expected name"
-        else
-            connectionString
-    override __.Open(name) =
-        let connectionString = DefaultConnectionProvider.ResolveConnectionString(name)
-        let provider = DbProviderFactories.GetFactory(connectionString.ProviderName)
-        let conn = provider.CreateConnection()
-        conn.ConnectionString <- connectionString.ConnectionString
-        conn.Open()
-        conn
 
 type private ExecutionLocalConnections(provider : ConnectionProvider) =
     let connections = Dictionary()

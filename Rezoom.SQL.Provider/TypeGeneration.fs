@@ -12,11 +12,10 @@ open FSharp.Reflection
 open ProviderImplementation.ProvidedTypes
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open Rezoom
-open Rezoom.SQL.Plans
+open Rezoom.SQL
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 open Rezoom.SQL.Compiler
-open Rezoom.SQL
 
 type GenerateTypeCase =
     | GenerateSQL of string
@@ -293,7 +292,7 @@ let generateMigrationMembers
                 let backend =
                     <@ fun () ->
                         (%backend.MigrationBackend)
-                            (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
+                            (ConnectionProvider.ResolveConnectionString(%%connectionName))
                     @>
                 <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
                     migrations.Run(%%config, %%(upcast backend))
@@ -312,7 +311,7 @@ let generateMigrationMembers
                 let backend =
                     <@ fun () ->
                         (%backend.MigrationBackend)
-                            (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
+                            (ConnectionProvider.ResolveConnectionString(%%connectionName))
                     @>
                 <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
                     migrations.Run(%%config, %%(upcast backend))

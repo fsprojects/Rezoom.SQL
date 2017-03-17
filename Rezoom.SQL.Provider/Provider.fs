@@ -12,7 +12,7 @@ type public Provider(cfg : TypeProviderConfig) as this =
     // Get the assembly and namespace used to house the provided types.
     let thisAssembly = Assembly.LoadFrom(cfg.RuntimeAssembly)
     let tmpAssembly = ProvidedAssembly(Path.GetTempFileName())
-    let rootNamespace = "Rezoom.SQL.Provider"
+    let rootNamespace = "Rezoom.SQL"
 
     let modelCache = new UserModelCache()
     let generateType typeName model case =

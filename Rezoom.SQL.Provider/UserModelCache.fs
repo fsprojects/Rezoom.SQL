@@ -4,7 +4,7 @@ open System.Collections.Generic
 open System.IO
 open Rezoom.SQL.Compiler
 
-type UserModelCache() as this =
+type private UserModelCache() as this =
     let watchers = Dictionary()
     let cache = Dictionary()
     let invalidated = Event<EventHandler, EventArgs>()
