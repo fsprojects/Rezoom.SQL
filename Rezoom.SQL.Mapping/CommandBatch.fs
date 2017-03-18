@@ -1,11 +1,9 @@
 ﻿namespace Rezoom.SQL.Mapping
 open System
-open System.Data
 open System.Data.Common
 open System.Collections.Generic
 open System.Text
 open System.Threading
-open System.Threading.Tasks
 open FSharp.Control.Tasks.ContextInsensitive
 
 type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
@@ -85,7 +83,48 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
             parameterCount <- parameterCount + count
             Nullable(index)
 
-    member __.Evaluate() =
+    member __.EvaluateSync() =
+        if evaluating then failwith "Already evaluating command"
+        else evaluating <- true
+        use dbCommand = conn.CreateCommand()
+        buildCommand dbCommand
+        use reader = dbCommand.ExecuteReader()
+        let reader = reader : DbDataReader
+        let processed = ResizeArray()
+        for i = 0 to commands.Count - 1 do
+            let cmd = commands.[i]
+            let processor = cmd.ObjectResultSetProcessor()
+            let mutable resultSetCount = match cmd.ResultSetCount with | Some 0 -> -1 | _ -> 0
+            while resultSetCount >= 0 do
+                processor.BeginResultSet(reader)
+                let mutable hasRows = true
+                while hasRows do
+                    let hasRow = reader.Read()
+                    if hasRow then
+                        processor.ProcessRow()
+                    else
+                        hasRows <- false
+                resultSetCount <- resultSetCount + 1
+                let hasNextResult = reader.NextResult()
+                match cmd.ResultSetCount with
+                | None -> // check for terminator
+                    if not hasNextResult || reader.FieldCount = 1 && reader.GetName(0) = terminatorColumn i then
+                        resultSetCount <- -1
+                    else
+                        let hasNextResult = reader.NextResult()
+                        if not hasNextResult then
+                            resultSetCount <- -1
+                | Some count ->
+                    if resultSetCount = count then 
+                        resultSetCount <- -1
+                    elif not hasNextResult then
+                        failwithf
+                            "Command claimed it would produce %d result sets, but only yielded %d"
+                            count resultSetCount
+            processed.Add(processor.ObjectGetResult())
+        processed
+
+    member __.EvaluateAsync() =
         if evaluating then failwith "Already evaluating command"
         else evaluating <- true
         task {
@@ -128,27 +167,14 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
             return processed
         }
 
-type CommandBatch(conn : DbConnection, tran : DbTransaction) =
-    let builders = ResizeArray<CommandBatchBuilder>()
-    let evaluation =
-        lazy
-            task {
-                let arr = Array.zeroCreate builders.Count
-                for i = 0 to builders.Count - 1 do
-                    let! resultSets = builders.[i].Evaluate()
-                    arr.[i] <- resultSets
-                return arr
-            }
-    do
-        builders.Add(CommandBatchBuilder(conn, tran))
-    member __.Batch(cmd : #Command<'a>) =
-        let inline retrieveResult builderIndex resultsIndex =
-            fun (token : CancellationToken) ->
-                evaluation.Value.ContinueWith
-                    ( (fun (t : _ ResizeArray array Task) ->
-                        t.Result.[builderIndex].[resultsIndex] |> Unchecked.unbox : 'a)
-                    , TaskContinuationOptions.ExecuteSynchronously
-                    )
+module private CommandBatchUtilities =
+    let inline build
+        (builders : CommandBatchBuilder ResizeArray)
+        (conn : DbConnection)
+        (tran : DbTransaction)
+        (cmd : #Command<'a>)
+        retrieveResult
+        =
         let builderIndex = builders.Count - 1
         let resultsIndex = builders.[builderIndex].BatchCommand(cmd)
         if resultsIndex.HasValue then
@@ -162,4 +188,46 @@ type CommandBatch(conn : DbConnection, tran : DbTransaction) =
                 retrieveResult builderIndex resultsIndex.Value
             else
                 failwith "Command has too many parameters to run"
+open CommandBatchUtilities
+
+type AsyncCommandBatch(conn : DbConnection, tran : DbTransaction) =
+    let builders = ResizeArray<CommandBatchBuilder>()
+    let evaluation =
+        lazy
+            task {
+                let arr = Array.zeroCreate builders.Count
+                for i = 0 to builders.Count - 1 do
+                    let! resultSets = builders.[i].EvaluateAsync()
+                    arr.[i] <- resultSets
+                return arr
+            }
+    do
+        builders.Add(CommandBatchBuilder(conn, tran))
+    member __.Batch(cmd : #Command<'a>) =
+        let inline retrieveResult builderIndex resultsIndex =
+            fun (token : CancellationToken) ->
+                task {
+                    let! result = evaluation.Value
+                    let boxed = result.[builderIndex].[resultsIndex]
+                    return (Unchecked.unbox boxed : 'a)
+                }
+        build builders conn tran cmd retrieveResult
+
+type SyncCommandBatch(conn : DbConnection, tran : DbTransaction) =
+    let builders = ResizeArray<CommandBatchBuilder>()
+    let evaluation =
+        lazy
+            let arr = Array.zeroCreate builders.Count
+            for i = 0 to builders.Count - 1 do
+                let resultSets = builders.[i].EvaluateSync()
+                arr.[i] <- resultSets
+            arr
+    do
+        builders.Add(CommandBatchBuilder(conn, tran))
+    member __.Batch(cmd : #Command<'a>) =
+        let inline retrieveResult builderIndex resultsIndex =
+            fun () ->
+                let arrs = evaluation.Value
+                arrs.[builderIndex].[resultsIndex] |> Unchecked.unbox : 'a
+        build builders conn tran cmd retrieveResult
 

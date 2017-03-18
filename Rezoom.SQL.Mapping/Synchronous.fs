@@ -13,9 +13,8 @@ type Extensions =
     [<Extension>]
     static member Execute(cmd : Command<'a>, conn : DbConnection) =
         let token = CancellationToken.None
-        let batch = CommandBatch(conn, tran = null)
-        let task = batch.Batch cmd token
-        task.Result
+        let batch = SyncCommandBatch(conn, tran = null)
+        batch.Batch cmd ()
 
     /// Execute the command on a connection and return its result sets.
     /// The connection is obtained from the given `ConnectionContext` according to the command's `ConnectionName`

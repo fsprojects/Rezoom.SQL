@@ -54,7 +54,7 @@ type private StepLocalBatches(conns : ExecutionLocalConnections) =
         let succ, batch = batches.TryGetValue(name)
         if succ then batch else
         let conn, tran = conns.GetConnection(name)
-        let batch = CommandBatch(conn, tran)
+        let batch = AsyncCommandBatch(conn, tran)
         batches.Add(name, batch)
         batch
 
