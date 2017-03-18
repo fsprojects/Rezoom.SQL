@@ -273,13 +273,6 @@ let generateSQLType (generate : GenerateType) (sql : string) =
 
 let generateMigrationMembers
     (config : Config.Config) (backend : IBackend) (provided : ProvidedTypeDefinition) migrationsField =
-    provided.AddMember <|
-        ProvidedProperty
-            ( "Migrations"
-            , typeof<string MigrationTree IReadOnlyList>
-            , GetterCode = fun _ -> Expr.FieldGet(migrationsField)
-            , IsStatic = true
-            )
     do
         let pars =
             [   ProvidedParameter("config", typeof<MigrationConfig>)
