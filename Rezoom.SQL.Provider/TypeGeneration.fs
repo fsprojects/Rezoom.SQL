@@ -292,7 +292,7 @@ let generateMigrationMembers
                 let backend =
                     <@ fun () ->
                         (%backend.MigrationBackend)
-                            (ConnectionProvider.ResolveConnectionString(%%connectionName))
+                            (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
                     @>
                 <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
                     migrations.Run(%%config, %%(upcast backend))
@@ -311,7 +311,7 @@ let generateMigrationMembers
                 let backend =
                     <@ fun () ->
                         (%backend.MigrationBackend)
-                            (ConnectionProvider.ResolveConnectionString(%%connectionName))
+                            (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
                     @>
                 <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
                     migrations.Run(%%config, %%(upcast backend))
