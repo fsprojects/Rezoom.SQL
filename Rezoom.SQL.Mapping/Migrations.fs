@@ -128,9 +128,18 @@ type IMigrationBackend =
     abstract member RunMigration : string Migration -> unit
 
 type MigrationConfig =
-    {   AllowMigrationsFromOlderMajorVersions : bool
+    {   /// If true, permit running migrations that have not been run on the database, but are older
+        /// than other migrations that *have* been run. Typically this would only make sense in development, after
+        /// merging migrations written by another developer.
+        AllowRetroactiveMigrations : bool
+        /// Function to call after running a migration. Typically this would write to stdout or a log file.
         LogMigrationRan : string Migration -> unit
     }
+    /// Default migration config. Simple and safe.
+    static member Default =
+        {   AllowRetroactiveMigrations = false
+            LogMigrationRan = fun _ -> ()
+        }
 
 module MigrationUtilities =
     let private quotationizeMigration (migration : string Migration) =
@@ -185,7 +194,7 @@ module MigrationUtilities =
                 let pair = migration.MajorVersion, migration.Name
                 if not <| already.Contains(pair) then
                     if migration.MajorVersion < currentMajorVersion
-                        && not config.AllowMigrationsFromOlderMajorVersions then
+                        && not config.AllowRetroactiveMigrations then
                         failwith <|
                             sprintf "Can't run migration V%d.%s because database has a newer major version (V%d)"
                                 migration.MajorVersion migration.Name
