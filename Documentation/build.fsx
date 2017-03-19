@@ -7,8 +7,11 @@ let output = Path.Combine(__SOURCE_DIRECTORY__, "bin/doc")
 let template = Path.Combine(source, "template.html")
 
 let copies =
-    [   "tips.js"
+    [   // resources for template
+        "tips.js"
         "style.css"
+        // images
+        "CreateNewProject.png"
     ]
 
 let inputs =

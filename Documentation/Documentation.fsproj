@@ -51,11 +51,14 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Content Include="packages.config" />
+    <None Include="V1.model.sql" />
+    <None Include="rzsql.json" />
     <None Include="build.fsx" />
     <None Include="template.html" />
     <Content Include="tips.js" />
     <Content Include="style.css" />
     <None Include="Tutorial.fsx" />
+    <None Include="CreateNewProject.png" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="CSharpFormat">
@@ -107,13 +110,13 @@
       <HintPath>..\packages\Rezoom.0.2.1\lib\net46\Rezoom.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Compiler">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.1.2\lib\net46\Rezoom.SQL.Compiler.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.2.0\lib\net46\Rezoom.SQL.Compiler.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Mapping">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.1.2\lib\net46\Rezoom.SQL.Mapping.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.2.0\lib\net46\Rezoom.SQL.Mapping.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Provider">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.1.2\lib\net46\Rezoom.SQL.Provider.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.2.0\lib\net46\Rezoom.SQL.Provider.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
