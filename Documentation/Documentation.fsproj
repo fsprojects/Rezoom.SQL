@@ -52,6 +52,7 @@
   <ItemGroup>
     <Content Include="packages.config" />
     <None Include="V1.model.sql" />
+    <None Include="V2.articles.sql" />
     <None Include="rzsql.json" />
     <None Include="build.fsx" />
     <None Include="template.html" />

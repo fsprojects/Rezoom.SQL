@@ -44,6 +44,8 @@ This will add Rezoom.SQL and its dependencies to your project, along with a few 
 One of the files automatically added to your project is `V1.model.sql`. Take a look inside and you'll see
 some SQL code like this. Give it a quick read so you understand the example model.
 
+*Note: you might want to toggle off SQL -> Intellisense Enabled because it's designed for T-SQL syntax.*
+
 ```sql
 create table Users
     ( Id int primary key autoincrement
@@ -113,6 +115,7 @@ type InsertUser = SQL<"""
 type InsertComment = SQL<"insert into Comments(AuthorId, Comment) values (@authorId, @comment)">
 
 let addExampleUser name email =
+    // open a context in which to run queries
     use context = new ConnectionContext()
     // insert a user and get their ID
     let userId : int64 =
@@ -255,7 +258,8 @@ This is suitable for one-to-many relationships. For many-to-one or many-to-[0,1]
 `one X(...)` or `optional X(...)`.
 
 You can also nest multiple layers of these annotations. For example, if you were querying biological data by
-[taxonomic rank](https://en.wikipedia.org/wiki/Taxonomic_rank), you could write code like this:
+[taxonomic rank](https://en.wikipedia.org/wiki/Taxonomic_rank), you could write code like this, with lots of
+nesting.
 
 *)
 
@@ -303,3 +307,60 @@ let showClasses() =
                     for spec in genus.ChildSpecies do
                         printfn "Wow, these are nested a lot! %s/%s/%s/%s"
                             order.Name family.Name genus.Name spec.Name
+
+(**
+
+## Making changes to your database model
+
+If you're picky about your contrived examples, you may take issue with the model defined in V1.model.sql.
+After all, in most applications, users don't just post comments into the void. They post comments *on* something
+else. Let's say they're commenting on articles posted by other users.
+
+If you want to change the model, you could delete your database file and edit V1.model.sql. But since you've already
+got some data, how about writing a migration script instead?
+
+Add a file in your project called V2.articles.sql. Put the following SQL in there:
+
+```sql
+create table Articles
+	( Id int primary key autoincrement
+	, AuthorId int references Users(Id)
+	, Title string(128)
+	, Content string(2048)
+	);
+
+alter table Comments
+	add column ArticleId int null references Articles(Id);
+```
+
+Now you can add code to your program referencing the new `Articles` table, and the new `ArticleId` column on
+`Comments`.
+
+*)
+
+type GetArticles = SQL<"""
+    select
+        a.*
+        , one Author(aa.*)
+        , many Comments
+            ( c.*
+            , one Author(ca.*))
+    from Articles a
+    join Users aa on aa.Id = a.AuthorId
+    left join Comments c on c.ArticleId = a.Id
+    left join Users ca on ca.Id = a.AuthorId
+""">
+
+let getArticles() =
+    use context = new ConnectionContext()
+    let articles = GetArticles.Command().Execute(context)
+    for article in articles do
+        printfn "%s (by %s)" article.Title article.Author.Email
+        for comment in article.Comments do
+            printfn "    %s said: %s" comment.Author.Email comment.Comment
+
+(**
+
+It's as simple as that. Next time you run your program, you'll notice it runs V2.articles.sql as a migration.
+
+*)

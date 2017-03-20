@@ -317,3 +317,25 @@ h6 a, h6 a:hover, h6 a:focus {
         color: #e0e0e0;
         margin-top: 15px;
     }
+
+table {
+    margin: 15px 0;
+}
+
+th {
+    text-align: left;
+}
+
+td, th {
+    padding: 0 10px;
+    border: 1px solid #aaa;
+}
+
+td.snippet {
+    padding 0;
+    border: none;
+}
+
+#main td > p, #main th > p {
+    margin: 2px 5px;
+}
