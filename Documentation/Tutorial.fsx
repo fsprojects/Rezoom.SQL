@@ -136,7 +136,7 @@ let main argv =
 
 You may notice that if you run this program twice, you'll get an error the second time.
 **This is because of the unique constraint** on `User.Email`. If you change the email address
-in the program, you can run it again. Try editing it to get an email address at runtime from `Console.ReadLine()`!
+in the program, you can run it again. Try editing it to get an email address at runtime from `Console.ReadLine()`.
 
 ## Querying for data
 
@@ -253,11 +253,20 @@ let showUsersWithComments() =
 
 (**
 
+Notice that in the above example, Rezoom.SQL automatically de-duplicates the users. Behind the scenes, it is getting
+the same old flat result set from SQL, but it processes it into a nested collection of objects in memory.
+In order to do this, it must have some way to de-duplicate the repeated user information. By default, this is done by
+comparing all the columns at the user level of the query that are selected from primary key columns -- in this case,
+just `u.Id as UserId`.
+
+Try editing the query to no longer select the user ID. You'll get an error from the type provider, saying that it has
+no columns to use as keys.
+
 When you use `many Xs(column1, column2, ...)`, the wrapped columns will be in an `IReadOnlyList` called `.Xs`.
 This is suitable for one-to-many relationships. For many-to-one or many-to-[0,1] relationship, you can use
 `one X(...)` or `optional X(...)`.
 
-You can also nest multiple layers of these annotations. For example, if you were querying biological data by
+You can nest multiple layers of these annotations. For example, if you were querying biological data by
 [taxonomic rank](https://en.wikipedia.org/wiki/Taxonomic_rank), you could write code like this, with lots of
 nesting.
 
@@ -363,24 +372,96 @@ let getArticles() =
 
 It's as simple as that. Next time you run your program, you'll notice it runs `V2.articles.sql` as a migration.
 
-## Migration trees
+As you might imagine, you could write your next migration in `V3.something.sql`. This linear ordering of migrations is
+simple and easy, but can be frustrating when you work on features in separate branches, or on a team with other
+developers. Rezoom.SQL has a feature called [migration trees](MigrationTrees.html) to help with those situations.
+It's beyond the scope of this tutorial, but check it out if you're curious.
 
-If you're working alone on a project, it usually makes sense to have a linear migration sequence. So next time you need
-a migration, you'll write `V3.nextfeature.sql`, then `V4.etc.sql`, and so on.
+## Switching from SQLite to SQL Server
 
-However, if you're working on a team, strictly ordered migrations can be a real pain. Say for example you're working on
-a feature where articles are tagged in categories like `f#` or `tutorial`, so you create `V3.tags.sql`.
-But at the same time, some guy named Robert is trying to add a feature that lets users add articles to their favorites.
-He doesn't know about your migration, so he names his `V3.favorites.sql`.
+Rezoom.SQL translates its own dialect of SQL to different "backends". Currently only [SQLite](https://www.sqlite.org/)
+and MS SQL Server (T-SQL) are supported, with [PostgreSQL](https://www.postgresql.org/) support coming soon.
 
-When you merge, you have two different V3 migrations. This is a problem! Now you'll need to get together and decide
-which one should be V3 and which should be V4, and one of you will have to manually fix up the migration history on
-your development database instance.
+So far, this tutorial has stuck to SQLite. However, most apps in the .NET ecosystem store their data in SQL Server,
+so they use T-SQL. If you're starting a fresh project and want to target T-SQL, it's as easy as installing
+[Rezoom.SQL.Provider.TSQL](https://www.nuget.org/packages/Rezoom.SQL.Provider.TSQL/) instead of
+[Rezoom.SQL.Provider.SQLite](https://www.nuget.org/packages/Rezoom.SQL.Provider.SQLite/). However, both packages
+are just thin wrappers around the [base library](https://www.nuget.org/packages/Rezoom.SQL.Provider/). They don't
+actually have any code, they just bundle some default config files and the initial `V1.model.sql`.
 
-To avoid this situation, you can take advantage of the fact that most migrations just add things to the schema,
-they don't remove things. This means they can run in any order, as long as their dependencies are satisfied.
+You can easily change the config yourself to target a different database backend. Here's how.
 
-Rezoom.SQL can identify these "non-destructive" migrations, and will allow you to define them as add-ons to the current
-major version number instead of bumping to the next major version.
+There's a file in your project called `rzsql.json`. Open it up and you'll see this:
+
+```javascript
+{
+  "backend": "sqlite",
+  "optionals":  "f#",
+  "migrations": ".",
+  "connectionname": "rzsql"
+}
+```
+
+Just change the `"backend"` setting from `"sqlite"` to `"tsql"`. Then rebuild your project.
+
+You may get build errors if you have queries using the `last_insert_rowid()` function. This is because that
+is a SQLite function, and doesn't exist in T-SQL. Rezoom.SQL unifies the syntax of SQL queries, but it's not a complete
+compatibility layer: the functions available are still determined by the backend. In this case, the T-SQL equivalent
+function is `scope_identity()`.
+
+At this point your project should build, but you're not done yet. To be able to actually run the code, you'll need
+to edit your `App.config` with connection settings for SQL Server. This part isn't actually Rezoom-specific,
+it's standard .NET connection string stuff. However, nobody can remember the details, so here they are.
+Open up `App.config`, and you'll find something like this:
+
+
+```xml
+<configuration>
+<connectionStrings>
+ <add
+  name="rzsql" providerName="System.Data.SQLite"
+  connectionString="Data Source=rzsql.db"
+ />
+</connectionStrings>
+<system.data>
+ <DbProviderFactories>
+  <remove invariant="System.Data.SQLite" />
+  <add
+   name="SQLite Data Provider"
+   invariant="System.Data.SQLite"
+   description=".NET Framework Data Provider for SQLite"
+   type="System.Data.SQLite.SQLiteFactory, System.Data.SQLite"
+   />
+ </DbProviderFactories>
+</system.data>
+</configuration>
+```
+
+Change the `<connectionStrings>` and `<DbProviderFactories>` sections like so:
+
+```xml
+<configuration>
+<connectionStrings>
+ <add
+  name="rzsql" providerName="System.Data.SqlClient"
+  connectionString="Data Source=.\SQLEXPRESS;Integrated Security=SSPI;Initial Catalog=rzsql"
+ />
+</connectionStrings>
+<system.data>
+ <DbProviderFactories>
+  <remove invariant="System.Data.SqlClient" />
+  <add
+   name="SqlClient Data Provider"
+   invariant="System.Data.SqlClient"
+   description=".Net Framework Data Provider for SqlServer"
+   type="System.Data.SqlClient.SqlClientFactory, System.Data"
+  />
+ </DbProviderFactories>
+</system.data>
+</configuration>
+```
+
+In the above configuration I am assuming your SQL server is located at .\SQLEXPRESS. If it isn't, change the
+`connectionString` attribute accordingly.
 
 *)

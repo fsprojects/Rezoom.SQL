@@ -60,6 +60,8 @@
     <Content Include="style.css" />
     <None Include="Tutorial.fsx" />
     <None Include="CreateNewProject.png" />
+    <None Include="LinearMigrations.gv" />
+    <None Include="MigrationTrees.gv" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="CSharpFormat">
