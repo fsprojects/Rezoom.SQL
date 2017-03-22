@@ -9,10 +9,13 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Documentation</RootNamespace>
     <AssemblyName>Documentation</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-    <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Name>Documentation</Name>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -50,7 +53,6 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
-    <Content Include="packages.config" />
     <None Include="V1.model.sql" />
     <None Include="V2.articles.sql" />
     <None Include="rzsql.json" />
@@ -62,6 +64,8 @@
     <None Include="CreateNewProject.png" />
     <None Include="LinearMigrations.gv" />
     <None Include="MigrationTrees.gv" />
+    <Content Include="packages.config" />
+    <Content Include="App.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="CSharpFormat">
@@ -98,7 +102,7 @@
       <HintPath>..\packages\FSharpVSPowerTools.Core.2.3.0\lib\net45\FSharpVSPowerTools.Core.dll</HintPath>
     </Reference>
     <Reference Include="LicenseToCIL">
-      <HintPath>..\packages\LicenseToCIL.0.2.2\lib\net46\LicenseToCIL.dll</HintPath>
+      <HintPath>..\packages\LicenseToCIL.0.3.0\lib\net45\LicenseToCIL.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core">
@@ -110,30 +114,37 @@
       <HintPath>..\packages\FSharp.Formatting.2.14.4\lib\net40\RazorEngine.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom">
-      <HintPath>..\packages\Rezoom.0.2.1\lib\net46\Rezoom.dll</HintPath>
+      <HintPath>..\packages\Rezoom.0.3.0\lib\net45\Rezoom.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Compiler">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.2.0\lib\net46\Rezoom.SQL.Compiler.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.3.0\lib\net45\Rezoom.SQL.Compiler.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Mapping">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.2.0\lib\net46\Rezoom.SQL.Mapping.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.3.0\lib\net45\Rezoom.SQL.Mapping.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Provider">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.2.0\lib\net46\Rezoom.SQL.Provider.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.3.0\lib\net45\Rezoom.SQL.Provider.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\packages\System.Data.SQLite.Core.1.0.104.0\lib\net45\System.Data.SQLite.dll</HintPath>
+    </Reference>
     <Reference Include="System.Numerics" />
     <Reference Include="System.Transactions" />
-    <Reference Include="System.ValueTuple">
-      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
     <Reference Include="System.Web.Razor">
       <HintPath>..\packages\FSharp.Formatting.2.14.4\lib\net40\System.Web.Razor.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <Import Project="..\packages\System.Data.SQLite.Core.1.0.104.0\build\net45\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.104.0\build\net45\System.Data.SQLite.Core.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\System.Data.SQLite.Core.1.0.104.0\build\net45\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Data.SQLite.Core.1.0.104.0\build\net45\System.Data.SQLite.Core.targets'))" />
+  </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

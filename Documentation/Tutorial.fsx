@@ -1,9 +1,12 @@
 ﻿(*** hide ***)
 
-#r "../packages/Rezoom.0.2.1/lib/net46/Rezoom.dll"
-#r "../packages/Rezoom.SQL.Provider.0.2.0/lib/net46/Rezoom.SQL.Compiler.dll"
-#r "../packages/Rezoom.SQL.Provider.0.2.0/lib/net46/Rezoom.SQL.Mapping.dll"
-#r "../packages/Rezoom.SQL.Provider.0.2.0/lib/net46/Rezoom.SQL.Provider.dll"
+#r "../packages/FParsec.1.0.2/lib/net40-client/FParsec.dll"
+#r "../packages/FParsec.1.0.2/lib/net40-client/FParsecCS.dll"
+#r "../packages/FParsec-Pipes.0.3.1.0/lib/net45/FParsec-Pipes.dll"
+#r "../packages/Rezoom.0.3.0/lib/net45/Rezoom.dll"
+#r "../packages/Rezoom.SQL.Provider.0.3.0/lib/net45/Rezoom.SQL.Compiler.dll"
+#r "../packages/Rezoom.SQL.Provider.0.3.0/lib/net45/Rezoom.SQL.Mapping.dll"
+#r "../packages/Rezoom.SQL.Provider.0.3.0/lib/net45/Rezoom.SQL.Provider.dll"
 #nowarn "193"
 
 (**
