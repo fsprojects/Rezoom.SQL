@@ -78,20 +78,20 @@
       <Private>True</Private>
     </ProjectReference>
     <Reference Include="FSharp.Core">
-      <HintPath>..\packages\FSharp.Core.4.1.0.2\lib\net45\FSharp.Core.dll</HintPath>
+      <HintPath>..\packages\FSharp.Core.4.0.0.1\lib\net40\FSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="FsUnit.NUnit">
       <HintPath>..\packages\FsUnit.3.0.0\lib\net45\FsUnit.NUnit.dll</HintPath>
     </Reference>
     <Reference Include="LicenseToCIL">
-      <HintPath>..\packages\LicenseToCIL.0.2.2\lib\net46\LicenseToCIL.dll</HintPath>
+      <HintPath>..\packages\LicenseToCIL.0.3.0\lib\net45\LicenseToCIL.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.3.6.0\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom">
-      <HintPath>..\packages\Rezoom.0.2.1\lib\net46\Rezoom.dll</HintPath>
+      <HintPath>..\packages\Rezoom.0.3.0\lib\net45\Rezoom.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -104,9 +104,6 @@
       <Project>{6b6a06c5-157a-4fe3-8b4c-2a1ae6a15333}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <Reference Include="System.ValueTuple">
-      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

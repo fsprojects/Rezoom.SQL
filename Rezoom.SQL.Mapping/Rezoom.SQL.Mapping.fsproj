@@ -9,8 +9,8 @@
     <OutputType>Library</OutputType>
     <RootNamespace>Rezoom.SQL.Mapping</RootNamespace>
     <AssemblyName>Rezoom.SQL.Mapping</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Name>Rezoom.SQL.Mapping</Name>
     <TargetFrameworkProfile />
@@ -72,9 +72,6 @@
     <Compile Include="Migrations.fs" />
     <Compile Include="IScalar.fs" />
     <Compile Include="Command.fs" />
-    <Compile Include="..\Shared\TaskBuilder.fs">
-      <Link>TaskBuilder.fs</Link>
-    </Compile>
     <Compile Include="CommandBatch.fs" />
     <Compile Include="ConnectionProvider.fs" />
     <Compile Include="ConnectionContext.fs" />
@@ -85,23 +82,20 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="LicenseToCIL">
-      <HintPath>..\packages\LicenseToCIL.0.2.2\lib\net46\LicenseToCIL.dll</HintPath>
+      <HintPath>..\packages\LicenseToCIL.0.3.0\lib\net45\LicenseToCIL.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
     <Reference Include="Rezoom">
-      <HintPath>..\packages\Rezoom.0.2.1\lib\net46\Rezoom.dll</HintPath>
+      <HintPath>..\packages\Rezoom.0.3.0\lib\net45\Rezoom.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.ValueTuple">
-      <HintPath>..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
