@@ -1,9 +1,9 @@
-﻿# Tutorial
+# Tutorial
 
 This tutorial will get you up and running with [Rezoom.SQL](https://github.com/rspeele/Rezoom.SQL).
 In just a few minutes, you'll be writing statically typed SQL in your program and running it on a SQLite database.
 
-You'll need [Visual Studio 2017](https://www.visualstudio.com/downloads/) -- the free
+You'll need [Visual Studio 2015 or 2017](https://www.visualstudio.com/downloads/) -- the free
 Community Edition is fine.
 
 Make sure you check the box for "F# language support" in the installer.
@@ -14,7 +14,7 @@ your installation to include F# language support.
 
 In Visual Studio, click File -> New -> Project.
 On the left side, select Templates -> Other Languages -> Visual F#, and select Console Application.
-Make sure you target .NET framework 4.6 or newer.
+Make sure you target .NET framework 4.5 or newer.
 
 ![screenshot of new project dialog](CreateNewProject.png)
 
