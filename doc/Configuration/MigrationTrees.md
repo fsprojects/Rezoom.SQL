@@ -1,6 +1,4 @@
-﻿(**
-
-# Migration trees
+﻿# Migration trees
 
 If you're working alone on a project, it usually makes sense to have a linear migration sequence. So next time you need
 a migration, you'll write `V3.nextfeature.sql`, then `V4.etc.sql`, and so on.
@@ -20,4 +18,3 @@ they don't remove things. This means they can run in any order, as long as their
 Rezoom.SQL can identify these "non-destructive" migrations, and will allow you to define them as add-ons to the current
 major version number instead of bumping to the next major version.
 
-*)
