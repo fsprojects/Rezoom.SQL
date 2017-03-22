@@ -32,7 +32,7 @@ let private directoriesToSearch =
         // the solution folder / packages.
         let dllPath = Path.GetFullPath(Assembly.GetExecutingAssembly().Location)
         log (sprintf "dll path = %s" dllPath)
-        match dllPath |> walkUp [Some "net46"; Some "lib"; None; Some "packages"] with
+        match dllPath |> walkUp [Some "net45"; Some "lib"; None; Some "packages"] with
         | None -> ()
         | Some packages ->
             for dir in Directory.GetDirectories(packages) do
@@ -57,7 +57,6 @@ let private nameWhitelist =
         "FParsecCS"
         "FParsec-Pipes"
         "LicenseToCIL"
-        "System.ValueTuple"
         "Rezoom"
     |] |> Set.ofArray
 
