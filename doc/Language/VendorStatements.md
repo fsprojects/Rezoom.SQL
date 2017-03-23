@@ -105,7 +105,7 @@ For example, here are some possible pairs of opening and closing delimiters:
 | Opening delimiter   | Closing delimiter   |
 |---------------------|---------------------|
 | `{`                 | `}`                 |
-| `{{`                | `}}`                |
+| `{?`                | `?}`                |
 | `[`                 | `]`                 |
 | `<#`                | `#>`                |
 
