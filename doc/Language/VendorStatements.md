@@ -17,15 +17,18 @@ checker of any result sets, model changes, or cache invalidation effects produce
 ```sql
 vendor tsql {
 
-    -- This is T-SQL. Rezoom.SQL cannot understand this, does not look at it and does not care. This is the code that
-    -- will actually run on your database.
+    -- This is T-SQL. Rezoom.SQL cannot understand this,
+    -- does not look at it and does not care.
+
+    -- This is the code that will actually run on your database.
 
     exec sp_tables
 
 } imagine {
 
-    -- This is Rezoom SQL. Rezoom.SQL parses and typechecks this and assumes that the T-SQL above has the same side
-    -- effects and result sets.
+    -- This is Rezoom SQL. Rezoom.SQL parses and typechecks this
+    -- and assumes that the T-SQL above has the same side effects
+    -- and result sets.
 
     select
         '' as TABLE_QUALIFIER
@@ -33,9 +36,9 @@ vendor tsql {
         , '' as TABLE_NAME
         , '' as TABLE_TYPE
         , COALESCE(null, '') as REMARKS
-    -- This is here because a SELECT with no FROM, WHERE, or LIMIT clause is assumed to return a single row.
+    -- This is here because a SELECT with no FROM, WHERE, or LIMIT clause
+    -- would be assumed to return a single row.
     where true
-
 }
 ```
 
@@ -109,12 +112,12 @@ For example, here are some possible pairs of opening and closing delimiters:
 | `[`                 | `]`                 |
 | `<#`                | `#>`                |
 
-So, you could rewrite the above example like so:
+So, you could rewrite the above example like so to avoid the delimiter-usurping closing brace:
 
 ```sql
-vendor tsql [<#
+vendor tsql <#
     delete top(10) from Comments where Text = '}' -- all good since } isn't our closing delimiter
-#>]
+#>
 ```
 
 Be aware that this also affects the delimiters you'll use for query parameters and the IMAGINE clause.
