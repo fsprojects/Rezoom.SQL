@@ -1,5 +1,6 @@
 ﻿open System
 open System.Diagnostics
+open System.Security
 open Rezoom
 open FileSystem
 open FileSystem.Execution
@@ -79,6 +80,12 @@ let mainLoop () =
         | "smart", [||] ->
             dumbMode <- false
             Plan.zero
+        | "reset", [||] ->
+            plan {
+                do! DemoSetup.setUpDemoData
+                let! id = Domain.getUserByName DemoSetup.defaultUserName |> Plan.map Option.get
+                userId <- id
+            }
         | "become", [| name |] ->
             plan {
                 let! resolved = Domain.getUserByName name
@@ -100,6 +107,11 @@ let mainLoop () =
             | None -> Plan.zero
             | Some id ->
                 showHierarchyWithPermissions userId (Some id)
+        | "rmdir", [| idStr |] ->
+            match parseFolderId idStr with
+            | None -> Plan.zero
+            | Some id ->
+                Domain.recycleFolder userId id
         | _ ->
             eprintfn "Unrecognized command."
             Plan.ret ()
@@ -113,7 +125,19 @@ let mainLoop () =
                 let split = input.Split([|' '|], StringSplitOptions.RemoveEmptyEntries)
                 split.[0], Array.skip 1 split
             let plan = planCommand cmd args
-            bench input plan
+            try
+                bench input plan
+            with
+            | :? AggregateException as e when e.InnerExceptions.Count = 1 ->
+                match e.InnerException with
+                | :? SecurityException as s ->
+                    eprintfn "Security exception: %s" s.Message
+                | exn ->
+                    eprintfn "Exception: %O" exn
+            | :? SecurityException as s ->
+                eprintfn "Security exception: %s" s.Message
+            | exn ->
+                eprintfn "Exception: %O" exn
 
 [<EntryPoint>]
 let main argv =
