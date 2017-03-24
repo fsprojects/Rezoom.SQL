@@ -102,6 +102,17 @@ let ``read DateTime`` () =
     test DateTime.UtcNow ColumnType.DateTime
 
 [<Test>]
+let ``read DateTimeOffset`` () =
+    test DateTimeOffset.UtcNow ColumnType.DateTimeOffset
+
+[<Test>]
+let ``read boolean`` () =
+    test false ColumnType.Boolean
+    test true ColumnType.Boolean
+    testXCore (fun b -> if b then 1 else 0) true ColumnType.Int32
+    testXCore (fun b -> if b then 1 else 0) false ColumnType.Int32
+
+[<Test>]
 let ``read DateTimeKind enum (via TryParser)`` () =
     let mutable e = DateTimeKind.Unspecified
     let succ = PrimitiveConverters.EnumTryParser<DateTimeKind>.TryParse("Local", &e)

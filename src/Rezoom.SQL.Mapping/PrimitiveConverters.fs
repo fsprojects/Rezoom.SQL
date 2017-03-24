@@ -121,11 +121,42 @@ type Converters =
             decimal decimal decimal decimal
             decimal decimal decimal decimal
             decimal decimal decimal decimal
+    static member ToBoolean(row : Row, col : ColumnInfo) : bool =
+        match col.Type with
+        | ColumnType.Boolean -> row.GetBoolean(col.Index)
+        | _ -> 0 <> Converters.ToInt32(row, col)
     static member ToDateTime(row : Row, col : ColumnInfo) : DateTime =
+        let inline fromString str =
+            DateTime.Parse(str, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)
         match col.Type with
         | ColumnType.DateTime -> row.GetDateTime(col.Index)
-        | ColumnType.Object -> Convert.ToDateTime(row.GetObject(col.Index), CultureInfo.InvariantCulture)
+        | ColumnType.String -> row.GetString(col.Index) |> fromString
+        | ColumnType.Object ->
+            match row.GetObject(col.Index) with
+            | :? string as s -> fromString s
+            | o -> Convert.ToDateTime(o, CultureInfo.InvariantCulture)
         | x -> failwithf "Invalid column type %A for DateTime" x
+    static member ToDateTimeOffset(row : Row, col : ColumnInfo) : DateTimeOffset =
+        let inline fromString str =
+            DateTimeOffset.Parse(str, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)
+        let inline fromDateTime (dt : DateTime) =
+            // assume if we're putting datetimes in the DB, they are UTC unless specified local
+            if dt.Kind = DateTimeKind.Unspecified then
+                DateTimeOffset(dt, TimeSpan.Zero)
+            else
+                DateTimeOffset(dt)
+        match col.Type with
+        | ColumnType.DateTimeOffset -> row.GetObject(col.Index) |> Unchecked.unbox
+        | ColumnType.String -> row.GetString(col.Index) |> fromString
+        | ColumnType.Object ->
+            match row.GetObject(col.Index) with
+            | :? string as s -> fromString s
+            | :? DateTime as dt -> fromDateTime dt
+            | o -> Unchecked.unbox o
+        | ColumnType.DateTime ->
+            let dt = row.GetDateTime(col.Index)
+            fromDateTime dt
+        | x -> failwithf "Invalid column type %A for DateTimeOffset" x
 
 let private convertersByType =
     let methods = typeof<Converters>.GetMethods()

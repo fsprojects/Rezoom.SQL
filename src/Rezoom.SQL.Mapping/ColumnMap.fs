@@ -18,6 +18,8 @@ type ColumnType =
     | Double   = 12s
     | Decimal  = 13s
     | DateTime = 14s
+    | DateTimeOffset = 15s
+    | Boolean        = 16s
 
 [<Struct>]
 type ColumnInfo =
