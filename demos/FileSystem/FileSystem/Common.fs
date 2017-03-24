@@ -60,6 +60,10 @@ type EffectivePermissions =
         if this.Delete <> Allowed then raise <| SecurityException("Not allowed to delete")
     member this.AssertCanCreate() =
         if this.Create <> Allowed then raise <| SecurityException("Not allowed to create")
+    override this.ToString() =
+        [   if this.Delete = Allowed then yield "delete"
+            if this.Create = Allowed then yield "create"
+        ] |> String.concat ","
 
 // The below types are basically DTOs. It might make sense to put them in the persistence layer instead,
 // but since they're just dumb immutable records it doesn't really hurt anything to have them shared.
@@ -85,13 +89,18 @@ type FileOrFolder =
         | Folder { FolderId = FolderId(id); Name = name } ->
             sprintf "%s/    (%d)" name id
 
-type Hierarchy =
+type Hierarchy<'info> =
     {   Node : FileOrFolder
-        Children : Hierarchy list
+        Children : 'info Hierarchy list
+        Info : 'info
     }
-    member this.ToString(depth : int) =
+    member private this.ToString(depth : int) : string =
         let indent = String(' ', depth) + "|-"
-        [   yield indent + " " + string this.Node
+        let info =
+            match box this.Info with
+            | null -> ""
+            | info -> " | info = " + string info
+        [   yield indent + " " + string this.Node + info
             for child in this.Children ->
                 child.ToString(depth + 2)
         ] |> String.concat Environment.NewLine

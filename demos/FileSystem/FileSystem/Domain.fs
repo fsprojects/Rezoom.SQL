@@ -15,7 +15,7 @@ let rec getHierarchy rootId =
                         match child with
                         | File _ -> Plan.ret []
                         | Folder f -> getHierarchy (Some f.FolderId) // recurse
-                    return { Node = child; Children = children }
+                    return { Info = (); Node = child; Children = children }
                 }
             ] |> Plan.concurrentList
     }
