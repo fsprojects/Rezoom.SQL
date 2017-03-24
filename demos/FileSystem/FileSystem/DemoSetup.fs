@@ -115,6 +115,8 @@ let private demoUsers =
         "Graham", [AllowUnder "a"; DenyUnder "a.3"]
         "Robert", [AllowUnder "b.1"]
         "John", [AllowUnder "b"; DenyUnder "b.1"; AllowUnder "b.1.3"]
+        "Sam", []
+        "Christopher", [AllowUnder "b.2.1"]
     ]
 
 type private InsertUserSQL = SQL<"""
@@ -160,12 +162,69 @@ let rec private setupDemoUser name (permissions : DemoPermisssion list) =
                     .Plan()
     }
 
+let private demoGroups =
+    [   "NotB2A4", [AllowUnder "root"; DenyUnder "b.2"; DenyUnder "a.4"], ["Sam"; "Christopher"]
+    ]
+
+type private InsertUserGroupSQL = SQL<"""
+    insert into UserGroups(UserId, GroupId)
+    select
+        u.Id,
+        @groupId
+    from Users u where u.Name = @userName
+""">
+
+type private InsertGroupSQL = SQL<"""
+    insert into Groups
+        ( Name
+        )
+    values
+        ( @name
+        );
+    select scope_identity() as InsertedId;
+""">
+
+type private InsertGroupPermissionSQL = SQL<"""
+    insert into FolderGroupPermissions
+        ( FolderId
+        , GroupId
+        , DeletePermission
+        , CreatePermission
+        )
+    select
+        f.Id
+        , @groupId
+        , @deletePermission
+        , @createPermission
+    from Folders f where f.Name = @folderName
+""">
+
+let private setupDemoGroup name permissions members =
+    plan {
+        let! groupId = InsertGroupSQL.Command(name = name).Scalar()
+        for permission in batch permissions do
+            let permission, folderName =
+                match permission with
+                | AllowUnder name -> true, name
+                | DenyUnder name -> false, name
+            do!
+                InsertGroupPermissionSQL
+                    .Command(groupId = groupId, folderName = folderName,
+                        deletePermission = Some permission,
+                        createPermission = Some permission)
+                    .Plan()
+        for name in batch members do
+            do! InsertUserGroupSQL.Command(groupId = groupId, userName = name).Plan()
+    }
+
 let setUpDemoData =
     plan {
         do! nukeData
         do! setUpFolders None demoFolderStructure
         for demoUserName, demoUserPermissions in batch demoUsers do
             do! setupDemoUser demoUserName demoUserPermissions
+        for demoGroupName, demoGroupPermissions, demoGroupMembers in batch demoGroups do
+            do! setupDemoGroup demoGroupName demoGroupPermissions demoGroupMembers
     }
 
 let defaultUserName = demoUsers |> List.head |> fst

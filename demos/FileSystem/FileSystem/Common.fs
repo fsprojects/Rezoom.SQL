@@ -61,9 +61,11 @@ type EffectivePermissions =
     member this.AssertCanCreate() =
         if this.Create <> Allowed then raise <| SecurityException("Not allowed to create")
     override this.ToString() =
-        [   if this.Delete = Allowed then yield "delete"
-            if this.Create = Allowed then yield "create"
-        ] |> String.concat ","
+        let perms =
+            [   if this.Delete = Allowed then yield "D"
+                if this.Create = Allowed then yield "C"
+            ] |> String.concat ","
+        if perms = "" then "DENIED" else perms
 
 // The below types are basically DTOs. It might make sense to put them in the persistence layer instead,
 // but since they're just dumb immutable records it doesn't really hurt anything to have them shared.
@@ -103,7 +105,7 @@ type Hierarchy<'info> =
         let info =
             match box this.Info with
             | null -> ""
-            | info -> " | info = " + string info
+            | info -> " | " + string info
         [   yield indent + " " + string this.Node + info
             for child in this.Children ->
                 child.ToString(depth + 2)
