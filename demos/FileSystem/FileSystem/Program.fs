@@ -1,4 +1,5 @@
-﻿open Rezoom
+﻿open System.Diagnostics
+open Rezoom
 open Rezoom.Execution
 open FileSystem
 open FileSystem.Domain
@@ -15,22 +16,35 @@ type DemoExecutionLog() =
             anyErrands <- false
     member __.BatchCount = batchCount
 
-let exec description (plan : 'a Plan) =
+let executeSmart (plan : 'a Plan) =
     task {
         let log = DemoExecutionLog()
         let config =
             { ExecutionConfig.Default with
                 Log = log
             }
+        let sw = Stopwatch()
         let! result = execute config plan
-        printfn "Ran `%s` in %d batches" description log.BatchCount
-        return result
+        return result, log.BatchCount
     } |> fun t -> t.Result
+
+let executeDumb (plan : 'a Plan) =
+    (DumbExecution.execute plan).Result
+
+let execute plan = executeDumb plan
+
+let bench description (plan : 'a Plan) =
+    let stopwatch = Stopwatch()
+    stopwatch.Start()
+    let result, batchCount = execute plan
+    stopwatch.Stop()
+    printfn "Ran `%s` in %d ms with %d round trips"
+        description stopwatch.ElapsedMilliseconds batchCount
 
 [<EntryPoint>]
 let main argv =
     DemoSetup.migrate()
-    exec "Set up demo data" DemoSetup.setUpDemoData
+    bench "Set up demo data" DemoSetup.setUpDemoData
 
     printfn "%A" argv
     0 // return an integer exit code
