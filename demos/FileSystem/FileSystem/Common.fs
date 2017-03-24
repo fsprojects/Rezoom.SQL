@@ -95,7 +95,11 @@ type Hierarchy<'info> =
         Info : 'info
     }
     member private this.ToString(depth : int) : string =
-        let indent = String(' ', depth) + "|-"
+        let prefix =
+            match this.Node with
+            | Folder _ -> "|-"
+            | File _ -> " *"
+        let indent = String(' ', depth) + prefix
         let info =
             match box this.Info with
             | null -> ""

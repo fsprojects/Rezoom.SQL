@@ -42,9 +42,16 @@ let private demoFolderStructure =
                     [   dir "a.1"
                             [   file "a.1.1"
                                 file "a.1.2"
+                                file "a.1.3"
                             ]
                         file "a.2"
                         file "a.3"
+                        dir "a.4"
+                            [   file "a.4.1"
+                                file "a.4.2"
+                                file "a.4.3"
+                                file "a.4.5"
+                            ]
                     ]
                 dir "b"
                     [   dir "b.1"
@@ -53,6 +60,10 @@ let private demoFolderStructure =
                                 dir "b.1.3"
                                     [   file "b.1.3.1"
                                         file "b.1.3.2"
+                                        dir "b.1.3.3"
+                                            [   file "b.1.3.3.1"
+                                                file "b.1.3.3.2"
+                                            ]
                                     ]
                             ]
                         dir "b.2"
@@ -60,10 +71,15 @@ let private demoFolderStructure =
                                     [   file "b.2.1.1"
                                     ]
                                 file "b.2.2"
+                                file "b.2.3"
                             ]
                         file "b.3"
+                        file "b.4"
+                        file "b.5"
+                        file "b.6"
                     ]
                 file "c"
+                file "d"
             ]
     ]
 
