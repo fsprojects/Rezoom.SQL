@@ -44,10 +44,10 @@ let getFolder (FolderId folderId) =
 
 type private GetChildrenSQL = SQL<"""
     select Id, Name, true as IsFolder
-    from Folders where ParentId = @parentId
+    from UnrecycledFolders where ParentId = @parentId
     union all
     select Id, Name, false as IsFolder
-    from Files where ParentId = @parentId
+    from UnrecycledFiles where ParentId = @parentId
 """>
 
 let getChildren (FolderId parentId) =
@@ -107,11 +107,9 @@ let getLocalPermissions (FolderId folderId) subjectId =
         let! row = command.TryExactlyOne()
         return
             match row with
-            | None -> LocalPermissions.Empty(FolderId folderId, subjectId)
+            | None -> LocalPermissions.Empty
             | Some found ->
-                {   FolderId = FolderId folderId
-                    SubjectId = subjectId
-                    DeletePermission = permissionFromBool found.DeletePermission
+                {   DeletePermission = permissionFromBool found.DeletePermission
                     CreatePermission = permissionFromBool found.CreatePermission
                 }
     }

@@ -46,3 +46,9 @@ create table FolderPermissions
     , CreatePermission bool null
     , primary key(FolderId, UserId, GroupId)
     );
+
+create view UnrecycledFolders as
+	select * from Folders where RecycleItemId is null;
+
+create view UnrecycledFiles as
+	select * from Files where RecycleItemId is null;

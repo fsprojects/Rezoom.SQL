@@ -1,5 +1,6 @@
-﻿namespace FileSystem
-// This file defines common types that every layer needs.
+﻿// This file defines common types that every layer can know about.
+namespace FileSystem
+open System.Security
 
 // Strongly typed wrappers for integer IDs.
 // A must-have when we're doing all our domain logic by passing around IDs.
@@ -30,17 +31,11 @@ type PermissionSubjectId =
 /// Represents the permissions local to a folder and user or group ID.
 /// In other words, a single record from the FolderPermissions table.
 type LocalPermissions =
-    {   /// The folder where these permissions are assigned.
-        FolderId : FolderId
-        /// The entity that these permissions are assigned for.
-        SubjectId : PermissionSubjectId
-        DeletePermission : LocalPermission
+    {   DeletePermission : LocalPermission
         CreatePermission : LocalPermission
     }
-    static member Empty(folderId, subjectId) =
-        {   FolderId = folderId
-            SubjectId = subjectId
-            DeletePermission = Inherit
+    static member Empty =
+        {   DeletePermission = Inherit
             CreatePermission = Inherit
         }
 
@@ -49,6 +44,21 @@ type LocalPermissions =
 type EffectivePermission =
     | Allowed
     | Denied
+
+type EffectivePermissions =
+    {   /// The folder where these effective permissions apply.
+        FolderId : FolderId option
+        /// The user these effective permissions apply to. We always resolve effective permissions for a specific
+        /// user, taking into account all the groups they are in. There is no point in resolving effective permissions
+        /// for a group because groups do not perform actions in the system, users do.
+        UserId : UserId
+        Delete : EffectivePermission
+        Create : EffectivePermission
+    }
+    member this.AssertCanDelete() =
+        if this.Delete <> Allowed then raise <| SecurityException("Not allowed to delete")
+    member this.AssertCanCreate() =
+        if this.Create <> Allowed then raise <| SecurityException("Not allowed to create")
 
 // The below types are basically DTOs. It might make sense to put them in the persistence layer instead,
 // but since they're just dumb immutable records it doesn't really hurt anything to have them shared.

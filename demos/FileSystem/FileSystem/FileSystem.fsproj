@@ -61,6 +61,8 @@
     <Compile Include="Common.fs" />
     <Compile Include="Persistence.fsi" />
     <Compile Include="Persistence.fs" />
+    <Compile Include="Domain.fsi" />
+    <Compile Include="Domain.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />

@@ -1,4 +1,9 @@
-﻿module FileSystem.Persistence
+﻿// This file defines the public interface to the persistence layer.
+
+// In theory we could implement this set of functions against something other than a SQL database,
+// including in memory for testing.
+
+module FileSystem.Persistence
 open Rezoom
 open FileSystem
 
@@ -9,16 +14,16 @@ val public migrate : unit -> unit
 val public getFile : id : FileId -> FileData Plan
 
 /// Get data about a single folder.
-val public getFolder : id:  FolderId -> FolderData Plan
+val public getFolder : id : FolderId -> FolderData Plan
 
-/// Get data about all the children of a folder.
+/// Get data for the non-recycled children of a folder.
 val public getChildren : parentId : FolderId -> FileOrFolder list Plan
 
 /// Get the IDs of the groups a user is a member of.
 val public getUserGroupIds : userId : UserId -> GroupId list Plan
 
 /// Get the data from the permissions record associated with a given folder and permission subject.
-/// If it does not exist, returns `LocalPermissions.Empty(folderId, subjectId)`.
+/// If no permissions are specified for the particular combination, returns `LocalPermissions.Empty.
 val public getLocalPermissions
     : folderId : FolderId -> subjectId : PermissionSubjectId -> LocalPermissions Plan
 
