@@ -7,9 +7,6 @@ module FileSystem.Persistence
 open Rezoom
 open FileSystem
 
-/// Migrate the database.
-val public migrate : unit -> unit
-
 /// Get data about a single file.
 val public getFile : id : FileId -> FileData Plan
 

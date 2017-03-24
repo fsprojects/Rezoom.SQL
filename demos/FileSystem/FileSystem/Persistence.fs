@@ -1,18 +1,7 @@
 ﻿module FileSystem.Persistence
 open Rezoom
 open Rezoom.SQL
-open Rezoom.SQL.Migrations
 open Rezoom.SQL.Plans
-
-/// Model inferred from V1.model.sql.
-type private FileSystemModel = SQLModel<".">
-
-let migrate() =
-    let config =
-        {   AllowRetroactiveMigrations = false
-            LogMigrationRan = fun m -> printfn "Ran migration `%s`" m.FileName
-        }
-    FileSystemModel.Migrate(config)
 
 type private GetFileSQL = SQL<"""
     select Id, Name, ParentId from Files where Id = @id
