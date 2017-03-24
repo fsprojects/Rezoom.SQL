@@ -96,12 +96,14 @@ let executeDumb (plan : 'a Plan) =
                 let tasks = ResizeArray()
                 let pendingResponses =
                     requests.Map(fun e ->
-                        let task = e.PrepareUntyped(context) token
+                        let task = lazy (e.PrepareUntyped(context) token)
                         tasks.Add(task)
-                        task)
+                        fun () -> task.Value)
                 errandCount <- errandCount + tasks.Count
-                let! _ = Task.WhenAll(tasks)
-                plan <- pendingResponses.Map(fun t -> RetrievalSuccess t.Result) |> resume
+                for task in tasks do // run tasks in series
+                    let! _ = task.Value
+                    ()
+                plan <- pendingResponses.Map(fun t -> t().Result |> RetrievalSuccess) |> resume
             | Result r ->
                 result <- Some r
         return Option.get result, errandCount
