@@ -8,5 +8,6 @@
     * [Using Rezoom to minimize round-trips](doc/Tutorial/UsingRezoom.md)
 * [Configuration](doc/Configuration/README.md)
 * [Language](doc/Language/README.md)
+    * [Navigation properties](doc/Language/NavigationProperties.md)
     * [Vendor statements](doc/Language/VendorStatements.md)
 * [API](doc/API/README.md)
