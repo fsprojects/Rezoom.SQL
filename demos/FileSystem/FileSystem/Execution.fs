@@ -1,16 +1,50 @@
-﻿module FileSystem.DumbExecution
+﻿module FileSystem.Execution
 open System
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
 open FSharp.Control.Tasks.ContextInsensitive
 open Rezoom
+open Rezoom.Execution
+
+// The usual way of executing plans, more or less.
+// Here we define a custom logger.
+
+type DemoExecutionLog() =
+    inherit ExecutionLog()
+    let mutable batchCount = 0
+    let mutable anyErrands = false
+    override __.OnPreparedErrand(_) = anyErrands <- true
+    override __.OnEndStep() =
+        if anyErrands then
+            batchCount <- batchCount + 1
+            anyErrands <- false
+    member __.BatchCount = batchCount
+
+// Now we write a wrapper function around Rezoom.Execution.execute
+// that uses our logger in the config and records the # of batches.
+
+let executeSmart (plan : 'a Plan) =
+    task {
+        let log = DemoExecutionLog()
+        let config =
+            { ExecutionConfig.Default with
+                Log = log
+            }
+        let! result = execute config plan
+        return result, log.BatchCount
+    } |> fun t -> t.Result
+
+// The rest of this file is a manual re-implementation of Rezoom.Execution.execute
+// which is dumb. That is, it does not batch commands and it does not cache anything.
+
+// Normally this would not be in a project, it is only written here so we run plans in "dumb" mode
+// and see how many round trips we saved in "smart" mode.
 
 type private DumbServiceContext(config : IServiceConfig) =
     inherit ServiceContext()
     let services = Dictionary<Type, obj>()
     let globals = Stack<_>()
-    let mutable totalSuccess = false
     override __.Configuration = config
     override this.GetService<'f, 'a when 'f :> ServiceFactory<'a> and 'f : (new : unit -> 'f)>() =
         let ty = typeof<'f>
@@ -39,17 +73,16 @@ type private DumbServiceContext(config : IServiceConfig) =
                 else exn <- AggregateException(exn, e)
         if not (isNull exn) then raise exn
     member __.ClearLocals(state) = ()
-    member __.SetSuccessful() = totalSuccess <- true
+    member __.SetSuccessful() = ()
     member this.Dispose() =
-        let state = if totalSuccess then ExecutionSuccess else ExecutionFault
         try
-            this.ClearLocals(state)
+            this.ClearLocals(ExecutionSuccess)
         finally
-            DumbServiceContext.ClearStack(globals, state)
+            DumbServiceContext.ClearStack(globals, ExecutionSuccess)
     interface IDisposable with
         member this.Dispose() = this.Dispose()
 
-let execute (plan : 'a Plan) =
+let executeDumb (plan : 'a Plan) =
     task {
         let config = { new IServiceConfig with member __.TryGetConfig() = None }
         let token = CancellationToken.None
@@ -72,6 +105,5 @@ let execute (plan : 'a Plan) =
             | Result r ->
                 result <- Some r
         return Option.get result, errandCount
-    }
-
+    } |> fun t -> t.Result
 

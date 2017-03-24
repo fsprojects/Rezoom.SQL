@@ -2,6 +2,12 @@
 open Rezoom
 open FileSystem
 
+/// Get user ID by name.
+val public getUserByName : name : string -> UserId option Plan
+
+/// Get a hierarchy of folders.
+val public getHierarchy : rootId : FolderId option -> Hierarchy list Plan
+
 /// Get effective permissions for a user within a given folder.
 val public getEffectivePermissions : userId : UserId -> folderId : FolderId -> EffectivePermissions Plan
 

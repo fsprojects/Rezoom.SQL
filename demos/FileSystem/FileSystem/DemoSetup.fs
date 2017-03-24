@@ -151,3 +151,5 @@ let setUpDemoData =
         for demoUserName, demoUserPermissions in batch demoUsers do
             do! setupDemoUser demoUserName demoUserPermissions
     }
+
+let defaultUserName = demoUsers |> List.head |> fst

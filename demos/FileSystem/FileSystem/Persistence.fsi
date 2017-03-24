@@ -7,6 +7,9 @@ module FileSystem.Persistence
 open Rezoom
 open FileSystem
 
+/// Get a user ID by their name.
+val public getUserByName : name : string -> UserId option Plan
+
 /// Get data about a single file.
 val public getFile : id : FileId -> FileData Plan
 
@@ -14,7 +17,7 @@ val public getFile : id : FileId -> FileData Plan
 val public getFolder : id : FolderId -> FolderData Plan
 
 /// Get data for the non-recycled children of a folder.
-val public getChildren : parentId : FolderId -> FileOrFolder list Plan
+val public getChildren : parentId : FolderId option -> FileOrFolder list Plan
 
 /// Get the IDs of the groups a user is a member of.
 val public getUserGroupIds : userId : UserId -> GroupId list Plan

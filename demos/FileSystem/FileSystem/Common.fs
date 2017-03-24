@@ -1,5 +1,6 @@
 ﻿// This file defines common types that every layer can know about.
 namespace FileSystem
+open System
 open System.Security
 
 // Strongly typed wrappers for integer IDs.
@@ -78,3 +79,21 @@ type FolderData =
 type FileOrFolder = 
     | Folder of FolderData
     | File of FileData
+    override this.ToString() =
+        match this with
+        | File { Name = n } -> n
+        | Folder { FolderId = FolderId(id); Name = name } ->
+            sprintf "%s/    (%d)" name id
+
+type Hierarchy =
+    {   Node : FileOrFolder
+        Children : Hierarchy list
+    }
+    member this.ToString(depth : int) =
+        let indent = String(' ', depth) + "|-"
+        [   yield indent + " " + string this.Node
+            for child in this.Children ->
+                child.ToString(depth + 2)
+        ] |> String.concat Environment.NewLine
+    override this.ToString() = this.ToString(0)
+        

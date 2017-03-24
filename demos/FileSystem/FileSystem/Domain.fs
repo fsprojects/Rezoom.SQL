@@ -2,6 +2,24 @@
 open Rezoom
 open FileSystem
 
+/// Direct wrapper around persistence layer -- no extra logic needed here.
+let getUserByName name = Persistence.getUserByName name
+
+let rec getHierarchy rootId =
+    plan {
+        let! children = Persistence.getChildren rootId
+        return!
+            [ for child in children ->
+                plan {
+                    let! children =
+                        match child with
+                        | File _ -> Plan.ret []
+                        | Folder f -> getHierarchy (Some f.FolderId) // recurse
+                    return { Node = child; Children = children }
+                }
+            ] |> Plan.concurrentList
+    }
+
 /// The rule we use to combine local permissions across the groups a user is in.
 /// In short, if ANY group you are in explicitly denies a permission, it's denied.
 let private denyWins left right =
@@ -101,7 +119,7 @@ let rec recycleFolder userId folderId =
             let! permissions = getEffectivePermissions userId parentId
             permissions.AssertCanDelete()
 
-        let! children = Persistence.getChildren folderId
+        let! children = Persistence.getChildren (Some folderId)
         for child in batch children do
             match child with
             | File file ->

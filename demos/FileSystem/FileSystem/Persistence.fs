@@ -3,6 +3,16 @@ open Rezoom
 open Rezoom.SQL
 open Rezoom.SQL.Plans
 
+type private GetUserSQL = SQL<"""
+    select Id from Users where Name = @name
+""">
+
+let getUserByName (name : string) =
+    plan {
+        let! row = GetUserSQL.Command(name).TryExactlyOne()
+        return row |> Option.map (fun r -> UserId r.Id)
+    }
+
 type private GetFileSQL = SQL<"""
     select Id, Name, ParentId from Files where Id = @id
 """>
@@ -33,26 +43,27 @@ let getFolder (FolderId folderId) =
 
 type private GetChildrenSQL = SQL<"""
     select Id, Name, true as IsFolder
-    from UnrecycledFolders where ParentId = @parentId
+    from Folders where RecycleItemId is null
+    and ParentId is @parentId
     union all
     select Id, Name, false as IsFolder
-    from UnrecycledFiles where ParentId = @parentId
+    from Files where RecycleItemId is null
+    and ParentId is @parentId
 """>
 
-let getChildren (FolderId parentId) =
+let getChildren parentId =
     plan {
-        let! rows = GetChildrenSQL.Command(parentId).Plan()
-        let parentId = FolderId parentId
+        let! rows = GetChildrenSQL.Command(parentId |> Option.map (fun (FolderId id) -> id)).Plan()
         return
             [ for row in rows ->
                 if row.IsFolder then
                     {   FolderId = FolderId row.Id
-                        ParentId = Some parentId
+                        ParentId = parentId
                         Name = row.Name
                     } |> Folder
                 else
                     {   FileId = FileId row.Id
-                        ParentId = parentId
+                        ParentId = Option.get parentId // can't be null
                         Name = row.Name
                     } |> File
             ]
