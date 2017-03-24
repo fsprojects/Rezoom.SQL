@@ -58,6 +58,23 @@ let rec showHierarchyWithPermissions userId fromParentId =
             printfn "%O" h
     }
 
+let testCache userId doubleUp =
+    plan {
+        let! folders = Domain.getHierarchy None
+        for h in folders do printfn "%O" h
+        if doubleUp then
+            let! folders = Domain.getHierarchy None
+            for h in folders do printfn "%O" h
+        for root in batch folders do
+            for child in batch root.Children do
+                match child.Node with 
+                | File f -> do! Domain.recycleFile userId f.FileId
+                | _ -> ()
+        if not doubleUp then
+            let! folders = Domain.getHierarchy None
+            for h in folders do printfn "%O" h
+    }
+
 let parseFolderId idStr =
     let succ, id = Int32.TryParse(idStr)
     if not succ then
@@ -112,6 +129,8 @@ let mainLoop () =
             | None -> Plan.zero
             | Some id ->
                 Domain.recycleFolder userId id
+        | "testcache", [| arg |] ->
+            testCache userId (arg = "doubleup")
         | _ ->
             eprintfn "Unrecognized command."
             Plan.ret ()
