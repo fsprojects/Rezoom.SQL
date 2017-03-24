@@ -73,9 +73,13 @@ let getUserGroupIds (UserId userId) =
     
 type private GetLocalPermissionsSQL = SQL<"""
     select DeletePermission, CreatePermission
-    from FolderPermissions
+    from FolderUserPermissions
     where FolderId = @folderId
     and UserId is @userId
+    union all
+    select DeletePermission, CreatePermission
+    from FolderGroupPermissions
+    where FolderId = @folderId
     and GroupId is @groupId
 """>
 

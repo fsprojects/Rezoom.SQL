@@ -31,24 +31,27 @@ create table Folders
 
 create table Files
     ( Id int primary key autoincrement
-	, ParentId int references Folders(Id)
+    , ParentId int references Folders(Id)
     , Name string(128)
     , Content binary
     , RecycleItemId int null references RecycleItems(Id)
     );
 
-create table FolderPermissions
+create table FolderUserPermissions
     ( FolderId int references Folders(Id)
-    , UserId int null references Users(Id) -- if this is for a single user
-    , GroupId int null references Groups(Id) -- if this is for a group
+    , UserId int references Users(Id)
     -- Permissions apply *within* the folder, not *to* it
     , DeletePermission bool null
     , CreatePermission bool null
-    , primary key(FolderId, UserId, GroupId)
+    , primary key(FolderId, UserId)
     );
 
-create view UnrecycledFolders as
-	select * from Folders where RecycleItemId is null;
+create table FolderGroupPermissions
+    ( FolderId int references Folders(Id)
+    , GroupId int references Groups(Id)
+    -- Permissions apply *within* the folder, not *to* it
+    , DeletePermission bool null
+    , CreatePermission bool null
+    , primary key(FolderId, GroupId)
+    );
 
-create view UnrecycledFiles as
-	select * from Files where RecycleItemId is null;

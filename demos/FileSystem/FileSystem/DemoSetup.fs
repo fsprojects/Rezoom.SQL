@@ -1,4 +1,4 @@
-﻿module FileSystem.Persistence.Setup
+﻿module FileSystem.DemoSetup
 open Rezoom
 open Rezoom.SQL
 open Rezoom.SQL.Migrations
@@ -16,7 +16,8 @@ let migrate() =
 
 type private NukeDataSQL = SQL<"""
     delete from Files;
-    delete from FolderPermissions;
+    delete from FolderUserPermissions;
+    delete from FolderGroupPermissions;
     delete from Folders;
     delete from RecycleItems;
     delete from UserGroups;
@@ -112,18 +113,16 @@ type private InsertUserSQL = SQL<"""
     select scope_identity() as InsertedId;
 """>
 
-type private InsertPermissionSQL = SQL<"""
-    insert into FolderPermissions
+type private InsertUserPermissionSQL = SQL<"""
+    insert into FolderUserPermissions
         ( FolderId
         , UserId
-        , GroupId
         , DeletePermission
         , CreatePermission
         )
     select
         f.Id
         , @userId
-        , @groupId
         , @deletePermission
         , @createPermission
     from Folders f where f.Name = @folderName
@@ -138,8 +137,8 @@ let rec private setupDemoUser name (permissions : DemoPermisssion list) =
                 | AllowUnder name -> true, name
                 | DenyUnder name -> false, name
             do!
-                InsertPermissionSQL
-                    .Command(userId = Some userId, folderName = folderName, groupId = None,
+                InsertUserPermissionSQL
+                    .Command(userId = userId, folderName = folderName,
                         deletePermission = Some permission,
                         createPermission = Some permission)
                     .Plan()
