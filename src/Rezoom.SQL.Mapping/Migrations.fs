@@ -20,7 +20,7 @@ type Migration<'src> =
         Name : string
         Source : 'src
     }
-    member this.FileName = "V" + string this.MajorVersion + "." + this.Name
+    member this.MigrationName = "V" + string this.MajorVersion + ", " + this.Name
 
 type MigrationTree<'src> =
     {   Node : 'src Migration
@@ -48,51 +48,50 @@ type private MigrationTreeBuilderNode<'src> =
     }
 
 type private MigrationTreeBuilder<'src>(majorVersionNumber) =
+    let rec toTree (node : 'src MigrationTreeBuilderNode) =
+        {   Node =
+                {   MajorVersion = majorVersionNumber
+                    Name = node.Name
+                    Source =
+                        match node.Source with
+                        | None ->
+                            failwithf "No source for migration V%d.%s"
+                                majorVersionNumber node.Name
+                        | Some src -> src
+                }
+            Children =
+                node.Children |> Seq.map toTree |> ResizeArray
+        }
     let migrations = Dictionary()
     let mutable root = None
     member __.ToTree() =
         match root with
         | None ->
             failwithf "No root migration for V%d" majorVersionNumber
-        | Some (root, rootName) ->
-            let rec toTree (node : 'src MigrationTreeBuilderNode) =
-                {   Node =
-                        {   MajorVersion = majorVersionNumber
-                            Name = node.Name
-                            Source =
-                                match node.Source with
-                                | None ->
-                                    failwithf "No source for migration V%d.%s"
-                                        majorVersionNumber node.Name
-                                | Some src -> src
-                        }
-                    Children =
-                        node.Children |> Seq.map toTree |> ResizeArray
-                }
-            toTree root         
-    member __.Add(name : MigrationFileName, source : 'src) =
-        let succ, self = migrations.TryGetValue(name.Name)
+        | Some (root, rootName) -> toTree root         
+    member __.Add(migrationName : MigrationFileName, source : 'src) =
+        let succ, self = migrations.TryGetValue(migrationName.Name)
         let self =
             if succ then
                 if Option.isSome self.Source then 
-                    failwithf "Multiple sources given for migration %O" name
+                    failwithf "Multiple sources given for migration %O" migrationName
                 self.Source <- Some source
                 self
             else
                 let newNode =
                     {   Source = Some source
-                        Name = name.Name
+                        Name = migrationName.Name
                         Children = ResizeArray()
                     }
-                migrations.[name.Name] <- newNode
+                migrations.[migrationName.Name] <- newNode
                 newNode
-        match name.ParentName with
+        match migrationName.ParentName with
         | None ->
             match root with
             | Some (node, rootName) ->
-                failwithf "Multiple root migrations given (%O, %O)" rootName name
+                failwithf "Multiple root migrations given (%O, %O)" rootName migrationName
             | None ->
-                root <- Some (self, name)
+                root <- Some (self, migrationName)
         | Some parentName ->
             let succ, parent = migrations.TryGetValue(parentName)
             if succ then
@@ -100,7 +99,7 @@ type private MigrationTreeBuilder<'src>(majorVersionNumber) =
             else
                 let parent =
                     {   Source = None
-                        Name = name.Name
+                        Name = parentName
                         Children = ResizeArray([|self|])
                     }
                 migrations.[parentName] <- parent

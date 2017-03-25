@@ -9,12 +9,16 @@ open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 
 module private UserModelLoader =
+    let private sortOfMigrationPattern =
+        """
+            ^V[0-9]+\.
+        """ |> fun pat -> Regex(pat, RegexOptions.IgnoreCase ||| RegexOptions.IgnorePatternWhitespace)
     let private migrationPattern =
         """
             ^V(?<majorVersion> [0-9]+ )
             \.
-            (?<name> \w+ )
-            ( - (?<name2> \w+ ))?
+            (?<name> [a-z0-9_]+ )
+            ( - (?<name2> [a-z0-9_]+ ))?
             \.SQL$
         """ |> fun pat -> Regex(pat, RegexOptions.IgnoreCase ||| RegexOptions.IgnorePatternWhitespace)
 
@@ -43,8 +47,11 @@ module private UserModelLoader =
     let loadMigrations migrationsFolder =
         let builder = MigrationTreeListBuilder()
         for path in Directory.GetFiles(migrationsFolder, "*.sql", SearchOption.AllDirectories) do
-            match parseMigrationInfo <| Path.GetFileName(path) with
-            | None -> ()
+            let fileName = Path.GetFileName(path)
+            match parseMigrationInfo fileName with
+            | None ->
+                if sortOfMigrationPattern.IsMatch(fileName) then
+                    failwithf "%s seems like it's supposed to be a migration, but is not well formed" fileName
             | Some migrationName ->
                 let text = File.ReadAllText(path)
                 let parsed = CommandEffect.ParseSQL(path, text)
@@ -69,7 +76,7 @@ module private UserModelLoader =
             if not isRoot && effect.DestructiveUpdates.Value then
                 failwith <| sprintf
                     "The migration ``%s`` contains destructive statements. This requires a version bump."
-                    migration.FileName
+                    migration.MigrationName
             effect.Statements, effect.ModelChange |? model
         let _, finalModel as pair = MigrationUtilities.foldMigrations folder initialModel migrationTrees
         revalidateViews finalModel
