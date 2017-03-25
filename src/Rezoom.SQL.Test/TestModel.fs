@@ -7,4 +7,4 @@ open Rezoom.SQL
 let ``model 2 loads`` () =
     let model = userModel2()
     let schema = model.Model.Schemas.[model.Model.DefaultSchema]
-    Assert.AreEqual(4, schema.Objects.Count)
+    Assert.AreEqual(5, schema.Objects.Count)

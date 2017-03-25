@@ -62,6 +62,7 @@
     <Compile Include="TestParserErrors.fs" />
     <Compile Include="TestTypeErrors.fs" />
     <Compile Include="TestModelErrors.fs" />
+    <Compile Include="TestMigrations.fs" />
     <Compile Include="TestAggregateErrors.fs" />
     <Compile Include="TestStaticRowCount.fs" />
     <Compile Include="TestTSQL.fs" />
