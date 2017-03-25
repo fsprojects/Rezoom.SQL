@@ -506,9 +506,9 @@ type TSQLMigrationBackend(settings : ConnectionStringSettings) =
                     WHERE s.name = 'dbo' and t.name = '__RZSQL_MIGRATIONS'
                 )
                 CREATE TABLE __RZSQL_MIGRATIONS
-                    ( MajorVersion int
-                    , Name varchar(256)
-                    , UNIQUE (MajorVersion, Name)
+                    ( MajorVersion int not null
+                    , Name varchar(256) not null
+                    , PRIMARY KEY (MajorVersion, Name)
                     );
             """
         ignore <| cmd.ExecuteNonQuery()

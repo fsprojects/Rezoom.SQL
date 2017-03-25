@@ -75,9 +75,9 @@ type DefaultMigrationBackend(conn : DbConnection) =
         cmd.CommandText <-
             """
                 CREATE TABLE IF NOT EXISTS __RZSQL_MIGRATIONS
-                    ( MajorVersion int
-                    , Name varchar(256)
-                    , UNIQUE (MajorVersion, Name)
+                    ( MajorVersion int not null
+                    , Name varchar(256) not null
+                    , PRIMARY KEY (MajorVersion, Name)
                     );
             """
         ignore <| cmd.ExecuteNonQuery()
