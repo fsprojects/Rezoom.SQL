@@ -62,3 +62,28 @@ let ``model 4 fails`` () =
         ()
     | other ->
         printfn "wrong exn %O" other
+
+[<Test>]
+let ``model 5 migration tree`` () =
+    let model = userModelByName "user-model-5"
+    let migrations = model.Migrations
+    let expected =
+        [   branch "V1, model"
+                [   branch "V1, comments"
+                        [   leaf "V1, time"
+                        ]
+                    branch "V1, groups"
+                        [   branch "V1, foos"
+                                [   leaf "V1, bars"
+                                ]
+                        ]
+                ]
+            branch "V2, next"
+                [   leaf "V2, baz"
+                    leaf "V2, qux"
+                ]
+        ]
+    printfn "%A" migrations
+    let trees = toTrees migrations
+    printfn "%A" trees
+    Assert.AreEqual(expected, trees)

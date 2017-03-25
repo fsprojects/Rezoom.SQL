@@ -60,7 +60,7 @@ type private MigrationTreeBuilder<'src>(majorVersionNumber) =
                         | Some src -> src
                 }
             Children =
-                node.Children |> Seq.map toTree |> ResizeArray
+                node.Children |> Seq.map toTree |> Seq.sortBy (fun m -> m.Node.Name) |> ResizeArray
         }
     let migrations = Dictionary()
     let mutable root = None
