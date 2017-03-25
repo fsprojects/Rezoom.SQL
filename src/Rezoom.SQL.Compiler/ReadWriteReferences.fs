@@ -105,7 +105,7 @@ type private ReferenceFinder() =
     member this.ResultColumn(resultColumn : TResultColumn) =
         match resultColumn.Case with
         | Column (expr, _) -> this.Expr(expr)
-        | _ -> failwith "BUG: result column wildcards should've been expanded by now"      
+        | _ -> bug "BUG: result column wildcards should've been expanded by now"      
     member this.ResultColumns(resultColumns : TResultColumns) =
         for col in resultColumns.Columns do this.ResultColumn(col)
     member this.TableOrSubquery(table : TTableOrSubquery) =

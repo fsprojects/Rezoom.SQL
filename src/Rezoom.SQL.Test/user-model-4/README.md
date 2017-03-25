@@ -1,0 +1,1 @@
+This model is supposed to fail because it contains a parameterized migration.

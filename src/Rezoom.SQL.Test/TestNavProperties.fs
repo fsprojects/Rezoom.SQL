@@ -9,7 +9,7 @@ let columns (sql : string) expected =
     let userModel = userModel1()
     let parsed = CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
     let sets = parsed.ResultSets() |> Seq.toArray
-    if sets.Length <> 1 then failwith "expected 1 result set"
+    if sets.Length <> 1 then fail "expected 1 result set"
     let cols = sets.[0].Columns |> Seq.map (fun c -> c.ColumnName.Value, c.Expr.Info.Type.ToString()) |> Seq.toList
     printfn "%A" cols
     Assert.AreEqual(expected, cols)

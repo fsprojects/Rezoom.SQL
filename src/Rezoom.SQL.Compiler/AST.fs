@@ -421,7 +421,7 @@ and ResultColumnCase<'t, 'e> =
     member this.AssumeColumn() =
         match this with
         | Column (expr, alias) -> expr, alias
-        | _ -> failwith "BUG: wildcard was assumed to be a single column (should've been expanded by now)"
+        | _ -> bug "BUG: wildcard was assumed to be a single column (should've been expanded by now)"
 
 and ResultColumn<'t, 'e> =
     {   Case : ResultColumnCase<'t, 'e>

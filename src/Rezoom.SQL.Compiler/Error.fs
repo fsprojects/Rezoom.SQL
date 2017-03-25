@@ -93,3 +93,11 @@ let insertMissingColumns (missing : 'a seq) =
         (missing |> Seq.map (fun x -> (x :> obj).ToString()) |> String.concat "``, ``")
 let insertIntoNonTable =
     sprintf "SQ041: INSERT into non-tables (including views) is not supported"
+let minorMigrationContainsDestruction =
+    sprintf "SQ042: The migration ``%s`` contains destructive statements, so it must increment the version number"
+let migrationFileNameWrong =
+    sprintf "SQ043: The file ``%s`` seems to be intended to be a migration, but its filename does not match the rules"
+let migrationContainsParameter =
+    sprintf "SQ044: The file ``%s`` contains a parameterized statement, but migrations cannot be parameterized"
+let commandContainsTooManyResultSets =
+    sprintf "SQ045: The command returns too many result sets (%d) to provide types for"

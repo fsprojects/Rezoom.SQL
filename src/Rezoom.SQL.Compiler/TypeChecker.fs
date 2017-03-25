@@ -185,7 +185,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         match knownShape with
         | Some shape ->
             if columns.Length <> shape.Columns.Count then
-                if columns.Length <= 0 then failwith "BUG: impossible, parser shouldn't have accepted this"
+                if columns.Length <= 0 then fail "BUG: impossible, parser shouldn't have accepted this"
                 let source = columns.[columns.Length - 1].Source
                 failAt source <| Error.expectedKnownColumnCount columns.Length shape.Columns.Count
             for i = 0 to columns.Length - 1 do

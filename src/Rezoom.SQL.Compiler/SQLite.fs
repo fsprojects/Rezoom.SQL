@@ -32,7 +32,7 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | BinaryTypeName(_) -> "BLOB"
             | DecimalTypeName
             | DateTimeTypeName
-            | DateTimeOffsetTypeName -> failwith <| sprintf "Unsupported type ``%A``" name
+            | DateTimeOffsetTypeName -> fail <| sprintf "Unsupported type ``%A``" name
 
 type private SQLiteStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(Name("SQLITE"), indexer)

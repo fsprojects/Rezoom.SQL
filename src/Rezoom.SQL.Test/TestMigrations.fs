@@ -40,3 +40,25 @@ let ``model 2 migration tree`` () =
     let trees = toTrees migrations
     printfn "%A" trees
     Assert.AreEqual(expected, trees)
+
+[<Test>]
+let ``model 3 fails`` () =
+    try
+        ignore <| userModelByName "user-model-3"
+        failwith "should've failed"
+    with
+    | :? SQLCompilerException as c when c.Message = Error.minorMigrationContainsDestruction "V1, drop" ->
+        ()
+    | other ->
+        printfn "wrong exn %O" other
+
+[<Test>]
+let ``model 4 fails`` () =
+    try
+        ignore <| userModelByName "user-model-4"
+        failwith "should've failed"
+    with
+    | :? SQLCompilerException as c when c.Message = Error.migrationContainsParameter "V2, bad" ->
+        ()
+    | other ->
+        printfn "wrong exn %O" other

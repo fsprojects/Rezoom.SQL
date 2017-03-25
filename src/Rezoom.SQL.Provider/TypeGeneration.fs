@@ -79,7 +79,7 @@ let private addScalarInterface (ty : ProvidedTypeDefinition) (field : ProvidedFi
         ProvidedMethod("get_ScalarValue", [], field.FieldType, InvokeCode =
             function
             | [ this ] -> Expr.FieldGet(this, field)
-            | _ -> failwith "Invalid getter argument list")
+            | _ -> bug "Invalid getter argument list")
     let flags =
         MethodAttributes.Virtual
         ||| MethodAttributes.Private
@@ -122,7 +122,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
         getter.GetterCode <-
             function
             | [ this ] -> Expr.FieldGet(this, field)
-            | _ -> failwith "Invalid getter argument list"
+            | _ -> bug "Invalid getter argument list"
         ty.AddMembers [ field :> MemberInfo; getter :> _ ]
         fields.Add(camel, field)
     for KeyValue(name, (_, column)) in columnMap.Columns do
@@ -141,7 +141,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
             |> Seq.fold
                 (fun exp ((_, field), par) -> Expr.Sequential(exp, Expr.FieldSet(this, field, par)))
                 (Quotations.Expr.Value(()))
-        | _ -> failwith "Invalid ctor argument list"
+        | _ -> bug "Invalid ctor argument list"
     ty.AddMember(ctor)
     if fields.Count = 1 then
         addScalarInterface ty (snd fields.[0])
@@ -257,7 +257,7 @@ let generateSQLType (generate : GenerateType) (sql : string) =
                 typedefof<ResultSets<_, _, _, _>>.MakeGenericType
                     (lst resultSet1 rowType1, lst resultSet2 rowType2, lst resultSet3 rowType3, lst resultSet4 rowType4)
         | sets ->
-            failwithf "Too many (%d) result sets from command." (List.length sets)
+            fail <| Error.commandContainsTooManyResultSets (List.length sets)
     let provided =
         ProvidedTypeDefinition
             ( generate.Assembly
@@ -290,7 +290,7 @@ let generateMigrationMembers
                 <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
                     migrations.Run(%%config, %%(upcast backend))
                 @@>
-            | _ -> failwith "Invalid migrate argument list"
+            | _ -> bug "Invalid migrate argument list"
         provided.AddMember meth
     do
         let connectionName = Quotations.Expr.Value(config.ConnectionName)
@@ -309,7 +309,7 @@ let generateMigrationMembers
                 <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
                     migrations.Run(%%config, %%(upcast backend))
                 @@>
-            | _ -> failwith "Invalid migrate argument list"
+            | _ -> bug "Invalid migrate argument list"
         provided.AddMember meth
 
 let generateModelType (generate : GenerateType) =

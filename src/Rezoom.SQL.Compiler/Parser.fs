@@ -132,7 +132,7 @@ let private vendorStmt =
     >>= fun (vendorName, openDelim) ->
         let closeDelim = flipDelimiter openDelim
         if closeDelim = openDelim then
-            fail (Error.sameVendorDelimiters closeDelim)
+            FParsec.Primitives.fail (Error.sameVendorDelimiters closeDelim)
         else
             let openDelim = pstring openDelim >>% OpenDelimiter
             let closeDelim = pstring closeDelim >>% CloseDelimiter
@@ -159,7 +159,7 @@ let stmts =
     -|> fun s -> s.ToArray()
 
 let parseStatements sourceDescription source =
-    if source = Error.jamesBondEasterEgg then failwith Error.jamesBond
+    if source = Error.jamesBondEasterEgg then fail Error.jamesBond
     match runParserOnString (stmts .>> eof) () sourceDescription source with
     | Success (statements, _, _) -> statements
     | Failure (_, err, _) ->

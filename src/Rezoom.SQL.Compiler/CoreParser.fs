@@ -119,7 +119,7 @@ let private unquotedNameOrKeyword =
 let private unquotedName =
     unquotedNameOrKeyword >>=? fun ident ->
         if sqlKeywords.Contains(ident.ToString()) then
-            fail (Error.reservedKeywordAsName ident)
+            FParsec.Primitives.fail (Error.reservedKeywordAsName ident)
         else
             preturn ident
 
@@ -175,7 +175,7 @@ let private columnName =
             {   Table = Some { Source = src; SchemaName = Some names.[0]; ObjectName = names.[1]; Info = () }
                 ColumnName = names.[2]
             }
-        | _ -> failwith "Unreachable")
+        | _ -> bug "Unreachable")
     <?> "column-name"
 
 let private namedBindParameter =
@@ -261,7 +261,7 @@ let private numericLiteral =
         if lit.IsInteger then
             lit.String |> uint64 |> IntegerLiteral |> preturn
         else if lit.IsHexadecimal then
-            fail "hexadecimal floats are not permitted"
+            FParsec.Primitives.fail "hexadecimal floats are not permitted"
         else 
             lit.String |> float |> FloatLiteral |> preturn
 

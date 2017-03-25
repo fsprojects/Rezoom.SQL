@@ -51,7 +51,7 @@ module private UserModelLoader =
             match parseMigrationInfo fileName with
             | None ->
                 if sortOfMigrationPattern.IsMatch(fileName) then
-                    failwithf "%s seems like it's supposed to be a migration, but is not well formed" fileName
+                    fail <| Error.migrationFileNameWrong fileName
             | Some migrationName ->
                 let text = File.ReadAllText(path)
                 let parsed = CommandEffect.ParseSQL(path, text)
@@ -74,24 +74,29 @@ module private UserModelLoader =
         let folder isRoot (model : Model) (migration : TotalStmts Migration) =
             let effect = CommandEffect.OfSQL(model, migration.Source)
             if not isRoot && effect.DestructiveUpdates.Value then
-                failwith <| sprintf
-                    "The migration ``%s`` contains destructive statements. This requires a version bump."
-                    migration.MigrationName
+                fail <| Error.minorMigrationContainsDestruction migration.MigrationName
             effect.Statements, effect.ModelChange |? model
         let _, finalModel as pair = MigrationUtilities.foldMigrations folder initialModel migrationTrees
         revalidateViews finalModel
         pair
 
     let stringizeMigrationTree (backend : IBackend) (migrationTrees : TTotalStmt IReadOnlyList MigrationTree seq) =
-        seq {
+        let rec stringize tree =
             let indexer =
                 { new IParameterIndexer with
                     member __.ParameterIndex(par) =
-                        failwith "Migrations cannot be parameterized"
+                        fail <| Error.migrationContainsParameter tree.Node.MigrationName
                 }
-            for tree in migrationTrees ->
-                tree.Map(fun stmts ->
-                    backend.ToCommandFragments(indexer, stmts) |> CommandFragment.Stringize)
+            {   Node =
+                    {   MajorVersion = tree.Node.MajorVersion
+                        Name = tree.Node.Name
+                        Source = backend.ToCommandFragments(indexer, tree.Node.Source) |> CommandFragment.Stringize
+                    }
+                Children =
+                    tree.Children |> Seq.map stringize |> ResizeArray
+            }
+        seq {
+            for tree in migrationTrees -> stringize tree
         }
 
     let tableIds (model : Model) =

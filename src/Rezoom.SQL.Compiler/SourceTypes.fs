@@ -106,12 +106,15 @@ type WithSource<'a> =
     interface IEquatable<WithSource<'a>> with
         member this.Equals(other) = this.Equals(other)
 
-type SourceInfoException(msg : string, pos : SourceInfo) =
+type SQLCompilerException(msg : string) =
     inherit Exception(msg)
+
+type SourceInfoException(msg : string, pos : SourceInfo) =
+    inherit SQLCompilerException(msg)
     member this.SourceInfo = pos
 
 type SourceException(msg : string, pos : SourceInfo, source, fileName) =
-    inherit Exception
+    inherit SQLCompilerException
         ( msg.TrimEnd('.') + "."
         + Environment.NewLine
         + fileName

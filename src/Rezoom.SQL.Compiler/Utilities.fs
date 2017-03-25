@@ -35,6 +35,9 @@ let emptyDictionary<'k, 'v> =
 
 let inline bug msg = failwith msg
 
+let inline fail msg =
+    raise (SQLCompilerException(msg))
+
 let inline failAt (source : SourceInfo) (msg : string) =
     raise (SourceInfoException(msg, source))
 
