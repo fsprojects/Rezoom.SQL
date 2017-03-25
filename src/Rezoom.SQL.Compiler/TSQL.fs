@@ -474,30 +474,54 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
 
 type TSQLMigrationBackend(settings : ConnectionStringSettings) =
     inherit DefaultMigrationBackend(settings)
-    override this.Initialize() =
+    let attemptCreateDatabase (conn : DbConnection) =
+        let oldConnectionString = conn.ConnectionString
         let builder = SqlConnectionStringBuilder(settings.ConnectionString)
         let catalog = builder.InitialCatalog
-        if not (String.IsNullOrEmpty(catalog)) then
-            builder.InitialCatalog <- "master"
-            this.Connection.ConnectionString <- builder.ConnectionString
-            this.Connection.Open()
-            do
-                use dbCmd = this.Connection.CreateCommand()
-                dbCmd.CommandText <-
-                    // do we care about injection attacks here? probably not... it's our own connection string
-                    sprintf
-                        """
-                            IF DB_ID('%s') IS NULL
-                                CREATE DATABASE [%s];
-                        """ catalog catalog
-                ignore <| dbCmd.ExecuteNonQuery()
-            do
-                use useCmd = this.Connection.CreateCommand()
-                useCmd.CommandText <- sprintf "USE %s;" catalog
-                ignore <| useCmd.ExecuteNonQuery()
+        if String.IsNullOrEmpty(catalog) then
+            false
         else
-            this.Connection.Open()
-        use cmd = this.Connection.CreateCommand()
+            builder.InitialCatalog <- "master"
+            conn.ConnectionString <- builder.ConnectionString
+            try
+                conn.Open()
+                do
+                    use dbCmd = conn.CreateCommand()
+                    dbCmd.CommandText <-
+                        // do we care about injection attacks here? probably not... it's our own connection string
+                        sprintf
+                            """
+                                IF DB_ID('%s') IS NULL
+                                    CREATE DATABASE [%s];
+                            """ catalog catalog
+                    ignore <| dbCmd.ExecuteNonQuery()
+                conn.Close()
+            finally
+                conn.ConnectionString <- oldConnectionString
+            conn.Open()
+            true
+    override this.Initialize() =
+        let conn = this.Connection
+        try
+            conn.Open()
+        with
+        // Class 20 or higher means we couldn't connect at all.
+        // https://msdn.microsoft.com/en-us/library/system.data.sqlclient.sqlerror.class(v=vs.110).aspx
+        | :? SqlException as exn when exn.Class < 20uy ->
+            // A possible source of this problem is that the initial catalog we specified does not yet exist.
+            // We'll try to reconnect to the master catalog and create it. This won't work on e.g. Azure SQL,
+            // but is very useful on local SQLEXPRESS instances.
+            conn.Close()
+            let created =
+                try
+                    attemptCreateDatabase conn
+                with
+                | innerExn -> 
+                    raise <| AggregateException(exn, innerExn)
+            if not created then
+                reraise()
+        // Now we have an open connection (or failed w/ an exception already) -- so proceed with our metadata tables.
+        use cmd = conn.CreateCommand()
         cmd.CommandText <-
             """
                 IF NOT EXISTS (
