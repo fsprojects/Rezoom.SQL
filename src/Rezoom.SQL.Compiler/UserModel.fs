@@ -70,13 +70,35 @@ module private UserModelLoader =
                     ignore <| concrete.Select(inferredDefinition)
                 | _ -> ()
 
+    let foldMigrations
+        (folder : bool -> Model -> Model -> 's1 Migration -> 's2 * Model * Model)
+        (initialModel : Model)
+        (migrationTrees : 's1 MigrationTree seq) =
+        let mutable totalModel = initialModel
+        let rec mapFold isRoot parentModel tree =
+            let s2, childModel, newTotalModel = folder isRoot parentModel totalModel tree.Node
+            totalModel <- newTotalModel
+            {   Node =
+                    {   MajorVersion = tree.Node.MajorVersion
+                        Name = tree.Node.Name
+                        Source = s2
+                    }
+                Children = tree.Children |> Seq.map (mapFold false childModel) |> ResizeArray
+            }
+        let trees = [ for tree in migrationTrees -> mapFold true totalModel tree ]
+        trees, totalModel
+
     let nextModel initialModel (migrationTrees : TotalStmts MigrationTree seq) =
-        let folder isRoot (model : Model) (migration : TotalStmts Migration) =
-            let effect = CommandEffect.OfSQL(model, migration.Source)
-            if not isRoot && effect.DestructiveUpdates.Value then
+        let folder isRoot (parentModel : Model) (totalModel : Model) (migration : TotalStmts Migration) =
+            let totalEffect = CommandEffect.OfSQL(totalModel, migration.Source)
+            if not isRoot && totalEffect.DestructiveUpdates.Value then
                 fail <| Error.minorMigrationContainsDestruction migration.MigrationName
-            effect.Statements, effect.ModelChange |? model
-        let _, finalModel as pair = MigrationUtilities.foldMigrations folder initialModel migrationTrees
+            let childModel =
+                CommandEffect.OfSQL(parentModel, migration.Source).ModelChange |? parentModel
+            let totalModel =
+                totalEffect.ModelChange |? totalModel
+            totalEffect.Statements, childModel, totalModel
+        let _, finalModel as pair = foldMigrations folder initialModel migrationTrees
         revalidateViews finalModel
         pair
 

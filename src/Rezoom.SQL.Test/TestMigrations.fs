@@ -51,6 +51,7 @@ let ``model 3 fails`` () =
         ()
     | other ->
         printfn "wrong exn %O" other
+        reraise()
 
 [<Test>]
 let ``model 4 fails`` () =
@@ -62,6 +63,7 @@ let ``model 4 fails`` () =
         ()
     | other ->
         printfn "wrong exn %O" other
+        reraise()
 
 [<Test>]
 let ``model 5 migration tree`` () =
@@ -81,6 +83,34 @@ let ``model 5 migration tree`` () =
             branch "V2, next"
                 [   leaf "V2, baz"
                     leaf "V2, qux"
+                ]
+        ]
+    printfn "%A" migrations
+    let trees = toTrees migrations
+    printfn "%A" trees
+    Assert.AreEqual(expected, trees)
+
+[<Test>]
+let ``model 6 fails`` () =
+    try
+        ignore <| userModelByName "user-model-6"
+        failwith "should've failed"
+    with
+    | :? SQLCompilerException as c when c.Message = Error.noSuchTable "Foos" ->
+        ()
+    | other ->
+        printfn "wrong exn %O" other
+        reraise()
+
+[<Test>]
+let ``model 6-good migration tree`` () =
+    let model = userModelByName "user-model-6-good"
+    let migrations = model.Migrations
+    let expected =
+        [   branch "V1, model"
+                [   branch "V1, a"
+                        [   leaf "V1, b"
+                        ]
                 ]
         ]
     printfn "%A" migrations

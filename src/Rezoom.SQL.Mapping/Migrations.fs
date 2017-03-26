@@ -158,24 +158,6 @@ module MigrationUtilities =
                 Children = %%children
             } : string MigrationTree @@>
 
-    let foldMigrations
-        (folder : bool -> 'acc -> 's1 Migration -> 's2 * 'acc)
-        (acc : 'acc)
-        (migrationTrees : 's1 MigrationTree seq) =
-        let mutable acc = acc
-        let rec mapFold root tree =
-            let s2, acc2 = folder root acc tree.Node
-            acc <- acc2
-            {   Node =
-                    {   MajorVersion = tree.Node.MajorVersion
-                        Name = tree.Node.Name
-                        Source = s2
-                    }
-                Children = tree.Children |> Seq.map (mapFold false) |> ResizeArray
-            }
-        let trees = [ for tree in migrationTrees -> mapFold true tree ]
-        trees, acc
-
     let runMigrations config (backend : IMigrationBackend) (migrationTrees : string MigrationTree seq) =
         backend.Initialize()
         let already = HashSet(backend.GetMigrationsRun())

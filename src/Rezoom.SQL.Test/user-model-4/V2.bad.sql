@@ -1,2 +1,2 @@
 create table Z
-as select @x;
+as select @x as k;
