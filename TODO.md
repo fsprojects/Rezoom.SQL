@@ -8,8 +8,7 @@
 
 # Migrations
 
-* Add tests for migrations, especially migration trees
-* Add test for having multiple migrations creating the same view
+* Make sure we validate migration trees down each path as well as once all together (depth-first) so we catch interdependence betwee branches
 
 # TSQL backend
 

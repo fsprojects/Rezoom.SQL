@@ -1,10 +1,12 @@
 ﻿namespace Rezoom.SQL.Compiler.TSQL
 open System
 open System.Collections.Generic
+open System.Data
 open System.Configuration
 open System.Data.SqlClient
 open System.Data.Common
 open System.Globalization
+open System.Text.RegularExpressions
 open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.BackendUtilities
 open Rezoom.SQL.Compiler.Translators
@@ -372,8 +374,18 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
 type private TSQLStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(Name("TSQL"), indexer)
     let expr = TSQLExpression(this :> StatementTranslator, indexer)
+    static member BatchSeparator = "RZSQL_DISTINCTIVE_BATCH_SEPARATOR"
     override __.Expr = upcast expr
     override __.ColumnsNullableByDefault = true
+    override __.CreateView(createView) =
+        let createView = base.CreateView(createView)
+        // http://msdn.microsoft.com/en-us/library/ms175502(v=sql.105).aspx
+        // have to have create view statements get their own batch, because T-SQL has terrible design decisions
+        seq {
+            yield text TSQLStatement.BatchSeparator
+            yield! createView
+            yield text TSQLStatement.BatchSeparator
+        }
     member this.SelectCoreWithTop(select : TSelectCore, top) =
         seq {
             yield text "SELECT"
@@ -536,6 +548,9 @@ type TSQLMigrationBackend(settings : ConnectionStringSettings) =
                     );
             """
         ignore <| cmd.ExecuteNonQuery()
+    override this.Batches(source) =
+        Regex.Split(source, Regex.Escape(TSQLStatement.BatchSeparator))
+        |> Seq.filter (not << String.IsNullOrWhiteSpace)
 
 type TSQLBackend() =
     static let initialModel =

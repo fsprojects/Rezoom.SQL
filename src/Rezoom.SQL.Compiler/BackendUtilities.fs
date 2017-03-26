@@ -69,6 +69,8 @@ type DefaultMigrationBackend(conn : DbConnection) =
     abstract member Initialize : unit -> unit
     abstract member GetMigrationsRun : unit -> (int * string) seq
     abstract member RunMigration : string Migration -> unit
+    abstract member Batches : string -> string seq
+    default __.Batches(source) = Seq.singleton source
     default __.Initialize() =
         conn.Open()
         use cmd = conn.CreateCommand()
@@ -97,12 +99,12 @@ type DefaultMigrationBackend(conn : DbConnection) =
         let migrationsRan = entReader.ToEntity()
         migrationsRan
         |> Seq.map (fun m -> m.ToTuple())
-    default __.RunMigration(migration) =
+    default this.RunMigration(migration) =
         use tx = conn.BeginTransaction()
-        do
+        for batch in this.Batches(migration.Source) do
             use cmd = conn.CreateCommand()
             cmd.Transaction <- tx
-            cmd.CommandText <- migration.Source
+            cmd.CommandText <- batch
             ignore <| cmd.ExecuteNonQuery()
         do
             use cmd = conn.CreateCommand()
