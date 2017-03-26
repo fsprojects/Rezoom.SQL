@@ -8,3 +8,5 @@ create table UserGroupMaps
 , GroupId int references Groups(Id)
 , primary key (UserId, GroupId)
 );
+
+create view VUsers as select * from Users;

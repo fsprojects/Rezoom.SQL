@@ -3,3 +3,5 @@ create table Comments
 , AuthorId int references Users(Id)
 , Text string(512)
 );
+
+create view VComments as select * from Users;
