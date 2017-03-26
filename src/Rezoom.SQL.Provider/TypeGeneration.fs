@@ -267,6 +267,7 @@ let generateSQLType (generate : GenerateType) (sql : string) =
             , IsErased = false
             , HideObjectMethods = true
             )
+    provided.AddXmlDocDelayed (fun () -> DocStrings.commandEffectDocString commandEffect)
     provided.AddMembers rowTypes
     provided.AddMember <| generateCommandMethod generate commandEffect commandType commandCtorMethod
     provided

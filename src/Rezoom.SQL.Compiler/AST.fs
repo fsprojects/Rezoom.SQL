@@ -81,6 +81,9 @@ type ColumnName<'t> =
 
 type BindParameter =
     | NamedParameter of Name // prefix character : or $ or @ is ignored
+    override this.ToString() =
+        let (NamedParameter name) = this
+        "@" + name.Value
     
 type BinaryOperator =
     | Concatenate

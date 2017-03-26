@@ -65,6 +65,7 @@
     <None Include="ProvidedTypes-LICENSE.md" />
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
+    <Compile Include="DocStrings.fs" />
     <Compile Include="TypeGeneration.fs" />
     <Compile Include="AssemblyResolver.fs" />
     <Compile Include="Provider.fs" />
