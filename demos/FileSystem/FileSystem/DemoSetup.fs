@@ -10,7 +10,7 @@ type private FileSystemModel = SQLModel
 let migrate() =
     let config =
         {   AllowRetroactiveMigrations = false
-            LogMigrationRan = fun m -> printfn "Ran migration `%s`" m.FileName
+            LogMigrationRan = fun m -> printfn "Ran migration `%s`" m.MigrationName
         }
     FileSystemModel.Migrate(config)
 
