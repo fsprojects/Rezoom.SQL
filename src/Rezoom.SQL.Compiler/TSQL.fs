@@ -497,19 +497,20 @@ type TSQLMigrationBackend(settings : ConnectionStringSettings) =
             conn.ConnectionString <- builder.ConnectionString
             try
                 conn.Open()
-                do
-                    use dbCmd = conn.CreateCommand()
-                    dbCmd.CommandText <-
-                        // do we care about injection attacks here? probably not... it's our own connection string
-                        sprintf
-                            """
-                                IF DB_ID('%s') IS NULL
-                                    CREATE DATABASE [%s];
-                            """ catalog catalog
-                    ignore <| dbCmd.ExecuteNonQuery()
-                conn.Close()
+                use dbCmd = conn.CreateCommand()
+                dbCmd.CommandText <-
+                    // do we care about injection attacks here? probably not... it's our own connection string
+                    sprintf
+                        """
+                            IF DB_ID('%s') IS NULL
+                                CREATE DATABASE [%s];
+                        """ catalog catalog
+                ignore <| dbCmd.ExecuteNonQuery()
             finally
+                conn.Close()
                 conn.ConnectionString <- oldConnectionString
+            SqlConnection.ClearAllPools()
+            // Threading.Thread.Sleep(5000) // For some damn reason it doesn't work if we reconnect right away...
             conn.Open()
             true
     override this.Initialize() =
