@@ -7,6 +7,7 @@
     * [Loading nested objects](doc/Tutorial/LoadingNestedObjects.md)
     * [Using Rezoom to minimize round-trips](doc/Tutorial/UsingRezoom.md)
 * [Configuration](doc/Configuration/README.md)
+    * [rzsql.json](doc/Configuration/Json.md)
 * [Language](doc/Language/README.md)
     * [Data types](doc/Language/DataTypes.md)
     * [Navigation properties](doc/Language/NavigationProperties.md)
