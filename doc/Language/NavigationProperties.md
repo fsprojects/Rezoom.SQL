@@ -22,7 +22,7 @@ You may get a result set like this. Notice the duplicated data for the
 categories "Components" and "Accessories".
 
 | ProductCategoryId | ProductCategoryName | ProductId | ProductName      |
-|-------------------+---------------------+-----------+------------------|
+|-------------------|---------------------|-----------|------------------|
 |                 1 | Components          |         1 | Red Bike Frame   |
 |                 1 | Components          |         2 | Blue Bike Frame  |
 |                 1 | Components          |         3 | Green Bike Frame |
