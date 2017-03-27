@@ -55,3 +55,8 @@ create table FolderGroupPermissions
     , primary key(FolderId, GroupId)
     );
 
+create view ActiveFolders as
+	select * from Folders where RecycleItemId is null;
+
+create view ActiveFiles as
+	select * from Files where RecycleItemId is null;

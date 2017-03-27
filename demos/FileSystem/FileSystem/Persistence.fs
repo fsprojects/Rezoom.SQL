@@ -43,12 +43,10 @@ let getFolder (FolderId folderId) =
 
 type private GetChildrenSQL = SQL<"""
     select Id, Name, true as IsFolder
-    from Folders where RecycleItemId is null
-    and ParentId is @parentId
+    from ActiveFolders where ParentId is @parentId
     union all
     select Id, Name, false as IsFolder
-    from Files where RecycleItemId is null
-    and ParentId is @parentId
+    from ActiveFiles where ParentId is @parentId
 """>
 
 let getChildren parentId =
