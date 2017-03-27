@@ -7,11 +7,11 @@ let private shortDescriptionCore (statement : Stmt<_, _>) =
     | CreateIndexStmt _ -> "CREATE INDEX"
     | CreateTableStmt _ -> "CREATE TABLE"
     | CreateViewStmt _ -> "CREATE VIEW"
-    | DeleteStmt _ -> "DELETE FROM"
+    | DeleteStmt _ -> "DELETE"
     | DropObjectStmt { Drop = DropIndex } -> "DROP INDEX"
     | DropObjectStmt { Drop = DropTable } -> "DROP TABLE"
     | DropObjectStmt { Drop = DropView } -> "DROP VIEW"
-    | InsertStmt _ -> "INSERT INTO"
+    | InsertStmt _ -> "INSERT"
     | SelectStmt _ -> "SELECT"
     | UpdateStmt _ -> "UPDATE"
     | BeginStmt -> "BEGIN TRAN"
@@ -57,11 +57,11 @@ let commandEffectDocString (commandEffect : CommandEffect) =
         [ for parameter, columnType in commandEffect.Parameters ->
             string parameter + " : " + string columnType
         ] |> String.concat ", "
-    [   if parameters = "" then
-            yield "SQL command (unparameterized)"
+    [   yield statementDescrs
+        if parameters = "" then
+            yield "(unparameterized)."
         else
-            yield "SQL command with parameters: (" + parameters + ")"
-        yield statementDescrs
+            yield "(" + parameters + ")."
         yield cacheInfo
-    ] |> String.concat System.Environment.NewLine
+    ] |> String.concat " "
 
