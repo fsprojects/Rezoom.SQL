@@ -1,0 +1,27 @@
+digraph "Type Hierarchy" {
+  rankdir=BT
+  node[color=none,shape=rectangle,fontname=Consolas]
+
+  integral[label="<integral>",color=gray]
+  fractional[label="<fractional>",color=gray]
+  numeric[label="<numeric>",color=gray]
+  stringish[label="<stringish>",color=gray]
+  scalar[label="<scalar>",color=gray]
+  any[label="<any>",color=gray]
+
+  int8 -> integral
+  int16 -> int8
+  int32 -> int16
+  int64 -> int32
+  bool -> scalar
+  float32 -> fractional
+  float64 -> float32
+  decimal -> fractional
+  binary -> stringish
+  string -> stringish
+  stringish -> scalar
+  fractional -> numeric
+  integral -> numeric
+  numeric -> scalar
+  scalar -> any
+}
