@@ -5,7 +5,7 @@ use for columns in `CREATE TABLE` statements, in `CAST` expressions, and the
 like.
 
 | RZSQL type     | .NET type             | SQLite type | TSQL type       |
-|----------------+-----------------------+-------------+-----------------|
+|----------------|-----------------------|-------------|-----------------|
 | string(n)      | System.String         | varchar     | nvarchar(n)     |
 | string         | System.String         | varchar     | nvarchar(max)   |
 | binary(n)      | System.Byte[]         | blob        | varbinary(n)    |
