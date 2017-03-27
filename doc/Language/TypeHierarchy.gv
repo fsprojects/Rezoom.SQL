@@ -1,3 +1,4 @@
+// dot -Tsvg -O TypeHierarchy.gv
 digraph "Type Hierarchy" {
   rankdir=BT
   node[color=none,shape=rectangle,fontname=Consolas]
