@@ -58,9 +58,9 @@ svg.railroad-diagram g.diagram-text:hover path.diagram-text {
 <path d="M330 31h0"></path><path d="M390 31h0"></path><rect height="22" rx="10" ry="10" width="60" x="330" y="20"></rect><text x="360" y="35">TABLE</text></g><path d="M390 31h10"></path><path d="M400 31h10"></path><g class="non-terminal">
 <path d="M410 31h0"></path><path d="M518 31h0"></path><rect height="22" width="108" x="410" y="20"></rect><text x="464" y="35">object-name</text></g></g><path d="M528 31a10 10 0 0 1 10 10v49a10 10 0 0 1 -10 10h-468a10 10 0 0 0 -10 10v0a10 10 0 0 0 10 10"></path><g>
 <path d="M60 120h52"></path><path d="M476 120h52"></path><path d="M112 120h20"></path><g>
-<path d="M132 120h60"></path><path d="M396 120h60"></path><g class="terminal">
-<path d="M192 120h0"></path><path d="M228 120h0"></path><rect height="22" rx="10" ry="10" width="36" x="192" y="109"></rect><text x="210" y="124">AS</text></g><path d="M228 120h10"></path><path d="M238 120h10"></path><g class="non-terminal">
-<path d="M248 120h0"></path><path d="M396 120h0"></path><rect height="22" width="148" x="248" y="109"></rect><text x="322" y="124">select-statement</text></g></g><path d="M456 120h20"></path><path d="M112 120a10 10 0 0 1 10 10v19a10 10 0 0 0 10 10"></path><g>
+<path d="M132 120h80"></path><path d="M376 120h80"></path><g class="terminal">
+<path d="M212 120h0"></path><path d="M248 120h0"></path><rect height="22" rx="10" ry="10" width="36" x="212" y="109"></rect><text x="230" y="124">AS</text></g><path d="M248 120h10"></path><path d="M258 120h10"></path><g class="non-terminal">
+<path d="M268 120h0"></path><path d="M376 120h0"></path><rect height="22" width="108" x="268" y="109"></rect><text x="322" y="124">select-stmt</text></g></g><path d="M456 120h20"></path><path d="M112 120a10 10 0 0 1 10 10v19a10 10 0 0 0 10 10"></path><g>
 <path d="M132 159h0"></path><path d="M456 159h0"></path><g class="terminal">
 <path d="M132 159h0"></path><path d="M160 159h0"></path><rect height="22" rx="10" ry="10" width="28" x="132" y="148"></rect><text x="146" y="163">(</text></g><path d="M160 159h10"></path><g>
 <path d="M170 159h0"></path><path d="M418 159h0"></path><path d="M170 159a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"></path><g>

@@ -3,6 +3,9 @@ from railroad_diagrams import *
 def expr():
     return NonTerminal('expr')
 
+def select_stmt():
+    return NonTerminal('select-stmt')
+
 def name():
     return NonTerminal('name')
 
@@ -68,7 +71,7 @@ export('CreateTable.svg', Diagram(
             'TABLE',
             object_name()),
         Choice(0,
-            Sequence('AS', NonTerminal('select-statement')),
+            Sequence('AS', select_stmt()),
             Sequence(
                 '(',
                 ZeroOrMore(
@@ -77,4 +80,45 @@ export('CreateTable.svg', Diagram(
                         NonTerminal('table-constraint')),
                     ','),
                 ')')))))
+
+export('CreateView.svg', Diagram(
+    Stack(
+        Sequence(
+            'CREATE',
+            Optional(Choice(0, 'TEMP', 'TEMPORARY'), 'skip'),
+            'VIEW',
+            object_name()),
+        Sequence(Optional(Sequence('(', ZeroOrMore(name(), ','), ')')), 'AS', select_stmt()))))
+
+export('TypeName.svg', Diagram(
+    Choice(0,
+        Sequence(
+            Choice(0, 'STRING', 'BINARY'),
+            Optional(Sequence('(', NonTerminal('max-length'), ')'))),
+        'INT8',
+        'INT16',
+        Choice(0, 'INT32', 'INT'),
+        'INT64',
+        'FLOAT32',
+        Choice(0, 'FLOAT64', 'FLOAT'),
+        'DECIMAL',
+        'BOOL',
+        'DATETIME',
+        'DATETIMEOFFSET')))
+
+export('Literal.svg', Diagram(
+    Choice(0,
+        'NULL',
+        Choice(0, 'TRUE', 'FALSE'),
+        NonTerminal('number'),
+        Sequence("'", ZeroOrMore(Choice(0, NonTerminal('any-char-but-quote'), "''")), "'"),
+        Sequence("x'", ZeroOrMore(NonTerminal('hex-digit-pair')), "'"),
+        Sequence(
+            NonTerminal('yyyy-MM-dd'),
+            Optional(
+                Sequence(
+                    NonTerminal('THH:mm:ss'),
+                    Optional(Sequence('.', NonTerminal('fff'))),
+                    Optional(Sequence(Choice(0, '+', '-'), NonTerminal('HH:mm')))))))))
+
 
