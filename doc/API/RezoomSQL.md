@@ -83,8 +83,7 @@ let cmd : Command<OneRowSQL.Row> = OneRowSQL.Command()
 
 // command produces multiple result sets
 type TwoSQL = SQL<"select * from Users; select * from Groups">
-let cmd
-    : Command<ResultSets<IReadOnlyList<TwoSQL.Row1>, IReadOnlyList<TwoSQL.Row2>>> =
+let cmd : Command<ResultSets<IReadOnlyList<TwoSQL.Row1>, IReadOnlyList<TwoSQL.Row2>>> =
     TwoSQL.Command()
 ```
 
