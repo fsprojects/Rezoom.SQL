@@ -919,10 +919,6 @@ let private constraintType =
             %% +.withSource signedNumericLiteral -|> signedToExpr
             %% +.withSource literal -|> fun lit -> { Source = lit.Source; Value = LiteralExpr lit.Value; Info = () }
             %% '(' -- ws -- +.expr -- ')' -|> id
-            // docs don't mention this, but it works
-            %% +.withSource name
-                -|> fun name ->
-                    { Source = name.Source; Value = name.Value.ToString() |> StringLiteral |> LiteralExpr; Info = () }
         ]
     %[
         %% +.primaryKeyClause -|> PrimaryKeyConstraint
