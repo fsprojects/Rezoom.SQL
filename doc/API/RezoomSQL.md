@@ -77,7 +77,8 @@ let cmd : Command<unit> = NoResultsSQL.Command()
 type OneSQL = SQL<"select * from Users">
 let cmd : Command<IReadOnlyList<OneSQL.Row>> = OneSQL.Command()
 
-// command produces a single provided row object (SELECT expressions with no other clauses)
+// command produces a single provided row object
+// because it is a SELECT with no other clauses
 type OneRowSQL = SQL<"select 1 as A, 2 as B">
 let cmd : Command<OneRowSQL.Row> = OneRowSQL.Command()
 
