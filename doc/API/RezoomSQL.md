@@ -102,10 +102,10 @@ the extension methods defined in one of the following namespaces:
   regular method (`Command<'a> -> 'a`).
 
 * [Rezoom.SQL.Asynchronous](RezoomSQLAsynchronous.md) to run the command as a
-  Task Parallel Library task (`Command<'a> -> Task<'a>).
+  Task Parallel Library task (`Command<'a> -> Task<'a>`).
 
 * [Rezoom.SQL.Plans](RezoomSQLPlans.md) to run the command as a Rezoom plan
-  (`Command<'a> -> Plan<'a>).
+  (`Command<'a> -> Plan<'a>`).
 
 ## The `SQLModel` provider
 
