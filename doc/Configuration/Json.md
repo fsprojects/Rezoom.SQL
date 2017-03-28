@@ -11,9 +11,9 @@ rzsql.json looks like this:
 ```javascript
 {
   "backend": "tsql",
-  "connectionname": "rzsql"
+  "connectionname": "rzsql",
   "optionals":  "f#",
-  "migrations": ".",
+  "migrations": "."
 }
 ```
 
