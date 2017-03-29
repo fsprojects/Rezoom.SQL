@@ -124,9 +124,6 @@ class StyleSheet(DiagramItem):
         self.up = 0
         self.down = 0
         self.children += ["""
-svg.railroad-diagram {
-    background-color: hsl(30,20%,95%);
-}
 svg.railroad-diagram path {
     stroke-width: 3;
     stroke: black;
@@ -153,12 +150,12 @@ svg.railroad-diagram text.comment {
     font-style: italic;
 }
 svg.railroad-diagram g.non-terminal text {
-    /*font-style: italic;*/
+    font-style: italic;
 }
 svg.railroad-diagram rect {
     stroke-width: 3;
     stroke: black;
-    fill: hsl(120,100%,90%);
+    fill: #ddeeff;
 }
 svg.railroad-diagram path.diagram-text {
     stroke-width: 3;

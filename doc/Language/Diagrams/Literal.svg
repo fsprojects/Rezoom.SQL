@@ -1,8 +1,6 @@
 <svg class="railroad-diagram" height="354" viewBox="0 0 682 354" width="682" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(.5 .5)">
 <style type="text/css">
-svg.railroad-diagram {
-    background-color: hsl(30,20%,95%);
-}
 svg.railroad-diagram path {
     stroke-width: 3;
     stroke: black;
@@ -29,12 +27,12 @@ svg.railroad-diagram text.comment {
     font-style: italic;
 }
 svg.railroad-diagram g.non-terminal text {
-    /&#42;font-style: italic;&#42;/
+    font-style: italic;
 }
 svg.railroad-diagram rect {
     stroke-width: 3;
     stroke: black;
-    fill: hsl(120,100%,90%);
+    fill: #ddeeff;
 }
 svg.railroad-diagram path.diagram-text {
     stroke-width: 3;
@@ -45,8 +43,7 @@ svg.railroad-diagram path.diagram-text {
 svg.railroad-diagram g.diagram-text:hover path.diagram-text {
     fill: #eee;
 }
-        </style><g transform="translate(.5 .5)">
-<path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"></path><g>
+        </style><path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"></path><g>
 <path d="M40 31h0"></path><path d="M642 31h0"></path><path d="M40 31h20"></path><g class="terminal">
 <path d="M60 31h255"></path><path d="M367 31h255"></path><rect height="22" rx="10" ry="10" width="52" x="315" y="20"></rect><text x="341" y="35">NULL</text></g><path d="M622 31h20"></path><path d="M40 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"></path><g>
 <path d="M60 61h231"></path><path d="M391 61h231"></path><path d="M291 61h20"></path><g class="terminal">

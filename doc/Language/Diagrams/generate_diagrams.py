@@ -63,7 +63,7 @@ export('TableConstraint.svg', Diagram(
                 OneOrMore(Sequence(name(), order_direction()), ','),
                 ')')))))
 
-export('CreateTable.svg', Diagram(
+export('CreateTable.svg', Diagram(Sequence(
     Stack(
         Sequence(
             'CREATE',
@@ -79,7 +79,7 @@ export('CreateTable.svg', Diagram(
                         NonTerminal('column-def'),
                         NonTerminal('table-constraint')),
                     ','),
-                ')')))))
+                ')'))))))
 
 export('CreateView.svg', Diagram(
     Stack(
