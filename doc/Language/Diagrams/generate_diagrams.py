@@ -9,18 +9,23 @@ def select_stmt():
 def name():
     return NonTerminal('name')
 
+def bind_parameter():
+    return NonTerminal('@bind-parameter')
+
 def type_name():
     return NonTerminal('type-name')
 
 def object_name():
     return NonTerminal('object-name')
 
+def column_name():
+    return NonTerminal('column-name')
+
 def order_direction():
     return Optional(Choice(0, 'ASC', 'DESC'), 'skip')
 
-def export(filename, diagram):
-    with open(filename, 'w') as f:
-        diagram.writeSvg(f.write)
+def literal():
+    return NonTerminal('literal')
 
 def primary_key_clause():
     return Sequence(
@@ -36,6 +41,10 @@ def foreign_key_clause():
         '(',
         ZeroOrMore(name(), ','),
         ')')
+
+def export(filename, diagram):
+    with open(filename, 'w') as f:
+        diagram.writeSvg(f.write)
 
 export('ColumnDef.svg', Diagram(
     name(),
@@ -120,5 +129,65 @@ export('Literal.svg', Diagram(
                     NonTerminal('THH:mm:ss'),
                     Optional(Sequence('.', NonTerminal('fff'))),
                     Optional(Sequence(Choice(0, '+', '-'), NonTerminal('HH:mm')))))))))
+
+export('Expr.svg', Diagram(
+    Choice(6,
+        literal(),
+        bind_parameter(),
+        Sequence(
+            '(',
+            Choice(0, expr(), select_stmt()),
+            ')'),
+        Sequence(
+            'CAST',
+            '(',
+            expr(),
+            'AS',
+            type_name(),
+            ')'),
+        Sequence(
+            Choice(0, 'NOT', '~', '-', '+'),
+            expr()),
+        Sequence(expr(),
+            Choice(1,
+                Sequence('COLLATE', name()),
+                Sequence(NonTerminal('binary-operator'), expr()),
+                Sequence(
+                    Optional('NOT', 'skip'),
+                    'LIKE',
+                    expr(),
+                    Optional(Sequence('ESCAPE', expr()), 'skip')),
+                Sequence(
+                    Optional('NOT', 'skip'),
+                    'BETWEEN',
+                    expr(),
+                    'AND',
+                    expr()),
+                Sequence(
+                    Optional('NOT', 'skip'),
+                    'IN',
+                    Choice(1,
+                        object_name(),
+                        Sequence(
+                            '(',
+                            Choice(0,
+                                ZeroOrMore(expr(), ','),
+                                select_stmt()),
+                            ')'),
+                        bind_parameter())))),
+        Sequence(
+            NonTerminal('function-name'),
+            '(',
+            Choice(0,
+                Sequence(Optional('DISTINCT', 'skip'), ZeroOrMore(expr(), ',')),
+                '*'),
+            ')'),
+        column_name(),
+        NonTerminal('case-expr'),
+        Sequence(
+            'EXISTS',
+            '(',
+            select_stmt(),
+            ')'))))
 
 
