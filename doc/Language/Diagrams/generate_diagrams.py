@@ -52,19 +52,20 @@ def export(filename, diagram):
     with open(filename, 'w') as f:
         diagram.writeSvg(f.write)
 
+export('ColumnConstraint.svg', Diagram(
+    Optional(Sequence('CONSTRAINT', name()), 'skip'),
+    Choice(3,
+        'NULL',
+        'UNIQUE',
+        Sequence('DEFAULT', expr()),
+        Sequence('COLLATE', name()),
+        primary_key_clause(),
+        foreign_key_clause())))
+
 export('ColumnDef.svg', Diagram(
     name(),
     type_name(),
-    ZeroOrMore(
-        Sequence(
-            Optional(Sequence('CONSTRAINT', name()), 'skip'),
-            Choice(0,
-                'NULL',
-                'UNIQUE',
-                Sequence('DEFAULT', expr()),
-                Sequence('COLLATE', name()),
-                primary_key_clause(),
-                foreign_key_clause())))))
+    ZeroOrMore(NonTerminal('column-constraint'))))
 
 export('TableConstraint.svg', Diagram(
     Stack(
