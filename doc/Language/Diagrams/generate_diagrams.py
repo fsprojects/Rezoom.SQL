@@ -21,8 +21,14 @@ def object_name():
 def column_name():
     return NonTerminal('column-name')
 
+def select_property():
+    return NonTerminal('select-property')
+
 def order_direction():
     return Optional(Choice(0, 'ASC', 'DESC'), 'skip')
+
+def table_expr():
+    return NonTerminal('table-expr')
 
 def literal():
     return NonTerminal('literal')
@@ -197,4 +203,57 @@ export('Expr.svg', Diagram(
             '(',
             select_stmt(),
             ')'))))
+
+export('SelectProperty.svg', Diagram(
+    Choice(0,
+        Sequence(
+            expr(),
+            Optional(Sequence(Optional('AS', 'skip'), name()))),
+        Sequence(
+            Choice(0, 'MANY', 'OPTIONAL', 'ONE'),
+            name(),
+            '(',
+            OneOrMore(select_property(), ','),
+            ')'))))
+
+export('TableExpr.svg', Diagram(
+    Choice(0,
+        Sequence(
+            Choice(0,
+                object_name(),
+                Sequence('(', select_stmt(), ')')),
+            Optional(Sequence(
+                Optional('AS', 'skip'),
+                name()))),
+        Sequence(
+            table_expr(),
+            Choice(0,
+                Sequence(
+                    Optional('NATURAL', 'skip'),
+                    Choice(0,
+                        Skip(),
+                        Sequence(Optional('LEFT'), 'OUTER'),
+                        'INNER',
+                        'CROSS'),
+                    'JOIN'),
+                ','),
+            table_expr(),
+            Optional(
+                Sequence('ON', expr()))))))
+
+export('SelectCore.svg', Diagram(
+    Stack(
+        Sequence(
+            'SELECT',
+            Optional('DISTINCT', 'skip'),
+            OneOrMore(select_property())),
+        Optional(Sequence('FROM', table_expr())),
+        Optional(Sequence('WHERE', expr())),
+        Optional(
+            Sequence(
+                'GROUP',
+                'BY',
+                OneOrMore(expr(), ','),
+                Optional(Sequence('HAVING', expr()))))
+    )))
 
