@@ -131,7 +131,7 @@ export('Literal.svg', Diagram(
                     Optional(Sequence(Choice(0, '+', '-'), NonTerminal('HH:mm')))))))))
 
 export('Expr.svg', Diagram(
-    Choice(6,
+    Choice(5,
         literal(),
         bind_parameter(),
         Sequence(
@@ -183,11 +183,18 @@ export('Expr.svg', Diagram(
                 '*'),
             ')'),
         column_name(),
-        NonTerminal('case-expr'),
+        Stack(
+            Sequence(
+                'CASE',
+                Optional(expr(), 'skip'),
+                OneOrMore(
+                    Sequence('WHEN', expr(), 'THEN', expr()))),
+            Sequence(
+                Optional(Sequence('ELSE', expr()), 'skip'),
+                'END')),
         Sequence(
             'EXISTS',
             '(',
             select_stmt(),
             ')'))))
-
 
