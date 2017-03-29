@@ -119,6 +119,10 @@ def wrapString(value):
 class StyleSheet(DiagramItem):
     def __init__(self):
         DiagramItem.__init__(self, 'style', { 'type': 'text/css' })
+        self.width = 0
+        self.height = 0
+        self.up = 0
+        self.down = 0
         self.children += ["""
 svg.railroad-diagram {
     background-color: hsl(30,20%,95%);
@@ -166,13 +170,15 @@ svg.railroad-diagram g.diagram-text:hover path.diagram-text {
     fill: #eee;
 }
         """]
+    def format(self, x, y, width):
+        return self
 
 class Diagram(DiagramItem):
     def __init__(self, *items, **kwargs):
         # Accepts a type=[simple|complex] kwarg
         DiagramItem.__init__(self, 'svg', {'class': DIAGRAM_CLASS, 'xmlns': SVG_XMLNS })
         self.type = kwargs.get("type", "simple")
-        self.items = [Start(self.type)] + [wrapString(item) for item in items] + [End(self.type)]
+        self.items = [StyleSheet()] + [Start(self.type)] + [wrapString(item) for item in items] + [End(self.type)]
         self.up = 0
         self.down = 0
         self.height = 0
@@ -187,7 +193,6 @@ class Diagram(DiagramItem):
         if self.items[-1].needsSpace:
             self.width -= 10
         self.formatted = False
-        self.children += [StyleSheet()]
 
     def format(self, paddingTop=20, paddingRight=None, paddingBottom=None, paddingLeft=None):
         if paddingRight is None:
@@ -297,7 +302,7 @@ class Stack(DiagramItem):
         self.up = self.items[0].up
         self.down = self.items[-1].down
         self.height = 0
-        last = len(self.items)
+        last = len(self.items) - 1
         for i,item in enumerate(self.items):
             self.height += item.height
             if i > 0:
