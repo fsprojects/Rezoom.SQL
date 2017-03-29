@@ -429,7 +429,7 @@ let private similarityOperator =
         }
     let op =
         %[  %% kw "LIKE" -|> Like
-            %% kw "GLOB" -|> Glob
+            %% kw "GLOB" -|> Glob // Remove SQLite stuff?
             %% kw "MATCH" -|> Match
             %% kw "REGEXP" -|> Regexp
         ] |> withSource
@@ -439,7 +439,7 @@ let private similarityOperator =
 
 let private notNullOperator =
     %[
-        kw "NOTNULL"
+        kw "NOTNULL" // Remove SQLite stuff?
         %% kw "NOT" -? kw "NULL" -|> ()
     ]
     |> withSource
@@ -464,7 +464,7 @@ let private betweenOperator =
             Info = ()
         }
 
-let private raiseTrigger =
+let private raiseTrigger = // Remove SQLite stuff?
     %% kw "RAISE"
     -- '('
     -- ws
@@ -542,7 +542,7 @@ let private operators = [
         infixl "<>" <| binary NotEqual
         infixlc isOperator
         ternaryolc similarityOperator (kw "ESCAPE")
-        postfix (kw "ISNULL") <| unary IsNull
+        postfix (kw "ISNULL") <| unary IsNull // Remove SQLite stuff?
         postfixc notNullOperator
         postfixc inOperator
         ternarylc betweenOperator (kw "AND")
@@ -845,7 +845,7 @@ do
         -? +.selectStmtWithoutCTE
         -|> (|>)
 
-let private foreignKeyRule =
+let private foreignKeyRule = // Remove SQLite stuff? But support cascade and set null...
     let eventRule =
         %% kw "ON"
         -- +.[
@@ -868,7 +868,7 @@ let private foreignKeyRule =
 
 
 let private foreignKeyDeferClause =
-    let initially =
+    let initially = // Remove SQLite stuff?
         %% kw "INITIALLY" -- +.[ %% kw "DEFERRED" -|> true; %% kw "IMMEDIATE" -|> false ] -|> id
     %% +.(zeroOrOne * kw "NOT")
     -? kw "DEFERRABLE"
