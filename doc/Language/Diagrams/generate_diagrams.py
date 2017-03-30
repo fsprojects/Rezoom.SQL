@@ -129,7 +129,14 @@ export('Literal.svg', Diagram(
     Choice(0,
         'NULL',
         Choice(0, 'TRUE', 'FALSE'),
-        NonTerminal('number'),
+        Choice(0,
+            Sequence(
+                ZeroOrMore('decimal-digit'),
+                Optional(
+                    Sequence('.', OneOrMore('decimal-digit')), 'skip'),
+                Optional(
+                    Sequence('e', Choice(0, Skip(), '+', '-'), OneOrMore('decimal-digit')))),
+            Sequence('0x', OneOrMore('hex-digit'))),
         Sequence("'", ZeroOrMore(Choice(0, NonTerminal('any-char-but-quote'), "''")), "'"),
         Sequence("x'", ZeroOrMore(NonTerminal('hex-digit-pair')), "'"),
         Sequence(
