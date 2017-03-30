@@ -8,6 +8,7 @@ VERTICAL_SEPARATION = 8
 ARC_RADIUS = 10
 DIAGRAM_CLASS = 'railroad-diagram'
 SVG_XMLNS = "http://www.w3.org/2000/svg"
+SVG_XMLNS_XLINK = "http://www.w3.org/1999/xlink"
 TRANSLATE_HALF_PIXEL = True
 INTERNAL_ALIGNMENT = 'center'
 DEBUG=False
@@ -173,7 +174,11 @@ svg.railroad-diagram g.diagram-text:hover path.diagram-text {
 class Diagram(DiagramItem):
     def __init__(self, *items, **kwargs):
         # Accepts a type=[simple|complex] kwarg
-        DiagramItem.__init__(self, 'svg', {'class': DIAGRAM_CLASS, 'xmlns': SVG_XMLNS })
+        DiagramItem.__init__(self, 'svg', {
+            'class': DIAGRAM_CLASS,
+            'xmlns': SVG_XMLNS,
+            'xmlns:xlink': SVG_XMLNS_XLINK
+        })
         self.type = kwargs.get("type", "simple")
         self.items = [StyleSheet()] + [Start(self.type)] + [wrapString(item) for item in items] + [End(self.type)]
         self.up = 0

@@ -1,5 +1,8 @@
 from railroad_diagrams import *
 
+def language(document):
+    return 'https://rspeele.gitbooks.io/rezoom-sql/doc/Language/' + document + '.html'
+
 def expr():
     return NonTerminal('expr')
 
@@ -34,7 +37,7 @@ def compound_expr():
     return NonTerminal('compound-expr')
 
 def literal():
-    return NonTerminal('literal')
+    return NonTerminal('literal', language('Literal'))
 
 def primary_key_clause():
     return Sequence(
