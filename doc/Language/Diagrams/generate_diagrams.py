@@ -262,7 +262,12 @@ export('Expr.svg', Diagram(
             ')'))))
 
 export('SelectProperty.svg', Diagram(
-    Choice(0,
+    Choice(2,
+        '*',
+        Sequence(
+            object_name(),
+            '.',
+            '*'),
         Sequence(
             expr(),
             Optional(Sequence(Optional('AS', 'skip'), name()))),
