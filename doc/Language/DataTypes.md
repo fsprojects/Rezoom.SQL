@@ -16,13 +16,13 @@ like.
 | int8           | System.SByte          | integer     | tinyint         |
 | int64          | System.Int64          | integer     | bigint          |
 | float32        | System.Single         | float       | float(24)       |
-| float64        | System.Double         | float       | float(53)       |
+| float, float64 | System.Double         | float       | float(53)       |
 | decimal        | System.Decimal        | N/A         | numeric(38, 19) |
 | datetime       | System.DateTime       | N/A         | datetime2       |
 | datetimeoffset | System.DateTimeOffset | N/A         | datetimeoffset  |
 
 The syntax to use when a type name is expected is obvious enough from the first
-column from the above table, but is also documented in the following railroad
+column in the above table, but is also documented in the following railroad
 diagram:
 
 ### _type-name_

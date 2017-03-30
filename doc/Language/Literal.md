@@ -12,7 +12,8 @@ Examples of literals in F# code include:
 ```
 
 Examples of literals in RZSQL include:
-```
+
+```sql
 null
 true
 false
@@ -48,5 +49,9 @@ the following quirks:
   automatically translates these to the appropriate backend representation.
 
 * RZSQL has literals for date and time values. Essentially these just understand
-  the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format.
+  the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format. An example of a
+  `DATETIMEOFFSET` literal is `2017-03-30T00:32:57-04:00`.
+
+
+
 
