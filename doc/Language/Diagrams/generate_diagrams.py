@@ -55,6 +55,27 @@ def export(filename, diagram):
     with open(filename, 'w') as f:
         diagram.writeSvg(f.write)
 
+export('RailroadDemo.svg', Diagram(
+    Stack(
+        Sequence(
+            'REQUIRED KEYWORD',
+            Optional(Sequence('OPTIONAL KEYWORD')),
+            OneOrMore('MANY OF THESE')),
+        Sequence(
+            '(',
+            ZeroOrMore(NonTerminal('other-thing'), ','),
+            ')'))))
+
+export('WhitespaceOrComment.svg', Diagram(
+    Choice(0,
+        Choice(0,
+            ' ',
+            '\\r',
+            '\\n',
+            '\\t'),
+        Sequence('--', ZeroOrMore(NonTerminal('anything-but-newline')), '\\n'),
+        Sequence('/*', ZeroOrMore(NonTerminal('anything-but-*/')), '*/'))))
+
 export('ColumnConstraint.svg', Diagram(
     Optional(Sequence('CONSTRAINT', name()), 'skip'),
     Choice(3,
@@ -131,12 +152,12 @@ export('Literal.svg', Diagram(
         Choice(0, 'TRUE', 'FALSE'),
         Choice(0,
             Sequence(
-                ZeroOrMore('decimal-digit'),
+                ZeroOrMore(NonTerminal('decimal-digit')),
                 Optional(
-                    Sequence('.', OneOrMore('decimal-digit')), 'skip'),
+                    Sequence('.', OneOrMore(NonTerminal('decimal-digit'))), 'skip'),
                 Optional(
-                    Sequence('e', Choice(0, Skip(), '+', '-'), OneOrMore('decimal-digit')))),
-            Sequence('0x', OneOrMore('hex-digit'))),
+                    Sequence('e', Choice(0, Skip(), '+', '-'), OneOrMore(NonTerminal('decimal-digit'))))),
+            Sequence('0x', OneOrMore(NonTerminal('hex-digit')))),
         Sequence("'", ZeroOrMore(Choice(0, NonTerminal('any-char-but-quote'), "''")), "'"),
         Sequence("x'", ZeroOrMore(NonTerminal('hex-digit-pair')), "'"),
         Sequence(

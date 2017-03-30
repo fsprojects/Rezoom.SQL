@@ -10,6 +10,8 @@
     * [rzsql.json](doc/Configuration/Json.md)
 * [Language](doc/Language/README.md)
     * [Data types](doc/Language/DataTypes.md)
+    * [Literals](doc/Language/Literal.md)
+    * [Expressions](doc/Language/Expr.md)
     * [Navigation properties](doc/Language/NavigationProperties.md)
     * [Vendor statements](doc/Language/VendorStatements.md)
 * [API](doc/API/README.md)

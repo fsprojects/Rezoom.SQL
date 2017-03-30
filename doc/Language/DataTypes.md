@@ -21,6 +21,14 @@ like.
 | datetime       | System.DateTime       | N/A         | datetime2       |
 | datetimeoffset | System.DateTimeOffset | N/A         | datetimeoffset  |
 
+The syntax to use when a type name is expected is obvious enough from the first
+column from the above table, but is also documented in the following railroad
+diagram:
+
+### _type-name_
+
+![railroad diagram](Diagrams/TypeName.svg)
+
 # How types are inferred
 
 RZSQL types are organized in a hierarchy in order to permit things like adding
