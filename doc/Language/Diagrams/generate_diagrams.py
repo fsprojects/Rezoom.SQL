@@ -30,6 +30,9 @@ def order_direction():
 def table_expr():
     return NonTerminal('table-expr')
 
+def compound_expr():
+    return NonTerminal('compound-expr')
+
 def literal():
     return NonTerminal('literal')
 
@@ -255,6 +258,35 @@ export('SelectCore.svg', Diagram(
                 'GROUP',
                 'BY',
                 OneOrMore(expr(), ','),
-                Optional(Sequence('HAVING', expr()))))
-    )))
+                Optional(Sequence('HAVING', expr())))))))
 
+export('CompoundExpr.svg', Diagram(
+    Choice(0,
+        NonTerminal('select-core'),
+        Sequence(
+            'VALUES',
+            OneOrMore(
+                Sequence('(', OneOrMore(expr(), ','), ')'),
+                ',')),
+        Sequence(
+            compound_expr(),
+            Choice(1,
+                'INTERSECT',
+                Sequence('UNION', Optional('ALL')),
+                'EXCEPT'),
+            compound_expr()))))
+
+export('SelectStmt.svg', Diagram(
+    Stack(
+        compound_expr(),
+        Optional(
+            Sequence(
+                'ORDER',
+                'BY',
+                OneOrMore(Sequence(expr(), order_direction()), ','))),
+        Optional(
+            Sequence(
+                'LIMIT',
+                expr(),
+                Optional(
+                    Sequence(Choice(0, 'OFFSET', ','), expr())))))))
