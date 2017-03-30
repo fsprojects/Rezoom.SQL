@@ -9,6 +9,7 @@
 * [Configuration](doc/Configuration/README.md)
     * [rzsql.json](doc/Configuration/Json.md)
 * [Language](doc/Language/README.md)
+    * [Names](doc/Language/Name.md)
     * [Data types](doc/Language/DataTypes.md)
     * [Literals](doc/Language/Literal.md)
     * [Expressions](doc/Language/Expr.md)

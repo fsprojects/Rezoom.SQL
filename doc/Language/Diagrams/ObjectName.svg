@@ -1,0 +1,52 @@
+<svg class="railroad-diagram" height="82" viewBox="0 0 292 82" width="292" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(.5 .5)">
+<style type="text/css">
+svg.railroad-diagram path {
+    stroke-width: 3;
+    stroke: black;
+    fill: rgba(0,0,0,0);
+}
+svg.railroad-diagram text {
+    font-family: "Consolas", "Monospace";
+    font-size: 14px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+svg.railroad-diagram text.diagram-text {
+    font-size: 12px;
+}
+svg.railroad-diagram text.diagram-arrow {
+    font-size: 16px;
+}
+svg.railroad-diagram text.label {
+    text-anchor: start;
+}
+svg.railroad-diagram text.comment {
+    font-family: "Consolas", "Monospace";
+    font-size: 12px;
+    font-style: italic;
+}
+svg.railroad-diagram g.non-terminal text {
+    font-style: italic;
+}
+svg.railroad-diagram rect {
+    stroke-width: 3;
+    stroke: black;
+    fill: #ddeeff;
+}
+svg.railroad-diagram path.diagram-text {
+    stroke-width: 3;
+    stroke: black;
+    fill: white;
+    cursor: help;
+}
+svg.railroad-diagram g.diagram-text:hover path.diagram-text {
+    fill: #eee;
+}
+        </style><path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"></path><g>
+<path d="M40 31h0"></path><path d="M180 31h0"></path><path d="M40 31h20"></path><g>
+<path d="M60 31h100"></path></g><path d="M160 31h20"></path><path d="M40 31a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"></path><g>
+<path d="M60 51h0"></path><path d="M160 51h0"></path><g class="non-terminal">
+<path d="M60 51h0"></path><path d="M112 51h0"></path><rect height="22" width="52" x="60" y="40"></rect><text x="86" y="55">name</text></g><path d="M112 51h10"></path><path d="M122 51h10"></path><g class="terminal">
+<path d="M132 51h0"></path><path d="M160 51h0"></path><rect height="22" rx="10" ry="10" width="28" x="132" y="40"></rect><text x="146" y="55">.</text></g></g><path d="M160 51a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"></path></g><path d="M180 31h10"></path><g class="non-terminal">
+<path d="M190 31h0"></path><path d="M242 31h0"></path><rect height="22" width="52" x="190" y="20"></rect><text x="216" y="35">name</text></g><path d="M242 31h10"></path><path d="M 252 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g></svg>

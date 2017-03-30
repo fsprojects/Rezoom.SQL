@@ -76,6 +76,31 @@ export('WhitespaceOrComment.svg', Diagram(
         Sequence('--', ZeroOrMore(NonTerminal('anything-but-newline')), '\\n'),
         Sequence('/*', ZeroOrMore(NonTerminal('anything-but-*/')), '*/'))))
 
+
+export('Name.svg', Diagram(
+    Choice(0,
+        Sequence(
+            Choice(1, '_', NonTerminal('alpha')),
+            ZeroOrMore(Choice(1, '_', NonTerminal('alpha'), NonTerminal('numeric'), '$'))),
+        Sequence(
+            '[',
+            OneOrMore(Choice(0, NonTerminal('anything-but-]'), ']]')),
+            ']'),
+        Sequence(
+            '`',
+            OneOrMore(Choice(0, NonTerminal('anything-but-`'), '``')),
+            '`'),
+        Sequence(
+            '"',
+            OneOrMore(Choice(0, NonTerminal('anything-but-"'), '""')),
+            '"'))))
+
+export('ObjectName.svg', Diagram(
+    Optional(Sequence(name(), '.'), 'skip'), name()))
+
+export('ColumnName.svg', Diagram(
+    Optional(Sequence(NonTerminal('object-name'), '.'), 'skip'), name()))
+
 export('ColumnConstraint.svg', Diagram(
     Optional(Sequence('CONSTRAINT', name()), 'skip'),
     Choice(3,
@@ -169,9 +194,10 @@ export('Literal.svg', Diagram(
                     Optional(Sequence(Choice(0, '+', '-'), NonTerminal('HH:mm')))))))))
 
 export('Expr.svg', Diagram(
-    Choice(5,
+    Choice(6,
         literal(),
         bind_parameter(),
+        column_name(),
         Sequence(
             '(',
             Choice(0, expr(), select_stmt()),
@@ -220,7 +246,6 @@ export('Expr.svg', Diagram(
                 Sequence(Optional('DISTINCT', 'skip'), ZeroOrMore(expr(), ',')),
                 '*'),
             ')'),
-        column_name(),
         Stack(
             Sequence(
                 'CASE',
