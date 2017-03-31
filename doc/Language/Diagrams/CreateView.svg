@@ -1,4 +1,4 @@
-<svg class="railroad-diagram" height="197" viewBox="0 0 580 197" width="580" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg class="railroad-diagram" height="197" viewBox="0 0 580 197" width="580" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(.5 .5)">
 <style type="text/css">
 svg.railroad-diagram path {
@@ -53,7 +53,7 @@ svg.railroad-diagram g.diagram-text:hover path.diagram-text {
 <path d="M188 51h20"></path><path d="M260 51h20"></path><rect height="22" rx="10" ry="10" width="52" x="208" y="40"></rect><text x="234" y="55">TEMP</text></g><path d="M280 51h20"></path><path d="M168 51a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"></path><g class="terminal">
 <path d="M188 81h0"></path><path d="M280 81h0"></path><rect height="22" rx="10" ry="10" width="92" x="188" y="70"></rect><text x="234" y="85">TEMPORARY</text></g><path d="M280 81a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10"></path></g><path d="M300 51a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"></path></g><path d="M320 31h10"></path><g class="terminal">
 <path d="M330 31h0"></path><path d="M382 31h0"></path><rect height="22" rx="10" ry="10" width="52" x="330" y="20"></rect><text x="356" y="35">VIEW</text></g><path d="M382 31h10"></path><path d="M392 31h10"></path><g class="non-terminal">
-<path d="M402 31h0"></path><path d="M510 31h0"></path><rect height="22" width="108" x="402" y="20"></rect><text x="456" y="35">object-name</text></g></g><path d="M520 31a10 10 0 0 1 10 10v49a10 10 0 0 1 -10 10h-460a10 10 0 0 0 -10 10v16a10 10 0 0 0 10 10"></path><g>
+<path d="M402 31h0"></path><path d="M510 31h0"></path><rect height="22" width="108" x="402" y="20"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/Name.html#object-name"><text x="456" y="35">object-name</text><text x="456" y="35">object-name</text></a></g></g><path d="M520 31a10 10 0 0 1 10 10v49a10 10 0 0 1 -10 10h-460a10 10 0 0 0 -10 10v16a10 10 0 0 0 10 10"></path><g>
 <path d="M60 136h29"></path><path d="M491 136h29"></path><g>
 <path d="M89 136h0"></path><path d="M317 136h0"></path><path d="M89 136a10 10 0 0 0 10 -10v-8a10 10 0 0 1 10 -10"></path><g>
 <path d="M109 108h188"></path></g><path d="M297 108a10 10 0 0 1 10 10v8a10 10 0 0 0 10 10"></path><path d="M89 136h20"></path><g>
@@ -62,7 +62,7 @@ svg.railroad-diagram g.diagram-text:hover path.diagram-text {
 <path d="M147 136h0"></path><path d="M259 136h0"></path><path d="M147 136a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"></path><g>
 <path d="M167 116h72"></path></g><path d="M239 116a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"></path><path d="M147 136h20"></path><g>
 <path d="M167 136h0"></path><path d="M239 136h0"></path><path d="M167 136h10"></path><g class="non-terminal">
-<path d="M177 136h0"></path><path d="M229 136h0"></path><rect height="22" width="52" x="177" y="125"></rect><text x="203" y="140">name</text></g><path d="M229 136h10"></path><path d="M177 136a10 10 0 0 0 -10 10v10a10 10 0 0 0 10 10"></path><g class="terminal">
+<path d="M177 136h0"></path><path d="M229 136h0"></path><rect height="22" width="52" x="177" y="125"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/Name.html#name"><text x="203" y="140">name</text><text x="203" y="140">name</text></a></g><path d="M229 136h10"></path><path d="M177 136a10 10 0 0 0 -10 10v10a10 10 0 0 0 10 10"></path><g class="terminal">
 <path d="M177 166h12"></path><path d="M217 166h12"></path><rect height="22" rx="10" ry="10" width="28" x="189" y="155"></rect><text x="203" y="170">,</text></g><path d="M229 166a10 10 0 0 0 10 -10v-10a10 10 0 0 0 -10 -10"></path></g><path d="M239 136h20"></path></g><path d="M259 136h10"></path><g class="terminal">
 <path d="M269 136h0"></path><path d="M297 136h0"></path><rect height="22" rx="10" ry="10" width="28" x="269" y="125"></rect><text x="283" y="140">)</text></g></g><path d="M297 136h20"></path></g><path d="M317 136h10"></path><g class="terminal">
 <path d="M327 136h0"></path><path d="M363 136h0"></path><rect height="22" rx="10" ry="10" width="36" x="327" y="125"></rect><text x="345" y="140">AS</text></g><path d="M363 136h10"></path><path d="M373 136h10"></path><g class="non-terminal">

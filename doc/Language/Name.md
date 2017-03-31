@@ -17,7 +17,7 @@ brackets, or double quotes to wrap names.
 
 ### _name_
 
-![railroad diagram](Diagrams/Name.svg)
+{% include "Diagrams/Name.svg" %}
 
 Regardless of which name syntax you use in your RZSQL source code, the compiled
 code will quote all names using the syntax native to your chosen database
@@ -35,7 +35,7 @@ and `temp`.
 
 ### _object-name_
 
-![railroad diagram](Diagrams/ObjectName.svg)
+{% include "Diagrams/ObjectName.svg" %}
 
 ## Column names
 
@@ -49,4 +49,4 @@ statement.
 
 ### _column-name_
 
-![railroad diagram](Diagrams/ColumnName.svg)
+{% include "Diagrams/ColumnName.svg" %}

@@ -29,7 +29,7 @@ This is the complete syntax for literals:
 
 ### _literal_
 
-![railroad diagram](Diagrams/Literal.svg)
+{% include "Diagrams/Literal.svg" %}
 
 Most of this is standard fare for programming languages. However, make note of
 the following quirks:

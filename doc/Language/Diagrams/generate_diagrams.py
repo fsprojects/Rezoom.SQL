@@ -1,25 +1,25 @@
 from railroad_diagrams import *
 
-def language(document):
-    return 'https://rspeele.gitbooks.io/rezoom-sql/doc/Language/' + document + '.html'
+def language(document, tag):
+    return 'https://rspeele.gitbooks.io/rezoom-sql/doc/Language/' + document + '.html#' + tag
 
 def expr():
-    return NonTerminal('expr')
+    return NonTerminal('expr', language('Expr', 'expr'))
 
 def select_stmt():
     return NonTerminal('select-stmt')
 
 def name():
-    return NonTerminal('name')
+    return NonTerminal('name', language('Name', 'name'))
 
 def bind_parameter():
     return NonTerminal('@bind-parameter')
 
 def type_name():
-    return NonTerminal('type-name')
+    return NonTerminal('type-name', language('DataTypes', 'type-name'))
 
 def object_name():
-    return NonTerminal('object-name')
+    return NonTerminal('object-name', language('Name', 'object-name'))
 
 def column_name():
     return NonTerminal('column-name')
@@ -37,7 +37,7 @@ def compound_expr():
     return NonTerminal('compound-expr')
 
 def literal():
-    return NonTerminal('literal', language('Literal'))
+    return NonTerminal('literal', language('Literal', 'literal'))
 
 def primary_key_clause():
     return Sequence(
