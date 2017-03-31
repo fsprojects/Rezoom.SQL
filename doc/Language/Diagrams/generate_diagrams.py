@@ -22,7 +22,7 @@ def object_name():
     return NonTerminal('object-name', language('Name', 'object-name'))
 
 def column_name():
-    return NonTerminal('column-name')
+    return NonTerminal('column-name', language('Name', 'column-name'))
 
 def select_property():
     return NonTerminal('select-property')
@@ -102,7 +102,7 @@ export('ObjectName.svg', Diagram(
     Optional(Sequence(name(), '.'), 'skip'), name()))
 
 export('ColumnName.svg', Diagram(
-    Optional(Sequence(NonTerminal('object-name'), '.'), 'skip'), name()))
+    Optional(Sequence(object_name(), '.'), 'skip'), name()))
 
 export('ColumnConstraint.svg', Diagram(
     Optional(Sequence('CONSTRAINT', name()), 'skip'),
@@ -243,7 +243,7 @@ export('Expr.svg', Diagram(
                             ')'),
                         bind_parameter())))),
         Sequence(
-            NonTerminal('function-name'),
+            NonTerminal('function-name', language('Name', 'name')),
             '(',
             Choice(0,
                 Sequence(Optional('DISTINCT', 'skip'), ZeroOrMore(expr(), ',')),
