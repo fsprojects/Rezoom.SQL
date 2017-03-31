@@ -54,12 +54,15 @@ either path and still have valid syntax.
 ![demo railroad diagram](Diagrams/RailroadDemo.svg)
 
 Rectangular nodes in a railroad diagram refer to other elements of the syntax.
-Typically these other elements have their own railroad diagrams, but sometimes
-they are just self-explanatory descriptions of what's expected, like
-`decimal-digit`.
+Often these are clickable links to other railroad diagrams, but sometimes they
+are just self-explanatory descriptions of what's expected, like `decimal-digit`.
 
 Here's a real railroad diagram for whitespace and comments.
 
 ### _whitespace-or-comment_
 
 ![railroad diagram](Diagrams/WhitespaceOrComment.svg)
+
+I used [a python library](https://github.com/tabatkins/railroad-diagrams) by
+[tabatkins](https://github.com/tabatkins) to generate the railroad diagrams in
+this documentation.

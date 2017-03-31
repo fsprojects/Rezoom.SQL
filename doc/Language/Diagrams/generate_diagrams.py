@@ -6,8 +6,11 @@ def language(document, tag):
 def expr():
     return NonTerminal('expr', language('Expr', 'expr'))
 
+def select_core():
+    return NonTerminal('select-core', language('SelectStmt', 'select-core'))
+
 def select_stmt():
-    return NonTerminal('select-stmt')
+    return NonTerminal('select-stmt', language('SelectStmt', 'select-stmt'))
 
 def name():
     return NonTerminal('name', language('Name', 'name'))
@@ -25,16 +28,16 @@ def column_name():
     return NonTerminal('column-name', language('Name', 'column-name'))
 
 def select_property():
-    return NonTerminal('select-property')
+    return NonTerminal('select-property', language('SelectStmt', 'select-property'))
 
 def order_direction():
     return Optional(Choice(0, 'ASC', 'DESC'), 'skip')
 
 def table_expr():
-    return NonTerminal('table-expr')
+    return NonTerminal('table-expr', language('SelectStmt', 'table-expr'))
 
 def compound_expr():
-    return NonTerminal('compound-expr')
+    return NonTerminal('compound-expr', language('SelectStmt', 'compound-expr'))
 
 def literal():
     return NonTerminal('literal', language('Literal', 'literal'))
@@ -294,12 +297,10 @@ export('TableExpr.svg', Diagram(
             table_expr(),
             Choice(0,
                 Sequence(
-                    Optional('NATURAL', 'skip'),
                     Choice(0,
                         Skip(),
-                        Sequence(Optional('LEFT'), 'OUTER'),
-                        'INNER',
-                        'CROSS'),
+                        Sequence('LEFT', Optional('OUTER')),
+                        'INNER'),
                     'JOIN'),
                 ','),
             table_expr(),
@@ -312,18 +313,18 @@ export('SelectCore.svg', Diagram(
             'SELECT',
             Optional('DISTINCT', 'skip'),
             OneOrMore(select_property())),
-        Optional(Sequence('FROM', table_expr())),
-        Optional(Sequence('WHERE', expr())),
+        Optional(Sequence('FROM', table_expr()), 'skip'),
+        Optional(Sequence('WHERE', expr()), 'skip'),
         Optional(
             Sequence(
                 'GROUP',
                 'BY',
                 OneOrMore(expr(), ','),
-                Optional(Sequence('HAVING', expr())))))))
+                Optional(Sequence('HAVING', expr()))), 'skip'))))
 
 export('CompoundExpr.svg', Diagram(
     Choice(0,
-        NonTerminal('select-core'),
+        select_core(),
         Sequence(
             'VALUES',
             OneOrMore(

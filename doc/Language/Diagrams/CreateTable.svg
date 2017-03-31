@@ -58,7 +58,7 @@ svg.railroad-diagram g.diagram-text:hover path.diagram-text {
 <path d="M60 120h52"></path><path d="M476 120h52"></path><path d="M112 120h20"></path><g>
 <path d="M132 120h80"></path><path d="M376 120h80"></path><g class="terminal">
 <path d="M212 120h0"></path><path d="M248 120h0"></path><rect height="22" rx="10" ry="10" width="36" x="212" y="109"></rect><text x="230" y="124">AS</text></g><path d="M248 120h10"></path><path d="M258 120h10"></path><g class="non-terminal">
-<path d="M268 120h0"></path><path d="M376 120h0"></path><rect height="22" width="108" x="268" y="109"></rect><text x="322" y="124">select-stmt</text></g></g><path d="M456 120h20"></path><path d="M112 120a10 10 0 0 1 10 10v19a10 10 0 0 0 10 10"></path><g>
+<path d="M268 120h0"></path><path d="M376 120h0"></path><rect height="22" width="108" x="268" y="109"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/SelectStmt.html#select-stmt"><text x="322" y="124">select-stmt</text><text x="322" y="124">select-stmt</text></a></g></g><path d="M456 120h20"></path><path d="M112 120a10 10 0 0 1 10 10v19a10 10 0 0 0 10 10"></path><g>
 <path d="M132 159h0"></path><path d="M456 159h0"></path><g class="terminal">
 <path d="M132 159h0"></path><path d="M160 159h0"></path><rect height="22" rx="10" ry="10" width="28" x="132" y="148"></rect><text x="146" y="163">(</text></g><path d="M160 159h10"></path><g>
 <path d="M170 159h0"></path><path d="M418 159h0"></path><path d="M170 159a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"></path><g>

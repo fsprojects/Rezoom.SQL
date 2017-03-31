@@ -45,7 +45,7 @@ svg.railroad-diagram g.diagram-text:hover path.diagram-text {
 }
         </style><path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"></path><g>
 <path d="M40 31h0"></path><path d="M542 31h0"></path><path d="M40 31h20"></path><g class="non-terminal">
-<path d="M60 31h177"></path><path d="M345 31h177"></path><rect height="22" width="108" x="237" y="20"></rect><text x="291" y="35">select-core</text></g><path d="M522 31h20"></path><path d="M40 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"></path><g>
+<path d="M60 31h177"></path><path d="M345 31h177"></path><rect height="22" width="108" x="237" y="20"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/SelectStmt.html#select-core"><text x="291" y="35">select-core</text><text x="291" y="35">select-core</text></a></g><path d="M522 31h20"></path><path d="M40 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"></path><g>
 <path d="M60 61h93"></path><path d="M429 61h93"></path><g class="terminal">
 <path d="M153 61h0"></path><path d="M221 61h0"></path><rect height="22" rx="10" ry="10" width="68" x="153" y="50"></rect><text x="187" y="65">VALUES</text></g><path d="M221 61h10"></path><path d="M231 61h10"></path><g>
 <path d="M241 61h0"></path><path d="M429 61h0"></path><path d="M241 61h10"></path><g>
@@ -57,7 +57,7 @@ svg.railroad-diagram g.diagram-text:hover path.diagram-text {
 <path d="M391 61h0"></path><path d="M419 61h0"></path><rect height="22" rx="10" ry="10" width="28" x="391" y="50"></rect><text x="405" y="65">)</text></g></g><path d="M419 61h10"></path><path d="M251 61a10 10 0 0 0 -10 10v40a10 10 0 0 0 10 10"></path><g class="terminal">
 <path d="M251 121h70"></path><path d="M349 121h70"></path><rect height="22" rx="10" ry="10" width="28" x="321" y="110"></rect><text x="335" y="125">,</text></g><path d="M419 121a10 10 0 0 0 10 -10v-40a10 10 0 0 0 -10 -10"></path></g></g><path d="M522 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10"></path><path d="M40 31a10 10 0 0 1 10 10v139a10 10 0 0 0 10 10"></path><g>
 <path d="M60 190h0"></path><path d="M522 190h0"></path><g class="non-terminal">
-<path d="M60 190h0"></path><path d="M184 190h0"></path><rect height="22" width="124" x="60" y="179"></rect><text x="122" y="194">compound-expr</text></g><path d="M184 190h10"></path><g>
+<path d="M60 190h0"></path><path d="M184 190h0"></path><rect height="22" width="124" x="60" y="179"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/SelectStmt.html#compound-expr"><text x="122" y="194">compound-expr</text><text x="122" y="194">compound-expr</text></a></g><path d="M184 190h10"></path><g>
 <path d="M194 190h0"></path><path d="M388 190h0"></path><path d="M194 190a10 10 0 0 0 10 -10v-19a10 10 0 0 1 10 -10"></path><g class="terminal">
 <path d="M214 151h31"></path><path d="M337 151h31"></path><rect height="22" rx="10" ry="10" width="92" x="245" y="140"></rect><text x="291" y="155">INTERSECT</text></g><path d="M368 151a10 10 0 0 1 10 10v19a10 10 0 0 0 10 10"></path><path d="M194 190h20"></path><g>
 <path d="M214 190h0"></path><path d="M368 190h0"></path><g class="terminal">
@@ -66,4 +66,4 @@ svg.railroad-diagram g.diagram-text:hover path.diagram-text {
 <path d="M304 170h44"></path></g><path d="M348 170a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"></path><path d="M284 190h20"></path><g class="terminal">
 <path d="M304 190h0"></path><path d="M348 190h0"></path><rect height="22" rx="10" ry="10" width="44" x="304" y="179"></rect><text x="326" y="194">ALL</text></g><path d="M348 190h20"></path></g></g><path d="M368 190h20"></path><path d="M194 190a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"></path><g class="terminal">
 <path d="M214 220h43"></path><path d="M325 220h43"></path><rect height="22" rx="10" ry="10" width="68" x="257" y="209"></rect><text x="291" y="224">EXCEPT</text></g><path d="M368 220a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10"></path></g><path d="M388 190h10"></path><g class="non-terminal">
-<path d="M398 190h0"></path><path d="M522 190h0"></path><rect height="22" width="124" x="398" y="179"></rect><text x="460" y="194">compound-expr</text></g></g><path d="M522 190a10 10 0 0 0 10 -10v-139a10 10 0 0 1 10 -10"></path></g><path d="M 542 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g></svg>
+<path d="M398 190h0"></path><path d="M522 190h0"></path><rect height="22" width="124" x="398" y="179"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/SelectStmt.html#compound-expr"><text x="460" y="194">compound-expr</text><text x="460" y="194">compound-expr</text></a></g></g><path d="M522 190a10 10 0 0 0 10 -10v-139a10 10 0 0 1 10 -10"></path></g><path d="M 542 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g></svg>

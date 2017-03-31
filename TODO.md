@@ -1,3 +1,10 @@
+# Language
+
+* Remove SQLite artifacts from syntax
+* Make sure we parenthesize compound expressions for backends
+* Make sure ORDER BY 1 doesn't ever mean order by 1st col on backend
+* Make sure we can ORDER BY result column aliases(?)
+
 # Documentation
 
 * Finish tutorial
