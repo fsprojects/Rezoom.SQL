@@ -125,15 +125,8 @@ type UnaryOperator =
 
 type SimilarityOperator =
     | Like
-    | Match
-    | Regexp
-    // SQLite also has Glob, Match, Regexp, but those aren't well represented across backends
-
-type Raise =
-    | RaiseIgnore
-    | RaiseRollback of string
-    | RaiseAbort of string
-    | RaiseFail of string
+    | Match // MATCH on SQLite, SIMILAR TO on PG
+    | Regexp // REGEXP on SQLite, ~ on PG
 
 type ExprType<'t, 'e> =
     | LiteralExpr of Literal
@@ -150,7 +143,6 @@ type ExprType<'t, 'e> =
     | ExistsExpr of SelectStmt<'t, 'e>
     | CaseExpr of CaseExpr<'t, 'e>
     | ScalarSubqueryExpr of SelectStmt<'t, 'e>
-    | RaiseExpr of Raise
 
 and
     [<NoComparison>]

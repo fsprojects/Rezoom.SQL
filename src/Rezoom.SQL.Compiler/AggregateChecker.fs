@@ -75,7 +75,6 @@ and private aggReferences (expr : InfExpr) =
     | LiteralExpr _
     | BindParameterExpr _
     | ScalarSubqueryExpr _ // scalar subqueries have been internally checked by typechecker
-    | RaiseExpr _ -> Seq.empty
     | ColumnNameExpr _ -> Seq.singleton (ColumnOutsideAggregate expr)
     | InExpr inex ->
         seq {

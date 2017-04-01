@@ -87,7 +87,6 @@ type private ReferenceFinder() =
         | ExistsExpr select -> this.Select(select)
         | CaseExpr case -> this.Case(case)
         | ScalarSubqueryExpr select -> this.Select(select)
-        | RaiseExpr _
         | LiteralExpr _
         | BindParameterExpr _ -> ()
     member this.Expr(expr : TExpr) = this.ExprType(expr.Value)

@@ -92,7 +92,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | ExistsExpr select -> ExistsExpr <| this.Select(select)
         | CaseExpr case -> CaseExpr <| this.Case(case)
         | ScalarSubqueryExpr select -> ScalarSubqueryExpr <| this.Select(select)
-        | RaiseExpr raise -> RaiseExpr raise
     member this.Expr(expr : Expr<'t1, 'e1>) =
         {   Value = this.ExprType(expr.Value)
             Source = expr.Source

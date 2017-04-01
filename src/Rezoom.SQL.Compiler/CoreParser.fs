@@ -451,18 +451,6 @@ let private betweenOperator =
             Info = ()
         }
 
-let private raiseTrigger = // Remove SQLite stuff?
-    %% kw "RAISE"
-    -- '('
-    -- ws
-    -- +.[  %% kw "IGNORE" -|> RaiseIgnore
-            %% kw "ROLLBACK" -- ',' -- ws -- +.stringLiteral -- ws -|> RaiseRollback
-            %% kw "ABORT" -- ',' -- ws -- +.stringLiteral -- ws -|> RaiseAbort
-            %% kw "FAIL" -- ',' -- ws -- +.stringLiteral -- ws -|> RaiseFail
-        ]
-    -- ')'
-    -|> RaiseExpr
-
 let private term (expr : Parser<Expr<unit, unit>, unit>) =
     let parenthesized =
         %[
@@ -477,7 +465,6 @@ let private term (expr : Parser<Expr<unit, unit>, unit>) =
             %% +.bindParameter -|> BindParameterExpr
             %% +.cast expr -|> CastExpr
             %% +.case expr -|> CaseExpr
-            raiseTrigger
             %% +.functionInvocation expr -|> FunctionInvocationExpr
             %% +.columnName -|> ColumnNameExpr
         ]

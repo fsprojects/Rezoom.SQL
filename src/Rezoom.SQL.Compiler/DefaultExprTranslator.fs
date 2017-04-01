@@ -229,20 +229,6 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             yield ws
             yield text "END"
         }
-    override this.Raise(raise) =
-        let raiseMsg ty msg =
-            seq {
-                yield text "RAISE("
-                yield text ty
-                yield text ","
-                yield this.Literal.StringLiteral(msg)
-                yield text ")"
-            }
-        match raise with
-        | RaiseIgnore -> Seq.singleton (text "RAISE(IGNORE)")
-        | RaiseRollback msg -> raiseMsg "ROLLBACK" msg
-        | RaiseAbort msg -> raiseMsg "ABORT" msg
-        | RaiseFail msg -> raiseMsg "FAIL" msg
     override this.Exists(subquery) =
         seq {
             yield text "EXISTS("
@@ -284,7 +270,6 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
                 | ExistsExpr select -> this.Exists(select)
                 | CaseExpr case -> this.Case(case)
                 | ScalarSubqueryExpr subquery -> this.ScalarSubquery(subquery)
-                | RaiseExpr raise -> this.Raise(raise)
             if needsParens then yield text ")"
         }
     member this.Expr(expr) = this.Expr(expr, FirstClassValue)

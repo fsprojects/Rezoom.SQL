@@ -92,7 +92,6 @@ and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : 
     abstract member Table : TTableInvocation -> Fragments
     abstract member In : inex : TInExpr -> Fragments
     abstract member Case : case : TCaseExpr -> Fragments
-    abstract member Raise : raise : Raise -> Fragments
     abstract member Exists : subquery : TSelectStmt -> Fragments
     abstract member ScalarSubquery : subquery : TSelectStmt -> Fragments
     abstract member NeedsParens : TExprType -> bool
