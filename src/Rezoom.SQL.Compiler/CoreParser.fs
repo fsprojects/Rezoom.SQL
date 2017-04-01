@@ -819,6 +819,7 @@ let private foreignKeyRule =
             %% kw "RESTRICT" -|> Restrict
             %% kw "NO" -- kw "ACTION" -|> NoAction
         ]
+    -- FParsec.Primitives.fail "ON ... clauses for foreign keys are not yet supported"
     -|> fun evt handler -> EventRule (evt, handler)
 
 let private foreignKeyClause =
