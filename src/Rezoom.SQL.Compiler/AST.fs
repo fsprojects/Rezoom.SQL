@@ -429,17 +429,8 @@ and ResultColumn<'t, 'e> =
         Source : SourceInfo
     }
 
-and IndexHint =
-    | IndexedBy of Name
-    | NotIndexed
-
-and QualifiedTableName<'t> =
-    {   TableName : ObjectName<'t>
-        IndexHint : IndexHint option
-    }
-
 and TableOrSubqueryType<'t, 'e> =
-    | Table of TableInvocation<'t, 'e> * IndexHint option // note: an index hint is invalid if the table has args
+    | Table of TableInvocation<'t, 'e>
     | Subquery of SelectStmt<'t, 'e>
 
 and
@@ -613,7 +604,7 @@ type CreateIndexStmt<'t, 'e> =
 
 type DeleteStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
-        DeleteFrom : QualifiedTableName<'t>
+        DeleteFrom : ObjectName<'t>
         Where : Expr<'t, 'e> option
         OrderBy : OrderingTerm<'t, 'e> array option
         Limit : Limit<'t, 'e> option
@@ -628,7 +619,7 @@ type UpdateOr =
 
 type UpdateStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
-        UpdateTable : QualifiedTableName<'t>
+        UpdateTable : ObjectName<'t>
         Or : UpdateOr option
         Set : (Name WithSource * Expr<'t, 'e>) array
         Where : Expr<'t, 'e> option
@@ -750,7 +741,6 @@ type CreateIndexStmt = CreateIndexStmt<unit, unit>
 type TableIndexConstraintClause = TableIndexConstraintClause<unit, unit>
 type TableConstraint = TableConstraint<unit, unit>
 type CreateViewStmt = CreateViewStmt<unit, unit>
-type QualifiedTableName = QualifiedTableName<unit>
 type DeleteStmt = DeleteStmt<unit, unit>
 type DropObjectStmt = DropObjectStmt<unit>
 type UpdateStmt = UpdateStmt<unit, unit>

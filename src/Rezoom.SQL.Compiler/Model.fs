@@ -333,7 +333,6 @@ type TAlterTableAlteration = AlterTableAlteration<ColumnType ObjectInfo, ColumnT
 type TCreateIndexStmt = CreateIndexStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TTableIndexConstraintClause = TableIndexConstraintClause<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TTableConstraint = TableConstraint<ColumnType ObjectInfo, ColumnType ExprInfo>
-type TQualifiedTableName = QualifiedTableName<ColumnType ObjectInfo>
 type TDeleteStmt = DeleteStmt<ColumnType ObjectInfo, ColumnType ExprInfo>
 type TDropObjectStmt = DropObjectStmt<ColumnType ObjectInfo>
 type TUpdateStmt = UpdateStmt<ColumnType ObjectInfo, ColumnType ExprInfo>

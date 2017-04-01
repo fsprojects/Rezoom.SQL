@@ -633,24 +633,14 @@ let private selectColumns =
     -- +.resultColumns
     -|> fun distinct cols -> { Distinct = distinct; Columns = cols }
 
-let private indexHint =
-    %[
-        %% kw "INDEXED" -- kw "BY" -- +.nameOrKeyword -- ws -|> IndexedBy
-        %% kw "NOT" -- kw "INDEXED" -|> NotIndexed
-    ]
-
 let private tableOrSubquery (tableExpr : Parser<TableExpr<unit, unit>, unit>) =
     let subterm =
         %% +.selectStmt
         -|> fun select alias -> TableOrSubquery { Table = Subquery select; Alias = alias; Info = () }
     let by =
-        %[  %% +.indexHint -|> fun indexed table ->
-                TableOrSubquery { Table = Table (table, Some indexed); Alias = None; Info = () }
-            %% +.(asAlias * zeroOrOne) -- +.(indexHint * zeroOrOne)
-                -|> fun alias indexed table ->
-                    TableOrSubquery { Table = Table (table, indexed); Alias = alias; Info = () }
-        ]
-
+        %% +.(asAlias * zeroOrOne)
+        -|> fun alias table ->
+            TableOrSubquery { Table = Table table; Alias = alias; Info = () }
     %[  %% +.tableInvocation -- +.by -|> fun table by -> by table
         %% '(' -- ws -- +.subterm -- ')' -- ws -- +.(asAlias * zeroOrOne) -|> (<|)
     ]
@@ -1057,18 +1047,10 @@ let private createIndexStmt =
             Where = whereExpr
         }
 
-let private qualifiedTableName =
-    %% +.objectName
-    -- +.(zeroOrOne * indexHint) // Remove SQLite stuff?
-    -|> fun tableName hint ->
-        {   TableName = tableName
-            IndexHint = hint
-        }
-
 let private deleteStmt =
     %% kw "DELETE"
     -- kw "FROM"
-    -- +.qualifiedTableName
+    -- +.objectName
     -- +.(zeroOrOne * whereClause)
     -- +.(zeroOrOne * orderBy)
     -- +.(zeroOrOne * limit)
@@ -1101,7 +1083,7 @@ let private updateStmt =
         -|> fun name expr -> name, expr
     %% kw "UPDATE"
     -- +.(zeroOrOne * updateOr)
-    -- +.qualifiedTableName
+    -- +.objectName
     -- kw "SET"
     -- +.(qty.[1..] / tws ',' * setColumn)
     -- +.(zeroOrOne * whereClause)

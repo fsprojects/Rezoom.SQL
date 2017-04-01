@@ -34,7 +34,6 @@ type LiteralTranslator() =
 type StatementTranslator() =
     abstract member Expr : ExprTranslator
     abstract member OrderDirection : OrderDirection -> Fragment
-    abstract member IndexHint : IndexHint -> Fragments
     abstract member CTE : cte : TCommonTableExpression -> Fragments
     abstract member With : withClause : TWithClause -> Fragments
     abstract member Values : vals : TExpr array WithSource array -> Fragments

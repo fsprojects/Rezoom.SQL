@@ -25,7 +25,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
 
     member private this.TableOrSubqueryScope(tsub : TableOrSubquery) =
         match tsub.Table with
-        | Table (tinvoc, index) ->
+        | Table tinvoc ->
             tsub.Alias |? tinvoc.Table.ObjectName, this.ObjectName(tinvoc.Table).Info
         | Subquery select ->
             match tsub.Alias with
@@ -62,9 +62,9 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
     member private this.TableOrSubquery(tsub : TableOrSubquery) =
         let tbl, info =
             match tsub.Table with
-            | Table (tinvoc, index) ->
+            | Table tinvoc ->
                 let invoke = exprChecker.TableInvocation(tinvoc)
-                Table (invoke, index), invoke.Table.Info
+                Table invoke, invoke.Table.Info
             | Subquery select ->
                 let select = this.Select(select, SelfQueryShape.Unknown)
                 Subquery select, select.Value.Info
@@ -534,11 +534,6 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             AsSelect = this.Select(createView.AsSelect, SelfQueryShape.Known(knownShape))
         }
 
-    member this.QualifiedTableName(qualified : QualifiedTableName) =
-        {   TableName = this.ObjectName(qualified.TableName)
-            IndexHint = qualified.IndexHint
-        }
-
     member this.Delete(delete : DeleteStmt) =
         let checker, withClause =
             match delete.With with
@@ -546,10 +541,10 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             | Some withClause ->
                 let checker, withClause = this.WithClause(withClause)
                 checker, Some withClause
-        let deleteFrom = checker.QualifiedTableName(delete.DeleteFrom)
+        let deleteFrom = checker.ObjectName(delete.DeleteFrom)
         let checker =
             checker.WithScope
-                ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(deleteFrom.TableName) |> Some })
+                ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(deleteFrom) |> Some })
         {   With = withClause
             DeleteFrom = deleteFrom
             Where = Option.map checker.Expr delete.Where
@@ -614,12 +609,12 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             | Some withClause ->
                 let checker, withClause = this.WithClause(withClause)
                 checker, Some withClause
-        let updateTable = checker.QualifiedTableName(update.UpdateTable)
+        let updateTable = checker.ObjectName(update.UpdateTable)
         let checker =
             checker.WithScope
-                ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(updateTable.TableName) |> Some })
+                ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(updateTable) |> Some })
         let setColumns =
-            [|  let cols = updateTable.TableName.Info.Query
+            [|  let cols = updateTable.Info.Query
                 for name, expr in update.Set do
                     match cols.ColumnByName(name.Value) with
                     | Found col ->
@@ -627,7 +622,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                         cxt.UnifyLeftKnown(name.Source, col.Expr.Info.Type, expr.Info.Type)
                         yield name, expr
                     | _ ->
-                        failAt name.Source <| Error.noSuchColumnToSet updateTable.TableName name.Value
+                        failAt name.Source <| Error.noSuchColumnToSet updateTable name.Value
             |]
         {   With = withClause
             UpdateTable = updateTable

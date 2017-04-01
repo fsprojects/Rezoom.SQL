@@ -12,25 +12,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
         match dir with
         | Ascending -> text "ASC"
         | Descending -> text "DESC"
-    override this.IndexHint(indexHint) =
-        seq {
-            match indexHint with
-            | NotIndexed ->
-                yield text "NOT INDEXED"
-            | (IndexedBy name) ->
-                yield text "INDEXED BY"
-                yield ws
-                yield this.Expr.Name(name)
-        }
-    member this.QualifiedTableName(qualified : TQualifiedTableName) =
-        seq {
-            yield! this.Expr.ObjectName(qualified.TableName)
-            match qualified.IndexHint with
-            | None -> ()
-            | Some indexHint ->
-                yield ws
-                yield! this.IndexHint(indexHint)
-        }
     override this.CTE(cte) =
         seq {
             yield this.Expr.Name(cte.Name)
@@ -98,7 +79,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
     override this.TableOrSubquery(tbl) =
         seq {
             match tbl.Table with
-            | Table (table, indexHint) ->
+            | Table table ->
                 yield! this.Expr.Table(table)
                 match tbl.Alias with
                 | None -> ()
@@ -107,11 +88,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                     yield text "AS"
                     yield ws
                     yield this.Expr.Name(alias)
-                match indexHint with
-                | None -> ()
-                | Some indexHint ->
-                    yield ws
-                    yield! this.IndexHint(indexHint)
             | Subquery select ->
                 yield text "("
                 yield! this.Select(select)
@@ -517,7 +493,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                     | UpdateOrFail -> text "OR FAIL"
                     | UpdateOrIgnore -> text "OR IGNORE"
             yield ws
-            yield! this.QualifiedTableName(update.UpdateTable)
+            yield! this.Expr.ObjectName(update.UpdateTable)
             yield ws
             yield text "SET"
             yield ws
@@ -561,7 +537,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
             yield text "DELETE FROM"
             yield ws
-            yield! this.QualifiedTableName(delete.DeleteFrom)
+            yield! this.Expr.ObjectName(delete.DeleteFrom)
             match delete.Where with
             | None -> ()
             | Some where ->

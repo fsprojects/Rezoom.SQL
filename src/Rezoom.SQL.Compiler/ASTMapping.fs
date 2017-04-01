@@ -139,8 +139,8 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.TableOrSubquery(table : TableOrSubquery<'t1, 'e1>) =
         let tbl =
             match table.Table with
-            | Table (tinvoc, index) ->
-                Table (this.TableInvocation(tinvoc), index)
+            | Table (tinvoc) ->
+                Table (this.TableInvocation(tinvoc))
             | Subquery select ->
                 Subquery (this.Select(select))
         {   Table = tbl
@@ -270,13 +270,9 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             ColumnNames = createView.ColumnNames
             AsSelect = this.Select(createView.AsSelect)
         }
-    member this.QualifiedTableName(qualified : QualifiedTableName<'t1>) =
-        {   TableName = this.ObjectName(qualified.TableName)
-            IndexHint = qualified.IndexHint
-        }
     member this.Delete(delete : DeleteStmt<'t1, 'e1>) =
         {   With = Option.map this.WithClause delete.With
-            DeleteFrom = this.QualifiedTableName(delete.DeleteFrom)
+            DeleteFrom = this.ObjectName(delete.DeleteFrom)
             Where = Option.map this.Expr delete.Where
             OrderBy = Option.map (rmap this.OrderingTerm) delete.OrderBy
             Limit = Option.map this.Limit delete.Limit
@@ -294,7 +290,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         }
     member this.Update(update : UpdateStmt<'t1, 'e1>) =
         {   With = Option.map this.WithClause update.With
-            UpdateTable = this.QualifiedTableName(update.UpdateTable)
+            UpdateTable = this.ObjectName(update.UpdateTable)
             Or = update.Or
             Set = update.Set |> rmap (fun (name, expr) -> name, this.Expr(expr))
             Where = Option.map this.Expr update.Where

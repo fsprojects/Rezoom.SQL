@@ -135,7 +135,6 @@ type InfCreateIndexStmt = CreateIndexStmt<InferredType ObjectInfo, InferredType 
 type InfTableIndexConstraintClause = TableIndexConstraintClause<InferredType ObjectInfo, InferredType ExprInfo>
 type InfTableConstraint = TableConstraint<InferredType ObjectInfo, InferredType ExprInfo>
 type InfCreateViewStmt = CreateViewStmt<InferredType ObjectInfo, InferredType ExprInfo>
-type InfQualifiedTableName = QualifiedTableName<InferredType ObjectInfo>
 type InfDeleteStmt = DeleteStmt<InferredType ObjectInfo, InferredType ExprInfo>
 type InfDropObjectStmt = DropObjectStmt<InferredType ObjectInfo>
 type InfUpdateStmt = UpdateStmt<InferredType ObjectInfo, InferredType ExprInfo>

@@ -110,7 +110,7 @@ type private ReferenceFinder() =
         for col in resultColumns.Columns do this.ResultColumn(col)
     member this.TableOrSubquery(table : TTableOrSubquery) =
         match table.Table with
-        | Table (tinvoc, _) -> this.TableInvocation(tinvoc)
+        | Table tinvoc -> this.TableInvocation(tinvoc)
         | Subquery select -> this.Select(select)
     member this.JoinConstraint(constr : TJoinConstraint) =  
         match constr with
@@ -156,7 +156,7 @@ type private ReferenceFinder() =
         | Some terms -> for term in terms do this.OrderingTerm(term)
         | None -> ()
     member this.Delete(delete : TDeleteStmt) =
-        this.ReferenceObject(WriteReference, delete.DeleteFrom.TableName)
+        this.ReferenceObject(WriteReference, delete.DeleteFrom)
         Option.iter this.WithClause delete.With
         Option.iter this.Expr delete.Where
         Option.iter this.Limit delete.Limit
@@ -168,7 +168,7 @@ type private ReferenceFinder() =
         Option.iter this.WithClause insert.With
         Option.iter this.Select insert.Data
     member this.Update(update : TUpdateStmt) =
-        this.ReferenceObject(WriteReference, update.UpdateTable.TableName)
+        this.ReferenceObject(WriteReference, update.UpdateTable)
         Option.iter this.WithClause update.With
         Option.iter this.Expr update.Where
         Option.iter this.Limit update.Limit
