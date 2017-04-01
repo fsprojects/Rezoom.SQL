@@ -127,9 +127,9 @@ type UnaryOperator =
 
 type SimilarityOperator =
     | Like
-    | Glob
     | Match
     | Regexp
+    // SQLite also has Glob, Match, Regexp, but those aren't well represented across backends
 
 type Raise =
     | RaiseIgnore

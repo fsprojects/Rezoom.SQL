@@ -429,7 +429,6 @@ let private similarityOperator =
         }
     let op =
         %[  %% kw "LIKE" -|> Like
-            %% kw "GLOB" -|> Glob // Remove SQLite stuff?
             %% kw "MATCH" -|> Match
             %% kw "REGEXP" -|> Regexp
         ] |> withSource

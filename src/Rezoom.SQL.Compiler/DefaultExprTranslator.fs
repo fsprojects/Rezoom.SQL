@@ -61,7 +61,6 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         CommandText <|
         match op with
         | Like -> "LIKE"
-        | Glob -> "GLOB"
         | Match -> "MATCH"
         | Regexp -> "REGEXP"
     override __.BindParameter par = indexer.ParameterIndex(par) |> Parameter

@@ -326,7 +326,6 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         CommandText <|
         match op with
         | Like -> "LIKE"
-        | Glob
         | Match
         | Regexp -> failwithf "Not supported by TSQL: %A" op
     /// Identifies expressions that are set up to use as predicates in T-SQL.
