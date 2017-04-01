@@ -248,10 +248,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
     override this.ForeignKeyRule(rule) =
         seq {
             match rule with
-            | MatchRule name ->
-                yield text "MATCH"
-                yield ws
-                yield this.Expr.Name(name)
             | EventRule (evt, handler) ->
                 yield text "ON"
                 yield ws
@@ -280,20 +276,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             for rule in clause.Rules do
                 yield ws
                 yield! this.ForeignKeyRule(rule)
-            match clause.Defer with
-            | None -> ()
-            | Some defer ->
-                if not defer.Deferrable then
-                    yield text "NOT"
-                    yield ws
-                yield text "DEFERRABLE"
-                match defer.InitiallyDeferred with
-                | None -> ()
-                | Some initially ->
-                    yield ws
-                    yield text "INITIALLY"
-                    yield ws
-                    yield text (if initially then "DEFERRED" else "IMMEDIATE")
         }
     abstract member ConstraintName : TObjectName * Name -> Name
     default __.ConstraintName(_, name) = name

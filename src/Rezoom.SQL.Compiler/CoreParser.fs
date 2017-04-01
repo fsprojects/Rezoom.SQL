@@ -830,48 +830,30 @@ do
         -? +.selectStmtWithoutCTE
         -|> (|>)
 
-let private foreignKeyRule = // Remove SQLite stuff? But support cascade and set null...
-    let eventRule =
-        %% kw "ON"
-        -- +.[
-                %% kw "DELETE" -|> OnDelete
-                %% kw "UPDATE" -|> OnUpdate
-            ]
-        -- +.[
-                %% kw "SET" -- +.[ %% kw "NULL" -|> SetNull; %% kw "DEFAULT" -|> SetDefault ] -|> id
-                %% kw "CASCADE" -|> Cascade
-                %% kw "RESTRICT" -|> Restrict
-                %% kw "NO" -- kw "ACTION" -|> NoAction
-            ]
-        -|> fun evt handler -> EventRule (evt, handler)
-    let matchRule =
-        %% kw "MATCH"
-        -- +.name
-        -- ws
-        -|> MatchRule
-    %[ eventRule; matchRule ]
-
-
-let private foreignKeyDeferClause =
-    let initially = // Remove SQLite stuff?
-        %% kw "INITIALLY" -- +.[ %% kw "DEFERRED" -|> true; %% kw "IMMEDIATE" -|> false ] -|> id
-    %% +.(zeroOrOne * kw "NOT")
-    -? kw "DEFERRABLE"
-    -- +.(zeroOrOne * initially)
-    -|> fun not init -> { Deferrable = Option.isNone not; InitiallyDeferred = init }
+let private foreignKeyRule =
+    %% kw "ON"
+    -- +.[
+            %% kw "DELETE" -|> OnDelete
+            %% kw "UPDATE" -|> OnUpdate
+        ]
+    -- +.[
+            %% kw "SET" -- +.[ %% kw "NULL" -|> SetNull; %% kw "DEFAULT" -|> SetDefault ] -|> id
+            %% kw "CASCADE" -|> Cascade
+            %% kw "RESTRICT" -|> Restrict
+            %% kw "NO" -- kw "ACTION" -|> NoAction
+        ]
+    -|> fun evt handler -> EventRule (evt, handler)
 
 let private foreignKeyClause =
     %% kw "REFERENCES"
     -- +.objectName
     -- +.parenthesizedColumnNames
     -- +.(qty.[0..] * foreignKeyRule)
-    -- +.(zeroOrOne * foreignKeyDeferClause)
-    -|> fun table cols rules defer ->
+    -|> fun table cols rules ->
         {
             ReferencesTable = table
             ReferencesColumns = cols
             Rules = rules.ToArray()
-            Defer = defer
         }
 
 let private constraintName =

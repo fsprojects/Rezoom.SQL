@@ -497,19 +497,12 @@ type ForeignKeyEventHandler =
     | NoAction
 
 type ForeignKeyRule =
-    | MatchRule of Name
-    | EventRule of (ForeignKeyEvent * ForeignKeyEventHandler)
-
-type ForeignKeyDeferClause =
-    {   Deferrable : bool
-        InitiallyDeferred : bool option
-    }
+    | EventRule of ForeignKeyEvent * ForeignKeyEventHandler
 
 type ForeignKeyClause<'t> =
     {   ReferencesTable : ObjectName<'t>
         ReferencesColumns : Name WithSource array
         Rules : ForeignKeyRule array
-        Defer : ForeignKeyDeferClause option
     }
 
 type PrimaryKeyClause =

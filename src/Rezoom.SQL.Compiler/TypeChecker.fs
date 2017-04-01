@@ -423,7 +423,6 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         {   ReferencesTable = referencesTable
             ReferencesColumns = foreignKey.ReferencesColumns
             Rules = foreignKey.Rules
-            Defer = foreignKey.Defer
         }
 
     member this.ColumnConstraint(constr : ColumnConstraint, creating : CreateTableStmt option) =

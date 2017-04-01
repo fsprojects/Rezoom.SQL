@@ -210,7 +210,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         {   ReferencesTable = this.ObjectName(foreignKey.ReferencesTable)
             ReferencesColumns = foreignKey.ReferencesColumns
             Rules = foreignKey.Rules
-            Defer = foreignKey.Defer
         }
     member this.ColumnConstraint(constr : ColumnConstraint<'t1, 'e1>) =
         {   Name = constr.Name
