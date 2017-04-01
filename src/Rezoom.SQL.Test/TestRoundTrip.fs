@@ -93,7 +93,7 @@ let ``create index`` () =
 let ``alter table add column`` () =
     roundtrip """
         alter table UserGroupMaps
-            add Tag int null
+            add column Tag int null
     """
 
 [<Test>]

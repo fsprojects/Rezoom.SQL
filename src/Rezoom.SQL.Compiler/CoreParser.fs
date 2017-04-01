@@ -901,13 +901,23 @@ let private alterTableStmt =
         -|> RenameTo
     let addColumn =
         %% kw "ADD"
-        -- zeroOrOne * kw "COLUMN"
+        --  [   kw "COLUMN"
+                %% kw "CONSTRAINT"
+                -- FParsec.Primitives.fail "ALTER TABLE ADD CONSTRAINT statements are not yet supported"
+                -%> ()
+            ]
         -- +.columnDef
         -|> AddColumn
+    let dropErr =
+        %% kw "DROP"
+        -- +.FParsec.Primitives.fail "ALTER TABLE DROP x statements are not yet supported"
+        -|> id
     %% kw "ALTER"
     -- kw "TABLE"
     -- +.objectName
-    -- +.[ renameTo; addColumn ]
+    -- +.[  renameTo
+            addColumn
+        ]
     -|> fun table alteration -> { Table = table; Alteration = alteration }
 
 let private tableIndexConstraintType =

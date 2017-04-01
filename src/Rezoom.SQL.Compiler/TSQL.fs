@@ -521,6 +521,22 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 | Restrict -> fail "RESTRICT is not supported in TSQL"
                 | NoAction -> text "NO ACTION"
         }
+    override this.AlterTable(alter) =
+        seq {
+            yield text "ALTER TABLE"
+            yield ws
+            yield! this.Expr.ObjectName(alter.Table)
+            yield ws
+            match alter.Alteration with
+            | RenameTo newName ->
+                yield text "RENAME TO"
+                yield ws
+                yield this.Expr.Name(newName)
+            | AddColumn columnDef ->
+                yield text "ADD" // no COLUMN keyword
+                yield ws
+                yield! this.ColumnDefinition(alter.Table, columnDef)
+        }
 
 type TSQLMigrationBackend(settings : ConnectionStringSettings) =
     inherit DefaultMigrationBackend(settings)
