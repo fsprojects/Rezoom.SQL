@@ -21,6 +21,17 @@ expressions, so they're right at the top.
 
 A [literal](Literal.md) is just a plain value like `1` or `'Jeff'`.
 
-### Bind parameters
+#### Bind parameters
 
-TODO
+A **bind parameter** lets you pass a value from your program into your SQL
+command. Bind parameters are like any other [names](Name.md), but are prefixed
+with an `@` sign.
+
+The [data type](DataTypes.md) of a bind parameter is inferred from its usage,
+much like F# variable types are inferred.
+
+#### Column names
+
+Within some contexts, such as a [select statement](SelectStmt.md), you'll be
+able to access table columns by [name](Name.md) from within an expression.
+
