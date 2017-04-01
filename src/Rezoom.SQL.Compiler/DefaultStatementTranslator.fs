@@ -376,7 +376,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield this.Expr.Name(newName)
             | AddColumn columnDef ->
-                yield text "ADD COLUMN"
+                yield text "ADD"
                 yield ws
                 yield! this.ColumnDefinition(alter.Table, columnDef)
         }
