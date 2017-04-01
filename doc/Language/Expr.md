@@ -32,6 +32,6 @@ much like F# variable types are inferred.
 
 #### Column names
 
-Within some contexts, such as a [select statement](SelectStmt.md), you'll be
-able to access table columns by [name](Name.md) from within an expression.
+Within some contexts, such as a [select statement](SelectStmt.md), you can
+access table columns by [name](Name.md) from within an expression.
 

@@ -338,17 +338,53 @@ export('CompoundExpr.svg', Diagram(
                 'EXCEPT'),
             compound_expr()))))
 
+def order_by():
+    return Sequence(
+        'ORDER',
+        'BY',
+        OneOrMore(Sequence(expr(), order_direction()), ','))
+
+def limit():
+    return Sequence(
+        'LIMIT',
+        expr(),
+        Optional(
+            Sequence(Choice(0, 'OFFSET', ','), expr())))
+
 export('SelectStmt.svg', Diagram(
     Stack(
         compound_expr(),
-        Optional(
-            Sequence(
-                'ORDER',
-                'BY',
-                OneOrMore(Sequence(expr(), order_direction()), ','))),
-        Optional(
-            Sequence(
-                'LIMIT',
-                expr(),
-                Optional(
-                    Sequence(Choice(0, 'OFFSET', ','), expr())))))))
+        Optional(order_by(), 'skip'),
+        Optional(limit(), 'skip'))))
+
+export('InsertStmt.svg', Diagram(
+    'INSERT', # todo: OR IGNORE and pals?
+    'INTO',
+    object_name(),
+    '(',
+    OneOrMore(name(), ','),
+    ')',
+    select_stmt()))
+
+export('UpdateStmt.svg', Diagram(
+    Stack(
+        Sequence(
+            'UPDATE',
+            object_name(),
+            'SET',
+            OneOrMore(
+                Sequence(name(), '=', expr()),
+                ',')),
+        Optional(Sequence('WHERE', expr()), 'skip'),
+        Optional(order_by(), 'skip'),
+        Optional(limit(), 'skip'))))
+
+export('DeleteStmt.svg', Diagram(
+    Stack(
+        Sequence(
+            'DELETE',
+            'FROM',
+            object_name()),
+        Optional(Sequence('WHERE', expr()), 'skip'),
+        Optional(order_by(), 'skip'),
+        Optional(limit(), 'skip'))))

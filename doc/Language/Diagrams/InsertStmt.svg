@@ -1,0 +1,55 @@
+<svg class="railroad-diagram" height="92" viewBox="0 0 684 92" width="684" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(.5 .5)">
+<style type="text/css">
+svg.railroad-diagram path {
+    stroke-width: 3;
+    stroke: black;
+    fill: rgba(0,0,0,0);
+}
+svg.railroad-diagram text {
+    font-family: "Consolas", "Monospace";
+    font-size: 14px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+svg.railroad-diagram text.diagram-text {
+    font-size: 12px;
+}
+svg.railroad-diagram text.diagram-arrow {
+    font-size: 16px;
+}
+svg.railroad-diagram text.label {
+    text-anchor: start;
+}
+svg.railroad-diagram text.comment {
+    font-family: "Consolas", "Monospace";
+    font-size: 12px;
+    font-style: italic;
+}
+svg.railroad-diagram g.non-terminal text {
+    font-style: italic;
+}
+svg.railroad-diagram rect {
+    stroke-width: 3;
+    stroke: black;
+    fill: #ddeeff;
+}
+svg.railroad-diagram path.diagram-text {
+    stroke-width: 3;
+    stroke: black;
+    fill: white;
+    cursor: help;
+}
+svg.railroad-diagram g.diagram-text:hover path.diagram-text {
+    fill: #eee;
+}
+        </style><path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"></path><path d="M40 31h10"></path><g class="terminal">
+<path d="M50 31h0"></path><path d="M118 31h0"></path><rect height="22" rx="10" ry="10" width="68" x="50" y="20"></rect><text x="84" y="35">INSERT</text></g><path d="M118 31h10"></path><path d="M128 31h10"></path><g class="terminal">
+<path d="M138 31h0"></path><path d="M190 31h0"></path><rect height="22" rx="10" ry="10" width="52" x="138" y="20"></rect><text x="164" y="35">INTO</text></g><path d="M190 31h10"></path><path d="M200 31h10"></path><g class="non-terminal">
+<path d="M210 31h0"></path><path d="M318 31h0"></path><rect height="22" width="108" x="210" y="20"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/Name.html#object-name"><text x="264" y="35">object-name</text><text x="264" y="35">object-name</text></a></g><path d="M318 31h10"></path><path d="M328 31h10"></path><g class="terminal">
+<path d="M338 31h0"></path><path d="M366 31h0"></path><rect height="22" rx="10" ry="10" width="28" x="338" y="20"></rect><text x="352" y="35">(</text></g><path d="M366 31h10"></path><path d="M376 31h10"></path><g>
+<path d="M386 31h0"></path><path d="M458 31h0"></path><path d="M386 31h10"></path><g class="non-terminal">
+<path d="M396 31h0"></path><path d="M448 31h0"></path><rect height="22" width="52" x="396" y="20"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/Name.html#name"><text x="422" y="35">name</text><text x="422" y="35">name</text></a></g><path d="M448 31h10"></path><path d="M396 31a10 10 0 0 0 -10 10v10a10 10 0 0 0 10 10"></path><g class="terminal">
+<path d="M396 61h12"></path><path d="M436 61h12"></path><rect height="22" rx="10" ry="10" width="28" x="408" y="50"></rect><text x="422" y="65">,</text></g><path d="M448 61a10 10 0 0 0 10 -10v-10a10 10 0 0 0 -10 -10"></path></g><path d="M458 31h10"></path><path d="M468 31h10"></path><g class="terminal">
+<path d="M478 31h0"></path><path d="M506 31h0"></path><rect height="22" rx="10" ry="10" width="28" x="478" y="20"></rect><text x="492" y="35">)</text></g><path d="M506 31h10"></path><path d="M516 31h10"></path><g class="non-terminal">
+<path d="M526 31h0"></path><path d="M634 31h0"></path><rect height="22" width="108" x="526" y="20"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/SelectStmt.html#select-stmt"><text x="580" y="35">select-stmt</text><text x="580" y="35">select-stmt</text></a></g><path d="M634 31h10"></path><path d="M 644 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g></svg>

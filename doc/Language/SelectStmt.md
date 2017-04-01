@@ -286,3 +286,25 @@ Together, these can be used to implement paging. If you want to show 25 rows per
 page, the first page of results can be returned with `LIMIT 25 OFFSET 0`, the
 second page with `LIMIT 25 OFFSET 25`, the third page with `LIMIT 25 OFFSET 50`,
 and so on.
+
+## Special case: SELECT without other clauses
+
+Occasionally you'll write a `SELECT` statement that has no compound operators
+and no `FROM`, `WHERE`, `GROUP BY`, or `LIMIT` clause.
+
+The main reason to do this is to return the result of a scalar function. For
+example, after inserting a record into a SQLite table, you may want to return
+its ID to your program, like so:
+
+```sql
+insert into MyTable(x, y) values ('example', 'data');
+select last_insert_rowid() as InsertedId;
+```
+
+When you write a `SELECT` without any other clauses, RZSQL knows that it will
+always return exactly one row, so it generates a command type returning a single
+row instead of an `IReadOnlyList` of rows.
+
+Additionally, if the row type only has one column, it will automatically
+implement `IScalar<'columnType>`. This allows you to use extension methods like
+`ExecuteScalar` on the generated command type for convenience.
