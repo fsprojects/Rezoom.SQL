@@ -202,10 +202,18 @@ let private generateCommandMethod
         fun args ->
             let arr =
                 Expr.NewArray
-                    ( typeof<obj * DbType>
+                    ( typeof<CommandParameter>
                     , (args, parameters) ||> List.map2 (fun ex (_, ty) ->
-                        let tx = backend.ParameterTransform(ty)
-                        Expr.NewTuple([ tx.ValueTransform ex; Quotations.Expr.Value(tx.ParameterType) ]))
+                        match ty.Type with
+                        | ListType elemTy ->
+                            let tx = backend.ParameterTransform({ ty with Type = elemTy })
+                            let dbType = Quotations.Expr.Value(tx.ParameterType)
+                            let arr = <@@ [| for e in ((%%ex) : obj array) -> %%tx.ValueTransform ex |] @@>
+                            <@@ ListParameter(%%dbType, [||]) @@>
+                        | _ ->
+                            let tx = backend.ParameterTransform(ty)
+                            let dbType = Quotations.Expr.Value(tx.ParameterType)
+                            <@@ ScalarParameter(%%dbType, %%tx.ValueTransform ex) @@>)
                     )
             Expr.CallUnchecked(callMeth, [ commandData; arr ])
     meth

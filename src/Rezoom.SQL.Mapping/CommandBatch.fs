@@ -32,29 +32,29 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
             dbParam.DbType <- dbType
             dbParam.Value <- value
             ignore <| dbCommand.Parameters.Add(dbParam)
-        for i, (parameterValue, parameterType) in command.Parameters |> Seq.indexed do
-            match parameterValue with
-            | :? Array as arr ->
+        for i, parameter in command.Parameters |> Seq.indexed do
+            match parameter with
+            | ListParameter(parameterType, os) ->
                 let mutable j = 0
-                for elem in arr do
+                for elem in os do
                     addParam (parameterNameArray (parameterOffset + i) j) parameterType elem
                     j <- j + 1
-            | _ ->
-                addParam (parameterName (parameterOffset + i)) parameterType parameterValue
+            | ScalarParameter(parameterType, o) ->
+                addParam (parameterName (parameterOffset + i)) parameterType o
         for fragment in command.Fragments do
             let fragmentString =
                 match fragment with
                 | LocalName name -> localName commandIndex name
                 | CommandText str -> str
                 | Parameter i ->
-                    match command.Parameters.[i] |> fst with
-                    | :? Array as arr ->
+                    match command.Parameters.[i] with
+                    | ListParameter(_, os) ->
                         let parNames =
                             seq {
-                                for j = 0 to arr.Length - 1 do yield parameterNameArray (parameterOffset + i) j
+                                for j = 0 to os.Length - 1 do yield parameterNameArray (parameterOffset + i) j
                             }
                         "(" + String.concat "," parNames + ")"
-                    | _ -> parameterName (parameterOffset + i)
+                    | ScalarParameter _ -> parameterName (parameterOffset + i)
                 | Whitespace -> " "
             ignore <| builder.Append(fragmentString)
         match command.ResultSetCount with
@@ -72,9 +72,10 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
     member __.BatchCommand(cmd : Command) =
         let mutable count = 0
         for par in cmd.Parameters do
-            match fst par with
-            | :? Array as arr -> count <- count + arr.Length
-            | _ -> count <- count + 1
+            count <- count +
+                match par with
+                | ListParameter (_, os) -> os.Length
+                | ScalarParameter _ -> 1
         if parameterCount + count > maxParameters then
             Nullable()
         else

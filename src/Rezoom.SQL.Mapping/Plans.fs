@@ -64,14 +64,19 @@ type private StepLocalBatchesFactory() =
     override __.CreateService(cxt) = StepLocalBatches(cxt.GetService<ExecutionLocalConnectionsFactory, _>())
     override __.DisposeService(_, _) = ()
 
-type private CommandErrandArgument(parameters : (obj * DbType) IReadOnlyList) =
+type private CommandErrandArgument(parameters : CommandParameter IReadOnlyList) =
     member __.Parameters = parameters
     member __.Equals(other : CommandErrandArgument) =
         Seq.forall2 (=) parameters other.Parameters
     override __.GetHashCode() =
         let mutable h = 0
-        for par, _ in parameters do
-            h <- ((h <<< 5) + h) ^^^ par.GetHashCode()
+        for par in parameters do
+            match par with
+            | ScalarParameter (ty, o) ->
+                h <- ((h <<< 5) + h) ^^^ hash o
+            | ListParameter (ty, os) ->
+                for o in os do
+                    h <- ((h <<< 5) + h) ^^^ hash o
         h
     override this.Equals(other : obj) =
         match other with

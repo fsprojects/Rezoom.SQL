@@ -54,8 +54,12 @@ type CommandData =
 
 type CommandCategory = CommandCategory of connectionName : string
 
+type CommandParameter =
+    | ListParameter of DbType * obj array
+    | ScalarParameter of DbType * obj
+
 [<AbstractClass>]
-type Command(data : CommandData, parameters : (obj * DbType) IReadOnlyList) =
+type Command(data : CommandData, parameters : CommandParameter IReadOnlyList) =
     let category = CommandCategory data.ConnectionName
     let cacheInfo =
         { new CacheInfo() with
