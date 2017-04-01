@@ -427,6 +427,18 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                     yield ws
                     yield! this.Predicate(having)
         }
+    override this.Compound(expr) =
+        match expr with
+        | CompoundTerm _ -> base.Compound(expr)
+        | _ ->
+            // TSQL compound terms don't always evaluate left->right, INTERSECT has higher precedence
+            // so just wrap in parens to be safe (this syntax is not legal on SQLite, which *does* eval left->right)
+            let wrapped = base.Compound(expr)
+            seq {
+                yield text "("
+                yield! wrapped
+                yield text ")"
+            }
     override this.SelectCore(select) = this.SelectCoreWithTop(select, None)
     override this.Select(select) =
         match select.Value.Limit with
