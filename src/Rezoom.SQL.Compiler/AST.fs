@@ -117,8 +117,6 @@ type UnaryOperator =
     | Negative
     | Not
     | BitNot
-    | NotNull
-    | IsNull
     /// True if this operator expects boolean inputs and has a boolean output.
     member this.IsLogicalOperator =
         match this with

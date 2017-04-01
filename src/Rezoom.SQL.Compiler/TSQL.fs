@@ -319,8 +319,6 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         match op with
         | Negative -> "-"
         | Not -> "NOT"
-        | NotNull -> "IS NOT NULL"
-        | IsNull -> "IS NULL"
         | BitNot -> "~"
     override __.SimilarityOperator(op) =
         CommandText <|

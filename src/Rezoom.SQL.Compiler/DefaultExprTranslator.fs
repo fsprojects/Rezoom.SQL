@@ -55,8 +55,6 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         | Negative -> "-"
         | Not -> "NOT"
         | BitNot -> "~"
-        | NotNull -> "NOT NULL"
-        | IsNull -> "IS NULL"
     override __.SimilarityOperator op =
         CommandText <|
         match op with
@@ -151,13 +149,6 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
                 yield this.UnaryOperator(un.Operator)
                 yield ws
                 yield! this.Expr(un.Operand, context)
-            }
-        | NotNull
-        | IsNull ->
-            seq {
-                yield! this.Expr(un.Operand, context)
-                yield ws
-                yield this.UnaryOperator(un.Operator)
             }
     override this.Between(between) =
         seq {

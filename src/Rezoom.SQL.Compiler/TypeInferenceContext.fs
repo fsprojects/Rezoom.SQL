@@ -187,10 +187,6 @@ module private TypeInferenceExtensions =
             | Negative
             | BitNot -> typeInference.Unify(source, operandType, InferredType.Number)
             | Not -> typeInference.Unify(source, operandType, InferredType.Boolean)
-            | IsNull
-            | NotNull ->
-                typeInference.ForceNullable(source, operandType.InferredNullable)
-                InferredType.Boolean
         member typeInference.AnonymousQueryInfo(columnNames) =
             {   Columns =
                     seq {

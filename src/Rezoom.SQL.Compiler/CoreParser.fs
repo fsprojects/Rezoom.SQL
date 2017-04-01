@@ -436,18 +436,6 @@ let private similarityOperator =
     -? +.op
     -|> similar
 
-let private notNullOperator =
-    %[
-        kw "NOTNULL" // Remove SQLite stuff?
-        %% kw "NOT" -? kw "NULL" -|> ()
-    ]
-    |> withSource
-    |>> fun op left ->
-        {   Expr.Source = op.Source
-            Value = UnaryExpr { Operator = NotNull; Operand = left }
-            Info = ()
-        }
-
 let private betweenOperator =
     let between invert input low high =
         {   Invert = Option.isSome invert
@@ -541,8 +529,6 @@ let private operators = [
         infixl "<>" <| binary NotEqual
         infixlc isOperator
         ternaryolc similarityOperator (kw "ESCAPE")
-        postfix (kw "ISNULL") <| unary IsNull // Remove SQLite stuff?
-        postfixc notNullOperator
         postfixc inOperator
         ternarylc betweenOperator (kw "AND")
     ]
