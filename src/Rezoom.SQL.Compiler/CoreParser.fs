@@ -1092,7 +1092,7 @@ let private createIndexStmt =
 
 let private qualifiedTableName =
     %% +.objectName
-    -- +.(zeroOrOne * indexHint)
+    -- +.(zeroOrOne * indexHint) // Remove SQLite stuff?
     -|> fun tableName hint ->
         {   TableName = tableName
             IndexHint = hint
@@ -1113,7 +1113,7 @@ let private deleteStmt =
             Limit = limit
         } |> DeleteStmt
 
-let private updateOr =
+let private updateOr = // Remove SQLite stuff?
     %% kw "OR"
     -- +.[
             %% kw "ROLLBACK" -|> UpdateOrRollback
@@ -1150,7 +1150,7 @@ let private updateStmt =
             Limit = limit
         } |> UpdateStmt
 
-let private insertOr =
+let private insertOr = // Remove SQLite stuff?
     let orPart =
         %% kw "OR"
         -- +.[
@@ -1171,7 +1171,7 @@ let private insertStmt =
     -- +.objectName
     -- +.parenthesizedColumnNames
     -- +.[
-            %% kw "DEFAULT" -- kw "VALUES" -|> None
+            %% kw "DEFAULT" -- kw "VALUES" -|> None // Remove SQLite stuff?
             %% +.selectStmt -|> Some
         ]
     -|> fun insert table cols data withClause ->
