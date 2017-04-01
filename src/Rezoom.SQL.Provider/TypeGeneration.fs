@@ -208,8 +208,13 @@ let private generateCommandMethod
                         | ListType elemTy ->
                             let tx = backend.ParameterTransform({ ty with Type = elemTy })
                             let dbType = Quotations.Expr.Value(tx.ParameterType)
-                            let arr = <@@ [| for e in ((%%ex) : obj array) -> %%tx.ValueTransform ex |] @@>
-                            <@@ ListParameter(%%dbType, [||]) @@>
+                            let inputArr = Expr.Coerce(ex, typeof<Array>)
+                            let lambda =
+                                let var = Var("x", typeof<obj>)
+                                Expr.Lambda(var, tx.ValueTransform (Expr.Var(var)))
+                            let arr =
+                                <@@ [| for ex in ((%%inputArr) : Array) -> ((%%lambda) : obj -> obj) ex |] @@>
+                            <@@ ListParameter(%%dbType, %%Expr.Coerce(arr, typeof<Array>)) @@>
                         | _ ->
                             let tx = backend.ParameterTransform(ty)
                             let dbType = Quotations.Expr.Value(tx.ParameterType)

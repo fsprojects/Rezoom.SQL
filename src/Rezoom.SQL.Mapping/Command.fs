@@ -55,7 +55,7 @@ type CommandData =
 type CommandCategory = CommandCategory of connectionName : string
 
 type CommandParameter =
-    | ListParameter of DbType * obj array
+    | ListParameter of DbType * Array
     | ScalarParameter of DbType * obj
 
 [<AbstractClass>]
