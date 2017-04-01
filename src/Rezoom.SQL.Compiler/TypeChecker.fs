@@ -599,7 +599,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             Or = insert.Or
             InsertInto = table
             Columns = columns // we *must* specify these because our order might not match DB's
-            Data = insert.Data |> Option.map (fun data -> checker.Select(data, SelfQueryShape.Known(knownShape)))
+            Data = checker.Select(insert.Data, SelfQueryShape.Known(knownShape))
         }
 
     member this.Update(update : UpdateStmt) =

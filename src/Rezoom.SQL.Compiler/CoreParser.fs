@@ -1119,10 +1119,7 @@ let private insertStmt =
     -- kw "INTO"
     -- +.objectName
     -- +.parenthesizedColumnNames
-    -- +.[
-            %% kw "DEFAULT" -- kw "VALUES" -|> None // Remove SQLite stuff?
-            %% +.selectStmt -|> Some
-        ]
+    -- +.selectStmt
     -|> fun insert table cols data withClause ->
         {   With = withClause
             Or = insert

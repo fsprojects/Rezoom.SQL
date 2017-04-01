@@ -286,7 +286,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             Or = insert.Or
             InsertInto = this.ObjectName(insert.InsertInto)
             Columns = insert.Columns
-            Data = Option.map this.Select insert.Data
+            Data = this.Select insert.Data
         }
     member this.Update(update : UpdateStmt<'t1, 'e1>) =
         {   With = Option.map this.WithClause update.With

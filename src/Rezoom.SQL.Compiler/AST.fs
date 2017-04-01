@@ -639,7 +639,7 @@ type InsertStmt<'t, 'e> =
         Or : InsertOr option
         InsertInto : ObjectName<'t>
         Columns : Name WithSource array
-        Data : SelectStmt<'t, 'e> option // either select/values, or "default values" if none
+        Data : SelectStmt<'t, 'e>
     }
 
 type CreateViewStmt<'t, 'e> =

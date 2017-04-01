@@ -468,10 +468,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield! insert.Columns |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
             yield text ")"
             yield ws
-            match insert.Data with
-            | None -> yield text "DEFAULT VALUES"
-            | Some data ->
-                yield! this.Select(data)
+            yield! this.Select(insert.Data)
         }
     override this.Update(update) =
         seq {

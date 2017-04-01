@@ -166,7 +166,7 @@ type private ReferenceFinder() =
     member this.Insert(insert : TInsertStmt) =
         this.ReferenceObject(WriteReference, insert.InsertInto)
         Option.iter this.WithClause insert.With
-        Option.iter this.Select insert.Data
+        this.Select insert.Data
     member this.Update(update : TUpdateStmt) =
         this.ReferenceObject(WriteReference, update.UpdateTable)
         Option.iter this.WithClause update.With
