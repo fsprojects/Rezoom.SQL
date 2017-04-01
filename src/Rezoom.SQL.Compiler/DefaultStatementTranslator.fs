@@ -221,24 +221,22 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield! this.Limit(limit)
         }
-    override this.ForeignKeyRule(rule) =
+    override this.ForeignKeyRule(EventRule(evt, handler)) =
         seq {
-            match rule with
-            | EventRule (evt, handler) ->
-                yield text "ON"
-                yield ws
-                yield
-                    match evt with
-                    | OnDelete -> text "DELETE"
-                    | OnUpdate -> text "UPDATE"
-                yield ws
-                yield
-                    match handler with
-                    | SetNull -> text "SET NULL"
-                    | SetDefault -> text "SET DEFAULT"
-                    | Cascade -> text "CASCADE"
-                    | Restrict -> text "RESTRICT"
-                    | NoAction -> text "NO ACTION"
+            yield text "ON"
+            yield ws
+            yield
+                match evt with
+                | OnDelete -> text "DELETE"
+                | OnUpdate -> text "UPDATE"
+            yield ws
+            yield
+                match handler with
+                | SetNull -> text "SET NULL"
+                | SetDefault -> text "SET DEFAULT"
+                | Cascade -> text "CASCADE"
+                | Restrict -> text "RESTRICT"
+                | NoAction -> text "NO ACTION"
         }
     override this.ForeignKeyClause(clause) =
         seq {

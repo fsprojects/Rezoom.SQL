@@ -1049,7 +1049,7 @@ let private deleteStmt =
             Limit = limit
         } |> DeleteStmt
 
-let private updateOr = // Remove SQLite stuff?
+let private updateOr =
     %% kw "OR"
     -- +.[
             %% kw "ROLLBACK" -|> UpdateOrRollback
@@ -1086,7 +1086,7 @@ let private updateStmt =
             Limit = limit
         } |> UpdateStmt
 
-let private insertOr = // Remove SQLite stuff?
+let private insertOr =
     let orPart =
         %% kw "OR"
         -- +.[

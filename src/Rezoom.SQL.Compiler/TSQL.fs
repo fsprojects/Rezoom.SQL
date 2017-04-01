@@ -492,6 +492,35 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield! this.CreateTableDefinition(create.Name, def)
         }
+    override this.Update(update) =
+        match update.Or with
+        | None ->
+            base.Update(update)
+        | Some _ ->
+            failAt update.UpdateTable.Source "UPDATE OR clause is not supported in TSQL"
+    override this.Insert(insert) =
+        match insert.Or with
+        | None ->
+            base.Insert(insert)
+        | Some _ ->
+            failAt insert.InsertInto.Source "INSERT OR clause is not supported in TSQL"
+    override this.ForeignKeyRule(EventRule(evt, handler)) =
+        seq {
+            yield text "ON"
+            yield ws
+            yield
+                match evt with
+                | OnDelete -> text "DELETE"
+                | OnUpdate -> text "UPDATE"
+            yield ws
+            yield
+                match handler with
+                | SetNull -> text "SET NULL"
+                | SetDefault -> text "SET DEFAULT"
+                | Cascade -> text "CASCADE"
+                | Restrict -> fail "RESTRICT is not supported in TSQL"
+                | NoAction -> text "NO ACTION"
+        }
 
 type TSQLMigrationBackend(settings : ConnectionStringSettings) =
     inherit DefaultMigrationBackend(settings)
