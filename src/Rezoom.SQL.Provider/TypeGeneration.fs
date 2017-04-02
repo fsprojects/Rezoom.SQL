@@ -54,6 +54,12 @@ let private toRowTypeName (name : string) =
     // Must sanitize to remove things like * from the name.
     Regex.Replace(name, @"[^_a-zA-Z0-9]", fun m -> string (char (int m.Value.[0] % 26 + int 'A'))) + "Row"
 
+type private SerializableAttributeData() =
+    inherit CustomAttributeData()
+    override __.Constructor = typeof<SerializableAttribute>.GetConstructor(Type.EmptyTypes)
+    override __.ConstructorArguments = [||] :> IList<_>
+    override __.NamedArguments = [||] :> IList<_>
+
 type private BlueprintNoKeyAttributeData() =
     inherit CustomAttributeData()
     override __.Constructor = typeof<BlueprintNoKeyAttribute>.GetConstructor(Type.EmptyTypes)
@@ -101,6 +107,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
             , IsErased = false
             , HideObjectMethods = true
             )
+    ty.AddCustomAttribute(SerializableAttributeData())
     if not columnMap.HasSubMaps then
         ty.AddCustomAttribute(BlueprintNoKeyAttributeData())
     let fields = ResizeArray()
