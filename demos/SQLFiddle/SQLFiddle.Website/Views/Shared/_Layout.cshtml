@@ -7,14 +7,7 @@
     @Styles.Render("~/Content/css")
 </head>
 <body>
-    <div>
-        @RenderBody()
-        <hr />
-        <footer>
-            <p>&copy; 2017 by Robert Peele</p>
-        </footer>
-    </div>
-
+    @RenderBody()
     @Scripts.Render("~/bundles/jquery")
     @RenderSection("scripts", required: false)
 </body>

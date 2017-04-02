@@ -1,3 +1,29 @@
 ﻿<div>
-    Hello, world.
+    <div id="navbar">
+        Hello, world.
+    </div>
+    <div id="footer">
+        &copy; 2017 by Robert Peele
+    </div>
+    <div id="model-editor"></div>
+    <div id="command-editor"></div>
+    <div id="typechecker-output"></div>
 </div>
+@section scripts {
+    @Scripts.Render("~/bundles/ace")
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var setUpEditor = function (id) {
+                var editor = ace.edit(id);
+                var session = editor.getSession();
+                session.setMode('ace/mode/sql');
+                session.on('change', function () {
+                    
+                });
+
+            };
+            setUpEditor('model-editor');
+            setUpEditor('command-editor');
+        });
+    </script>
+}

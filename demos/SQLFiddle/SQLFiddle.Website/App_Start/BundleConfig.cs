@@ -9,10 +9,13 @@ namespace SQLFiddle.Website
         public static void RegisterBundles(BundleCollection bundles)
         {
             bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
-                        "~/Scripts/jquery-{version}.js"));
+                "~/Scripts/jquery-{version}.js"));
+
+            bundles.Add(new ScriptBundle("~/bundles/ace").Include(
+                "~/Scripts/ace.js", "~/Scripts/mode-sql.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
-                      "~/Content/Site.css"));
+                "~/Content/site.css"));
         }
     }
 }

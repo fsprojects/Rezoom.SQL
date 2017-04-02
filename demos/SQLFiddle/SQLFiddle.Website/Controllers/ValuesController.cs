@@ -7,7 +7,7 @@ using System.Web.Http;
 
 namespace SQLFiddle.Website.Controllers
 {
-    public class ValuesController : ApiController
+    public class FiddleApiController : ApiController
     {
         // GET api/values
         public IEnumerable<string> Get()

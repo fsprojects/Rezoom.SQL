@@ -1,1 +1,54 @@
-﻿
+﻿#navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+#model-editor, #command-editor {
+    position: fixed;
+    border: 1px solid black;
+    top: 30px;
+}
+
+#model-editor {
+    left: 0;
+    right: 50%;
+    bottom: 30px;
+}
+
+#command-editor {
+    right: 0;
+    left: 50%;
+    bottom: 230px;
+}
+
+#typechecker-output {
+    position: fixed;
+    right: 0;
+    left: 50%;
+    bottom: 30px;
+    height: 200px;
+    border: 1px solid black;
+}
+
+#typechecker-output.valid {
+    background: #ddffdd;
+}
+
+#typechecker-output {
+    background: #ffdddd;
+}
+
+#footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+#navbar, #footer {
+    background: #aaeeaa;
+    height: 30px;
+    padding: 5px 5px 0 5px;
+}
