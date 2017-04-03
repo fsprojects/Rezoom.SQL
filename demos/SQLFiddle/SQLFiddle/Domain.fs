@@ -16,7 +16,7 @@ let private errorFrom ty (exn : SQLCompilerException) =
     let startIndex, endIndex, message =
         match exn with
         | :? SourceException as src ->
-            0, 0, src.Reason
+            src.SourceInfo.StartPosition.Index, src.SourceInfo.EndPosition.Index, src.Reason
         | :? SourceInfoException as src ->
             src.SourceInfo.StartPosition.Index, src.SourceInfo.EndPosition.Index, src.Message
         | _ ->

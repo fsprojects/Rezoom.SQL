@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Web.Http;
+using System.Net.Http;
+using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -7,19 +9,23 @@ namespace SQLFiddle.Website.Controllers
 {
     public class FiddleApiController : ApiController
     {
-        [HttpPost]
-        [Route("api/check")]
-        public async Task<CheckedFiddle> CheckFiddle()
-        {
-            var settings = new JsonSerializerSettings
+        private static readonly JsonSerializerSettings _settings = new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
             };
-            var example = JsonConvert.SerializeObject(new FiddleInput(FiddleBackend.SQLiteFiddle, "model", "command", true), settings);
 
+        [HttpPost]
+        [Route("api/check")]
+        public async Task<HttpResponseMessage> CheckFiddle()
+        {
             var rawInput = await Request.Content.ReadAsStringAsync();
-            var fiddleInput = JsonConvert.DeserializeObject<FiddleInput>(rawInput, settings);
-            return await Execution.Execute(Domain.checkFiddle(fiddleInput));
+            var fiddleInput = JsonConvert.DeserializeObject<FiddleInput>(rawInput, _settings);
+            var fiddleOutput = await Execution.Execute(Domain.checkFiddle(fiddleInput));
+            return new HttpResponseMessage
+            {
+                Content = new StringContent
+                    (JsonConvert.SerializeObject(fiddleOutput.Output, _settings), Encoding.UTF8, "application/json"),
+        };
         }
 
         [HttpGet]
