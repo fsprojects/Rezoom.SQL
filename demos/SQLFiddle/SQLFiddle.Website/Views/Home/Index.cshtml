@@ -10,6 +10,9 @@
     <div id="typechecker-output"></div>
 </div>
 @section scripts {
+    <script type="text/javascript">
+        window.require = function () { };
+    </script>
     @Scripts.Render("~/bundles/ace")
     <script type="text/javascript">
         $(document).ready(function () {
@@ -20,6 +23,31 @@
             var commandEditor = ace.edit('command-editor');
             var commandSession = commandEditor.getSession();
             commandSession.setMode('ace/mode/sql');
+            var removeMarker = function () { };
+            var onTypeChecked = function (data) {
+                $('#typechecker-output').text(JSON.stringify(data));
+                var cases = {
+                    FiddleInvalid: function () {
+                        var err = data.fields[0];
+                        var session = ({ ModelError: modelSession, CommandError: commandSession })[err.type.case];
+                        var row = 0;
+                        var col = 0;
+                        session.setAnnotations([{ row: row, column: col, text: err.message }]);
+                        removeMarker();
+                        var markerId = session.addMarker(session.getWordRange(row, 1), 'error-marker', 'fullLine');
+                        removeMarker = function () {
+                            session.removeMarker(markerId);
+                        };
+                    },
+                    FiddleValid: function () {
+                        removeMarker();
+                        modelSession.setAnnotations([]);
+                        commandSession.setAnnotations([]);
+                    }
+                };
+                cases[data.case]();
+            };
+
             var check = function () {
                 var json = JSON.stringify({
                     backend: { case: "SQLiteFiddle" },
@@ -34,10 +62,11 @@
                     dataType: 'json',
                     contentType: 'application/json;charset=utf-8',
                     success: function (data) {
+                        onTypeChecked(data);
                         $('#typechecker-output').text(JSON.stringify(data));
                     },
                     failure: function (err) {
-                        $('#typechecker-output').text(JSON.stringify(err));
+                        console.log(JSON.stringify(err));
                     },
                 })
             };
