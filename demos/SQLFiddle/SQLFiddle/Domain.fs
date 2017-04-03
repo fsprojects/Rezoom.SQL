@@ -81,5 +81,3 @@ let checkFiddle input =
         let output = validate input
         return { Input = input; Output = output }
     }
-
-let getStandardFiddles () = Persistence.getStandardFiddles ()

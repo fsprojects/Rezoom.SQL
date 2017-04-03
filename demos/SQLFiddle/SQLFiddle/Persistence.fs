@@ -25,8 +25,8 @@ let private sha1 (fiddleData :  FiddleInput) =
     hasher.Hash
 
 type SaveFiddleSQL = SQL<"""
-insert into Fiddles(SHA1, Backend, Model, Command, Valid)
-select @sha1, @backend, @model, @command, @valid
+insert into Fiddles(SHA1, Backend, Model, Command)
+select @sha1, @backend, @model, @command
 where not exists(select null x from Fiddles where SHA1 = @sha1)
 """>
 
@@ -40,15 +40,14 @@ let saveFiddle fiddleData =
                 , fiddleData.Command
                 , fiddleData.Model
                 , sha1
-                , fiddleData.Valid
                 )
         do! cmd.Plan()
         return FiddleId sha1
     }
 
 type GetFiddleSQL = SQL<"""
-select Backend, Model, Command, Valid from Fiddles
-where not Deleted and SHA1 = @sha1
+select Backend, Model, Command from Fiddles
+where SHA1 = @sha1
 """>
 
 let getFiddle (FiddleId sha1) =
@@ -62,22 +61,5 @@ let getFiddle (FiddleId sha1) =
                 {   Backend = backend
                     Model = found.Model
                     Command = found.Command
-                    Valid = found.Valid
                 }
-    }
-
-type GetStandardFiddlesSQL = SQL<"""
-select SHA1, Title from StandardFiddles
-order by Title
-""">
-
-let getStandardFiddles () =
-    plan {
-        let! results = GetStandardFiddlesSQL.Command().Plan()
-        return
-            [ for result in results ->
-                {   Id = FiddleId result.SHA1
-                    Title = result.Title
-                }
-            ]
     }

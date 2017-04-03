@@ -46,7 +46,6 @@ type FiddleInput =
     {   Backend : FiddleBackend
         Model : string
         Command : string
-        Valid : bool
     }
 
 type FiddleErrorType =
@@ -89,9 +88,4 @@ type FiddleOutput =
 type CheckedFiddle =
     {   Input : FiddleInput
         Output : FiddleOutput
-    }
-
-type StandardFiddle =
-    {   Id : FiddleId
-        Title : string
     }
