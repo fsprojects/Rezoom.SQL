@@ -33,7 +33,7 @@ type SourceInfo =
         let mutable i = source.Length - 1
         let mutable inWord = false
         let mutable boundaryCount = 0
-        while i >= 0 && boundaryCount < SourceInfo.ContextLength do
+        while i >= 0 && i < source.Length && boundaryCount < SourceInfo.ContextLength do
             if source.[i] = '\r' || source.[i] = '\n' then
                 boundaryCount <- SourceInfo.ContextLength
             else
@@ -42,7 +42,7 @@ type SourceInfo =
                     boundaryCount <- boundaryCount + 1
                 inWord <- inWordNow
             i <- i - 1
-        i <- min (i + 1) (source.Length - 1)
+        i <- max 0 (min (i + 1) (source.Length - 1))
         source.Substring(i, source.Length - i)
     static member private ContextAfter(source : string) =
         let mutable i = 0
@@ -111,7 +111,7 @@ type SQLCompilerException(msg : string) =
 
 type SourceInfoException(msg : string, pos : SourceInfo) =
     inherit SQLCompilerException(msg)
-    member this.SourceInfo = pos
+    member __.SourceInfo = pos
 
 type SourceException(msg : string, pos : SourceInfo, source, fileName) =
     inherit SQLCompilerException
@@ -125,6 +125,7 @@ type SourceException(msg : string, pos : SourceInfo, source, fileName) =
         + "):" + Environment.NewLine
         + pos.ShowInSource(source)
         )
+    member __.SourceInfo = pos
     member __.FileName = fileName
     member __.Reason = msg
     member __.FullSourceContext = source

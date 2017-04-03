@@ -166,4 +166,5 @@ let parseStatements sourceDescription source =
         let sourceInfo = SourceInfo.OfPosition(translatePosition err.Position)
         use writer = new System.IO.StringWriter()
         err.WriteTo(writer, (fun _ _ _ _ -> ()))
-        failAt sourceInfo <| Error.parseError writer
+        let errMsg = Error.parseError writer
+        raise <| SourceException(errMsg, sourceInfo, source, sourceDescription)
