@@ -34,49 +34,53 @@
 
             var showTypeInfo = function (info) {
                 var $div = $('<div/>');
-                $div.append('<h4>Parameters</h4>');
-                (function () {
-                    var parameters = info.parameters;
-                    var $table = $('<table class="parameters"></table>');
-                    var $header = $('<tr></tr>');
-                    for (var i = 0; i < parameters.length; i++) {
-                        var $th = $('<th></th>').text('@@' + parameters[i].name);
-                        $header.append($th);
-                    }
-                    $table.append($header);
-                    var $row = $('<tr></tr>');
-                    for (var i = 0; i < parameters.length; i++) {
-                        var pty = parameters[i].type;
-                        var $th = $('<td></td>').text(formatTypeName(pty));
-                        $row.append($th);
-                    }
-                    $table.append($row);
-                    $div.append($table);
-                })();
 
-                $div.append('<h4>Result Sets</h4>');
-
-                var resultSets = info.resultSets;
-                for (var i = 0; i < resultSets.length; i++)
-                {
-                    var resultSet = resultSets[i].columns;
+                if (info.parameters.length > 0) {
+                    $div.append('<h4>Parameters</h4>');
                     (function () {
-                        var $table = $('<table class="result-set"></table>');
+                        var parameters = info.parameters;
+                        var $table = $('<table class="parameters"></table>');
                         var $header = $('<tr></tr>');
-                        for (var i = 0; i < resultSet.length; i++) {
-                            var $th = $('<th></th>').text(resultSet[i].name);
+                        for (var i = 0; i < parameters.length; i++) {
+                            var $th = $('<th></th>').text('@@' + parameters[i].name);
                             $header.append($th);
                         }
                         $table.append($header);
                         var $row = $('<tr></tr>');
-                        for (var i = 0; i < resultSet.length; i++) {
-                            var pty = resultSet[i].type;
+                        for (var i = 0; i < parameters.length; i++) {
+                            var pty = parameters[i].type;
                             var $th = $('<td></td>').text(formatTypeName(pty));
                             $row.append($th);
                         }
                         $table.append($row);
                         $div.append($table);
                     })();
+                }
+
+                if (info.resultSets.length > 0) {
+                    $div.append('<h4>Result Sets</h4>');
+
+                    var resultSets = info.resultSets;
+                    for (var i = 0; i < resultSets.length; i++) {
+                        var resultSet = resultSets[i].columns;
+                        (function () {
+                            var $table = $('<table class="result-set"></table>');
+                            var $header = $('<tr></tr>');
+                            for (var i = 0; i < resultSet.length; i++) {
+                                var $th = $('<th></th>').text(resultSet[i].name);
+                                $header.append($th);
+                            }
+                            $table.append($header);
+                            var $row = $('<tr></tr>');
+                            for (var i = 0; i < resultSet.length; i++) {
+                                var pty = resultSet[i].type;
+                                var $th = $('<td></td>').text(formatTypeName(pty));
+                                $row.append($th);
+                            }
+                            $table.append($row);
+                            $div.append($table);
+                        })();
+                    }
                 }
 
                 $output.html($div);
@@ -117,7 +121,9 @@
                 cases[data.case]();
             };
 
+            var lastCheck = new Date().getTime();
             var check = function () {
+                lastCheck = new Date().getTime();
                 var json = JSON.stringify({
                     backend: { case: "SQLiteFiddle" },
                     model: modelEditor.getValue(),
@@ -139,8 +145,29 @@
                 })
             };
 
-            modelSession.on('change', check);
-            commandSession.on('change', check);
+            var checkTimeout = undefined;
+            var debounceCheck = function () {
+                var model = modelEditor.getValue();
+                var command = commandEditor.getValue();
+                localStorage.setItem('rzsql-model', model);
+                localStorage.setItem('rzsql-command', command);
+                if (lastCheck + 2000 < new Date().getTime()) {
+                    check();
+                } else {
+                    if (checkTimeout !== undefined) {
+                        clearTimeout(checkTimeout);
+                        checkTimeout = undefined;
+                    }
+                    checkTimeout = setTimeout(check, 500);
+                }
+            };
+
+            modelEditor.setValue(localStorage.getItem('rzsql-model') || '');
+            commandEditor.setValue(localStorage.getItem('rzsql-command') || '');
+            modelSession.on('change', debounceCheck);
+            commandSession.on('change', debounceCheck);
+
+            check();
         });
     </script>
 }
