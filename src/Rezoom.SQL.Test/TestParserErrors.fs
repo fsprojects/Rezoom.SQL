@@ -14,3 +14,7 @@ let ``invalid CTE`` () =
             )
             select * from cte
         """
+
+[<Test>]
+let ``small input`` () =
+    expectError "SQ000: Expecting: end of input, whitespace, '--' or '/*'" "s"
