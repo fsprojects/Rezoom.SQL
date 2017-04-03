@@ -55,8 +55,11 @@ type FiddleErrorType =
 
 type FiddleError =
     {   Type : FiddleErrorType
-        StartIndex : int
-        EndIndex : int
+        StartLine : int
+        StartColumn : int
+        EndLine : int
+        EndColumn : int
+        Reason : string
         Message : string
     }
 

@@ -23,26 +23,95 @@
             var commandEditor = ace.edit('command-editor');
             var commandSession = commandEditor.getSession();
             commandSession.setMode('ace/mode/sql');
+
+            var $output = $('#typechecker-output');
+
+            var AceRange = ace.require('ace/range').Range;
+
+            var formatTypeName = function (ty) {
+                return ty.name.toLowerCase().replace(/[<>]/g, '') + (ty.nullable ? ' (nullable)' : '');
+            };
+
+            var showTypeInfo = function (info) {
+                var $div = $('<div/>');
+                $div.append('<h4>Parameters</h4>');
+                (function () {
+                    var parameters = info.parameters;
+                    var $table = $('<table class="parameters"></table>');
+                    var $header = $('<tr></tr>');
+                    for (var i = 0; i < parameters.length; i++) {
+                        var $th = $('<th></th>').text('@@' + parameters[i].name);
+                        $header.append($th);
+                    }
+                    $table.append($header);
+                    var $row = $('<tr></tr>');
+                    for (var i = 0; i < parameters.length; i++) {
+                        var pty = parameters[i].type;
+                        var $th = $('<td></td>').text(formatTypeName(pty));
+                        $row.append($th);
+                    }
+                    $table.append($row);
+                    $div.append($table);
+                })();
+
+                $div.append('<h4>Result Sets</h4>');
+
+                var resultSets = info.resultSets;
+                for (var i = 0; i < resultSets.length; i++)
+                {
+                    var resultSet = resultSets[i].columns;
+                    (function () {
+                        var $table = $('<table class="result-set"></table>');
+                        var $header = $('<tr></tr>');
+                        for (var i = 0; i < resultSet.length; i++) {
+                            var $th = $('<th></th>').text(resultSet[i].name);
+                            $header.append($th);
+                        }
+                        $table.append($header);
+                        var $row = $('<tr></tr>');
+                        for (var i = 0; i < resultSet.length; i++) {
+                            var pty = resultSet[i].type;
+                            var $th = $('<td></td>').text(formatTypeName(pty));
+                            $row.append($th);
+                        }
+                        $table.append($row);
+                        $div.append($table);
+                    })();
+                }
+
+                $output.html($div);
+            };
+
             var removeMarker = function () { };
             var onTypeChecked = function (data) {
-                $('#typechecker-output').text(JSON.stringify(data));
                 var cases = {
                     FiddleInvalid: function () {
                         var err = data.fields[0];
                         var session = ({ ModelError: modelSession, CommandError: commandSession })[err.type.case];
-                        var row = 0;
-                        var col = 0;
-                        session.setAnnotations([{ row: row, column: col, text: err.message }]);
+                        var row = Math.max(0, err.startLine - 1);
+                        var col = Math.max(0, err.startColumn - 1);
+                        session.setAnnotations([{ row: row, column: col, text: err.reason }]);
                         removeMarker();
-                        var markerId = session.addMarker(session.getWordRange(row, 1), 'error-marker', 'fullLine');
+                        
+                        var range = new AceRange(row, col, Math.max(0, err.endLine - 1), Math.max(0, err.endColumn - 1));
+                        var markerId = session.addMarker(range, 'error-marker');
                         removeMarker = function () {
                             session.removeMarker(markerId);
                         };
+
+                        $output.toggleClass('valid', false);
+
+                        $output.text(err.message);
                     },
                     FiddleValid: function () {
                         removeMarker();
                         modelSession.setAnnotations([]);
                         commandSession.setAnnotations([]);
+
+                        $output.toggleClass('valid', true);
+
+                        var ty = data.fields[0];
+                        $output.html(showTypeInfo(ty));
                     }
                 };
                 cases[data.case]();
@@ -63,7 +132,6 @@
                     contentType: 'application/json;charset=utf-8',
                     success: function (data) {
                         onTypeChecked(data);
-                        $('#typechecker-output').text(JSON.stringify(data));
                     },
                     failure: function (err) {
                         console.log(JSON.stringify(err));

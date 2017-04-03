@@ -13,17 +13,20 @@ let private backendOf fiddleBackend =
     | TSQLFiddle -> tsqlBackend
 
 let private errorFrom ty (exn : SQLCompilerException) =
-    let startIndex, endIndex, message =
+    let src, reason, message =
         match exn with
         | :? SourceException as src ->
-            src.SourceInfo.StartPosition.Index, src.SourceInfo.EndPosition.Index, src.Reason
+            src.SourceInfo, src.Reason, src.Message
         | :? SourceInfoException as src ->
-            src.SourceInfo.StartPosition.Index, src.SourceInfo.EndPosition.Index, src.Message
+            src.SourceInfo, src.Message, src.Message
         | _ ->
-            0, 0, exn.Message
+            SourceInfo.Invalid, exn.Message, exn.Message
     {   Type = ty
-        StartIndex = startIndex
-        EndIndex = endIndex
+        StartLine = src.StartPosition.Line
+        StartColumn = src.StartPosition.Column
+        EndLine = src.EndPosition.Line
+        EndColumn = src.EndPosition.Column
+        Reason = reason
         Message = message
     }
 

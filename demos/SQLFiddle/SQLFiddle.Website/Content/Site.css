@@ -1,4 +1,9 @@
-﻿#navbar {
+﻿h4 {
+    margin: 5px;
+    font-size: 14px;
+}
+
+#navbar {
     position: fixed;
     top: 0;
     left: 0;
@@ -38,6 +43,19 @@
 
 #typechecker-output {
     background: #ffdddd;
+    padding: 5px;
+    font-family: monospace;
+    overflow: auto;
+}
+
+#typechecker-output table {
+    border-collapse: collapse;
+    margin: 2px;
+}
+
+#typechecker-output td, #typechecker-output th {
+    border: 1px solid black;
+    padding: 1px 5px;
 }
 
 #footer {
