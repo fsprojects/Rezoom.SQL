@@ -2,8 +2,8 @@
 ( SHA1 binary(16) primary key
 , CreatedUtc datetime default(sysutcdatetime())
 , Backend string(8)
-, Model string(4096)
-, Command string(4096)
+, Model string
+, Command string
 , Valid bool
 , Deleted bool default(false)
 );

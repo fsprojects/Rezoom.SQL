@@ -13,17 +13,37 @@
     @Scripts.Render("~/bundles/ace")
     <script type="text/javascript">
         $(document).ready(function () {
-            var setUpEditor = function (id) {
-                var editor = ace.edit(id);
-                var session = editor.getSession();
-                session.setMode('ace/mode/sql');
-                session.on('change', function () {
-                    
-                });
+            var modelEditor = ace.edit('model-editor');
+            var modelSession = modelEditor.getSession();
+            modelSession.setMode('ace/mode/sql');
 
+            var commandEditor = ace.edit('command-editor');
+            var commandSession = commandEditor.getSession();
+            commandSession.setMode('ace/mode/sql');
+            var check = function () {
+                var json = JSON.stringify({
+                    backend: { case: "SQLiteFiddle" },
+                    model: modelEditor.getValue(),
+                    command: commandEditor.getValue(),
+                    valid: false,
+                });
+                $.ajax({
+                    type: 'POST',
+                    url: '/api/check',
+                    data: json,
+                    dataType: 'json',
+                    contentType: 'application/json;charset=utf-8',
+                    success: function (data) {
+                        $('#typechecker-output').text(JSON.stringify(data));
+                    },
+                    failure: function (err) {
+                        $('#typechecker-output').text(JSON.stringify(err));
+                    },
+                })
             };
-            setUpEditor('model-editor');
-            setUpEditor('command-editor');
+
+            modelSession.on('change', check);
+            commandSession.on('change', check);
         });
     </script>
 }
