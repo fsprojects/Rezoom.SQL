@@ -39,7 +39,7 @@ type FiddleId =
                     if highNibble < 0 then highNibble <- nibble
                     else
                         yield byte ((highNibble <<< 4) ||| nibble)
-                        highNibble <- 0
+                        highNibble <- -1
         |] |> FiddleId
 
 type FiddleInput =

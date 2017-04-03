@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using System.Web.Mvc;
+﻿using System.Web.Mvc;
 
 namespace SQLFiddle.Website.Controllers
 {
@@ -10,7 +6,7 @@ namespace SQLFiddle.Website.Controllers
     {
         public ActionResult Index()
         {
-            ViewBag.Title = "Home Page";
+            ViewBag.Title = "RZSQL Fiddle";
 
             return View();
         }

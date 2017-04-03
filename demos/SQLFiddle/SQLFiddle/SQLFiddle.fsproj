@@ -59,7 +59,7 @@
     <Compile Include="Domain.fs" />
     <Compile Include="Execution.fs" />
     <Content Include="packages.config" />
-    <None Include="V1.model.sql" />
+    <Content Include="V1.model.sql" />
     <EmbeddedResource Include="rzsql.json" />
     <Content Include="App.config" />
   </ItemGroup>

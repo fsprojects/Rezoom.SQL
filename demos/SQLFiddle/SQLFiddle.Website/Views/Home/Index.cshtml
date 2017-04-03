@@ -1,6 +1,6 @@
 ﻿<div>
     <div id="navbar">
-        Hello, world.
+        <button type="button" id="save-button">Save</button>
     </div>
     <div id="footer">
         &copy; 2017 by Robert Peele
@@ -10,9 +10,6 @@
     <div id="typechecker-output"></div>
 </div>
 @section scripts {
-    <script type="text/javascript">
-        window.require = function () { };
-    </script>
     @Scripts.Render("~/bundles/ace")
     <script type="text/javascript">
         $(document).ready(function () {
@@ -121,34 +118,49 @@
                 cases[data.case]();
             };
 
-            var lastCheck = new Date().getTime();
-            var check = function () {
-                lastCheck = new Date().getTime();
-                var json = JSON.stringify({
+            var fiddleInput = function () {
+                return {
                     backend: { case: "SQLiteFiddle" },
                     model: modelEditor.getValue(),
                     command: commandEditor.getValue(),
                     valid: false,
-                });
+                };
+            };
+
+            var lastCheck = new Date().getTime();
+            var check = function () {
+                lastCheck = new Date().getTime();
                 $.ajax({
                     type: 'POST',
                     url: '/api/check',
-                    data: json,
+                    data: JSON.stringify(fiddleInput()),
                     dataType: 'json',
                     contentType: 'application/json;charset=utf-8',
                     success: function (data) {
                         onTypeChecked(data);
                     },
-                    failure: function (err) {
+                    error: function (err) {
                         console.log(JSON.stringify(err));
                     },
-                })
+                });
             };
 
+            var currentHash = undefined;
+            var setHash = function (fiddleId) {
+                if (fiddleId) {
+                    fiddleId = '#' + fiddleId;
+                }
+                currentHash = fiddleId;
+                window.location.hash = currentHash;
+            }
+
             var checkTimeout = undefined;
+            var checkDisabled = false;
             var debounceCheck = function () {
+                if (checkDisabled) return;
                 var model = modelEditor.getValue();
                 var command = commandEditor.getValue();
+                setHash('');
                 localStorage.setItem('rzsql-model', model);
                 localStorage.setItem('rzsql-command', command);
                 if (lastCheck + 2000 < new Date().getTime()) {
@@ -162,12 +174,56 @@
                 }
             };
 
-            modelEditor.setValue(localStorage.getItem('rzsql-model') || '');
-            commandEditor.setValue(localStorage.getItem('rzsql-command') || '');
+            modelEditor.setValue(localStorage.getItem('rzsql-model') || '', 1);
+            commandEditor.setValue(localStorage.getItem('rzsql-command') || '', 1);
             modelSession.on('change', debounceCheck);
             commandSession.on('change', debounceCheck);
 
-            check();
+            var loadHash = function () {
+                if (!window.location.hash || window.location.hash === currentHash) return;
+                currentHash = window.location.hash;
+                var fiddleId = window.location.hash.substring(1);
+                $.ajax({
+                    type: 'GET',
+                    url: '/api/get/' + fiddleId,
+                    dataType: 'json',
+                    success: function (data) {
+                        checkDisabled = true;
+                        modelEditor.setValue(data.input.model, -1);
+                        commandEditor.setValue(data.input.command, -1);
+                        checkDisabled = false;
+                        onTypeChecked(data.output);
+                    },
+                    error: function (err) {
+                        alert('No such fiddle');
+                        window.location.hash = '';
+                    },
+                });
+            };
+            if (window.location.hash) {
+                loadHash();
+            } else {
+                check();
+            }
+            setInterval(loadHash, 100);
+
+            var saveFiddle = function () {
+                $.ajax({
+                    type: 'POST',
+                    url: '/api/save',
+                    data: JSON.stringify(fiddleInput()),
+                    dataType: 'json',
+                    contentType: 'application/json;charset=utf-8',
+                    success: function (data) {
+                        setHash(data.id);
+                    },
+                    error: function (err) {
+                        alert(JSON.stringify(err));
+                    },
+                });
+            };
+
+            $('#save-button').click(saveFiddle);
         });
     </script>
 }
