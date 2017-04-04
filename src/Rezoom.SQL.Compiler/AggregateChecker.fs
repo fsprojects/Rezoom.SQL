@@ -25,11 +25,12 @@ let rec private aggReferencesSelectCore (select : InfSelectCore) =
         | None -> ()
         | Some where ->
             for ref in aggReferences where do
+                // where clause runs prior to aggregation, so we don't yield any aggreferences from it
+                // (because column refs are ok) but we do yell if aggregate functions are used
                 match ref with
                 | Aggregate source ->
                     failAt source Error.aggregateInWhereClause
                 | _ -> ()
-            yield! aggReferences where
     }
 
 and private aggReferencesCompoundTerm (term : InfCompoundTerm) =
