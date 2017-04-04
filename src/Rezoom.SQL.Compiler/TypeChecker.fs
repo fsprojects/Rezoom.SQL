@@ -18,6 +18,11 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
     let exprChecker = ExprTypeChecker(cxt, scope, this)
     member this.ObjectName(name) = exprChecker.ObjectName(name)
     member this.ObjectName(name, allowNotFound) = exprChecker.ObjectName(name, allowNotFound)
+    member this.SchemaTableName(name) =
+        let name = exprChecker.ObjectName(name)
+        match name.Info with
+        | TableLike { Table = TableReference _ } -> name
+        | _ -> failAt name.Source <| Error.objectNotATable name
     member this.Expr(expr, knownType) = exprChecker.Expr(expr, knownType)
     member this.Expr(expr) = exprChecker.Expr(expr)
     member this.Scope = scope
@@ -463,7 +468,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             AddColumn <| this.ColumnDef(cdef, None)
 
     member this.CreateIndex(createIndex : CreateIndexStmt) =
-        let tableName = this.ObjectName(createIndex.TableName)
+        let tableName = this.SchemaTableName(createIndex.TableName)
         let checker =
             this.WithScope({ scope with FromClause = Some <| InferredFromClause.FromSingleObject(tableName) })
         {   Unique = createIndex.Unique
@@ -541,7 +546,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             | Some withClause ->
                 let checker, withClause = this.WithClause(withClause)
                 checker, Some withClause
-        let deleteFrom = checker.ObjectName(delete.DeleteFrom)
+        let deleteFrom = checker.SchemaTableName(delete.DeleteFrom)
         let checker =
             checker.WithScope
                 ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(deleteFrom) |> Some })
@@ -609,7 +614,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             | Some withClause ->
                 let checker, withClause = this.WithClause(withClause)
                 checker, Some withClause
-        let updateTable = checker.ObjectName(update.UpdateTable)
+        let updateTable = checker.SchemaTableName(update.UpdateTable)
         let checker =
             checker.WithScope
                 ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(updateTable) |> Some })
@@ -637,7 +642,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         match stmt with
         | AlterTableStmt alter ->
             AlterTableStmt <|
-                let tbl = this.ObjectName(alter.Table)
+                let tbl = this.SchemaTableName(alter.Table)
                 {   Table = tbl
                     Alteration = this.Alteration(tbl, alter.Alteration)
                 }

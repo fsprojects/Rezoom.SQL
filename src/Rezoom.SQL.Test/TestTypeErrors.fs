@@ -93,3 +93,17 @@ let ``insert into view bad`` () =
         """
             insert into ViewUsers(Id) values (1)
         """
+
+[<Test>]
+let ``update view bad`` () =
+    expectError (Error.objectNotATable "ViewUsers")
+        """
+            update ViewUsers set Id = 1
+        """
+
+[<Test>]
+let ``delete from view bad`` () =
+    expectError (Error.objectNotATable "ViewUsers")
+        """
+            delete from ViewUsers
+        """
