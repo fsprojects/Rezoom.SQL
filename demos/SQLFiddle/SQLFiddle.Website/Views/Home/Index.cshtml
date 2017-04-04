@@ -1,6 +1,14 @@
 ﻿<div>
     <div id="navbar">
-        <button type="button" id="save-button">Save</button>
+        <button type="button" id="save">Save</button>
+        <span>Backend:</span>
+        <select id="backend">
+            <option value="SQLiteFiddle">SQLite</option>
+            <option value="TSQLFiddle">T-SQL</option>
+        </select>
+        <span style="float: right">
+            <a href="https://github.com/rspeele/Rezoom.SQL">Powered by RZSQL</a>
+        </span>
     </div>
     <div id="footer">
         &copy; 2017 by Robert Peele
@@ -21,7 +29,9 @@
             var commandSession = commandEditor.getSession();
             commandSession.setMode('ace/mode/sql');
 
+            var $backend = $('#backend');
             var $output = $('#typechecker-output');
+            var $save = $('#save');
 
             var AceRange = ace.require('ace/range').Range;
 
@@ -120,7 +130,7 @@
 
             var fiddleInput = function () {
                 return {
-                    backend: { case: "SQLiteFiddle" },
+                    backend: { case: $backend.val() },
                     model: modelEditor.getValue(),
                     command: commandEditor.getValue(),
                     valid: false,
@@ -149,6 +159,11 @@
             var setHash = function (fiddleId) {
                 if (fiddleId) {
                     fiddleId = '#' + fiddleId;
+                    $save.text(fiddleId);
+                    $save.attr('disabled', true);
+                } else {
+                    $save.text('Save');
+                    $save.attr('disabled', false);
                 }
                 currentHash = fiddleId;
                 window.location.hash = currentHash;
@@ -161,6 +176,7 @@
                 var model = modelEditor.getValue();
                 var command = commandEditor.getValue();
                 setHash('');
+                localStorage.setItem('rzsql-backend', $backend.val());
                 localStorage.setItem('rzsql-model', model);
                 localStorage.setItem('rzsql-command', command);
                 if (lastCheck + 2000 < new Date().getTime()) {
@@ -174,10 +190,12 @@
                 }
             };
 
+            $backend.val(localStorage.getItem('rzsql-backend'));
             modelEditor.setValue(localStorage.getItem('rzsql-model') || '', 1);
             commandEditor.setValue(localStorage.getItem('rzsql-command') || '', 1);
             modelSession.on('change', debounceCheck);
             commandSession.on('change', debounceCheck);
+            $backend.change(debounceCheck);
 
             var loadHash = function () {
                 if (!window.location.hash || window.location.hash === currentHash) return;
@@ -189,9 +207,11 @@
                     dataType: 'json',
                     success: function (data) {
                         checkDisabled = true;
+                        $backend.val(data.input.backend.case);
                         modelEditor.setValue(data.input.model, -1);
                         commandEditor.setValue(data.input.command, -1);
                         checkDisabled = false;
+                        setHash(fiddleId);
                         onTypeChecked(data.output);
                     },
                     error: function (err) {
@@ -223,7 +243,7 @@
                 });
             };
 
-            $('#save-button').click(saveFiddle);
+            $save.click(saveFiddle);
         });
     </script>
 }

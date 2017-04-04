@@ -19,21 +19,21 @@
 #model-editor {
     left: 0;
     right: 50%;
-    bottom: 30px;
+    bottom: 20px;
 }
 
 #command-editor {
     right: 0;
     left: 50%;
-    bottom: 230px;
+    bottom: 260px;
 }
 
 #typechecker-output {
     position: fixed;
     right: 0;
     left: 50%;
-    bottom: 30px;
-    height: 200px;
+    bottom: 20px;
+    height: 230px;
     border: 1px solid black;
 }
 
@@ -63,15 +63,38 @@
     bottom: 0;
     left: 0;
     right: 0;
+    line-height: 20px;
+    height: 20px;
+}
+
+#navbar {
+    height: 30px;
 }
 
 #navbar, #footer {
     background: #aaeeaa;
-    height: 30px;
     padding: 5px 5px 0 5px;
+    font-family: monospace;
 }
 
 .error-marker {
     position: absolute;
     background: #ffdddd;
+}
+
+#save {
+    width: 350px;
+    margin-right: 20px;
+}
+
+#navbar a {
+    color: black;
+}
+
+#navbar a:visited {
+    color: #666;
+}
+
+#navbar a:hover {
+    font-weight: bold;
 }
