@@ -31,25 +31,25 @@ let private errorFrom ty (exn : SQLCompilerException) =
     }
 
 let private typeFrom (columnType : ColumnType) =
-        {   Nullable = columnType.Nullable
-            Name = columnType.Type.ToString()
+        {   FiddleType.Nullable = columnType.Nullable
+            FiddleType.Name = columnType.Type.ToString()
         }
 
 let private parameterFrom (NamedParameter bindParam, columnType : ColumnType) =
-    {   Name = bindParam.Value
-        Type = typeFrom columnType
+    {   FiddleTypedName.Name = bindParam.Value
+        FiddleTypedName.Type = typeFrom columnType
     }
 
 let private resultSetFrom (queryInfo : QueryExprInfo<ColumnType>) =
-    {   Columns = queryInfo.Columns |> Seq.map (fun c ->
+    {   FiddleResultSet.Columns = queryInfo.Columns |> Seq.map (fun c ->
             {   Name = c.ColumnName.Value
                 Type = typeFrom c.Expr.Info.Type
             }) |> Seq.toList
     }
 
 let private typeInfoFrom (effect : CommandEffect) =
-    {   Parameters = effect.Parameters |> Seq.map parameterFrom |> Seq.toList
-        ResultSets = effect.ResultSets() |> Seq.map resultSetFrom |> Seq.toList
+    {   FiddleTypeInformation.Parameters = effect.Parameters |> Seq.map parameterFrom |> Seq.toList
+        FiddleTypeInformation.ResultSets = effect.ResultSets() |> Seq.map resultSetFrom |> Seq.toList
     }
 
 let private validate (input : FiddleInput) =
