@@ -471,6 +471,12 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         let tableName = this.SchemaTableName(createIndex.TableName)
         let checker =
             this.WithScope({ scope with FromClause = Some <| InferredFromClause.FromSingleObject(tableName) })
+        let query = tableName.Info.Query
+        for { Source = source; Value = (col, _) } in createIndex.IndexedColumns do
+            match query.ColumnByName(col) with
+            | Found _ -> ()
+            | NotFound _ -> failAt source <| Error.noSuchColumn col
+            | Ambiguous _ -> failAt source <| Error.ambiguousColumn col
         {   Unique = createIndex.Unique
             IndexName = this.ObjectName(createIndex.IndexName, allowNotFound = true)
             TableName = tableName

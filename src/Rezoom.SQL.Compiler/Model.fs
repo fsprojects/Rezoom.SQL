@@ -74,7 +74,8 @@ and SchemaConstraint =
                     | _ -> OtherConstraintType
                 ty, constr.Name,
                     match constr.TableConstraintType with
-                    | TableIndexConstraint constr -> constr.IndexedColumns |> Seq.map fst |> Set.ofSeq
+                    | TableIndexConstraint constr ->
+                        constr.IndexedColumns |> Seq.map (fun w -> fst w.Value) |> Set.ofSeq
                     | TableForeignKeyConstraint (names, _) -> names |> Seq.map (fun v -> v.Value) |> Set.ofSeq
                     | TableCheckConstraint _ -> Set.empty
         }
@@ -108,7 +109,7 @@ and SchemaTable =
                 for constr in def.Constraints do
                     match constr.TableConstraintType with
                     | TableIndexConstraint { Type = PrimaryKey; IndexedColumns = indexed } ->
-                        for name, _ in indexed -> name
+                        for { Value = name, _ } in indexed -> name
                     | _ -> ()
             } |> Set.ofSeq
         let tableColumns =

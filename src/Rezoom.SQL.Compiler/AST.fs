@@ -543,7 +543,7 @@ type TableIndexConstraintType =
 
 type TableIndexConstraintClause<'t, 'e> =
     {   Type : TableIndexConstraintType
-        IndexedColumns : (Name * OrderDirection) array
+        IndexedColumns : (Name * OrderDirection) WithSource array
     }
 
 type TableConstraintType<'t, 'e> =
@@ -553,7 +553,7 @@ type TableConstraintType<'t, 'e> =
     member this.DefaultName() =
         match this with
         | TableIndexConstraint con ->
-            String.concat "_" [ for name, _ in con.IndexedColumns -> name.Value ]
+            String.concat "_" [ for { Value = name, _ } in con.IndexedColumns -> name.Value ]
             + "_"
             + (match con.Type with
                 | PrimaryKey -> "PK"
@@ -590,7 +590,7 @@ type CreateIndexStmt<'t, 'e> =
     {   Unique : bool
         IndexName : ObjectName<'t>
         TableName : ObjectName<'t>
-        IndexedColumns : (Name * OrderDirection) array
+        IndexedColumns : (Name * OrderDirection) WithSource array
         Where : Expr<'t, 'e> option
     }
 

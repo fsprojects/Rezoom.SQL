@@ -22,3 +22,10 @@ let ``duplicate create table complains`` () =
             create view Users as
                 select * from Users;
         """
+
+[<Test>]
+let ``no such column to index`` () =
+    expectError (Error.noSuchColumn "Goober")
+        """
+            create index IX_Users_Goober on Users(Id, Goober);
+        """

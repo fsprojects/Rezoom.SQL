@@ -129,7 +129,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 {   SchemaName = schema.SchemaName
                     TableName = table.TableName
                     IndexName = create.IndexName.ObjectName
-                    Columns = create.IndexedColumns |> Seq.map fst |> Set.ofSeq
+                    Columns = create.IndexedColumns |> Seq.map (fun w -> fst w.Value) |> Set.ofSeq
                 }
             let table =
                 { table with

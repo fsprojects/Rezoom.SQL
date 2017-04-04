@@ -308,7 +308,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                     | PrimaryKey -> "PRIMARY KEY"
                     | Unique -> "UNIQUE"
                 yield text "("
-                yield! indexClause.IndexedColumns |> Seq.map this.IndexedColumn |> join ","
+                yield! indexClause.IndexedColumns |> Seq.map (fun v -> this.IndexedColumn(v.Value)) |> join ","
                 yield text ")"
             | TableForeignKeyConstraint (names, references) ->
                 yield text "FOREIGN KEY("
@@ -417,7 +417,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield ws
             yield! this.Expr.ObjectName(create.TableName)
             yield text "("
-            yield! create.IndexedColumns |> Seq.map this.IndexedColumn |> join ","
+            yield! create.IndexedColumns |> Seq.map (fun w -> this.IndexedColumn(w.Value)) |> join ","
             yield text ")"
             match create.Where with
             | None -> ()
