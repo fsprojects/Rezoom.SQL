@@ -42,8 +42,8 @@ let private parameterFrom (NamedParameter bindParam, columnType : ColumnType) =
 
 let private resultSetFrom (queryInfo : QueryExprInfo<ColumnType>) =
     {   FiddleResultSet.Columns = queryInfo.Columns |> Seq.map (fun c ->
-            {   Name = c.ColumnName.Value
-                Type = typeFrom c.Expr.Info.Type
+            {   FiddleTypedName.Name = c.ColumnName.Value
+                FiddleTypedName.Type = typeFrom c.Expr.Info.Type
             }) |> Seq.toList
     }
 
