@@ -7,19 +7,25 @@ open Rezoom
 open Rezoom.SQL
 open Rezoom.SQL.Plans
 
+let private noNulls bytes =
+    for by in bytes do
+        if by = 0uy then
+            failwith "No NULL bytes allowed!"
+    bytes
+
 let private sha1 (fiddleData :  FiddleInput) =
     use hasher = SHA1.Create()
-    let modelBytes = Encoding.UTF8.GetBytes(fiddleData.Model)
+    let modelBytes = Encoding.UTF8.GetBytes(fiddleData.Model) |> noNulls
     ignore <| hasher.TransformBlock(modelBytes, 0, modelBytes.Length, modelBytes, 0)
 
     ignore <| hasher.TransformBlock([| 0uy |], 0, 1, [| 0uy |], 0)
 
-    let commandBytes = Encoding.UTF8.GetBytes(fiddleData.Command)
+    let commandBytes = Encoding.UTF8.GetBytes(fiddleData.Command) |> noNulls
     ignore <| hasher.TransformBlock(commandBytes, 0, commandBytes.Length, commandBytes, 0)
     
     ignore <| hasher.TransformBlock([| 0uy |], 0, 1, [| 0uy |], 0)
 
-    let backendBytes = Encoding.UTF8.GetBytes(fiddleData.Backend.ToString())
+    let backendBytes = Encoding.UTF8.GetBytes(fiddleData.Backend.ToString()) |> noNulls
     ignore <| hasher.TransformFinalBlock(backendBytes, 0, backendBytes.Length)
 
     hasher.Hash
