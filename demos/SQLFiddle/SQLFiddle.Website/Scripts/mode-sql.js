@@ -8,8 +8,9 @@ var SqlHighlightRules = function() {
 
     var keywords = (
         "select|insert|update|delete|from|where|and|or|group|by|order|limit|offset|having|as|case|" +
-        "when|else|end|type|left|right|join|on|outer|desc|asc|union|create|table|primary|key|if|" +
-        "foreign|not|references|default|null|inner|cross|natural|database|drop|grant"
+        "when|then|else|end|type|left|right|join|on|outer|desc|asc|union|create|alter|table|index|" +
+        "foreign|not|references|default|null|inner|cross|natural|drop|vendor|imagine|like|exists|" +
+        "collate|distinct|escape|between|view|primary|key"
     );
 
     var builtinConstants = (
@@ -17,13 +18,12 @@ var SqlHighlightRules = function() {
     );
 
     var builtinFunctions = (
-        "avg|count|first|last|max|min|sum|ucase|lcase|mid|len|round|rank|now|format|" + 
-        "coalesce|ifnull|isnull|nvl"
+        "avg|cast|count|max|min|sum|round|rank|now|" +
+        "coalesce|ifnull|isnull"
     );
 
     var dataTypes = (
-        "int|numeric|decimal|date|varchar|char|bigint|float|double|bit|binary|text|set|timestamp|" +
-        "money|real|number|integer"
+        "int|int32|int64|int16|int8|decimal|datetime|datetimeoffset|float|float32|float64|bool|binary|string"
     );
 
     var keywordMapper = this.createKeywordMapper({
