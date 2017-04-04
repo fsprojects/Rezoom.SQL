@@ -83,6 +83,12 @@ let ``create table with column list and fk`` () =
     """
 
 [<Test>]
+let ``between`` () =
+    roundtrip """
+        select * from Users where Id between 1+1 and 2+2
+    """
+
+[<Test>]
 let ``create index`` () =
     roundtrip """
         create index IX_User on Users
