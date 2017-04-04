@@ -386,17 +386,21 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 let fromChecker, compound = checker.CompoundTop(select.Compound, selfShape)
                 let limit = Option.map checker.Limit select.Limit
                 let info =
-                    let merge attemptAdd (leftInfo : _ ObjectInfo) (rightInfo : _ ObjectInfo) =
+                    let eitherNull (t1 : InferredType) (t2 : InferredType) =
+                        { t1 with InferredNullable = InferredNullable.Either(t1.InferredNullable, t2.InferredNullable) }
+                    let merge attemptAdd (leftInfo : InferredType ObjectInfo) (rightInfo : InferredType ObjectInfo) =
                         match attemptAdd, leftInfo, rightInfo with
                         | true,
-                            TableLike({ Query = { StaticRowCount = Some left } as leftQuery } as leftTable),
-                            TableLike { Query = { StaticRowCount = Some right } } ->
-                                { leftTable with
-                                    Query = { leftQuery with StaticRowCount = Some (left + right) }
+                            TableLike({ Query = { StaticRowCount = Some left } as lq } as lt),
+                            TableLike { Query = { StaticRowCount = Some right } as rq } ->
+                                let q = lq.MergeInfo(rq, eitherNull)
+                                { lt with
+                                    Query = { q with StaticRowCount = Some (left + right) }
                                 } |> TableLike
-                        | _, TableLike ({ Query = q } as o), _ ->
-                            TableLike { o with Query = { q with StaticRowCount = None } }
-                        | _ , left, _ -> left
+                        | _, TableLike ({ Query = q } as lt), right ->
+                            let q = q.MergeInfo(right.Query, eitherNull)
+                            TableLike { lt with Query = { q with StaticRowCount = None } }
+                        | _ -> bug "Compound expr info must always be table-like!"
                     match limit, compound.Value.MergeInfo(merge true, merge false) with
                     | Some _, TableLike ({ Query = { StaticRowCount = Some _ } as query } as table) ->
                         // if we have any limit expr, drop the static row count

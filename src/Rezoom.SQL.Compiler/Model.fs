@@ -246,6 +246,17 @@ and QueryExprInfo<'t> =
         {   Columns = this.Columns |> Seq.map (fun c -> c.Map(f)) |> toReadOnlyList
             StaticRowCount = this.StaticRowCount
         }
+    member this.MergeInfo(other : QueryExprInfo<'t>, merge : 't -> 't -> 't) =
+        {   Columns =
+                (this.Columns, other.Columns)
+                ||> Seq.map2 (fun c1 c2 ->
+                    { c1 with
+                        Expr =
+                            { c1.Expr with
+                                Info = { c1.Expr.Info with Type = merge c1.Expr.Info.Type c2.Expr.Info.Type } } })
+                |> ResizeArray
+            StaticRowCount = this.StaticRowCount
+        }
 
 and TableReference =
     | TableReference of SchemaTable

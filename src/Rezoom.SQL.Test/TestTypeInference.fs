@@ -173,3 +173,18 @@ let ``union null from top`` () =
     let resultSets = cmd.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, resultSets.Length)
     Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Nullable)
+
+[<Test>]
+let ``union null in values clause`` () =
+    let model = userModel1()
+    let cmd = 
+        CommandEffect.OfSQL(model.Model, "anonymous", @"
+            select 1 as x
+            union all
+            values (null)
+        ")
+    printfn "%A" cmd.Parameters
+    Assert.AreEqual(0, cmd.Parameters.Count)
+    let resultSets = cmd.ResultSets() |> Seq.toArray
+    Assert.AreEqual(1, resultSets.Length)
+    Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Nullable)
