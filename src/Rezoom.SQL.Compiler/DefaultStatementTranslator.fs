@@ -583,6 +583,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             for stmt in stmts do
                 yield! this.Statement(stmt)
                 yield text ";"
+                yield linebreak
         }
     override this.Vendor(vendor) =
         if expectedVendorName <> vendor.VendorName.Value then
@@ -603,5 +604,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             for stmt in stmts do
                 yield! this.TotalStatement(stmt)
                 yield text ";"
+                yield linebreak
         }
 

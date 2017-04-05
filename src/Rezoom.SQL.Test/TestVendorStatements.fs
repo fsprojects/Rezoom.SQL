@@ -33,6 +33,7 @@ let ``vendor without exprs or imaginary`` () =
         [   CommandText "
             this is raw text
         ;"
+            LineBreak
         ]
 
 [<Test>]
@@ -49,6 +50,7 @@ let ``vendor without imaginary`` () =
             Parameter 1
             CommandText "
         ;"
+            LineBreak
         ]
 
 [<Test>]
@@ -67,6 +69,7 @@ let ``vendor with imaginary`` () =
             Parameter 1
             CommandText "
         ;"
+            LineBreak
         ]
 
 [<Test>]
@@ -85,4 +88,5 @@ let ``vendor with wacky delimiters`` () =
             Parameter 1
             CommandText "
         ;"
+            LineBreak
         ]
