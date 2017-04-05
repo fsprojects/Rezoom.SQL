@@ -387,15 +387,15 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
     member this.SelectCoreWithTop(select : TSelectCore, top) =
         seq {
             yield text "SELECT"
-            yield ws
             match top with
             | None -> ()
             | Some top ->
+                yield ws
                 yield text "TOP"
                 yield ws
                 yield! this.FirstClassValue(top)
-                yield ws
-            yield! this.ResultColumns(select.Columns)
+            yield linebreak
+            yield! this.ResultColumns(select.Columns) |> indent
             match select.From with
             | None -> ()
             | Some from ->

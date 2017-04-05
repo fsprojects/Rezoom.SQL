@@ -26,16 +26,31 @@ type CommandFragment =
     static member Stringize(newline : string, indent : string, fragments : CommandFragment seq) =
         seq {
             let mutable indentation = ""
-            let mutable pending = false
+            let mutable pendingLine = false
             for fragment in fragments do
-                match fragment with
-                | LocalName name -> yield name
-                | CommandText text -> yield text
-                | Whitespace -> yield " "
-                | LineBreak -> yield newline + indentation
-                | Indent -> indentation <- indentation + indent
-                | Outdent -> indentation <- indentation.Substring(0, max 0 (indentation.Length - indent.Length))
-                | Parameter i -> yield ("@P" + string i)
+                let text =
+                    match fragment with
+                    | LocalName name -> Some name
+                    | CommandText text -> Some text
+                    | Whitespace -> Some " "
+                    | Parameter i -> Some ("@P" + string i)
+                    | LineBreak ->
+                        pendingLine <- true
+                        None
+                    | Indent ->
+                        indentation <- indentation + indent
+                        None
+                    | Outdent ->
+                        indentation <- indentation.Substring(0, max 0 (indentation.Length - indent.Length))
+                        None
+                match text with
+                | None -> ()
+                | Some text ->
+                    if pendingLine then
+                        pendingLine <- false
+                        yield newline
+                        yield indentation
+                    yield text
         } |> String.concat ""
     static member Stringize(fragments : CommandFragment seq) =
         CommandFragment.Stringize(" ", "", fragments)

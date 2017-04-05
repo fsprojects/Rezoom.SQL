@@ -55,7 +55,9 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
                             }
                         "(" + String.concat "," parNames + ")"
                     | ScalarParameter _ -> parameterName (parameterOffset + i)
+                | Indent | Outdent -> ""
                 | Whitespace -> " "
+                | LineBreak -> "\n"
             ignore <| builder.Append(fragmentString)
         match command.ResultSetCount with
         | Some _ -> () // no need to add terminator statement
