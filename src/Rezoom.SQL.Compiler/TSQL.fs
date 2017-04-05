@@ -448,7 +448,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 // We can use TOP here
                 this.SelectCoreWithTop(core, Some limit.Limit)
             | _ ->
-                this.Select(select) // Our override of LIMIT will turn this into an offset/fetch clause
+                base.Select(select) // Our override of LIMIT will turn this into an offset/fetch clause
     override this.Limit(limit) =
         seq {
             yield text "OFFSET"
