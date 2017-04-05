@@ -40,13 +40,17 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
     override this.Values(vals) =
         seq {
             yield text "VALUES"
+            yield linebreak
             yield!
-                vals |> Seq.map (fun row ->
+                vals
+                |> Seq.map (fun row ->
                     seq {
                         yield text "("
                         yield! row.Value |> Seq.map this.FirstClassValue |> join ","
                         yield text ")"
-                    }) |> joinLines "," |> indent
+                    })
+                |> joinLines ","
+                |> indent
         }
 
     override this.ResultColumn(expr, alias) =

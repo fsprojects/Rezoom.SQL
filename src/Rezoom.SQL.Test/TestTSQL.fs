@@ -122,4 +122,4 @@ let ``select offset`` () =
 let ``insert row`` () =
     translate
         "insert into Users row Email = 'email@example.com', Name = 'name'"
-        "INSERT INTO [Users] ([Email],[Name]) VALUES('email@example.com','name');"
+        "INSERT INTO [Users] ([Email],[Name]) VALUES ('email@example.com','name');"
