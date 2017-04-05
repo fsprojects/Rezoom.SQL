@@ -1,4 +1,5 @@
 ﻿module SQLFiddle.Domain
+open System.Collections.Generic
 open Rezoom
 open Rezoom.SQL.Compiler
 
@@ -47,21 +48,51 @@ let private resultSetFrom (queryInfo : QueryExprInfo<ColumnType>) =
             }) |> Seq.toList
     }
 
-let private typeInfoFrom (effect : CommandEffect) =
+let dispenserParameterIndexer() =
+    let dict = Dictionary()
+    let mutable last = -1
+    { new IParameterIndexer with
+        member __.ParameterIndex(par) =
+            let succ, value = dict.TryGetValue(par)
+            if succ then value
+            else
+                last <- last + 1
+                dict.[par] <- last
+                last
+    }
+
+let private typeInfoFrom (backend : IBackend) (model : CommandEffect) (effect : CommandEffect) =
+    let indexer = dispenserParameterIndexer()
+    let stringize statements =
+        Rezoom.SQL.Mapping.CommandFragment.Stringize("\n", "    ", backend.ToCommandFragments(indexer, statements))
     {   FiddleTypeInformation.Parameters = effect.Parameters |> Seq.map parameterFrom |> Seq.toList
-        FiddleTypeInformation.ResultSets = effect.ResultSets() |> Seq.map resultSetFrom |> Seq.toList
+        ResultSets = effect.ResultSets() |> Seq.map resultSetFrom |> Seq.toList
+        Idempotent =
+            match effect.CacheInfo.Value with
+            | None -> false
+            | Some c -> c.Idempotent
+        ReadTables =
+            match effect.CacheInfo.Value with
+            | None -> ["(unknown)"]
+            | Some c -> [ for _, tbl in c.ReadTables -> tbl.Value ]
+        WriteTables =
+            match effect.CacheInfo.Value with
+            | None -> ["(unknown)"]
+            | Some c -> [ for _, tbl in c.WriteTables -> tbl.Value ]
+        BackendModel = stringize model.Statements
+        BackendCommand = stringize effect.Statements      
     }
 
 let private validate (input : FiddleInput) =
     let backend = backendOf input.Backend
     let initialModel = backend.InitialModel
     try
+        let modelEffect = CommandEffect.OfSQL(initialModel, "Model", input.Model)
         let model =
-            let modelEffect = CommandEffect.OfSQL(initialModel, "Model", input.Model)
             defaultArg modelEffect.ModelChange initialModel
         try
             let commandEffect = CommandEffect.OfSQL(model, "Command", input.Command)
-            FiddleValid (typeInfoFrom commandEffect)
+            FiddleValid (typeInfoFrom backend modelEffect commandEffect)
         with
         | :? SQLCompilerException as exn ->
             FiddleInvalid (errorFrom CommandError exn)

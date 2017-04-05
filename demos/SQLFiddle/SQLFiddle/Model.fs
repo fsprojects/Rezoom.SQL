@@ -79,6 +79,11 @@ type FiddleResultSet =
 type FiddleTypeInformation =
     {   Parameters : FiddleTypedName list
         ResultSets : FiddleResultSet list
+        Idempotent : bool
+        ReadTables : string list
+        WriteTables : string list
+        BackendModel : string
+        BackendCommand : string
     }
 
 type FiddleOutput =
