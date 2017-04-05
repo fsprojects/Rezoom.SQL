@@ -15,15 +15,17 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
     override this.CTE(cte) =
         seq {
             yield this.Expr.Name(cte.Name)
-            yield ws
+            yield linebreak
             match cte.ColumnNames with
             | None -> ()
             | Some names ->
                 yield text "("
-                yield! names.Value |> Seq.map (srcValue >> this.Expr.Name) |> join1 ", "
+                yield! names.Value |> Seq.map (srcValue >> this.Expr.Name) |> joinLines1 "," |> indent
                 yield text ") "
             yield text "AS ("
-            yield! this.Select(cte.AsSelect)
+            yield linebreak
+            yield! this.Select(cte.AsSelect) |> indent
+            yield linebreak
             yield text ")"
         }
     override this.With(withClause) =
@@ -44,7 +46,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                         yield text "("
                         yield! row.Value |> Seq.map this.FirstClassValue |> join ","
                         yield text ")"
-                    }) |> join ","
+                    }) |> joinLines "," |> indent
         }
 
     override this.ResultColumn(expr, alias) =
@@ -74,7 +76,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                             bug "Bug in typechecker: nav columns should've been expanded"
                         | _ ->
                             bug "Bug in typechecker: wildcards should've been expanded"
-                } |> join ","
+                } |> joinLines ","
         }
     override this.TableOrSubquery(tbl) =
         seq {
@@ -90,7 +92,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                     yield this.Expr.Name(alias)
             | Subquery select ->
                 yield text "("
-                yield! this.Select(select)
+                yield! this.Select(select) |> indent
                 yield text ")"
                 match tbl.Alias with
                 | None -> ()
@@ -115,9 +117,9 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
     override this.Join(join) =
         seq {
             yield! this.TableExpr(join.LeftTable)
-            yield ws
+            yield linebreak
             yield this.JoinType(join.JoinType)
-            yield ws
+            yield linebreak
             yield! this.TableExpr(join.RightTable)
             match join.Constraint with
             | JoinOn expr ->
@@ -130,36 +132,36 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
     override this.SelectCore(select) =
         seq {
             yield text "SELECT"
-            yield ws
-            yield! this.ResultColumns(select.Columns)
+            yield linebreak
+            yield! this.ResultColumns(select.Columns) |> indent
             match select.From with
             | None -> ()
             | Some from ->
-                yield ws
+                yield linebreak
                 yield text "FROM"
                 yield ws
-                yield! this.TableExpr(from)
+                yield! this.TableExpr(from) |> indent
             match select.Where with
             | None -> ()
             | Some where ->
-                yield ws
+                yield linebreak
                 yield text "WHERE"
                 yield ws
-                yield! this.Predicate(where)
+                yield! this.Predicate(where) |> indent
             match select.GroupBy with
             | None -> ()
             | Some groupBy ->
-                yield ws
+                yield linebreak
                 yield text "GROUP BY"
                 yield ws
                 yield! groupBy.By |> Seq.map this.FirstClassValue |> join ","
                 match groupBy.Having with
                 | None -> ()
                 | Some having ->
-                    yield ws
+                    yield linebreak
                     yield text "HAVING"
                     yield ws
-                    yield! this.Predicate(having)
+                    yield! this.Predicate(having) |> indent
         }
     override this.CompoundTerm(compound) =
         match compound with
@@ -169,9 +171,9 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
         let op name (expr : TCompoundExpr) (term : TCompoundTerm) =
             seq {
                 yield! this.Compound(expr.Value)
-                yield ws
+                yield linebreak
                 yield text name
-                yield ws
+                yield linebreak
                 yield! this.CompoundTerm(term.Value)
             }
         match compound with
@@ -206,19 +208,19 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             | None -> ()
             | Some withClause ->
                 yield! this.With(withClause)
-                yield ws
+                yield linebreak
             yield! this.Compound(select.Compound.Value)
             match select.OrderBy with
             | None -> ()
             | Some orderBy ->
-                yield ws
+                yield linebreak
                 yield text "ORDER BY"
                 yield ws
                 yield! orderBy |> Seq.map this.OrderingTerm |> join ","
             match select.Limit with
             | None -> ()
             | Some limit ->
-                yield ws
+                yield linebreak
                 yield! this.Limit(limit)
         }
     override this.ForeignKeyRule(EventRule(evt, handler)) =
@@ -333,16 +335,17 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                         this.Expr.Name(this.ConstraintName(table, col.Name + "_NOTNULL"))
                         ws; text "NOT NULL"
                     |]
-            for constr in col.Constraints do
-                yield ws
-                yield! this.ColumnConstraint(table, constr)
+            yield!
+                col.Constraints
+                |> Seq.collect (fun constr -> seq { yield linebreak; yield! this.ColumnConstraint(table, constr) })
+                |> indent
         }
     override this.CreateTableDefinition(table, create) =
         seq {
             yield text "("
             let columns = create.Columns |> Seq.map (fun c -> this.ColumnDefinition(table, c))
             let constraints = create.Constraints |> Seq.map (fun c -> this.TableConstraint(table, c))
-            yield! Seq.append columns constraints |> join ","
+            yield! Seq.append columns constraints |> joinLines "," |> indent
             yield text ")"
         }
     override this.CreateTable(create) =
@@ -359,9 +362,10 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             match create.As with
             | CreateAsSelect select ->
                 yield text "AS"
-                yield ws
+                yield linebreak
                 yield! this.Select(select)
             | CreateAsDefinition def ->
+                yield linebreak
                 yield! this.CreateTableDefinition(create.Name, def)
         }
     override this.AlterTable(alter) =
@@ -390,16 +394,16 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield text "VIEW"
             yield ws
             yield! this.Expr.ObjectName(create.ViewName)
-            yield ws
+            yield linebreak
             match create.ColumnNames with
             | None -> ()
             | Some names ->
                 yield text "("
                 yield! names |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
                 yield text ")"
-                yield ws
+                yield linebreak
             yield text "AS"
-            yield ws
+            yield linebreak
             yield! this.Select(create.AsSelect)
         }
     override this.CreateIndex(create) =
@@ -416,13 +420,14 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield text "ON"
             yield ws
             yield! this.Expr.ObjectName(create.TableName)
+            yield linebreak
             yield text "("
-            yield! create.IndexedColumns |> Seq.map (fun w -> this.IndexedColumn(w.Value)) |> join ","
+            yield! create.IndexedColumns |> Seq.map (fun w -> this.IndexedColumn(w.Value)) |> join "," |> indent
             yield text ")"
             match create.Where with
             | None -> ()
             | Some where ->
-                yield ws
+                yield linebreak
                 yield text "WHERE"
                 yield ws
                 yield! this.Predicate(where)
@@ -462,10 +467,11 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield text "INTO"
             yield ws
             yield! this.Expr.ObjectName(insert.InsertInto)
+            yield linebreak
             yield text "("
-            yield! insert.Columns |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
+            yield! insert.Columns |> Seq.map (srcValue >> this.Expr.Name) |> join1 "," |> indent
             yield text ")"
-            yield ws
+            yield linebreak
             yield! this.Select(insert.Data)
         }
     override this.Update(update) =
@@ -474,7 +480,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             | None -> ()
             | Some withClause ->
                 yield! this.With(withClause)
-                yield ws
+                yield linebreak
             yield text "UPDATE"
             match update.Or with
             | None -> ()
@@ -491,7 +497,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield! this.Expr.ObjectName(update.UpdateTable)
             yield ws
             yield text "SET"
-            yield ws
+            yield linebreak
             yield!
                 seq {
                     for name, value in update.Set ->
@@ -502,25 +508,25 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                             yield ws
                             yield! this.FirstClassValue(value)
                         }
-                } |> join ","
+                } |> join "," |> indent
             match update.Where with
             | None -> ()
             | Some where ->
-                yield ws
+                yield linebreak
                 yield text "WHERE"
                 yield ws
-                yield! this.Predicate(where)
+                yield! this.Predicate(where) |> indent
             match update.OrderBy with
             | None -> ()
             | Some orderBy ->
-                yield ws
+                yield linebreak
                 yield text "ORDER BY"
                 yield ws
                 yield! orderBy |> Seq.map this.OrderingTerm |> join ","
             match update.Limit with
             | None -> ()
             | Some limit ->
-                yield ws
+                yield linebreak
                 yield! this.Limit(limit)
         }
     override this.Delete(delete) =
@@ -529,28 +535,28 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             | None -> ()
             | Some withClause ->
                 yield! this.With(withClause)
-                yield ws
+                yield linebreak
             yield text "DELETE FROM"
             yield ws
             yield! this.Expr.ObjectName(delete.DeleteFrom)
             match delete.Where with
             | None -> ()
             | Some where ->
-                yield ws
+                yield linebreak
                 yield text "WHERE"
                 yield ws
-                yield! this.Predicate(where)
+                yield! this.Predicate(where) |> indent
             match delete.OrderBy with
             | None -> ()
             | Some orderBy ->
-                yield ws
+                yield linebreak
                 yield text "ORDER BY"
                 yield ws
                 yield! orderBy |> Seq.map this.OrderingTerm |> join ","
             match delete.Limit with
             | None -> ()
             | Some limit ->
-                yield ws
+                yield linebreak
                 yield! this.Limit(limit)
         }
     override this.Begin = Seq.singleton (text "BEGIN")

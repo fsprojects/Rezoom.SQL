@@ -25,6 +25,9 @@ let simplifyFragments (fragments : Fragments) =
             | Whitespace ->
                 if not hasWhitespace then ignore <| builder.Append(' ')
                 hasWhitespace <- true
+            | LineBreak
+            | Indent
+            | Outdent
             | Parameter _
             | LocalName _ ->
                 if builder.Length > 0 then
@@ -38,19 +41,30 @@ let simplifyFragments (fragments : Fragments) =
     }
 
 let ws = Whitespace
+let tabin = Indent
+let tabout = Outdent
+let linebreak = LineBreak
 let text str = CommandText str
 
-let join separator (fragments : Fragments seq) =
+let joinWith separator (fragments : Fragments seq) =
     seq {
-        let separator = CommandText separator
         let mutable first = true
         for element in fragments do
-            if not first then yield separator
+            if not first then yield! separator
             else first <- false
             yield! element
     }
 
+let joinLines separator fragments = joinWith [| linebreak; text separator; ws |] fragments
+let joinLines1 separator sequence = joinLines separator (sequence |> Seq.map Seq.singleton)
+let join separator fragments = joinWith (Seq.singleton <| text separator) fragments
 let join1 separator sequence = join separator (sequence |> Seq.map Seq.singleton)
+let indent fragments =
+    seq {
+        yield tabin
+        yield! fragments
+        yield tabout
+    }
 
 type DbMigration(majorVersion : int, name : string) =
     [<BlueprintKey>]

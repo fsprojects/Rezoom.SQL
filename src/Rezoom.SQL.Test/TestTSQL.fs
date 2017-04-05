@@ -66,7 +66,7 @@ let ``temp table`` () =
 let ``temp table from select`` () =
     translate
         """create temp table x as select Id, Email from Users where Id > 0"""
-        ( """SELECT * INTO [#x] FROM (SELECT [Users].[Id],[Users].[Email]"""
+        ( """SELECT * INTO [#x] FROM (SELECT [Users].[Id] , [Users].[Email]"""
         + """ FROM [Users] WHERE ([Users].[Id] > 0)) __rzsubquery;""")
 
 [<Test>]
@@ -81,8 +81,8 @@ create table XUsers
         """
         ( "CREATE TABLE [XUsers] "
         + "([Id] INT CONSTRAINT [XUsers_Id_NOTNULL] NOT NULL CONSTRAINT [XUsers_Id_PK] PRIMARY KEY IDENTITY(1,1)"
-        + ",[Email] NVARCHAR(254) CONSTRAINT [XUsers_Email_NOTNULL] NOT NULL CONSTRAINT [XUsers_Email_UNIQUE] UNIQUE"
-        + ",[Name] NVARCHAR(64) CONSTRAINT [XUsers_Name_NULL] NULL);")
+        + " , [Email] NVARCHAR(254) CONSTRAINT [XUsers_Email_NOTNULL] NOT NULL CONSTRAINT [XUsers_Email_UNIQUE] UNIQUE"
+        + " , [Name] NVARCHAR(64) CONSTRAINT [XUsers_Name_NULL] NULL);")
 
 [<Test>]
 let ``create xusers table constraints`` () =
@@ -99,8 +99,8 @@ create table XUsers
         """
         ( "CREATE TABLE [XUsers] "
         + "([Id] INT CONSTRAINT [XUsers_Id_NOTNULL] NOT NULL"
-        + ",[Email] NVARCHAR(254) CONSTRAINT [XUsers_Email_NOTNULL] NOT NULL"
-        + ",[Name] NVARCHAR(64) CONSTRAINT [XUsers_Name_NULL] NULL"
-        + ",CONSTRAINT [XUsers_Email_Name_UNIQUE] UNIQUE([Email] ASC,[Name] ASC)"
-        + ",CONSTRAINT [XUsers_Id_PK] PRIMARY KEY([Id] ASC)"
-        + ",CONSTRAINT [XUsers_CHECK] CHECK(([Id] > 0)));")
+        + " , [Email] NVARCHAR(254) CONSTRAINT [XUsers_Email_NOTNULL] NOT NULL"
+        + " , [Name] NVARCHAR(64) CONSTRAINT [XUsers_Name_NULL] NULL"
+        + " , CONSTRAINT [XUsers_Email_Name_UNIQUE] UNIQUE([Email] ASC,[Name] ASC)"
+        + " , CONSTRAINT [XUsers_Id_PK] PRIMARY KEY([Id] ASC)"
+        + " , CONSTRAINT [XUsers_CHECK] CHECK(([Id] > 0)));")

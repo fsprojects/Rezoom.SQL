@@ -191,7 +191,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
                 yield text ")"
             | InSelect select ->
                 yield text "("
-                yield! statement.Select(select)
+                yield! statement.Select(select) |> indent
                 yield text ")"
             | InTable tbl ->
                 yield! this.Table(tbl)
@@ -201,7 +201,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
     override this.Case(case) =
         seq {
             yield text "CASE"
-            yield ws
+            yield tabin
             let whenContext =
                 match case.Input with
                 | None -> Predicate
@@ -209,9 +209,10 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             match case.Input with
             | None -> ()
             | Some input ->
-                yield! this.Expr(input, FirstClassValue)
                 yield ws
+                yield! this.Expr(input, FirstClassValue)
             for input, output in case.Cases do
+                yield linebreak
                 yield text "WHEN"
                 yield ws
                 yield! this.Expr(input, whenContext)
@@ -222,23 +223,24 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             match case.Else.Value with
             | None -> ()
             | Some els ->
-                yield ws
+                yield linebreak
                 yield text "ELSE"
                 yield ws
                 yield! this.Expr(els, FirstClassValue)
-            yield ws
+            yield tabout
+            yield linebreak
             yield text "END"
         }
     override this.Exists(subquery) =
         seq {
             yield text "EXISTS("
-            yield! statement.Select(subquery)
+            yield! statement.Select(subquery) |> indent
             yield text ")"
         }
     override this.ScalarSubquery(subquery) =
         seq {
             yield text "("
-            yield! statement.Select(subquery)
+            yield! statement.Select(subquery) |> indent
             yield text ")"
         }
     override __.NeedsParens(expr) =

@@ -201,12 +201,13 @@ module private TSQLFunctions =
             func "quotename" [ infect string; optional (infect string) ] string
             func "reverse" [ infect string ] string
             func "soundex" [ infect string ] string
-            // func "string_agg" // wtf, how do we support this? it has its own special clause type...
+            // func "string_agg" // wtf, how do we support this?d it has its own special clause type...
             func "stuff" [ infect (a' |> constrained StringishTypeClass); infect integral; infect integral; string ] a'
             func "trim" [ infect string ] string // come on TSQL, "characters from"? cut it out...
             func "charindex" [ infect string; infect string ; optional integral ] integral
             func "difference" [ infect string; infect string ] int32
             func "len" [ infect string ] integral
+            func "datalength" [ infect string ] integral
             func "nchar" [ infect integral ] string
             func "replace" [ infect string; infect string; infect string ] string
             func "space" [ infect integral ] string
@@ -398,31 +399,31 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             match select.From with
             | None -> ()
             | Some from ->
-                yield ws
+                yield linebreak
                 yield text "FROM"
                 yield ws
-                yield! this.TableExpr(from)
+                yield! this.TableExpr(from) |> indent
             match select.Where with
             | None -> ()
             | Some where ->
-                yield ws
+                yield linebreak
                 yield text "WHERE"
                 yield ws
-                yield! this.Predicate(where)
+                yield! this.Predicate(where) |> indent
             match select.GroupBy with
             | None -> ()
             | Some groupBy ->
-                yield ws
+                yield linebreak
                 yield text "GROUP BY"
                 yield ws
                 yield! groupBy.By |> Seq.map this.FirstClassValue |> join ","
                 match groupBy.Having with
                 | None -> ()
                 | Some having ->
-                    yield ws
+                    yield linebreak
                     yield text "HAVING"
                     yield ws
-                    yield! this.Predicate(having)
+                    yield! this.Predicate(having) |> indent
         }
     override this.Compound(expr) =
         match expr with
@@ -483,13 +484,13 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield! this.Expr.ObjectName(create.Name)
                 yield ws
                 yield text "FROM ("
-                yield! this.Select(select)
+                yield! this.Select(select) |> indent
                 yield text ") __rzsubquery"
             | CreateAsDefinition def ->
                 yield text "CREATE TABLE"
                 yield ws
                 yield! this.Expr.ObjectName(create.Name)
-                yield ws
+                yield linebreak
                 yield! this.CreateTableDefinition(create.Name, def)
         }
     override this.Update(update) =

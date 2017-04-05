@@ -16,16 +16,29 @@ type CommandFragment =
     | Parameter of int
     /// At least one unit of whitespace.
     | Whitespace
+    /// Whitespace, preferably a line break.
+    | LineBreak
+    /// Increase indentation level for following line breaks.
+    | Indent
+    /// Decrease indentation level for following line breaks.
+    | Outdent
     /// Converts a sequence of fragments *without parameters* to a string.
-    static member Stringize(fragments : CommandFragment seq) =
+    static member Stringize(newline : string, indent : string, fragments : CommandFragment seq) =
         seq {
+            let mutable indentation = ""
+            let mutable pending = false
             for fragment in fragments do
                 match fragment with
                 | LocalName name -> yield name
                 | CommandText text -> yield text
                 | Whitespace -> yield " "
+                | LineBreak -> yield newline + indentation
+                | Indent -> indentation <- indentation + indent
+                | Outdent -> indentation <- indentation.Substring(0, max 0 (indentation.Length - indent.Length))
                 | Parameter i -> yield ("@P" + string i)
         } |> String.concat ""
+    static member Stringize(fragments : CommandFragment seq) =
+        CommandFragment.Stringize(" ", "", fragments)
 
 [<AbstractClass>]
 type ResultSetProcessor() =

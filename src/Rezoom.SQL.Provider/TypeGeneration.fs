@@ -1,9 +1,6 @@
 ﻿module private Rezoom.SQL.Provider.TypeGeneration
 open System
-open System.Data
-open System.Data.Common
 open System.Collections.Generic
-open System.IO
 open System.Text.RegularExpressions
 open System.Reflection
 open FSharp.Core.CompilerServices
@@ -42,6 +39,9 @@ let private toFragmentExpr (fragment : CommandFragment) =
     | CommandText t -> <@@ CommandText (%%Quotations.Expr.Value(t)) @@>
     | Parameter i -> <@@ Parameter (%%Quotations.Expr.Value(i)) @@>
     | Whitespace -> <@@ Whitespace @@>
+    | LineBreak -> <@@ LineBreak @@>
+    | Indent -> <@@ Indent @@>
+    | Outdent -> <@@ Outdent @@>
 
 let private toFragmentArrayExpr (fragments : CommandFragment IReadOnlyList) =
     Expr.NewArray(typeof<CommandFragment>, fragments |> Seq.map toFragmentExpr |> Seq.toList)
