@@ -172,6 +172,8 @@
     <Content Include="Scripts\jquery-1.10.2.js" />
     <Content Include="Scripts\jquery-1.10.2.min.js" />
     <Content Include="Scripts\mode-sql.js" />
+    <Content Include="Scripts\theme-katzenmilch.js" />
+    <Content Include="Scripts\theme-sqlserver.js" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>

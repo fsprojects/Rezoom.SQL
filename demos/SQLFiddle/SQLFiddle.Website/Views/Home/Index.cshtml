@@ -15,7 +15,9 @@
         &copy; 2017 by <a href="https://github.com/rspeele">Robert Peele</a>
     </div>
     <div id="model-editor"></div>
+    <div id="model-output"></div>
     <div id="command-editor"></div>
+    <div id="command-output"></div>
     <div id="typechecker-output"></div>
 </div>
 @section scripts {
@@ -24,11 +26,23 @@
         $(document).ready(function () {
             var modelEditor = ace.edit('model-editor');
             var modelSession = modelEditor.getSession();
+            modelEditor.setTheme('ace/theme/sqlserver');
             modelSession.setMode('ace/mode/sql');
 
             var commandEditor = ace.edit('command-editor');
             var commandSession = commandEditor.getSession();
+            commandEditor.setTheme('ace/theme/sqlserver');
             commandSession.setMode('ace/mode/sql');
+
+            var modelOutput = ace.edit('model-output');
+            modelOutput.getSession().setMode('ace/mode/sql');
+            modelOutput.setTheme('ace/theme/katzenmilch');
+            modelOutput.setReadOnly(true);
+
+            var commandOutput = ace.edit('command-output');
+            commandOutput.getSession().setMode('ace/mode/sql');
+            commandOutput.setTheme('ace/theme/katzenmilch');
+            commandOutput.setReadOnly(true);
 
             var $backend = $('#backend');
             var $output = $('#typechecker-output');
@@ -94,10 +108,12 @@
                 $output.html($div);
             };
 
+            var currentValid = false;
             var removeMarker = function () { };
             var onTypeChecked = function (data) {
                 var cases = {
                     FiddleInvalid: function () {
+                        currentValid = false;
                         var err = data.fields[0];
                         var session = ({ ModelError: modelSession, CommandError: commandSession })[err.type.case];
                         var row = Math.max(0, err.startLine - 1);
@@ -114,8 +130,11 @@
                         $output.toggleClass('valid', false);
 
                         $output.text(err.message);
+                        modelOutput.setValue('');
+                        commandOutput.setValue('');
                     },
                     FiddleValid: function () {
+                        currentValid = true;
                         removeMarker();
                         modelSession.setAnnotations([]);
                         commandSession.setAnnotations([]);
@@ -124,6 +143,8 @@
 
                         var ty = data.fields[0];
                         $output.html(showTypeInfo(ty));
+                        modelOutput.setValue(ty.backendModel, 1);
+                        commandOutput.setValue(ty.backendCommand, 1);
                     }
                 };
                 cases[data.case]();
@@ -180,14 +201,14 @@
                 localStorage.setItem('rzsql-backend', $backend.val());
                 localStorage.setItem('rzsql-model', model);
                 localStorage.setItem('rzsql-command', command);
-                if (lastCheck + 2000 < new Date().getTime()) {
+                if (lastCheck + 3000 < new Date().getTime()) {
                     check();
                 } else {
                     if (checkTimeout !== undefined) {
                         clearTimeout(checkTimeout);
                         checkTimeout = undefined;
                     }
-                    checkTimeout = setTimeout(check, 500);
+                    checkTimeout = setTimeout(check, currentValid ? 800 : 400);
                 }
             };
 

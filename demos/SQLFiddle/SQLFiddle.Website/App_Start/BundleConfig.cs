@@ -11,8 +11,12 @@ namespace SQLFiddle.Website
             bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
                 "~/Scripts/jquery-{version}.js"));
 
-            bundles.Add(new ScriptBundle("~/bundles/ace").Include(
-                "~/Scripts/ace.js", "~/Scripts/mode-sql.js"));
+            bundles.Add(new ScriptBundle("~/bundles/ace").Include
+                ( "~/Scripts/ace.js"
+                , "~/Scripts/mode-sql.js"
+                , "~/Scripts/theme-katzenmilch.js"
+                , "~/Scripts/theme-sqlserver.js"
+                ));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
                 "~/Content/site.css"));

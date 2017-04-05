@@ -10,22 +10,38 @@
     right: 0;
 }
 
-#model-editor, #command-editor {
+#model-editor, #command-editor, #model-output, #command-output {
     position: fixed;
     border: 1px solid black;
-    top: 30px;
+    box-sizing: border-box;
 }
 
 #model-editor {
+    top: 30px;
     left: 0;
+    right: 50%;
+    bottom: 320px;
+}
+
+#model-output {
+    left: 0;
+    height: 300px;
     right: 50%;
     bottom: 20px;
 }
 
 #command-editor {
+    top: 30px;
     right: 0;
     left: 50%;
-    bottom: 260px;
+    bottom: 460px;
+}
+
+#command-output {
+    right: 0;
+    height: 240px;
+    left: 50%;
+    bottom: 220px;
 }
 
 #typechecker-output {
@@ -33,19 +49,16 @@
     right: 0;
     left: 50%;
     bottom: 20px;
-    height: 230px;
+    height: 200px;
     border: 1px solid black;
+    padding: 0;
+    background: #ffdddd;
+    font-family: monospace;
+    overflow: auto;
 }
 
 #typechecker-output.valid {
     background: #ddffdd;
-}
-
-#typechecker-output {
-    background: #ffdddd;
-    padding: 5px;
-    font-family: monospace;
-    overflow: auto;
 }
 
 #typechecker-output table {
