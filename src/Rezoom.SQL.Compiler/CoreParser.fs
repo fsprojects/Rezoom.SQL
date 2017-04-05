@@ -1113,12 +1113,34 @@ let private insertOr =
     ]
 
 let private insertStmt =
+    let insertStmtRow =
+        let keyValue = %% +.withSource nameOrKeyword -- ws -- '=' -- ws -- +.expr -%> auto
+        %% +.withSource (kw "ROW")
+        -- +.(qty.[1..] / tws ',' * keyValue)
+        -|> fun { Source = src } pairs ->
+            let at v = { Source = src; Value = v }
+            let selectStmt =
+                {   Compound =
+                        CompoundTerm
+                            {   Source = src
+                                Value = Values ([| at [| for _, e in pairs -> e |] |])
+                                Info = ()
+                            } |> at
+                    With = None
+                    OrderBy = None
+                    Limit = None
+                    Info = ()
+                }
+            [| for n, _ in pairs -> n |], at selectStmt
+    let insertStmtSelect =
+        %% +.parenthesizedColumnNames
+        -- +.selectStmt
+        -%> auto
     %% +.insertOr
     -- kw "INTO"
     -- +.objectName
-    -- +.parenthesizedColumnNames
-    -- +.selectStmt
-    -|> fun insert table cols data withClause ->
+    -- +.[ insertStmtRow; insertStmtSelect ]
+    -|> fun insert table (cols, data) withClause ->
         {   With = withClause
             Or = insert
             InsertInto = table

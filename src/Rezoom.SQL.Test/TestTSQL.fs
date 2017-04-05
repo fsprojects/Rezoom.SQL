@@ -116,3 +116,10 @@ let ``select offset`` () =
     translate
         "select 1 as x from Users limit 5 offset 10"
         "SELECT 1 AS [x] FROM [Users] OFFSET 10 ROWS FETCH NEXT 5 ROWS ONLY;"
+
+
+[<Test>]
+let ``insert row`` () =
+    translate
+        "insert into Users row Email = 'email@example.com', Name = 'name'"
+        "INSERT INTO [Users] ([Email],[Name]) VALUES('email@example.com','name');"
