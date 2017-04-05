@@ -65,6 +65,24 @@ let indent fragments =
         yield! fragments
         yield tabout
     }
+let parencols fragmentss =
+    seq {
+        let comma = text ","
+        let mutable first = true
+        yield text "("
+        yield ws
+        for fragments in fragmentss do
+            if not first then
+                yield comma
+                yield ws
+            else
+                first <- false
+            yield! fragments
+            yield linebreak
+        yield text ")"
+    } |> indent
+
+let parencols1 fragments = parencols (fragments |> Seq.map Seq.singleton)
 
 type DbMigration(majorVersion : int, name : string) =
     [<BlueprintKey>]

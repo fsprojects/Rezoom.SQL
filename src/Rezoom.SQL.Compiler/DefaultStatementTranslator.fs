@@ -331,7 +331,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield! this.Expr.TypeName(col.Type)
             if this.ColumnsNullableByDefault && not col.Nullable then
                 yield!
-                    [|  ws; text "CONSTRAINT"; ws
+                    [|  linebreak; text "CONSTRAINT"; ws
                         this.Expr.Name(this.ConstraintName(table, col.Name + "_NOTNULL"))
                         ws; text "NOT NULL"
                     |]
@@ -342,11 +342,9 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
         }
     override this.CreateTableDefinition(table, create) =
         seq {
-            yield text "("
             let columns = create.Columns |> Seq.map (fun c -> this.ColumnDefinition(table, c))
             let constraints = create.Constraints |> Seq.map (fun c -> this.TableConstraint(table, c))
-            yield! Seq.append columns constraints |> joinLines "," |> indent
-            yield text ")"
+            yield! Seq.append columns constraints |> parencols
         }
     override this.CreateTable(create) =
         seq {
@@ -366,14 +364,14 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield! this.Select(select)
             | CreateAsDefinition def ->
                 yield linebreak
-                yield! this.CreateTableDefinition(create.Name, def)
+                yield! this.CreateTableDefinition(create.Name, def) |> indent
         }
     override this.AlterTable(alter) =
         seq {
             yield text "ALTER TABLE"
             yield ws
             yield! this.Expr.ObjectName(alter.Table)
-            yield ws
+            yield linebreak
             match alter.Alteration with
             | RenameTo newName ->
                 yield text "RENAME TO"
@@ -398,13 +396,11 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             match create.ColumnNames with
             | None -> ()
             | Some names ->
-                yield text "("
-                yield! names |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
-                yield text ")"
+                yield! names |> Seq.map (srcValue >> this.Expr.Name) |> parencols1
                 yield linebreak
             yield text "AS"
             yield linebreak
-            yield! this.Select(create.AsSelect)
+            yield! this.Select(create.AsSelect) |> indent
         }
     override this.CreateIndex(create) =
         seq {
@@ -421,9 +417,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield ws
             yield! this.Expr.ObjectName(create.TableName)
             yield linebreak
-            yield text "("
-            yield! create.IndexedColumns |> Seq.map (fun w -> this.IndexedColumn(w.Value)) |> join "," |> indent
-            yield text ")"
+            yield! create.IndexedColumns |> Seq.map (fun w -> this.IndexedColumn(w.Value)) |> parencols
             match create.Where with
             | None -> ()
             | Some where ->
