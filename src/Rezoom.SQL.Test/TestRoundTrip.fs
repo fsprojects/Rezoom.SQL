@@ -61,6 +61,14 @@ let ``insert from select`` () =
     """
 
 [<Test>]
+let ``insert row syntax`` () =
+    roundtrip """
+        insert into Groups row
+            Id = 1
+            , Name = 'g'
+    """
+
+[<Test>]
 let ``delete`` () =
     roundtrip """
         delete from Users where Email like '%earthlink.net'
