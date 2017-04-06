@@ -143,8 +143,8 @@
 
                         var ty = data.fields[0];
                         $output.html(showTypeInfo(ty));
-                        modelOutput.setValue(ty.backendModel, 1);
-                        commandOutput.setValue(ty.backendCommand, 1);
+                        modelOutput.setValue(ty.backendModel, -1);
+                        commandOutput.setValue(ty.backendCommand, -1);
                     }
                 };
                 cases[data.case]();
