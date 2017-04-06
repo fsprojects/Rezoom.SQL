@@ -231,3 +231,11 @@ let ``table with self-referential constraints`` () =
             , ParentId int references Folders(Id)
             );
     """
+
+[<Test>]
+let ``non-grouped literal is ok`` () =
+    roundtrip """
+        select Id, 'literal' as lit
+        from Users
+        group by Id
+    """

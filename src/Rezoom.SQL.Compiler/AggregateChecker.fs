@@ -72,10 +72,11 @@ and private aggReferencesSelect (select : InfSelectStmt) =
 
 and private aggReferences (expr : InfExpr) =
     match expr.Value with
-    | ExistsExpr _
     | LiteralExpr _
-    | BindParameterExpr _
-    | ScalarSubqueryExpr _ // scalar subqueries have been internally checked by typechecker
+    | BindParameterExpr _ 
+    | ExistsExpr _
+    // scalar subqueries have been internally checked by typechecker
+    | ScalarSubqueryExpr _ -> Seq.empty
     | ColumnNameExpr _ -> Seq.singleton (ColumnOutsideAggregate expr)
     | InExpr inex ->
         seq {
