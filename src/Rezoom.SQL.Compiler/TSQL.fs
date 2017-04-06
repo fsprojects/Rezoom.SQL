@@ -446,7 +446,21 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             match limit.Offset, select.Value.Compound.Value with
             | None, CompoundTerm { Value = Select core } ->
                 // We can use TOP here
-                this.SelectCoreWithTop(core, Some limit.Limit)
+                seq {
+                    match select.Value.With with
+                    | None -> ()
+                    | Some withClause ->
+                        yield! this.With(withClause)
+                        yield linebreak
+                    yield! this.SelectCoreWithTop(core, Some limit.Limit)
+                    match select.Value.OrderBy with
+                    | None -> ()
+                    | Some orderBy ->
+                        yield linebreak
+                        yield text "ORDER BY"
+                        yield ws
+                        yield! orderBy |> Seq.map this.OrderingTerm |> join ","
+                }
             | _ ->
                 base.Select(select) // Our override of LIMIT will turn this into an offset/fetch clause
     override this.Limit(limit) =
