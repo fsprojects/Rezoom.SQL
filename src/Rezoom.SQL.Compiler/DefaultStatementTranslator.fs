@@ -338,7 +338,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                     [|  linebreak; text "CONSTRAINT"; ws
                         this.Expr.Name(this.ConstraintName(table, col.Name + "_NOTNULL"))
                         ws; text "NOT NULL"
-                    |]
+                    |] |> indent
             yield!
                 col.Constraints
                 |> Seq.collect (fun constr -> seq { yield linebreak; yield! this.ColumnConstraint(table, constr) })
