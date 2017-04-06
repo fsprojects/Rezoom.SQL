@@ -86,13 +86,13 @@
       <HintPath>..\packages\Rezoom.0.3.0\lib\net45\Rezoom.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Compiler">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.4.4.2148\lib\net45\Rezoom.SQL.Compiler.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.4.5.36481\lib\net45\Rezoom.SQL.Compiler.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Mapping">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.4.4.2148\lib\net45\Rezoom.SQL.Mapping.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.4.5.36481\lib\net45\Rezoom.SQL.Mapping.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Provider">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.4.4.2148\lib\net45\Rezoom.SQL.Provider.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.4.5.36481\lib\net45\Rezoom.SQL.Provider.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
