@@ -67,9 +67,8 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
     override this.ResultColumns(cols) =
         seq {
             match cols.Distinct with
-            | None
-            | Some AllColumns -> ()
-            | Some DistinctColumns -> yield text "DISTINCT"; yield ws
+            | None -> ()
+            | Some Distinct -> yield text "DISTINCT"; yield ws
             yield!
                 seq {
                     for col in cols.Columns do

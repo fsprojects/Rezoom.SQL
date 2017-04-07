@@ -68,7 +68,7 @@ type SourceInfo =
         if
             this.StartPosition.Index < 0
             || this.EndPosition.Index < 0
-            || this.StartPosition.Index >= int source.Length
+            || this.StartPosition.Index > int source.Length
             || this.EndPosition.Index > int source.Length
         then
             "(no known source (possibly generated code))"

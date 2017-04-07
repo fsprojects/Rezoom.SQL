@@ -39,7 +39,7 @@ let private whitespaceUnit =
     %[  lineComment // a line comment
         blockComment // a block comment
         spaces1 // one or more whitespace characters
-    ]
+    ] <?> "whitespace"
 
 /// Optional whitespace: 0 or more whitespace units
 let ws = skipMany whitespaceUnit
@@ -128,7 +128,7 @@ let name =
         bracketedName
         backtickedName
         unquotedName
-    ]
+    ] <?> "name"
 
 let private stringLiteral =
    (let escapedQuote =
@@ -189,7 +189,7 @@ let private kw str =
     %% ci str
     -? notFollowedByL (satisfy isFollowingIdentifierCharacter) str
     -- ws
-    -|> ()
+    -|> () <?> str
 
 let private nullLiteral =
     %% kw "NULL" -|> NullLiteral
@@ -235,8 +235,8 @@ let private dateTimeishLiteral =
         -- +.(zeroOrOne * ms)
         -- +.(zeroOrOne * offsetPart)
         -%> auto
-    %% +.date
-    ?- +.(zeroOrOne * timePart)
+    %% +.(date <?> "date-literal")
+    ?- +.(zeroOrOne * (timePart <?> "time-literal"))
     -|> fun (year, month, day) time ->
         match time with
         | None -> DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc) |> DateTimeLiteral
@@ -283,7 +283,7 @@ let private literal =
         %% +.stringLiteral -|> StringLiteral
         dateTimeishLiteral
         %% +.numericLiteral -|> NumericLiteral
-    ]
+    ] <?> "literal"
 
 let private typeName =
     let maxBound = %% '(' -- ws -- +.p<int> -- ws -- ')' -- ws -%> id
@@ -301,7 +301,7 @@ let private typeName =
         %% kw "BOOL" -%> BooleanTypeName
         %% kw "DATETIME" -%> DateTimeTypeName
         %% kw "DATETIMEOFFSET" -%> DateTimeOffsetTypeName
-    ]
+    ] <?> "type-name"
 
 let private cast expr =
     %% kw "CAST"
@@ -529,10 +529,11 @@ let private operators = [
 
 do
     exprImpl :=
-        {   Whitespace = ws
-            Term = term
-            Operators = operators    
-        } |> Precedence.expression
+        Precedence.expression
+            {   Whitespace = ws
+                Term = term
+                Operators = operators    
+            } <?> "expr"
 
 let private parenthesizedColumnNames =
     %% '('
@@ -613,8 +614,7 @@ let private resultColumns =
 
 let private selectColumns =
     %% kw "SELECT"
-    -- +.[  %% kw "DISTINCT" -|> Some DistinctColumns
-            %% kw "ALL" -|> Some AllColumns
+    -- +.[  %% kw "DISTINCT" -|> Some Distinct
             preturn None
         ]
     -- +.resultColumns

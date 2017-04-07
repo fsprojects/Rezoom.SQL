@@ -7,7 +7,7 @@ open Rezoom.SQL.Mapping
 
 [<Test>]
 let ``invalid CTE`` () =
-    expectError "SQ000: Expecting: whitespace, ')', '--' or '/*'"
+    expectError "SQ000: Expecting: whitespace or ')'"
         """
             with cte ( as
             select * from Users u
@@ -17,4 +17,10 @@ let ``invalid CTE`` () =
 
 [<Test>]
 let ``small input`` () =
-    expectError "SQ000: Expecting: end of input, whitespace, '--' or '/*'" "s"
+    expectError "SQ000: Expecting: end of input or whitespace" "s"
+
+[<Test>]
+let ``error at eof`` () =
+    expectError
+        ("SQ000: Expecting: DISTINCT, MANY, ONE, OPTIONAL, expr, name, whitespace or '*'")
+        "select"

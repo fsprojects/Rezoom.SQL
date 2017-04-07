@@ -221,10 +221,6 @@ and CaseExpr<'t, 'e> =
 
 and Distinct = | Distinct
 
-and DistinctColumns =
-    | DistinctColumns
-    | AllColumns
-
 and FunctionArguments<'t, 'e> =
     | ArgumentWildcard
     | ArgumentList of (Distinct option * Expr<'t, 'e> array)
@@ -386,7 +382,7 @@ and GroupBy<'t, 'e> =
     }
 
 and ResultColumns<'t, 'e> =
-    {   Distinct : DistinctColumns option
+    {   Distinct : Distinct option
         Columns : ResultColumn<'t, 'e> array
     }
 
