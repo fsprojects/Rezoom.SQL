@@ -188,3 +188,16 @@ let ``union null in values clause`` () =
     let resultSets = cmd.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, resultSets.Length)
     Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Nullable)
+
+[<Test>]
+let ``select max`` () =
+    let model = userModel1()
+    let cmd = 
+        CommandEffect.OfSQL(model.Model, "anonymous", @"
+            select max(Name) as MaxName from Users
+        ")
+    printfn "%A" cmd.Parameters
+    Assert.AreEqual(0, cmd.Parameters.Count)
+    let resultSets = cmd.ResultSets() |> Seq.toArray
+    Assert.AreEqual(1, resultSets.Length)
+    Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Type = StringType)

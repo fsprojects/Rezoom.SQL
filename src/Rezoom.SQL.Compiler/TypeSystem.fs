@@ -176,10 +176,10 @@ type FunctionType
         ) =
         let mutable i = 0
         for par in parameters do
-            if i >= argList.Count then
-                failAt source <| Error.insufficientArguments name argList.Count this.MinimumParameters
             match par.VarArg with
             | None ->
+                if i >= argList.Count then
+                    failAt source <| Error.insufficientArguments name argList.Count this.MinimumParameters
                 validate (argList.[i]) par
                 i <- i + 1
             | Some varg ->
