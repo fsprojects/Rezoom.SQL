@@ -483,7 +483,6 @@ let private operators = [
         prefix (kw "NOT") <| unary Not
         prefix '~' <| unary BitNot
         prefix '-' <| unary Negative
-        prefix '+' id
     ]
     [
         infixl "||" <| binary Concatenate
