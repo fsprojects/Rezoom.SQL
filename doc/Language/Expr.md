@@ -94,7 +94,7 @@ highest to lowest.
 | `NOT`      | Unary   |          9 | `NOT true`             | True if operand is false.                     |
 | `~`        | Unary   |          9 | `~0xff`                | Integer bitwise complement.                   |
 | `-`        | Unary   |          9 | `-2`                   | -x is like x * -1.                            |
-| `||`       | Binary  |          8 | 'abc || def'           | String concatenation.                         |
+| <code>&#124;&#124;</code> | Binary | 8 | <code>abc &#124;&#124; def</code> | String concatenation.         |
 | `*`        | Binary  |          7 | `5 * 3`                | Numeric multiplication.                       |
 | `/`        | Binary  |          7 | `10 / 2`               | Numeric division.                             |
 | `%`        | Binary  |          7 | `5 % 3`                | Integer modulo.                               |
@@ -103,7 +103,7 @@ highest to lowest.
 | `<<`       | Binary  |          5 | `32 << 1`              | Integer bitwise left-shift.                   |
 | `>>`       | Binary  |          5 | `64 >> 1`              | Integer bitwise right-shift.                  |
 | `&`        | Binary  |          5 | `123456 & 0xff`        | Integer bitwise AND.                          |
-| `|`        | Binary  |          5 | `0x00ff | 0xff00`      | Integer bitwise OR.                           |
+| <code>&#124;</code> | Binary |  5 | <code>0x00ff &#124; 0xff00</code> | Integer bitwise OR.                |
 | `>=`       | Binary  |          4 | `4 >= 4`               | Greater-than-or-equal comparison.             |
 | `<=`       | Binary  |          4 | `4 <= 4`               | Less-than-or-equal comparison.                |
 | `>`        | Binary  |          4 | `4 > 3`                | Greater-than comparison.                      |
