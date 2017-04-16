@@ -294,7 +294,7 @@ and no `FROM`, `WHERE`, `GROUP BY`, or `LIMIT` clause.
 
 The main reason to do this is to return the result of a scalar function. For
 example, after inserting a record into a SQLite table, you may want to return
-its ID to your program, like so:
+its ID to your program, [like so](http://rzsql.net/#2411C55565AE200FE3895D3AB82B031184A2425B):
 
 ```sql
 insert into MyTable(x, y) values ('example', 'data');
