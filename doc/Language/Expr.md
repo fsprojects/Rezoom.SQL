@@ -35,3 +35,154 @@ much like F# variable types are inferred.
 Within some contexts, such as a [select statement](SelectStmt.md), you can
 access table columns by [name](Name.md) from within an expression.
 
+## Parentheses
+
+Parentheses serve two roles in expressions. As in most languages, they can be
+used to override the default operator precedence and control the order of
+operations. For example, here parentheses are used to force `x` and `y` to be
+added before multiplying in `z`:
+
+```sql
+(x + y) * z
+```
+
+However, parentheses also allow you use a sub-query expected to return a single
+value [in an expression](http://rzsql.net/#ED91DE78755E4619957993765695D94BCD058E61):
+
+```sql
+select (select Email from Users limit 1) as FirstEmail
+```
+
+These are called _scalar subqueries_. Scalar subqueries should always have only
+one column, and RZSQL enforces this at compile time. They should also return no
+more than one row, but RZSQL cannot verify this, so it is up to you to ensure it.
+
+If a scalar subquery produces multiple rows, the outcome is dependent on your
+SQL backend. It may use the first row, or throw an error, or do something
+completely unexpected.
+
+## The CAST expression
+
+The `CAST` expression is used to convert values from one [type](DataTypes.md) to
+another. For example:
+
+```sql
+select CAST('123' as int64) as IntegerColumn
+```
+
+As far as RZSQL's type system is concerned, a value of any type can be converted
+to any other type using `CAST`. This may fail at runtime depending on your
+database backend.
+
+## Operators
+
+RZSQL supports a variety of operators. Operators can be:
+
+* Unary, meaning they are written preceding their single operand as in `NOT x`
+* Binary, meaning they are written between their operands, as in `x + y`
+* Ternary, meaning they are written with three operands, as in `x between y and z`
+
+All operators are left-associative, meaning that if operator `A` and `B` have
+**the same precedence**, then `x A y B z` groups like `(x A y) B z`.
+
+The following table briefly describes each operator in order of precedence, from
+highest to lowest.
+
+| Operator   | Type    | Precedence | Example                | Notes                                         |
+|------------|---------|------------|------------------------|-----------------------------------------------|
+| `COLLATE`  | Binary  |         10 | `'str' COLLATE NOCASE` | Right side is a collation name.               |
+| `NOT`      | Unary   |          9 | `NOT true`             | True if operand is false.                     |
+| `~`        | Unary   |          9 | `~0xff`                | Integer bitwise complement.                   |
+| `-`        | Unary   |          9 | `-2`                   | -x is like x * -1.                            |
+| `||`       | Binary  |          8 | 'abc || def'           | String concatenation.                         |
+| `*`        | Binary  |          7 | `5 * 3`                | Numeric multiplication.                       |
+| `/`        | Binary  |          7 | `10 / 2`               | Numeric division.                             |
+| `%`        | Binary  |          7 | `5 % 3`                | Integer modulo.                               |
+| `+`        | Binary  |          6 | `5 + 3`                | Numeric addition.                             |
+| `-`        | Binary  |          6 | `5 - 3`                | Numeric subtraction.                          |
+| `<<`       | Binary  |          5 | `32 << 1`              | Integer bitwise left-shift.                   |
+| `>>`       | Binary  |          5 | `64 >> 1`              | Integer bitwise right-shift.                  |
+| `&`        | Binary  |          5 | `123456 & 0xff`        | Integer bitwise AND.                          |
+| `|`        | Binary  |          5 | `0x00ff | 0xff00`      | Integer bitwise OR.                           |
+| `>=`       | Binary  |          4 | `4 >= 4`               | Greater-than-or-equal comparison.             |
+| `<=`       | Binary  |          4 | `4 <= 4`               | Less-than-or-equal comparison.                |
+| `>`        | Binary  |          4 | `4 > 3`                | Greater-than comparison.                      |
+| `<`        | Binary  |          4 | `3 < 4`                | Less-than comparison.                         |
+| `=`        | Binary  |          3 | `1 = 1`                | Equality comparison.                          |
+| `<>`       | Binary  |          3 | `1 <> 0`               | Inequality comparison.                        |
+| `IS`       | Binary  |          3 | `NULL IS NULL`         | Equality comparison (including null).         |
+| `IS NOT`   | Binary  |          3 | `1 IS NOT NULL`        | Inequality comparison (including null).       |
+| `LIKE`     | Binary  |          3 | `'abc' LIKE '%b%'`     | String glob pattern test.                     |
+| `NOT LIKE` | Binary  |          3 | `'a' NOT LIKE '%b%'`   | String glob pattern test (negated).           |
+| `IN`       | Binary  |          3 | `1 IN (1,2,3)`         | Membership test. See details below.           |
+| `NOT IN`   | Binary  |          3 | `1 NOT IN (2,3)`       | Membership test (negated). See details below. |
+| `BETWEEN`  | Ternary |          3 | `5 BETWEEN 1 AND 7`    | Inclusive range test.                         |
+| `AND`      | Binary  |          2 | `true AND NOT false`   | Logical AND.                                  |
+| `OR`       | Binary  |          1 | `false OR true`        | Logical OR.                                   |
+
+#### Special operators: `LIKE`
+
+Some operators are actually a bit more complex than described above.
+
+One such operator is `LIKE`, which has a couple of quirks. One is that is
+actually a ternary operator whose third operand is optional. The `LIKE` operator
+takes an optional `ESCAPE` clause specifying the character to use to escape
+special characters in the pattern. The behavior of this clause is dependent on
+your SQL backend, but an example usage for SQLite is:
+
+```sql
+'string with a % sign' LIKE '%\%%' ESCAPE '\'
+```
+
+Additionally, the verbs `MATCH` or `REGEXP` can be used instead of `LIKE`, as
+in:
+
+```sql
+'test' REGEXP '^te.*'
+```
+
+These operators are not supported on all SQL backends. On SQLite they behave as
+documented [here](https://sqlite.org/lang_expr.html#like).
+
+#### Special operators: `IN`
+
+Another special operator is `IN`. Its right side, which determines the source of
+elements to test for membership in, can be one of three things:
+
+* A table name.
+* A subquery (wrapped in parentheses).
+* A list of expresssions (wrapped in parentheses and separated by commas).
+* A bind parameter.
+
+If it is a bind parameter, that parameter's type will be inferred as an array.
+At runtime, RZSQL will handle converting the given array of values to multiple
+bind parameters, and the SQL query sent to the server will look something like
+`... x IN (@p0, @p1, @p2... @pN) ...`.
+
+#### Ternary operator associativity
+
+Ternary operators are also left-associative. Hopefully there are no realistic
+situations where this would come up, but this means that the following
+expression:
+
+```sql
+1 BETWEEN 2 BETWEEN 3 AND 4 AND 5 BETWEEN 6 AND 7
+```
+
+Is parsed as:
+
+```sql
+(1 BETWEEN (2 BETWEEN 3 AND 4) AND 5) BETWEEN 6 AND 7
+```
+
+## Function invocation
+
+TODO
+
+## The CASE expression
+
+TODO
+
+## The EXISTS expression
+
+TODO

@@ -228,13 +228,6 @@ _compound-expr_ using **compound operators**.
 
 {% include "Diagrams/CompoundExpr.svg" %}
 
-## The `VALUES` clause
-
-Instead of a _select-core_, you can write literal rows of data with a `VALUES`
-clause. The main use case for this is in the [insert statement](InsertStmt.md).
-There, a full _select-stmt_ is permitted, but usually the data is provided by
-the client program in a `VALUES` clause rather than pulled from other tables.
-
 ## The compound operators
 
 The four compound operators supported by RZSQL are:
@@ -249,6 +242,20 @@ The four compound operators supported by RZSQL are:
 
 * `EXCEPT`: the result set contains all rows from the left compound term **not
   found in** the right compound term.
+
+Compound operators are all left-associative, meaning that `x except y union all
+z` groups like `(x except y) union all z`. The parentheses here are purely for
+illustration. In RZSQL, you _cannot_ use parentheses around compound exprs to
+override their associativity. If you need an associativity other than
+left-to-right, you'll need to use subqueries instead.
+
+## The `VALUES` clause
+
+Notice that as an alterantive to a _select-core_, you can write literal rows of
+data with a `VALUES` clause. The main use case for this is in the [insert
+statement](InsertStmt.md). There, a full _select-stmt_ is permitted, but usually
+the data is provided by the client program in a `VALUES` clause rather than
+pulled from other tables.
 
 ## The complete select statement
 
