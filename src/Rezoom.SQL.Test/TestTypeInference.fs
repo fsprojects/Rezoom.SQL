@@ -201,3 +201,18 @@ let ``select max`` () =
     let resultSets = cmd.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, resultSets.Length)
     Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Type = StringType)
+
+[<Test>]
+let ``correlated subquery`` () =
+    let model = userModel1()
+    let cmd = 
+        CommandEffect.OfSQL(model.Model, "anonymous", @"
+            select * from Users lu
+            where exists(select null as x from Users ru where ru.Name = lu.Name || ' stuff')
+        ")
+    printfn "%A" cmd.Parameters
+    Assert.AreEqual(0, cmd.Parameters.Count)
+    let resultSets = cmd.ResultSets() |> Seq.toArray
+    Assert.AreEqual(1, resultSets.Length)
+    Assert.AreEqual(5, resultSets.[0].Columns.Count)
+    Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Type = StringType)

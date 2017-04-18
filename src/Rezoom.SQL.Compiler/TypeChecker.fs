@@ -669,5 +669,6 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         | RollbackStmt -> RollbackStmt
 
     interface IQueryTypeChecker with
-        member this.Select(select) = this.Select(select, SelfQueryShape.Unknown)
+        member this.Select(select) =
+            TypeChecker(cxt, scope.Child()).Select(select, SelfQueryShape.Unknown)
         member this.CreateView(view) = this.CreateView(view)

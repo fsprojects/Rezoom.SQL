@@ -252,6 +252,11 @@ and InferredSelectScope =
             SelectClause = None
         }
 
+    member this.Child() =
+        {   InferredSelectScope.Root(this.Model) with
+                ParentScope = Some this
+        }
+
     member private this.ResolveObjectReferenceBySchema
         (schema : Schema, name : Name, inferView : CreateViewStmt -> TCreateViewStmt) =
         match schema.Objects |> Map.tryFind name with
