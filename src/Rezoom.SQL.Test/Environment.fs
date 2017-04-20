@@ -6,6 +6,7 @@ open System
 open System.Reflection
 open System.IO
 open System.Collections.Generic
+open Rezoom.SQL.Mapping
 open Rezoom.SQL.Compiler
 
 let userModelByName name =
@@ -40,3 +41,102 @@ let dispenserParameterIndexer() =
                 last
     }
 
+type SimpleTestCheck =
+    {   Idempotent : bool option
+        ResultSets : (string * ColumnType) list list option
+        Parameters : (string * ColumnType) list option
+        OutputMigration : string option
+        OutputCommand : string option
+    }
+
+let expect =
+    {   Idempotent = None
+        ResultSets = None
+        Parameters = None
+        OutputMigration = None
+        OutputCommand = None
+    }
+
+type SimpleTestExpectation =
+    | Good of SimpleTestCheck
+    | BadCommand of string
+    | BadMigration of string
+
+type SimpleTest =
+    {   Migration : string
+        Command : string
+        TestBackend : IBackend
+        Expect : SimpleTestExpectation
+    }
+
+let private defaultTest =
+    {   Migration = ""
+        Command = ""
+        TestBackend = DefaultBackend()
+        Expect = BadCommand "expectation not specified"
+    }
+
+let sqliteTest =
+    { defaultTest with
+        TestBackend = SQLite.SQLiteBackend()
+    }
+
+let tsqlTest =
+    { defaultTest with
+        TestBackend = TSQL.TSQLBackend()
+    }
+
+let private runSimple (test : SimpleTest) =
+    let indexer = dispenserParameterIndexer()
+    try
+        let migrationEffect = CommandEffect.OfSQL(test.TestBackend.InitialModel, "migration", test.Migration)
+        let outputMigration =
+            test.TestBackend.ToCommandFragments(indexer, migrationEffect.Statements)
+            |> CommandFragment.Stringize
+        let commandModel = migrationEffect.ModelChange |? test.TestBackend.InitialModel
+        try
+            let commandEffect = CommandEffect.OfSQL(commandModel, "command", test.Command)
+            let outputCommand =
+                test.TestBackend.ToCommandFragments(indexer, commandEffect.Statements)
+                |> CommandFragment.Stringize
+            {   Idempotent = match commandEffect.CacheInfo.Value with | Some v -> Some v.Idempotent | None -> None
+                ResultSets =
+                    [ for resultSet in commandEffect.ResultSets() ->
+                        [ for col in resultSet.Columns ->
+                            col.ColumnName.Value, col.Expr.Info.Type
+                        ]
+                    ] |> Some
+                Parameters =
+                    [ for (NamedParameter par), ty in commandEffect.Parameters ->
+                        par.Value, ty
+                    ] |> Some
+                OutputMigration = Some outputMigration
+                OutputCommand = Some outputCommand
+            } |> Good
+        with
+        | :? SQLCompilerException as cexn ->
+            BadCommand cexn.Message
+    with
+    | :? SQLCompilerException as mexn ->
+        BadMigration mexn.Message
+
+let private assertMatchExpectation (expect : SimpleTestExpectation) (result : SimpleTestExpectation) =
+    let (?==) l r =
+        match l, r with
+        | None, _ -> true
+        | Some _ as x, y when x = y -> true
+        | _ -> false
+            
+    match expect, result with
+    | BadCommand e, BadCommand r
+    | BadMigration e, BadMigration r when e = r -> ()
+    | Good e, Good r ->
+        let matched =
+            e.Idempotent ?== r.Idempotent
+            && e.ResultSets ?== r.ResultSets
+            && e.Parameters ?== r.Parameters
+            && e.OutputCommand ?== r.OutputCommand
+            && e.OutputMigration ?== r.OutputMigration
+        if matched then () else failwithf "Mismatch: %A vs %A" e r
+    | e, r ->
+        failwithf "Mismatch: %A vs %A" e r
