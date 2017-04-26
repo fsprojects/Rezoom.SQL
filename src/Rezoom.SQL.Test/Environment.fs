@@ -140,3 +140,8 @@ let private assertMatchExpectation (expect : SimpleTestExpectation) (result : Si
         if matched then () else failwithf "Mismatch: %A vs %A" e r
     | e, r ->
         failwithf "Mismatch: %A vs %A" e r
+
+let assertSimple (test : SimpleTest) =
+    let ran = runSimple test
+    assertMatchExpectation test.Expect ran
+    

@@ -85,8 +85,8 @@ type AggregateFunction(name, args, ret, allowWildcard, allowDistinct) =
     override __.Aggregate(_) =
         Some { AllowWildcard = allowWildcard; AllowDistinct = allowWildcard }
 
-let inline proc name args ret = NonAggregateFunction(Name(name), List.toArray args, ret, idem = true) :> FunctionType
-let inline func name args ret = NonAggregateFunction(Name(name), List.toArray args, ret, idem = false) :> FunctionType
+let inline proc name args ret = NonAggregateFunction(Name(name), List.toArray args, ret, idem = false) :> FunctionType
+let inline func name args ret = NonAggregateFunction(Name(name), List.toArray args, ret, idem = true) :> FunctionType
 let inline aggregate name args ret = AggregateFunction(Name(name), List.toArray args, ret, false, true) :> FunctionType
 let inline aggregateW name args ret = AggregateFunction(Name(name), List.toArray args, ret, true, true) :> FunctionType
 

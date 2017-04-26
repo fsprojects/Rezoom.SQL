@@ -71,6 +71,7 @@
     <Compile Include="TestPrimitiveReaders.fs" />
     <Compile Include="TestManyPrimitives.fs" />
     <Compile Include="TestQueryParents.fs" />
+    <Compile Include="TestCTEs.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
