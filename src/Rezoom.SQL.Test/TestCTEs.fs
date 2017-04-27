@@ -27,6 +27,7 @@ SELECT group_concat(rtrim(t),'CRLF') as x FROM a;"
         Expect =
             {   expect with
                     Idempotent = Some true
-                    ResultSets = Some [ [ "x", { Type = StringType;  Nullable = false } ] ];
+                    ResultSets = Some [ [ "x", { Type = StringType; Nullable = false } ] ];
             } |> Good
     } |> assertSimple
+
