@@ -42,7 +42,7 @@ let dispenserParameterIndexer() =
     }
 
 let dumpSignature (fty : FunctionType) =
-    sprintf "## %O\n    %O%O\nIdempotent: %s\nErased: %s\nAggregate: %s"
+    sprintf "## %O\n    %O%O\n| Idempotent | Erased | Aggregate |\n|-|-|-|\n|%s|%s|%s|"
         fty.FunctionName
         fty.FunctionName
         fty.TypeSignature

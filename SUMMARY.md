@@ -16,6 +16,8 @@
     * [Select Statements](doc/Language/SelectStmt.md)
     * [Navigation properties](doc/Language/NavigationProperties.md)
     * [Vendor statements](doc/Language/VendorStatements.md)
+    * [SQLite](doc/Language/SQLite/README.md)
+        * [Functions](doc/Language/SQLite/Functions.md)
     * [TSQL](doc/Language/TSQL/README.md)
         * [Functions](doc/Language/TSQL/Functions.md)
 * [API](doc/API/README.md)

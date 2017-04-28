@@ -37,3 +37,9 @@ let ``sqlite non-idempotent random in subquery`` () =
                     ResultSets = Some [ [ "r", { Type = IntegerType Integer64; Nullable = false } ] ];
             } |> Good
     } |> assertSimple
+
+[<Test>]
+let ``sqlite dump function signatures`` () =
+    for KeyValue(_, func) in sqliteTest.TestBackend.InitialModel.Builtin.Functions do
+        printfn "%s" (dumpSignature func)
+        printfn ""
