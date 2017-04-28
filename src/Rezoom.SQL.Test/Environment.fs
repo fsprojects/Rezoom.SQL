@@ -41,6 +41,18 @@ let dispenserParameterIndexer() =
                 last
     }
 
+let dumpSignature (fty : FunctionType) =
+    sprintf "## %O\n    %O%O\nIdempotent: %s\nErased: %s\nAggregate: %s"
+        fty.FunctionName
+        fty.FunctionName
+        fty.TypeSignature
+        (if fty.Idempotent then "yes" else "no")
+        (if fty.Erased then "yes" else "no")
+        (match fty.Aggregate ArgumentWildcard with
+            | None -> "no"
+            | Some agg -> "yes")
+
+
 type SimpleTestCheck =
     {   Idempotent : bool option
         ResultSets : (string * ColumnType) list list option

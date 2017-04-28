@@ -138,6 +138,25 @@ type FunctionTermType =
         InfectNullable : bool
         VarArg : FunctionTermVarArg option
     }
+    override this.ToString() =
+        [   yield
+                match this.TypeVariable with
+                | None -> sprintf "%O" this.TypeConstraint
+                | Some name ->
+                    match this.TypeConstraint with
+                    | AnyTypeClass
+                    | ScalarTypeClass -> sprintf "%O" name
+                    | constr -> sprintf "%O %O" constr name
+            if this.ForceNullable then
+                yield "?"
+            if this.InfectNullable then
+                yield "^"
+            match this.VarArg with
+            | None -> ()
+            | Some varArg ->
+                let maxArgs = string (defaultArg (Option.map string varArg.MaxArgCount) "*")
+                yield "{" + string varArg.MinArgCount + ".." + maxArgs + "}"
+        ] |> String.concat ""
 and FunctionTermVarArg =
     {   MinArgCount : int
         MaxArgCount : int option
@@ -166,6 +185,8 @@ type FunctionType
     abstract member Erased : bool
     default __.Erased = false
     abstract member Aggregate : FunctionArguments<'t, 'e> -> AggregateType option
+    member __.TypeSignature =
+        "(" + (parameters |> Seq.map string |> String.concat ", ") + ") -> " + string returns
     member __.MinimumParameters =
         parameters |> Seq.sumBy (fun p -> match p.VarArg with | None -> 1 | Some v -> v.MinArgCount)
     member internal this.ValidateArgs

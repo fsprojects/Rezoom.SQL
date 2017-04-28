@@ -16,5 +16,7 @@
     * [Select Statements](doc/Language/SelectStmt.md)
     * [Navigation properties](doc/Language/NavigationProperties.md)
     * [Vendor statements](doc/Language/VendorStatements.md)
+    * [TSQL](doc/Language/TSQL/README.md)
+        * [Functions](doc/Language/TSQL/Functions.md)
 * [API](doc/API/README.md)
     * [Rezoom.SQL](doc/API/RezoomSQL.md)

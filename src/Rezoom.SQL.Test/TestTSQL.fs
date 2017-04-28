@@ -123,3 +123,9 @@ let ``insert row`` () =
     translate
         "insert into Users row Email = 'email@example.com', Name = 'name'"
         "INSERT INTO [Users] ([Email],[Name]) VALUES ('email@example.com','name');"
+
+[<Test>]
+let ``tsql dump function signatures`` () =
+    for KeyValue(_, func) in tsqlTest.TestBackend.InitialModel.Builtin.Functions do
+        printfn "%s" (dumpSignature func)
+        printfn ""
