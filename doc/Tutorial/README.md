@@ -24,6 +24,7 @@ In your new project, open up the package manager console window (View -> Other W
 and type:
 
 ```powershell
+Install-Package Rezoom.SQL.Provider
 Install-Package Rezoom.SQL.Provider.SQLite
 ```
 
