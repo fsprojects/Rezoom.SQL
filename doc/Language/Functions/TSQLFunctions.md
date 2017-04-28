@@ -3,48 +3,6 @@
 This is the complete list of built-in functions supported by the `"tsql"`
 backend.
 
-A function type signature is documented as:
-
-    name(arg1, arg2... argN) -> ret
-
-`arg1` through `argN` and `ret` describe the types of the function's parameters
-and return value. These are best explained through examples:
-
-    INT
-
-A value of the INT [data type](../DataTypes.md).
-
-    <numeric>
-
-A value of any data type under the `<numeric>` part of the [data types
-tree](../DataTypes.md).
-
-    <numeric>^
-
-Same as above, but the caret indicates that if this argument is inferred to be
-nullable, the function's return value will also be inferred to be nullable.
-
-    <numeric>?
-
-The expression given for this argument will be assumed to be nullable. This can
-cause bind parameters to be made nullable.
-
-    a
-
-A type variable. All occurences of the same type variable in the function type
-signature must be the exact same type. So for example, this function can take
-two INTs or two FLOAT64s but not one INT and one FLOAT64:
-
-    example(a, a) -> BOOL
-
-Type variables can also be constrained to a subset of data types, like so:
-
-    <numeric> a
-
-Hopefully this gets the idea across well enough to decipher the actual function signatures.
-
-# Functions in alphabetical order
-
 ## abs
     abs(<numeric> a^) -> a
 | Idempotent | Erased | Aggregate |
