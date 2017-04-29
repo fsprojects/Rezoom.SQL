@@ -120,6 +120,28 @@ highest to lowest.
 | `AND`      | Binary  |          2 | `true AND NOT false`   | Logical AND.                                  |
 | `OR`       | Binary  |          1 | `false OR true`        | Logical OR.                                   |
 
+#### IS versus =
+
+The `IS` and `IS NOT` operators are almost the same as `=` and `<>`. However,
+there is an important distinction. SQL dialects traditionally implement
+[three-valued logic](https://en.wikipedia.org/wiki/Null_(SQL)). This means that
+the following expression is **false**:
+
+```sql
+NULL = NULL
+OR NULL <> NULL
+OR 1 <> NULL
+```
+
+The `IS` and `IS NOT` operators work the way equality comparisons do in normal
+programming languages, so the following expression is **true**:
+
+```sql
+NULL IS NULL
+AND NOT (NULL IS NOT NULL)
+AND 1 IS NOT NULL
+```
+
 #### Special operators: `LIKE`
 
 Some operators are actually a bit more complex than described above.
@@ -177,12 +199,61 @@ Is parsed as:
 
 ## Function invocation
 
-TODO
+Your SQL backend probably has some functions, like [these for
+SQLite](https://sqlite.org/lang_corefunc.html).
+
+RZSQL tries to know about those functions so it can correctly typecheck queries
+using them. You can find the list of supported functions for your backend under
+the [functions](Functions/README.md) section.
 
 ## The CASE expression
 
-TODO
+The CASE expression lets you write conditionals. This works pretty much the same
+way on every SQL backend. There are two forms of CASE expressions.
+
+The most generally useful form looks like this:
+
+```sql
+CASE
+    WHEN cond1 THEN result1
+    WHEN cond2 THEN result2
+    ELSE result3
+END
+```
+
+This is essentially the same thing as the F# expression:
+
+```sql
+if cond1 then result1
+elif cond2 then result2
+else result3
+```
+
+The other form of CASE expression has an expression between the CASE keyword and
+the first WHEN keyword. In this form, each WHEN clause is implicitly compared to
+the initial expression.
+
+So, this expression:
+
+```sql
+CASE x
+    WHEN value1 THEN result1
+    WHEN value2 THEN result2
+    ELSE result3
+END
+```
+
+Is equivalent in effect to this expression:
+
+```sql
+CASE
+    WHEN x = value1 THEN result1
+    WHEN x = value2 THEN result2
+    ELSE result3
+END
+```
 
 ## The EXISTS expression
 
-TODO
+The EXISTS expression takes a subquery on its right side. It returns true if the
+subquery yields any rows, false otherwise.
