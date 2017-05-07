@@ -223,6 +223,10 @@ type private TSQLLiteral() =
     override __.BlobLiteral(bytes) =
         let hexPairs = bytes |> Array.map (fun b -> b.ToString("X2", CultureInfo.InvariantCulture))
         "0x" + String.Concat(hexPairs) |> text
+    override __.DateTimeLiteral(dt) =
+        "'" + base.DateTimeLiteral(dt) + "'"
+    override __.DateTimeOffsetLiteral(dt) =
+        "'" + base.DateTimeOffsetLiteral(dt) + "'"
 
 type private TSQLExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
