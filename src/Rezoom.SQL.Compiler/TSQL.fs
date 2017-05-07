@@ -224,9 +224,9 @@ type private TSQLLiteral() =
         let hexPairs = bytes |> Array.map (fun b -> b.ToString("X2", CultureInfo.InvariantCulture))
         "0x" + String.Concat(hexPairs) |> text
     override __.DateTimeLiteral(dt) =
-        "'" + base.DateTimeLiteral(dt) + "'"
+        CommandText <| "'" + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff") + "'"
     override __.DateTimeOffsetLiteral(dt) =
-        "'" + base.DateTimeOffsetLiteral(dt) + "'"
+        CommandText <| "'" + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffzzz") + "'"
 
 type private TSQLExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
