@@ -25,6 +25,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         | _ -> failAt name.Source <| Error.objectNotATable name
     member this.Expr(expr, knownType) = exprChecker.Expr(expr, knownType)
     member this.Expr(expr) = exprChecker.Expr(expr)
+    member this.BooleanExpr(expr) = this.Expr(expr, BooleanType)
     member this.Scope = scope
     member this.WithScope(scope) = TypeChecker(cxt, scope)
 
@@ -211,7 +212,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
 
     member this.GroupBy(groupBy : GroupBy) =
         {   By = groupBy.By |> rmap this.Expr
-            Having = groupBy.Having |> Option.map this.Expr
+            Having = groupBy.Having |> Option.map this.BooleanExpr
         }
 
     member this.SelectCore(select : SelectCore, knownShape : InferredQueryShape option) =
@@ -241,7 +242,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         checker,
             {   Columns = columns
                 From = from
-                Where = Option.map checker.Expr select.Where
+                Where = Option.map checker.BooleanExpr select.Where
                 GroupBy = Option.map checker.GroupBy select.GroupBy
                 Info =
                     {   Table = SelectResults
@@ -485,7 +486,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             IndexName = this.ObjectName(createIndex.IndexName, allowNotFound = true)
             TableName = tableName
             IndexedColumns = createIndex.IndexedColumns
-            Where = createIndex.Where |> Option.map checker.Expr
+            Where = createIndex.Where |> Option.map checker.BooleanExpr
         }
 
     member this.TableIndexConstraint(constr : TableIndexConstraintClause) =
@@ -562,7 +563,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 ({ checker.Scope with FromClause = InferredFromClause.FromSingleObject(deleteFrom) |> Some })
         {   With = withClause
             DeleteFrom = deleteFrom
-            Where = Option.map checker.Expr delete.Where
+            Where = Option.map checker.BooleanExpr delete.Where
             OrderBy = Option.map (rmap checker.OrderingTerm) delete.OrderBy
             Limit = Option.map checker.Limit delete.Limit
         }

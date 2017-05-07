@@ -107,3 +107,10 @@ let ``delete from view bad`` () =
         """
             delete from ViewUsers
         """
+
+[<Test>]
+let ``where clause must be bool`` ()=
+    expectError (Error.cannotUnify StringType BooleanType)
+        """
+            select 1 as it from ViewUsers where 'a'
+        """
