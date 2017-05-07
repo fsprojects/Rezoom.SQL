@@ -182,10 +182,11 @@ type private ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelect
         let input = this.Expr(between.Input)
         let low = this.Expr(between.Low)
         let high = this.Expr(between.High)
+        let operandType = cxt.Unify(source, [ input.Info.Type; low.Info.Type; high.Info.Type ])
         {   Expr.Source = source
             Value = { Invert = between.Invert; Input = input; Low = low; High = high } |> BetweenExpr
             Info =
-                {   Type = cxt.Unify(source, [ input.Info.Type; low.Info.Type; high.Info.Type ])
+                {   Type = InferredType.Dependent(operandType, BooleanType)
                     Idempotent = input.Info.Idempotent && low.Info.Idempotent && high.Info.Idempotent
                     Function = None
                     Column = None

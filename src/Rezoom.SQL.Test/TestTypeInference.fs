@@ -216,3 +216,19 @@ let ``correlated subquery`` () =
     Assert.AreEqual(1, resultSets.Length)
     Assert.AreEqual(5, resultSets.[0].Columns.Count)
     Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Type = StringType)
+
+[<Test>]
+let ``between expr`` () =
+    { tsqlTest with
+        Migration = ""
+        Command = 
+            """select 1 as it where
+                sysutcdatetime() between sysutcdatetime() and sysutcdatetime()
+            and 1 between 0 and 2
+            and 'b' between 'a' and 'c';"""
+        Expect =
+            {   expect with
+                    Idempotent = Some true
+                    ResultSets = Some [ [ "it", { Type = NumericTypeClass; Nullable = false } ] ];
+            } |> Good
+    } |> assertSimple
