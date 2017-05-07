@@ -23,8 +23,15 @@ type private ExecutionLocalConnections(provider : ConnectionProvider) =
         for conn, tran in connections.Values do
             try
                 match state with
-                | ExecutionSuccess -> tran.Commit()
-                | ExecutionFault -> // don't explicitly rollback, tran.Dispose() should handle it
+                | ExecutionSuccess ->
+                    try
+                        tran.Commit()
+                    with
+                    | e ->
+                        if isNull exn then exn <- e
+                        else exn <- AggregateException(exn, e)
+                | ExecutionFault ->
+                    () // don't explicitly rollback, tran.Dispose() should handle it
                 try
                     tran.Dispose()
                 finally
