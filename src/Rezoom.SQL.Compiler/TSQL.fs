@@ -106,6 +106,7 @@ module private TSQLFunctions =
             aggregate "var" [ numeric scalar ] (nullable float64)
             aggregate "varp" [ numeric scalar ] (nullable float64)
             // @@FUNCTIONNAME builtins
+            atAtProc "rowcount" int32
             atAtProc "datefirst" int8
             atAtProc "dbts" binary
             atAtProc "langid" int8
@@ -146,6 +147,7 @@ module private TSQLFunctions =
             func "datetimefromparts" [ ii; ii; ii; ii; ii; ii; ii ] datetime
             func "datetimeoffsetfromparts" [ ii; ii; ii; ii; ii; ii; ii; ii; ii; ii ] datetimeoffset
             func "smalldatetimefromparts" [ ii; ii; ii; ii; ii ] datetime
+            func "todatetimeoffset" [ infect datetime; infect scalar ] datetimeoffset
             // math funcs from https://msdn.microsoft.com/en-us/library/ms177516.aspx
             func "acos" [ infect fractional ] float64
             func "asin" [ infect fractional ] float64
