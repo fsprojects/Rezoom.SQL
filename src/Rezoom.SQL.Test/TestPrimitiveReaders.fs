@@ -106,6 +106,13 @@ let ``read DateTimeOffset`` () =
     test DateTimeOffset.UtcNow ColumnType.DateTimeOffset
 
 [<Test>]
+let ``read Guid`` () =
+    test (Guid.NewGuid()) ColumnType.Guid
+    test Guid.Empty ColumnType.Guid
+    testXCore (fun (g : Guid) -> g.ToString()) (Guid.NewGuid()) ColumnType.String
+
+
+[<Test>]
 let ``read boolean`` () =
     test false ColumnType.Boolean
     test true ColumnType.Boolean

@@ -57,3 +57,21 @@ select * from Users where Created > @created or @created is null
 let ``test optional datetime parameter`` () =
     let results = TestOptionalDateTimeParameter.Command(Some DateTime.UtcNow)
     printfn "%A" results
+
+type TestGuidParameter = SQL<"""
+select * from Users where RandomId = @id
+""">
+
+[<Test>]
+let ``test guid parameter`` () =
+    let results = TestGuidParameter.Command(Guid.NewGuid())
+    printfn "%A" results
+
+type TestOptionalGuidParameter = SQL<"""
+select * from Users where RandomId = @id or @id is null
+""">
+
+[<Test>]
+let ``test optional guid parameter`` () =
+    let results = TestOptionalGuidParameter.Command(Some (Guid.NewGuid()))
+    printfn "%A" results

@@ -164,6 +164,20 @@ type Converters =
             fromDateTime dt
         | x -> failwithf "Invalid column type %A for DateTimeOffset" x
 
+    static member ToGuid(row : Row, col : ColumnInfo) : Guid =
+        let inline fromString str = Guid.Parse(str)
+        let inline fromBytes bytes = Guid(bytes : byte array)
+        match col.Type with
+        | ColumnType.Guid -> row.GetGuid(col.Index)
+        | ColumnType.String -> row.GetString(col.Index) |> fromString
+        | ColumnType.Object ->
+            match row.GetObject(col.Index) with
+            | :? string as s -> fromString s
+            | :? array<byte> as bytes -> fromBytes bytes
+            | o -> Unchecked.unbox o
+        | x -> failwithf "Invalid column type %A for Guid" x
+
+
 let private convertersByType =
     let methods = typeof<Converters>.GetMethods()
     methods

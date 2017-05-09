@@ -20,6 +20,7 @@ type ColumnType =
     | DateTime = 14s
     | DateTimeOffset = 15s
     | Boolean        = 16s
+    | Guid           = 17s
 
 [<Struct>]
 type ColumnInfo =

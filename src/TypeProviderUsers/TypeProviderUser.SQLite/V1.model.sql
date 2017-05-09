@@ -9,6 +9,7 @@ create table Users
 , Email string(254)
 , ProfilePictureSHA256 binary(32) null references Pictures(SHA256)
 , Created datetime
+, RandomId guid default(cast(randomblob(16) as guid))
 );
 
 create table Articles

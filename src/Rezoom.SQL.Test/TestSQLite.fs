@@ -18,7 +18,7 @@ let ``sqlite non-idempotent random`` () =
 let ``sqlite non-idempotent randomblob`` () =
     { sqliteTest with
         Migration = ""
-        Command = "select randomblob() as r;"
+        Command = "select randomblob(4) as r;"
         Expect =
             {   expect with
                     Idempotent = Some false

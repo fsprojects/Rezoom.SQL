@@ -6,6 +6,7 @@ open System.Collections.Generic
 
 type CoreColumnType =
     | BooleanType
+    | GuidType
     | StringType
     | IntegerType of IntegerSize
     | FloatType of FloatSize
@@ -29,6 +30,7 @@ type CoreColumnType =
         | FloatType Float32 -> FractionalTypeClass
         | FloatType Float64 -> FloatType Float32
         | DecimalType -> FractionalTypeClass
+        | GuidType
         | StringType
         | BinaryType -> StringishTypeClass
         | IntegralTypeClass
@@ -59,6 +61,7 @@ type CoreColumnType =
     override this.ToString() =
         match this with
         | BooleanType -> "BOOL"
+        | GuidType -> "GUID"
         | StringType -> "STRING"
         | IntegerType Integer8 -> "INT8"
         | IntegerType Integer16 -> "INT16"
@@ -79,6 +82,7 @@ type CoreColumnType =
         | ListType t -> "[" + string t + "]"
     static member OfTypeName(typeName : TypeName) =
         match typeName with
+        | GuidTypeName -> GuidType
         | StringTypeName _ -> StringType
         | BinaryTypeName _ -> BinaryType
         | IntegerTypeName sz -> IntegerType sz
@@ -118,6 +122,7 @@ type ColumnType =
         | DecimalType -> DbType.Decimal, nullify typeof<decimal>
         | DateTimeType -> DbType.DateTime, nullify typeof<DateTime>
         | DateTimeOffsetType -> DbType.DateTimeOffset, nullify typeof<DateTimeOffset>
+        | GuidType -> DbType.Guid, nullify typeof<Guid>
         | StringType -> DbType.String, nullify typeof<string>
         | BinaryType -> DbType.Binary, nullify typeof<byte array>
         | StringishTypeClass

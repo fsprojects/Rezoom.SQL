@@ -241,6 +241,7 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         (Seq.singleton << text) <|
             match name with
             | BooleanTypeName -> "BIT"
+            | GuidTypeName -> "GUID"
             | IntegerTypeName Integer8 -> "TINYINT"
             | IntegerTypeName Integer16 -> "SMALLINT"
             | IntegerTypeName Integer32 -> "INT"

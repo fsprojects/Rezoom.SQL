@@ -36,6 +36,7 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | FloatTypeName Float64 -> "FLOAT"
             | DateTimeTypeName // store datetimes as UTC ISO8601 strings -- yyyy-MM-ddTHH:mm:ssZ
             | StringTypeName(_) -> "VARCHAR"
+            | GuidTypeName
             | BinaryTypeName(_) -> "BLOB"
             | DecimalTypeName
             | DateTimeOffsetTypeName -> fail <| sprintf "Unsupported type ``%A``" name
@@ -82,7 +83,7 @@ module private SQLiteFunctions =
             func "printf" [ infect string; vararg scalar ] string
             func "quote" [ scalar ] string
             proc "random" [] int64
-            proc "randomblob" [] binary
+            proc "randomblob" [ int32 ] binary
             func "replace" [ infect string; infect string; infect string ] string
             func "round" [ infect float64; optional (infect integral) ] float64
             func "rtrim" [ infect string; optional (infect string) ] string
@@ -167,6 +168,24 @@ type SQLiteBackend() =
                     else
                         <@@ if isNull %%asObj then box DBNull.Value else %%xform asObj @@>
                 {   ParameterType = DbType.String
+                    ValueTransform = transform
+                }
+            | GuidType ->
+                let transform (expr : Quotations.Expr) =
+                    let xform (gExpr : Quotations.Expr<Guid>) =
+                        <@  let bytes = (%gExpr).ToByteArray()
+                            box bytes
+                        @>
+                    let xform (gExpr : Quotations.Expr) =
+                        (xform (Expr.Cast(Expr.Coerce(gExpr, typeof<Guid>)))).Raw
+                    let ty = expr.Type
+                    let asObj = Expr.Coerce(expr, typeof<obj>)
+                    if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
+                        let invokeValue = Expr.Coerce(Expr.PropertyGet(expr, ty.GetProperty("Value")), typeof<obj>)
+                        <@@ if isNull %%asObj then box DBNull.Value else %%xform invokeValue @@>
+                    else
+                        <@@ if isNull %%asObj then box DBNull.Value else %%xform asObj @@>
+                {   ParameterType = DbType.Binary
                     ValueTransform = transform
                 }
             | _ -> ParameterTransform.Default(columnType)

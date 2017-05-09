@@ -20,6 +20,7 @@ type Row() =
     abstract member GetDecimal : int16 -> decimal
     abstract member GetDateTime : int16 -> DateTime
     abstract member GetBoolean : int16 -> bool
+    abstract member GetGuid : int16 -> Guid
 
 type ObjectRow([<ParamArray>] row : obj array) =
     inherit Row()
@@ -39,4 +40,5 @@ type ObjectRow([<ParamArray>] row : obj array) =
     override __.GetDecimal(i) = row.[int i] |> Unchecked.unbox
     override __.GetDateTime(i) = row.[int i] |> Unchecked.unbox
     override __.GetBoolean(i) = row.[int i] |> Unchecked.unbox
+    override __.GetGuid(i) = row.[int i] |> Unchecked.unbox
 

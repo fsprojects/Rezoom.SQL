@@ -20,6 +20,7 @@ let private columnTypes =
         typeof<DateTime>, ColumnType.DateTime
         typeof<DateTimeOffset>, ColumnType.DateTimeOffset
         typeof<bool>, ColumnType.Boolean
+        typeof<Guid>, ColumnType.Guid
     |] |> dict
 
 let columnType (ty : Type) =
@@ -50,4 +51,5 @@ type DataReaderRow(reader : IDataReader) =
     override __.GetDecimal(i) = reader.GetDecimal(int i)
     override __.GetDateTime(i) = reader.GetDateTime(int i)
     override __.GetBoolean(i) = reader.GetBoolean(int i)
+    override __.GetGuid(i) = reader.GetGuid(int i)
 

@@ -36,6 +36,7 @@ type FloatSize =
     | Float64
 
 type TypeName =
+    | GuidTypeName
     | StringTypeName of maxLength : int option
     | BinaryTypeName of maxLength : int option
     | IntegerTypeName of IntegerSize
