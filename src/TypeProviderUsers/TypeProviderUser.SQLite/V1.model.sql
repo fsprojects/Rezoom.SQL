@@ -8,6 +8,7 @@ create table Users
 , Name string(80)
 , Email string(254)
 , ProfilePictureSHA256 binary(32) null references Pictures(SHA256)
+, Created datetime
 );
 
 create table Articles

@@ -16,15 +16,17 @@ insert into Pictures(SHA256, PNGData)
 values  ( x'0000000000000000000000000000000000000000000000000000000000000000'
         , x''
         );
-insert into Users(Name, Email, ProfilePictureSHA256)
+insert into Users(Name, Email, ProfilePictureSHA256, Created)
 values  ( 'Homer'
         , 'homer.simpson@springfieldnuclear.com'
         , x'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+        , 2017-01-01T00:00:00
         );
-insert into Users(Name, Email, ProfilePictureSHA256)
+insert into Users(Name, Email, ProfilePictureSHA256, Created)
 values  ( 'Marge'
         , 'marge@globex.com'
         , x'0000000000000000000000000000000000000000000000000000000000000000'
+        ,  2017-01-01T00:00:00
         );
 insert into Articles(AuthorId, ArticleTitle, ArticleText)
 values  ( (select Id from Users where Name = 'Homer')

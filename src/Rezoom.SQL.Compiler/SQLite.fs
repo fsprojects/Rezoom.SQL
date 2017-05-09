@@ -2,17 +2,23 @@
 open System
 open System.Collections.Generic
 open System.Configuration
+open System.Data
 open System.Data.Common
 open System.IO
+open FSharp.Quotations
 open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.BackendUtilities
 open Rezoom.SQL.Compiler.Translators
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
+open Rezoom.SQL.Compiler.CoreParser
 
 type private SQLiteLiteral() =
     inherit DefaultLiteralTranslator()
-    override __.BooleanLiteral(t) = CommandText <| if t then "1" else "0"
+    override __.BooleanLiteral(t) =
+        CommandText <| if t then "1" else "0"
+    override __.DateTimeLiteral(dt) =
+        CommandText <| "'" + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") + "'"
 
 type private SQLiteExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
@@ -28,10 +34,10 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | IntegerTypeName Integer64 -> "INTEGER"
             | FloatTypeName Float32
             | FloatTypeName Float64 -> "FLOAT"
+            | DateTimeTypeName // store datetimes as UTC ISO8601 strings -- yyyy-MM-ddTHH:mm:ssZ
             | StringTypeName(_) -> "VARCHAR"
             | BinaryTypeName(_) -> "BLOB"
             | DecimalTypeName
-            | DateTimeTypeName
             | DateTimeOffsetTypeName -> fail <| sprintf "Unsupported type ``%A``" name
 
 type private SQLiteStatement(indexer : IParameterIndexer) as this =
@@ -140,7 +146,30 @@ type SQLiteBackend() =
     interface IBackend with
         member this.MigrationBackend = <@ fun settings -> new SQLiteMigrationBackend(settings) :> IMigrationBackend @>
         member this.InitialModel = initialModel
-        member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
+        member this.ParameterTransform(columnType) =
+            match columnType.Type with
+            | DateTimeType ->
+                let transform (expr : Quotations.Expr) =
+                    let xform (dtExpr : Quotations.Expr<DateTime>) =
+                        <@  let utcDt =
+                                if (%dtExpr).Kind = DateTimeKind.Unspecified
+                                then DateTime.SpecifyKind(%dtExpr, DateTimeKind.Utc)
+                                else (%dtExpr).ToUniversalTime()
+                            utcDt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") |> box
+                        @>
+                    let xform (dtExpr : Quotations.Expr) =
+                        (xform (Expr.Cast(Expr.Coerce(dtExpr, typeof<DateTime>)))).Raw
+                    let ty = expr.Type
+                    let asObj = Expr.Coerce(expr, typeof<obj>)
+                    if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
+                        let invokeValue = Expr.Coerce(Expr.PropertyGet(expr, ty.GetProperty("Value")), typeof<obj>)
+                        <@@ if isNull %%asObj then box DBNull.Value else %%xform invokeValue @@>
+                    else
+                        <@@ if isNull %%asObj then box DBNull.Value else %%xform asObj @@>
+                {   ParameterType = DbType.String
+                    ValueTransform = transform
+                }
+            | _ -> ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =
             let translator = SQLiteStatement(indexer)
             translator.TotalStatements(stmts)

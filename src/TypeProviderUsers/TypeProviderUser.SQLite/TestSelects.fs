@@ -39,3 +39,21 @@ let ``test in byte arrays`` () =
     let results = TestInByteArrays.Command([| Array.create 32 0uy; Array.create 32 0xffuy |]) |> runOnTestData
     printfn "%A" results
     Assert.AreEqual([ [||]; [||] ], [ for r in results -> r.PNGData ])
+
+type TestDateTimeParameter = SQL<"""
+select * from Users where Created > @created
+""">
+
+[<Test>]
+let ``test datetime parameter`` () =
+    let results = TestDateTimeParameter.Command(DateTime.UtcNow)
+    printfn "%A" results
+
+type TestOptionalDateTimeParameter = SQL<"""
+select * from Users where Created > @created or @created is null
+""">
+
+[<Test>]
+let ``test optional datetime parameter`` () =
+    let results = TestOptionalDateTimeParameter.Command(Some DateTime.UtcNow)
+    printfn "%A" results

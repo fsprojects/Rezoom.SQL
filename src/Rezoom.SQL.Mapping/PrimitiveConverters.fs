@@ -128,14 +128,20 @@ type Converters =
     static member ToDateTime(row : Row, col : ColumnInfo) : DateTime =
         let inline fromString str =
             DateTime.Parse(str, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)
-        match col.Type with
-        | ColumnType.DateTime -> row.GetDateTime(col.Index)
-        | ColumnType.String -> row.GetString(col.Index) |> fromString
-        | ColumnType.Object ->
-            match row.GetObject(col.Index) with
-            | :? string as s -> fromString s
-            | o -> Convert.ToDateTime(o, CultureInfo.InvariantCulture)
-        | x -> failwithf "Invalid column type %A for DateTime" x
+        let dt =
+            match col.Type with
+            | ColumnType.DateTime -> row.GetDateTime(col.Index)
+            | ColumnType.String -> row.GetString(col.Index) |> fromString
+            | ColumnType.Object ->
+                match row.GetObject(col.Index) with
+                | :? string as s -> fromString s
+                | o -> Convert.ToDateTime(o, CultureInfo.InvariantCulture)
+            | x -> failwithf "Invalid column type %A for DateTime" x
+        if dt.Kind = DateTimeKind.Unspecified then
+            DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+        else
+            dt.ToUniversalTime()
+
     static member ToDateTimeOffset(row : Row, col : ColumnInfo) : DateTimeOffset =
         let inline fromString str =
             DateTimeOffset.Parse(str, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)
