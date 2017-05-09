@@ -50,6 +50,7 @@ let binary = concrete BinaryType
 let datetime = concrete DateTimeType
 let datetimeoffset = concrete DateTimeOffsetType
 let decimal = concrete DecimalType
+let guid = concrete GuidType
 
 let nullable arg =
     { arg with

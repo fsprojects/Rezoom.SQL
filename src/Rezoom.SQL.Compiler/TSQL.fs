@@ -216,6 +216,9 @@ module private TSQLFunctions =
             func "string_escape" [ infect string; infect string ] string // TODO: enforce literal on 2nd arg?
             func "substring" [ infect a' |> constrained StringishTypeClass; infect integral; infect integral ] a'
             func "unicode" [ infect string ] int32
+            // guid functions
+            proc "newid" [] guid
+            proc "newsequentialid" [] guid
             // missing: system functions, system statistical functions, text and image functions
         |] |> Array.map addCustom |> DefaultFunctions.extendedBy
 
