@@ -232,6 +232,8 @@ type private TSQLLiteral() =
         CommandText <| "'" + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff") + "'"
     override __.DateTimeOffsetLiteral(dt) =
         CommandText <| "'" + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffzzz") + "'"
+    override __.StringLiteral(str) =
+        CommandText <| "N'" + str.Replace("'", "''") + "'"
 
 type private TSQLExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)

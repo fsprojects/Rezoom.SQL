@@ -48,13 +48,13 @@ let ``first class to bool`` ()=
 let ``iif with predicate`` ()=
     translate
         """select IIF(1 > 0, 'a', 'b') as choice"""
-        """SELECT IIF((1 > 0),'a','b') AS [choice];"""
+        """SELECT IIF((1 > 0),N'a',N'b') AS [choice];"""
 
 [<Test>]
 let ``iif with first class value`` () =
     translate
         """select IIF(false, 'a', 'b') as choice"""
-        """SELECT IIF(((0)<>0),'a','b') AS [choice];"""
+        """SELECT IIF(((0)<>0),N'a',N'b') AS [choice];"""
 
 [<Test>]
 let ``temp table`` () =
@@ -122,7 +122,7 @@ let ``select offset`` () =
 let ``insert row`` () =
     translate
         "insert into Users row Email = 'email@example.com', Name = 'name'"
-        "INSERT INTO [Users] ([Email],[Name]) VALUES ('email@example.com','name');"
+        "INSERT INTO [Users] ([Email],[Name]) VALUES (N'email@example.com',N'name');"
 
 [<Test>]
 let ``tsql dump function signatures`` () =
