@@ -1,8 +1,13 @@
 ﻿module TypeProviderUser.SQLite.TestSelects
 open System
+open System.Threading
+open System.Threading.Tasks
 open NUnit.Framework
 open FsUnit
+open Rezoom
 open Rezoom.SQL
+open Rezoom.SQL.Plans
+open MBrace.FsPickler
 
 type TestEqualInteger = SQL<"""
 select * from Users where Id = @userId
@@ -75,3 +80,37 @@ select * from Users where RandomId = @id or @id is null
 let ``test optional guid parameter`` () =
     let results = TestOptionalGuidParameter.Command(Some (Guid.NewGuid()))
     printfn "%A" results
+
+[<Test>]
+let ``replay works`` () =
+    let plan =
+        plan {
+            let! r1 = TestInInteger.Command([| 1L |]).Plan()
+            let! r2 = TestInInteger.Command([| 2L |]).Plan()
+            return r1.[0].Email, r2.[0].Email
+        }
+    let config = Execution.ExecutionConfig.Default
+    let serializer =
+        let bin = FsPickler.CreateBinarySerializer()
+        { new Replay.IReplaySerializer with
+            member __.Serialize(o) = bin.Pickle(o)
+            member __.Deserialize(o) = bin.UnPickle(o)
+        }
+    let mutable saved = None
+    let save state arr =
+        saved <- Some (arr())
+    let recording =
+        Replay.RecordingExecutionStrategy.Create
+            ( Execution.defaultExecutionStrategy
+            , serializer
+            , save
+            )
+    let played = recording.Execute(config, plan, CancellationToken.None).Result
+    match saved with
+    | None -> failwith "not saved"
+    | Some blob ->
+        let replayed = (Replay.replay config serializer blob).Result
+        if played = unbox replayed then
+            ()
+        else failwith "not equal"
+
