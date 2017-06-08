@@ -13,6 +13,7 @@
     * [Data types](doc/Language/DataTypes.md)
     * [Literals](doc/Language/Literal.md)
     * [Expressions](doc/Language/Expr.md)
+    * [Create Table Statements](doc/Language/CreateTableStmt.md)
     * [Select Statements](doc/Language/SelectStmt.md)
     * [Navigation properties](doc/Language/NavigationProperties.md)
     * [Vendor statements](doc/Language/VendorStatements.md)

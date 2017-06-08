@@ -39,6 +39,9 @@ def table_expr():
 def compound_expr():
     return NonTerminal('compound-expr', language('SelectStmt', 'compound-expr'))
 
+def column_constraint():
+    return NonTerminal('compound-expr', language('CreateTable', 'column-constraint'))
+
 def literal():
     return NonTerminal('literal', language('Literal', 'literal'))
 
@@ -120,7 +123,7 @@ export('ColumnConstraint.svg', Diagram(
 export('ColumnDef.svg', Diagram(
     name(),
     type_name(),
-    ZeroOrMore(NonTerminal('column-constraint'))))
+    ZeroOrMore(column_constraint())))
 
 export('TableConstraint.svg', Diagram(
     Stack(
