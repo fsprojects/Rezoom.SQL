@@ -65,16 +65,16 @@ The supported constraints are:
 
 ## Table constraints
 
+### _table-constraint_
+
+After specifying the columns of the table, you can also define some table-wide
+constraints that apply to more than one column. These are **table-constraints**.
+
 {% include "Diagrams/TableConstraint.svg" %}
 
 Some of these are just multi-column versions of the column constraints and work
 the same. The CHECK constraint is table-wide and should be a boolean expression,
 which will be checked when rows in the table are inserted or updated.
-
-After specifying the columns of the table, you can also define some table-wide
-constraints that apply to more than one column. These are **table-constraints**.
-
-### _table-constraint_
 
 ## Constraint naming
 
