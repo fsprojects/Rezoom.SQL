@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Rezoom.SQL.Provider.TSQL</id>
-    <version>0.3.1</version>
+    <version>0.5.1</version>
     <title>Rezoom.SQL.Provider.TSQL</title>
     <authors>Robert Peele</authors>
     <owners>humbobst</owners>
@@ -14,7 +14,7 @@
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data tsql fsharp typeprovider</tags>
     <dependencies>
-      <dependency id="Rezoom.SQL.Provider" version="0.3.1" />
+      <dependency id="Rezoom.SQL.Provider" version="0.5.1.2675" />
     </dependencies>
   </metadata>
 </package>
