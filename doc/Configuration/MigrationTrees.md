@@ -1,4 +1,5 @@
-﻿# Migration trees
+﻿
+# Migration trees
 
 If you're working alone on a project, it usually makes sense to have a linear migration sequence. So next time you need
 a migration, you'll write `V3.nextfeature.sql`, then `V4.etc.sql`, and so on.
