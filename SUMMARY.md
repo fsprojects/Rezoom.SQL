@@ -8,6 +8,7 @@
     * [Using Rezoom to minimize round-trips](doc/Tutorial/UsingRezoom.md)
 * [Configuration](doc/Configuration/README.md)
     * [rzsql.json](doc/Configuration/Json.md)
+    * [Migration Trees](doc/Configuration/MigrationTrees.md)
 * [Language](doc/Language/README.md)
     * [Names](doc/Language/Name.md)
     * [Data types](doc/Language/DataTypes.md)

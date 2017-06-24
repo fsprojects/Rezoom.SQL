@@ -1,0 +1,14 @@
+digraph "Migration Tree 1" {
+  rankdir=LR
+  node[color=none,shape=rectangle,fontname=Consolas]
+
+  subgraph cluster_v1 {
+      model[label="V1.model.sql"]
+  }
+
+  subgraph cluster_v2 {
+      foo[label="V2.foo.sql"]
+  }
+
+  model -> foo[color=red]
+}

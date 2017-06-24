@@ -1,0 +1,19 @@
+digraph "Migration Tree 2" {
+  rankdir=LR
+  node[color=none,shape=rectangle,fontname=Consolas]
+
+  subgraph cluster_v1 {
+      model[label="V1.model.sql"]
+  }
+
+  subgraph cluster_v2 {
+      rank="same";
+      foo[label="V2.foo.sql"]
+      bar[label="V2.foo-bar.sql"]
+      baz[label="V2.foo-baz.sql"]
+      foo -> bar
+      foo -> baz
+  }
+
+  model -> foo[color=red]
+}

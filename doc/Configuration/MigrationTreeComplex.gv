@@ -1,0 +1,35 @@
+digraph "Migration Tree 2" {
+  rankdir=LR
+  node[color=none,shape=rectangle,fontname=Consolas]
+
+  subgraph cluster_v1 {
+      model[label="V1.model.sql"]
+  }
+
+  subgraph cluster_v2 {
+      rank="same";
+      foo[label="V2.foo.sql"]
+      bar[label="V2.foo-bar.sql"]
+      baz[label="V2.foo-baz.sql"]
+      qux[label="V2.baz-qux.sql"]
+      foo -> bar
+      foo -> baz
+      baz -> qux
+  }
+
+  subgraph cluster_v3 {
+      zorp[label="V3.zorp.sql"]
+      zfoo[label="V3.zorp-foo.sql"]
+      zbar[label="V3.zorp-bar.sql"]
+      zorp -> zfoo
+      zorp -> zbar
+  }
+
+  subgraph cluster_v4 {
+      kro[label="V4.kro.sql"]
+  }
+
+  model -> foo[color=red]
+  foo -> zorp[color=red]
+  zorp -> kro[color=red]
+}
