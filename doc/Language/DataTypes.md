@@ -116,10 +116,11 @@ In the simplest case, as seen above, the expression is a parameter, like
 nullable.
 
 This also works for somewhat more complex expressions. For example, it could be
-a scalar sub-query, like `(select @name as n)`, or `@count + 1`. In this case,
-the typechecker has concluded that the whole subquery's result is nullable
-if-and-only-if the parameter in question is nullable, so again, it concludes
-that the parameter must be made nullable to satisfy the constraint.
+a binary operation like `@count + 1`, or even a scalar sub-query, like `(select
+@name as n)`. In both these cases. the typechecker concludes that the whole
+subquery's result is nullable if-and-only-if the parameter in question is
+nullable, so again, it makes the parameter's type nullable to satisfy the
+constraint.
 
 What about expressions involving multiple parameters? Consider [this
 query](http://rzsql.net/#011CADD14BA2DBA4E91B39CCE86D48EDF2726A7C):
