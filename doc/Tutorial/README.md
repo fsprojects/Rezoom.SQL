@@ -156,8 +156,9 @@ let main argv =
 
 ## Using more complex queries
 
-You can use SQL joins, group by, etc. in your queries. The SQL syntax is not yet documented, but is closely based
-on [that of SQLite](https://www.sqlite.org/lang.html).
+You can use SQL joins, group by, etc. in your queries. The SQL syntax is closely
+based on [that of SQLite](https://www.sqlite.org/lang.html). For more details,
+refer to the [language section](../Language/README.md) of this documentation.
 
 For example, we can join the `Users` table to the `Comments` table to get a list of comments *and* data
 about the users who wrote them. This also demonstrates using query parameters. Notice that Rezoom.SQL infers
