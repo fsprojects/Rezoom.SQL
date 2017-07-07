@@ -177,6 +177,7 @@ export('TypeName.svg', Diagram(
         Choice(0, 'FLOAT64', 'FLOAT'),
         'DECIMAL',
         'BOOL',
+        'GUID',
         'DATETIME',
         'DATETIMEOFFSET')))
 
