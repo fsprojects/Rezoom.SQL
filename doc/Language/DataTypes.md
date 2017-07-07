@@ -142,8 +142,9 @@ nullability inference occurs in two stages:
 2. Remaining expressions are processed.
 
 You can use the `nullable` function to tell the type checker that one of the two
-parameters is nullable. It will pick this up in the first pass, and as a result,
-know that it does not need to infer the other parameter as nullable.
+parameters is nullable. It will pick this up in the first pass. Then, in the
+second pass, it will know that it does not need to make the other parameter
+nullable.
 
 See [this example](http://rzsql.net/#CDF2BE7EA720284F2640B4BEA1AAFDEA9CCD8EC2):
 
