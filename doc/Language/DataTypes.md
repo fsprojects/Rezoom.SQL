@@ -10,6 +10,7 @@ like.
 | string         | System.String         | varchar     | nvarchar(max)   |
 | binary(n)      | System.Byte[]         | blob        | varbinary(n)    |
 | binary         | System.Byte[]         | blob        | varbinary(max)  |
+| guid           | System.Guid           | blob        | uniqueidentifier|
 | bool           | System.Boolean        | integer     | bit             |
 | int, int32     | System.Int32          | integer     | int             |
 | int16          | System.Int16          | integer     | smallint        |
@@ -90,3 +91,66 @@ backend-specific functions, like the SQLite `ifnull` function.
 
 Finally, any expression inserted into a nullable table column is assumed to be
 nullable.
+
+# Nullability inference on left joins
+
+All columns in a table on the right side of a `left join` are nullable. This is
+because when the join does not match any rows in the right-hand table, the
+result set will contain a row of all NULLs.
+
+However, this is a special kind of nullability which you can ignore when
+consuming a result set in your program by using [navigation
+properties](NavigationProperties.md).
+
+# Nullability inference on more complex expressions
+
+What follows is intended to satisfy curious readers -- most queries do not
+exercise this corner of the typechecker.
+
+When an expression is assumed to be nullable, for example, because it appears on
+either side of an `IS` operator, the effect varies depending on how that
+constraint could be satisfied.
+
+In the simplest case, as seen above, the expression is a parameter, like
+`@name`, so the typechecker simply concludes that the parameter must be
+nullable.
+
+This also works for somewhat more complex expressions. For example, it could be
+a scalar sub-query, like `(select @name as n)`, or `@count + 1`. In this case,
+the typechecker has concluded that the whole subquery's result is nullable
+if-and-only-if the parameter in question is nullable, so again, it concludes
+that the parameter must be made nullable to satisfy the constraint.
+
+What about expressions involving multiple parameters? Consider [this
+query](http://rzsql.net/#011CADD14BA2DBA4E91B39CCE86D48EDF2726A7C):
+
+```sql
+select 1 as col where 1 is @x + @y
+```
+
+In SQL, the expression `@x + @y` is nullable if-and-only-if `@x` **OR** `@y` is
+nullable. This is precisely how the typechecker models the nullability of the
+expression. Forcing it to be nullable could be satisfied by making _either_
+parameter nullable, but in the absence of other information, the typechecker
+will assume _both_ `@x` and `@y` are nullable.
+
+However, because you may not always want both parameters to be nullable,
+nullability inference occurs in two stages:
+
+1. Expressions assumed nullable whose nullability is based on a single parameter are processed.
+2. Remaining expressions are processed.
+
+You can use the `nullable` function to tell the type checker that one of the two
+parameters is nullable. It will pick this up in the first pass, and as a result,
+know that it does not need to infer the other parameter as nullable.
+
+See [this example](http://rzsql.net/#CDF2BE7EA720284F2640B4BEA1AAFDEA9CCD8EC2):
+
+```sql
+select 1 as col where 1 is @x + nullable(@y)
+```
+
+Notice that this is an [erased function](Functions/README.md#erased-functions),
+so using it has no effect on the compiled SQL code.
+
+
