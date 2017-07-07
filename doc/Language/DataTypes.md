@@ -44,7 +44,7 @@ hierarchy than `int16`.
 
 Here is the current type hierarchy. Notice that there are some types in the
 hierarchy that do not appear in the above table. These exist just as constraints
-so that we can model functions like TSQL's `datalength` that works on both
+so that we can model functions like TSQL's `datalength`, which works on both
 `binary` and `string` types. It is not possible to reference them in your own
 RZSQL code, such as in `CAST` expressions.
 
