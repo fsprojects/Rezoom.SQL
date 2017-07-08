@@ -12,7 +12,7 @@ These features, while not currently supported, fit in well with RZSQL's design
 goals and would make sense to add eventually. Pull requests would of course be
 appreciated!
 
-* Complete `ALTER TABLE` support for backends other than SQLite
+* Complete `ALTER TABLE` support for backends beyond SQLite
 * Support for mixing dynamic SQL into static queries, especially `ORDER BY` clause
 * Window functions
 * Table-valued functions
