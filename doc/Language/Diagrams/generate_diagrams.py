@@ -42,6 +42,9 @@ def compound_expr():
 def column_constraint():
     return NonTerminal('compound-expr', language('CreateTable', 'column-constraint'))
 
+def column_def():
+    return NonTerminal('column-def', language('CreateTable', 'column-def'))
+
 def literal():
     return NonTerminal('literal', language('Literal', 'literal'))
 
@@ -150,10 +153,24 @@ export('CreateTable.svg', Diagram(Sequence(
                 '(',
                 ZeroOrMore(
                     Choice(0,
-                        NonTerminal('column-def'),
+                        column_def(),
                         NonTerminal('table-constraint')),
                     ','),
                 ')'))))))
+
+export('AlterTable.svg', Diagram(Sequence(
+    'ALTER',
+    'TABLE',
+    object_name(),
+    Choice(0,
+        Sequence(
+            'ADD',
+            'COLUMN',
+            column_def()),
+        Sequence(
+            'RENAME',
+            'TO',
+            name())))))
 
 export('CreateView.svg', Diagram(
     Stack(

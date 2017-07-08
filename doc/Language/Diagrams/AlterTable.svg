@@ -1,0 +1,59 @@
+<svg class="railroad-diagram" height="92" viewBox="0 0 670 92" width="670" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(.5 .5)">
+<style type="text/css">
+svg.railroad-diagram path {
+    stroke-width: 3;
+    stroke: black;
+    fill: rgba(0,0,0,0);
+}
+svg.railroad-diagram text {
+    font-family: "Consolas", "Monospace";
+    font-size: 14px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+svg.railroad-diagram text.diagram-text {
+    font-size: 12px;
+}
+svg.railroad-diagram text.diagram-arrow {
+    font-size: 16px;
+}
+svg.railroad-diagram text.label {
+    text-anchor: start;
+}
+svg.railroad-diagram text.comment {
+    font-family: "Consolas", "Monospace";
+    font-size: 12px;
+    font-style: italic;
+}
+svg.railroad-diagram g.non-terminal text {
+    font-style: italic;
+}
+svg.railroad-diagram rect {
+    stroke-width: 3;
+    stroke: black;
+    fill: #ddeeff;
+}
+svg.railroad-diagram path.diagram-text {
+    stroke-width: 3;
+    stroke: black;
+    fill: white;
+    cursor: help;
+}
+svg.railroad-diagram g.diagram-text:hover path.diagram-text {
+    fill: #eee;
+}
+        </style><path d="M 20 21 v 20 m 10 -20 v 20 m -10 -10 h 20.5"></path><path d="M40 31h10"></path><g>
+<path d="M50 31h0"></path><path d="M620 31h0"></path><g class="terminal">
+<path d="M50 31h0"></path><path d="M110 31h0"></path><rect height="22" rx="10" ry="10" width="60" x="50" y="20"></rect><text x="80" y="35">ALTER</text></g><path d="M110 31h10"></path><path d="M120 31h10"></path><g class="terminal">
+<path d="M130 31h0"></path><path d="M190 31h0"></path><rect height="22" rx="10" ry="10" width="60" x="130" y="20"></rect><text x="160" y="35">TABLE</text></g><path d="M190 31h10"></path><path d="M200 31h10"></path><g class="non-terminal">
+<path d="M210 31h0"></path><path d="M318 31h0"></path><rect height="22" width="108" x="210" y="20"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/Name.html#object-name"><text x="264" y="35">object-name</text><text x="264" y="35">object-name</text></a></g><path d="M318 31h10"></path><g>
+<path d="M328 31h0"></path><path d="M620 31h0"></path><path d="M328 31h20"></path><g>
+<path d="M348 31h0"></path><path d="M600 31h0"></path><g class="terminal">
+<path d="M348 31h0"></path><path d="M392 31h0"></path><rect height="22" rx="10" ry="10" width="44" x="348" y="20"></rect><text x="370" y="35">ADD</text></g><path d="M392 31h10"></path><path d="M402 31h10"></path><g class="terminal">
+<path d="M412 31h0"></path><path d="M480 31h0"></path><rect height="22" rx="10" ry="10" width="68" x="412" y="20"></rect><text x="446" y="35">COLUMN</text></g><path d="M480 31h10"></path><path d="M490 31h10"></path><g class="non-terminal">
+<path d="M500 31h0"></path><path d="M600 31h0"></path><rect height="22" width="100" x="500" y="20"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/CreateTable.html#column-def"><text x="550" y="35">column-def</text><text x="550" y="35">column-def</text></a></g></g><path d="M600 31h20"></path><path d="M328 31a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"></path><g>
+<path d="M348 61h28"></path><path d="M572 61h28"></path><g class="terminal">
+<path d="M376 61h0"></path><path d="M444 61h0"></path><rect height="22" rx="10" ry="10" width="68" x="376" y="50"></rect><text x="410" y="65">RENAME</text></g><path d="M444 61h10"></path><path d="M454 61h10"></path><g class="terminal">
+<path d="M464 61h0"></path><path d="M500 61h0"></path><rect height="22" rx="10" ry="10" width="36" x="464" y="50"></rect><text x="482" y="65">TO</text></g><path d="M500 61h10"></path><path d="M510 61h10"></path><g class="non-terminal">
+<path d="M520 61h0"></path><path d="M572 61h0"></path><rect height="22" width="52" x="520" y="50"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/Name.html#name"><text x="546" y="65">name</text><text x="546" y="65">name</text></a></g></g><path d="M600 61a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10"></path></g></g><path d="M620 31h10"></path><path d="M 630 31 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g></svg>
