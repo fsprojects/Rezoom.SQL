@@ -25,8 +25,11 @@ appreciated!
 ## In my dreams
 
 These features are considered desirable, but would be more difficult to fit into
-RZSQL's design, and will probably not be added:
+RZSQL's design. I probably won't get around to adding them unless I'm around to
+work on this project [a long time](https://www.youtube.com/watch?v=izQB2-Kmiic):
 
+* Interpreted in-memory implementation of each DB backend, for easy unit testing
+* Linq-ish query builder using the type provider's database model
 * Statically typed (w/ schema) JSON/XML access
 * Custom data types (e.g. Postgres range types)
 
