@@ -49,9 +49,12 @@ let getArticles() =
             printfn "    %s said: %s" comment.Author.Email comment.Comment
 ```
 
-It's as simple as that. Next time you run your program, you'll notice it runs `V2.articles.sql` as a migration.
+It's as simple as that. Next time you run your program, you'll notice it runs
+`V2.articles.sql` as a migration.
 
-As you might imagine, you could write your next migration in `V3.something.sql`. This linear ordering of migrations is
-simple and easy, but can be frustrating when you work on features in separate branches, or on a team with other
-developers. Rezoom.SQL has a feature called [migration trees](MigrationTrees.html) to help with those situations.
-It's beyond the scope of this tutorial, but check it out if you're curious.
+As you might imagine, you could write your next migration in `V3.something.sql`.
+This linear ordering of migrations is simple and easy, but can be frustrating
+when you work on features in separate branches, or on a team with other
+developers. Rezoom.SQL has a feature called [migration
+trees](../Configuration/MigrationTrees.md) to help with those situations. It's
+beyond the scope of this tutorial, but check it out if you're curious.
