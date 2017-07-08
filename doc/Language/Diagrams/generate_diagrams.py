@@ -40,10 +40,10 @@ def compound_expr():
     return NonTerminal('compound-expr', language('SelectStmt', 'compound-expr'))
 
 def column_constraint():
-    return NonTerminal('compound-expr', language('CreateTable', 'column-constraint'))
+    return NonTerminal('compound-expr', language('CreateTableStmt', 'column-constraint'))
 
 def column_def():
-    return NonTerminal('column-def', language('CreateTable', 'column-def'))
+    return NonTerminal('column-def', language('CreateTableStmt', 'column-def'))
 
 def literal():
     return NonTerminal('literal', language('Literal', 'literal'))
