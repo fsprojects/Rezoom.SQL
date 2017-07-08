@@ -1,3 +1,5 @@
+(this page is part of [the Rezoom.SQL tutorial](README.md))
+
 # Switching from SQLite to SQL Server
 
 Rezoom.SQL translates its own dialect of SQL to different "backends". Currently only [SQLite](https://www.sqlite.org/)

@@ -1,3 +1,5 @@
+(this page is part of [the Rezoom.SQL tutorial](README.md))
+
 # Adding Migrations
 
 If you're picky about your contrived examples, you may take issue with the model defined in `V1.model.sql`.
