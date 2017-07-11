@@ -67,6 +67,11 @@ has an obvious downside of cluttering caller code and being easy to forget. At
 the permission check and the action it permitted, and then you're back to this
 problem.
 
+Finally, you could write a caching layer for obtaining permissions. This is
+probably the best approach so far, but can be a lot of work, especially making
+sure the cache gets invalidated correctly when permissions change. It also won't
+help at all with the 500 separate `update` commands.
+
 ## Solving it with Rezoom
 
 Using Rezoom, you can define `deleteDocument` as a `Plan`. When you see
@@ -106,8 +111,8 @@ let example() =
 ```
 
 Executing this version of `deleteManyDocuments` will only query for permissions
-once. This is thanks to the static analysis provided by Rezoom.SQL, which tells
-Rezoom:
+**once**. This is thanks to the static analysis provided by Rezoom.SQL, which
+tells Rezoom:
 
 1. `GetPermissions` doesn't have side effects or use any nondeterministic
    functions like `random`, so its result can be cached for the rest of this
@@ -133,7 +138,7 @@ for documentId in batch documentIds do
     ...
 ```
 
-Now the function will execute with two round-trips to the database: one
+Now the function will execute with **two round-trips** to the database: one
 containing the permissions query, another containing all the `update` statements
 to delete the documents.
 
@@ -142,8 +147,9 @@ self-contained units of business logic which you can compose into much more
 complex transactions without incurring massive performance costs.
 
 This is a breath of fresh air compared to typical database work, where to get
-acceptable efficiency you must write large chunks of logic or pass around a lot
-of shared state explicitly.
+acceptable efficiency you usually have to either write your logic in large
+chunks with minimal abstraction, or pass around a lot of shared state
+explicitly.
 
 ## Caching and you
 
@@ -165,15 +171,14 @@ It doesn't know and it doesn't want to.
   will be executed within a transaction. It does not represent long-running,
   ongoing tasks like polling loops.
 
-* The cache is local to the each Plan's execution. If multiple plans are running
-  at the same time (for example, servicing different web requests), they do not
-  share any cached data.
+* The cache is local to each Plan's execution. When multiple plans are running
+  at the same time (for example, servicing different web requests), they **do
+  not** share any cached data.
 
 This means that Rezoom's automatic caching is intended to **simulate you
 explicitly passing already-loaded data** around between your functions,
 **without cluttering your interfaces with brittle implementation details**.
 
 In fact, at large scale, you might still want to use another layer of caching
-for heavily-hit resources so that multiple web requests _can_ share the same
-data.
-
+for heavily-hit resources so that multiple web requests _can_ share some
+caching. It's up to you!
