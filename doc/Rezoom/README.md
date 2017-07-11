@@ -118,7 +118,7 @@ tells Rezoom:
    functions like `random`, so its result can be cached for the rest of this
    transaction unless we update the data in the `UserPermissions` table.
 
-2. `DeleteDocument` does have side effects, but doesn't affect the
+2. `DeleteDocument` does have side effects, but doesn't touch the
    `UserPermissions` table, so it doesn't invalidate the cache for
    `GetPermissions`.
 
@@ -161,7 +161,7 @@ Cached answers can be _wrong_. The old adage goes:
 
 So it's natural to be suspicious of a "magic" cache, especially when we're
 talking to an external database that could be updated by another thread or even
-by another program running on another computer 500 miles away. The cache
+by a program running on another machine somewhere. The automatic cache
 invalidation could be perfect for our own code, but how can it know about those
 external changes to the data?
 
