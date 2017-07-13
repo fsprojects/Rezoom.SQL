@@ -356,7 +356,10 @@ let private case expr =
     -|> id
 
 let expr, private exprImpl = createParserForwardedToRef<Expr<unit, unit>, unit>()
-let private selectStmt, private selectStmtImpl = createParserForwardedToRef<SelectStmt<unit, unit>, unit>()
+let private selectStmt, private selectStmtImpl =
+    createParserForwardedToRef<SelectStmt<unit, unit>, unit>()
+let private selectStmtWithoutCTE, private selectStmtWithoutCTEImpl =
+    createParserForwardedToRef<SelectStmt<unit, unit>, unit>()
 
 let private binary op e1 e2 =
     {   Expr.Value = BinaryExpr { BinaryExpr.Operator = op; Left = e1; Right = e2 }
@@ -402,7 +405,7 @@ let private inOperator =
                 -- ws
                 --
                     +.[
-                        %% +.selectStmt -|> InSelect
+                        %% +.selectStmtWithoutCTE -|> InSelect
                         %% +.(qty.[0..] / tws ',' * expr) -|> (fun exs -> exs.ToArray() |> InExpressions)
                     ]
                 -- ')'
@@ -455,13 +458,13 @@ let private betweenOperator =
 let private term (expr : Parser<Expr<unit, unit>, unit>) =
     let parenthesized =
         %[
-            %% +.selectStmt -|> ScalarSubqueryExpr
+            %% +.selectStmtWithoutCTE -|> ScalarSubqueryExpr
             %% +.expr -|> fun e -> e.Value
         ]
     %% +.sourcePosition
     -- +.[
             %% '(' -- ws -- +.parenthesized -- ')' -|> id
-            %% kw "EXISTS" -- ws -- '(' -- ws -- +.selectStmt -- ')' -|> ExistsExpr
+            %% kw "EXISTS" -- ws -- '(' -- ws -- +.selectStmtWithoutCTE -- ')' -|> ExistsExpr
             %% +.literal -|> LiteralExpr
             %% +.bindParameter -|> BindParameterExpr
             %% +.cast expr -|> CastExpr
@@ -550,7 +553,7 @@ let private commonTableExpression =
     -- kw "AS"
     -- '('
     -- ws
-    -- +.selectStmt
+    -- +.selectStmtWithoutCTE
     -- ')'
     -- ws
     -|> fun table cols asSelect ->
@@ -622,7 +625,7 @@ let private selectColumns =
 
 let private tableOrSubquery (tableExpr : Parser<TableExpr<unit, unit>, unit>) =
     let subterm =
-        %% +.selectStmt
+        %% +.selectStmtWithoutCTE
         -|> fun select alias -> TableOrSubquery { Table = Subquery select; Alias = alias; Info = () }
     let by =
         %% +.(asAlias * zeroOrOne)
@@ -786,7 +789,7 @@ let private limit =
     -- +.(zeroOrOne * offset)
     -|> fun limit offset -> { Limit = limit; Offset = offset }
 
-let selectStmtWithoutCTE =
+let private selectStmtPendingCTE =
     %% +.withSource compoundExpr
     -- +.(zeroOrOne * orderBy)
     -- +.(zeroOrOne * limit)
@@ -802,9 +805,10 @@ let selectStmtWithoutCTE =
         }
 
 do
+    selectStmtWithoutCTEImpl := selectStmtPendingCTE |>> ((|>) None)
     selectStmtImpl :=
         %% +.(zeroOrOne * withClause)
-        -? +.selectStmtWithoutCTE
+        -? +.selectStmtPendingCTE
         -|> (|>)
 
 let private foreignKeyRule =
@@ -1134,7 +1138,7 @@ let private insertStmt =
             [| for n, _ in pairs -> n |], at selectStmt
     let insertStmtSelect =
         %% +.parenthesizedColumnNames
-        -- +.selectStmt
+        -- +.selectStmtWithoutCTE
         -%> auto
     %% +.insertOr
     -- kw "INTO"
@@ -1187,7 +1191,7 @@ let private cteStmt =
             deleteStmt
             insertStmt
             updateStmt
-            %% +.selectStmtWithoutCTE -|>
+            %% +.selectStmtPendingCTE -|>
                 fun select withClause -> select withClause |> SelectStmt
         ]
     -|> (|>)
