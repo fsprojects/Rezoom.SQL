@@ -922,6 +922,7 @@ let private alterTableStmt =
     -- +.objectName
     -- +.[  renameTo
             addColumn
+            dropErr
         ]
     -|> fun table alteration -> { Table = table; Alteration = alteration }
 
@@ -1003,19 +1004,6 @@ let private createTableStmt =
             Name = name
             As = createAs
         }
-
-let private analyzeStmt =
-    %% kw "ANALYZE"
-    -- +.(zeroOrOne * objectName)
-    -|> id
-
-let private attachStmt =
-    %% kw "ATTACH"
-    -- zeroOrOne * kw "DATABASE"
-    -- +.expr
-    -- kw "AS"
-    -- +.nameOrKeyword
-    -|> fun ex schemaName -> ex, schemaName
 
 let private beginStmt =
     %% kw "BEGIN"
@@ -1166,11 +1154,6 @@ let private createViewStmt =
             ColumnNames = cols
             AsSelect = asSelect
         }
-
-let private ifExists =
-    %[  %% kw "IF" -- kw "EXISTS" -|> true
-        preturn false
-    ]
 
 let private dropObjectType =
     %[  %% kw "INDEX" -|> DropIndex
