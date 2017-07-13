@@ -5,36 +5,46 @@ open Rezoom.SQL.Compiler
 [<Test>]
 let ``sqlite non-idempotent random`` () =
     { sqliteTest with
-        Migration = ""
         Command = "select random() as r;"
         Expect =
-            {   expect with
-                    Idempotent = Some false
-                    ResultSets = Some [ [ "r", { Type = IntegerType Integer64; Nullable = false } ] ];
+            { expect with
+                Idempotent = Some false
+                ResultSets = Some [ [ "r", { Type = IntegerType Integer64; Nullable = false } ] ]
             } |> Good
     } |> assertSimple
 
 [<Test>]
 let ``sqlite non-idempotent randomblob`` () =
     { sqliteTest with
-        Migration = ""
         Command = "select randomblob(4) as r;"
         Expect =
-            {   expect with
-                    Idempotent = Some false
-                    ResultSets = Some [ [ "r", { Type = BinaryType; Nullable = false } ] ];
+            { expect with
+                Idempotent = Some false
+                ResultSets = Some [ [ "r", { Type = BinaryType; Nullable = false } ] ]
             } |> Good
     } |> assertSimple
 
 [<Test>]
 let ``sqlite non-idempotent random in subquery`` () =
     { sqliteTest with
-        Migration = ""
         Command = "select * from (select random() r) q;"
         Expect =
-            {   expect with
-                    Idempotent = Some false
-                    ResultSets = Some [ [ "r", { Type = IntegerType Integer64; Nullable = false } ] ];
+            { expect with
+                Idempotent = Some false
+                ResultSets = Some [ [ "r", { Type = IntegerType Integer64; Nullable = false } ] ]
+            } |> Good
+    } |> assertSimple
+
+[<Test>]
+let ``sqlite custom constraint name`` () =
+    { sqliteTest with
+        Command = "create table X(a int constraint myname unique)"
+        Expect =
+            { expect with
+                OutputCommand =
+                    """
+                    CREATE TABLE "X"  ( "a" INTEGER CONSTRAINT "a_NOTNULL" NOT NULL CONSTRAINT "myname" UNIQUE );
+                    """.Trim() |> Some
             } |> Good
     } |> assertSimple
 

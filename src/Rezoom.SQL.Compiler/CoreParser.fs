@@ -883,7 +883,7 @@ let private columnConstraint =
     -- +.constraintType
     -- ws
     -|> fun name cty columnName ->
-        {   Name = cty.DefaultName(columnName)
+        {   Name = name |? cty.DefaultName(columnName)
             ColumnConstraintType = cty
         }
 
