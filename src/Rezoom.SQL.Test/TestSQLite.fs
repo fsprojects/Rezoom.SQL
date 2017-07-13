@@ -49,6 +49,19 @@ let ``sqlite custom constraint name`` () =
     } |> assertSimple
 
 [<Test>]
+let ``sqlite custom table constraint name`` () =
+    { sqliteTest with
+        Command = "create table X(a int, constraint myname unique (a))"
+        Expect =
+            { expect with
+                OutputCommand =
+                    """
+                    CREATE TABLE "X"  ( "a" INTEGER CONSTRAINT "a_NOTNULL" NOT NULL , CONSTRAINT "myname" UNIQUE("a" ASC) );
+                    """.Trim() |> Some
+            } |> Good
+    } |> assertSimple
+
+[<Test>]
 let ``sqlite dump function signatures`` () =
     for KeyValue(_, func) in sqliteTest.TestBackend.InitialModel.Builtin.Functions do
         printfn "%s" (dumpSignature func)
