@@ -16,6 +16,7 @@
     * [Literals](doc/Language/Literal.md)
     * [Expressions](doc/Language/Expr.md)
     * [Select statements](doc/Language/SelectStmt.md)
+    * [Insert statements](doc/Language/InsertStmt.md)
     * [Create table statements](doc/Language/CreateTableStmt.md)
     * [Create view statements](doc/Language/CreateViewStmt.md)
     * [Alter table statements](doc/Language/AlterTableStmt.md)

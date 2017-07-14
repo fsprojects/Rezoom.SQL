@@ -382,10 +382,17 @@ export('InsertStmt.svg', Diagram(
     'INSERT', # todo: OR IGNORE and pals?
     'INTO',
     object_name(),
-    '(',
-    OneOrMore(name(), ','),
-    ')',
-    select_stmt()))
+    Choice(0,
+        Sequence(
+            '(',
+            OneOrMore(name(), ','),
+            ')',
+            select_stmt()),
+        Sequence(
+            'ROW',
+            OneOrMore(
+                Sequence(name(), '=', expr()),
+                ',')))))
 
 export('UpdateStmt.svg', Diagram(
     Stack(
@@ -409,3 +416,12 @@ export('DeleteStmt.svg', Diagram(
         Optional(Sequence('WHERE', expr()), 'skip'),
         Optional(order_by(), 'skip'),
         Optional(limit(), 'skip'))))
+
+export('DropStmt.svg', Diagram(
+    Sequence(
+        'DROP',
+        Choice(0,
+            'TABLE',
+            'VIEW',
+            'INDEX'),
+        object_name())))
