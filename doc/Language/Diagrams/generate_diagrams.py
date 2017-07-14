@@ -394,8 +394,8 @@ export('InsertStmt.svg', Diagram(
                 Sequence(name(), '=', expr()),
                 ',')))))
 
-export('UpdateStmt.svg', Diagram(
-    Stack(
+def update_stmt_simple():
+    return Stack(
         Sequence(
             'UPDATE',
             object_name(),
@@ -403,17 +403,29 @@ export('UpdateStmt.svg', Diagram(
             OneOrMore(
                 Sequence(name(), '=', expr()),
                 ',')),
-        Optional(Sequence('WHERE', expr()), 'skip'),
+        Optional(Sequence('WHERE', expr()), 'skip'))
+
+export('UpdateStmtSimple.svg', Diagram(update_stmt_simple()))
+
+export('UpdateStmt.svg', Diagram(
+    Stack(
+        update_stmt_simple(),
         Optional(order_by(), 'skip'),
         Optional(limit(), 'skip'))))
 
-export('DeleteStmt.svg', Diagram(
-    Stack(
+def delete_stmt_simple():
+    return Stack(
         Sequence(
             'DELETE',
             'FROM',
             object_name()),
-        Optional(Sequence('WHERE', expr()), 'skip'),
+        Optional(Sequence('WHERE', expr()), 'skip'))
+
+export('DeleteStmtSimple.svg', Diagram(delete_stmt_simple()))
+
+export('DeleteStmt.svg', Diagram(
+    Stack(
+        delete_stmt_simple(),
         Optional(order_by(), 'skip'),
         Optional(limit(), 'skip'))))
 
