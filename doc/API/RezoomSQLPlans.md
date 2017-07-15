@@ -1,6 +1,7 @@
 # Rezoom.SQL.Plans
 
-This namespace contains extension methods to run SQL commands as Rezoom `Plan`s.
+This namespace contains extension methods to run SQL commands as [Rezoom
+plans](../Rezoom/README.md).
 
 ## Simple execution
 

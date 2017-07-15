@@ -15,7 +15,7 @@ type Extensions = class
     /// The connection is obtained from the given `ConnectionContext` according to the command's `ConnectionName`
     /// property.
     [<Extension>]
-    static member Execute : cmd:Command<'a> * context:ConnectionContext -> 'a
+    static member Execute : cmd : Command<'a> * context:ConnectionContext -> 'a
 
     /// Execute the command on a connection and return the optional first and only row of its single result set.
     /// If the command returns more than 1 row, this throws an exception.
