@@ -31,3 +31,5 @@
     * [What's missing?](doc/Language/MissingFeatures.md)
 * [API](doc/API/README.md)
     * [Rezoom.SQL](doc/API/RezoomSQL.md)
+    * [Rezoom.SQL.Synchronous](doc/API/RezoomSQLSynchronous.md)
+    * [Rezoom.SQL.Plans](doc/API/RezoomSQLPlans.md)
