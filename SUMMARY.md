@@ -34,3 +34,4 @@
     * [Rezoom.SQL.Synchronous](doc/API/RezoomSQLSynchronous.md)
     * [Rezoom.SQL.Asynchronous](doc/API/RezoomSQLAsynchronous.md)
     * [Rezoom.SQL.Plans](doc/API/RezoomSQLPlans.md)
+    * [Rezoom.SQL.Migrations](doc/API/RezoomSQLMigrations.md)
