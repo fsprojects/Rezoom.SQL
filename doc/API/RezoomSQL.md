@@ -1,6 +1,7 @@
 # Rezoom.SQL
 
-This namespace contains the type providers defined in `Rezoom.SQL.Provider.dll`.
+This namespace contains the type providers defined in `Rezoom.SQL.Provider.dll`,
+as well as some common types for representing SQL commands generically.
 
 ## The `SQL` provider
 
@@ -62,7 +63,7 @@ let cmd = ExamplePositionalArguments.Command(1, 2)
 
 ### The `Command` type
 
-The result of the `Command` method is a `Rezoom.SQL.Mapping.Command<SomeType>`.
+The result of the `Command` method is a `Rezoom.SQL.Command<SomeType>`.
 This means it is a SQL command you can execute to get a result of type `SomeType`.
 
 `SomeType` will vary depending on the content of the command. Here are common
@@ -98,11 +99,11 @@ running program.
 In order to actually run the command and obtain its result sets, you should use
 the extension methods defined in one of the following namespaces:
 
-* [Rezoom.SQL.Synchronous](RezoomSQLSynchronous.md) to run the command as a
-  regular method (`Command<'a> -> 'a`).
+* [Rezoom.SQL.Synchronous](RezoomSQLSynchronous.md) to run the command
+  immediately (`Command<'a> -> 'a`).
 
 * [Rezoom.SQL.Asynchronous](RezoomSQLAsynchronous.md) to run the command as a
-  Task Parallel Library task (`Command<'a> -> Task<'a>`).
+  task (`Command<'a> -> Task<'a>`).
 
 * [Rezoom.SQL.Plans](RezoomSQLPlans.md) to run the command as a Rezoom plan
   (`Command<'a> -> Plan<'a>`).
