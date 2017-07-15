@@ -5,6 +5,7 @@ open System.Collections.Generic
 open System.Text
 open System.Threading
 open FSharp.Control.Tasks.ContextInsensitive
+open Rezoom.SQL
 
 type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
     let maxParameters =

@@ -26,6 +26,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>bin\Debug\Rezoom.SQL.Mapping.XML</DocumentationFile>
+    <OtherFlags>
+    </OtherFlags>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -73,12 +75,16 @@
     <Compile Include="StaticEntityReaderTemplate.fs" />
     <Compile Include="Migrations.fs" />
     <Compile Include="IScalar.fs" />
+    <Compile Include="CommandParts.fs" />
     <Compile Include="Command.fs" />
     <Compile Include="CommandBatch.fs" />
     <Compile Include="ConnectionProvider.fs" />
     <Compile Include="ConnectionContext.fs" />
+    <Compile Include="Asynchronous.fsi" />
     <Compile Include="Asynchronous.fs" />
+    <Compile Include="Synchronous.fsi" />
     <Compile Include="Synchronous.fs" />
+    <Compile Include="Plans.fsi" />
     <Compile Include="Plans.fs" />
     <Content Include="packages.config" />
   </ItemGroup>

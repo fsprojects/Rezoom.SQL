@@ -1,4 +1,4 @@
-﻿namespace Rezoom.SQL.Mapping
+﻿namespace Rezoom.SQL
 
 /// Represents a type that is returned from a scalar query.
 type IScalar<'a> =
