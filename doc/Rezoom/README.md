@@ -11,16 +11,17 @@ Consider the following simple example.
 ```fsharp
 open Rezoom
 open Rezoom.SQL
+open Rezoom.SQL.Synchronous
 
 type GetPermissions = SQL<"select * from UserPermissions where UserId = @userId limit 1">
 type DeleteDocument = SQL<"update Documents set DeletedByUserId = @userId where Id = @docId">
 
-let deleteDocument (userId : int) (documentId : int) =
-    let permissions = GetPermissions.Command(userId).ExactlyOne()
+let deleteDocument (userId : int) (documentId : int) (conn : ConnnectionContext) =
+    let permissions = GetPermissions.Command(userId).ExecuteExactlyOne(conn)
     if not permissions.CanDelete then
         failwith "User does not have permission to delete documents"
     else
-        DeleteDocument.Command(docId = documentId, userId = userId).Execute()
+        DeleteDocument.Command(docId = documentId, userId = userId).Execute(conn)
 ```
 
 This code might be OK by itself. It reads pretty clearly. Of course, in a real
@@ -31,9 +32,9 @@ The problem I want to address with this code is what happens when you try to use
 it in a perfectly reasonable way:
 
 ```fsharp
-let deleteManyDocuments userId documentIds =
+let deleteManyDocuments userId documentIds conn =
     for documentId in documentIds do
-        deleteDocument userId documentId
+        deleteDocument userId documentId conn
 ```
 
 This function is very bad! If we pass in 500 document IDs, we'll run 1000 SQL
@@ -97,6 +98,10 @@ let deleteManyDocuments (userId : int) (documentIds : seq<int>) : Plan<unit> =
     }
 ```
 
+Notice that these functions do not take a connection context. This is because a
+`Plan` is a _recipe for how_ to run something. A plan doesn't _do x_, it says
+"if I only had a connection, I _could do x_".
+
 Here's an example of how to actually run such a `Plan`:
 
 ```fsharp
@@ -142,6 +147,8 @@ Now the function will execute with **two round-trips** to the database: one
 containing the permissions query, another containing all the `update` statements
 to delete the documents.
 
+## Benefits
+
 This automated caching and batching allows you to write very simple,
 self-contained units of business logic which you can compose into much more
 complex transactions without incurring massive performance costs.
@@ -150,6 +157,12 @@ This is a breath of fresh air compared to typical database work, where to get
 acceptable efficiency you usually have to either write your logic in large
 chunks with minimal abstraction, or pass around a lot of shared state
 explicitly.
+
+If you design carefully, you can end up with a rich domain layer (100s of
+methods) that is completely ignorant of the SQL backend, and is built upon a
+relatively small (30-50 methods) persistence API. Such a small persistence API
+can be worth implementing twice: once with Rezoom.SQL for real world usage, and
+once in-memory for integration testing the domain logic.
 
 ## Caching and you
 
