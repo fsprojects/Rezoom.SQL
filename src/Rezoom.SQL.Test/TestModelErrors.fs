@@ -29,3 +29,15 @@ let ``no such column to index`` () =
         """
             create index IX_Users_Goober on Users(Id, Goober);
         """
+
+[<Test>]
+let ``no such column to index on creation`` () =
+    expectError (Error.noSuchColumn "Qux")
+        """
+            create table MetaSyntactic
+                ( Foo int
+                , Bar int
+                , Baz int
+                , unique (Foo, Bar, Qux)
+                );
+        """

@@ -489,17 +489,24 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             Where = createIndex.Where |> Option.map checker.BooleanExpr
         }
 
-    member this.TableIndexConstraint(constr : TableIndexConstraintClause) =
+    member this.TableIndexConstraint(constr : TableIndexConstraintClause, creating : CreateTableStmt option) =
+        match creating with
+        | Some { As = CreateAsDefinition def } ->
+            let columnNames = def.Columns |> Seq.map (fun c -> c.Name) |> Set.ofSeq
+            for { Source = source; Value = (name, _) } in constr.IndexedColumns do
+                if columnNames |> (not << Set.contains name) then
+                    failAt source <| Error.noSuchColumn name
+        | _ -> ()
         {   Type = constr.Type
             IndexedColumns = constr.IndexedColumns
         }
 
-    member this.TableConstraint(constr : TableConstraint, creating) =
+    member this.TableConstraint(constr : TableConstraint, creating : CreateTableStmt option) =
         {   Name = constr.Name
             TableConstraintType =
                 match constr.TableConstraintType with
                 | TableIndexConstraint clause ->
-                    TableIndexConstraint <| this.TableIndexConstraint(clause)
+                    TableIndexConstraint <| this.TableIndexConstraint(clause, creating)
                 | TableForeignKeyConstraint (names, foreignKey) ->
                     TableForeignKeyConstraint (names, this.ForeignKey(foreignKey, creating))
                 | TableCheckConstraint expr -> TableCheckConstraint <| this.Expr(expr)
