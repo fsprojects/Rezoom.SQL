@@ -101,3 +101,7 @@ let migrationContainsParameter =
     sprintf "SQ044: The file ``%s`` contains a parameterized statement, but migrations cannot be parameterized"
 let commandContainsTooManyResultSets =
     sprintf "SQ045: The command returns too many result sets (%d) to provide types for"
+let commandChangesSchema =
+    sprintf "SQ046: The command includes a change to the database schema which it does not undo"
+let commandLeavesTempTable = // special case of SQ046
+    sprintf "SQ047: The command creates a temp table and does not drop it"

@@ -230,8 +230,22 @@ let private generateCommandMethod
             Expr.CallUnchecked(callMeth, [ commandData; arr ])
     meth
 
+let validateSQLCommand (generate : GenerateType) (effect : CommandEffect) =
+    match effect.ModelChange with
+    | None -> ()
+    | Some change ->
+        let previousModel = generate.UserModel.Model
+        if change = previousModel then () else
+        match change.Schemas.TryFind(change.TemporarySchema)
+            , previousModel.Schemas.TryFind(previousModel.TemporarySchema) with
+        | Some newTemp, Some oldTemp when newTemp.Objects.Count > oldTemp.Objects.Count ->
+            fail <| Error.commandLeavesTempTable
+        | _ ->
+            fail <| Error.commandChangesSchema
+
 let generateSQLType (generate : GenerateType) (sql : string) =
     let commandEffect = CommandEffect.OfSQL(generate.UserModel.Model, generate.TypeName, sql)
+    validateSQLCommand generate commandEffect
     let commandCtor = typeof<CommandConstructor>
     let cmd (r : Type) = typedefof<_ Command>.MakeGenericType(r)
     let lst (query : _ QueryExprInfo) (rowType : Type) =
