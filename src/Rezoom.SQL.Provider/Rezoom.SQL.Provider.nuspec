@@ -10,7 +10,11 @@
     <projectUrl>https://github.com/rspeele/Rezoom.SQL</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>Fix GUID on TSQL backend not being translated as UNIQUEIDENTIFIER.</releaseNotes>
+    <releaseNotes>
+        New type checks for indexes, schema modifications.
+        Fix custom-named table constraints.
+        Use latest Rezoom (with improved TaskBuilder).
+    </releaseNotes>
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data sqlite tsql sqlserver fsharp typeprovider</tags>
     <frameworkAssemblies>
