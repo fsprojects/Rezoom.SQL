@@ -45,7 +45,7 @@ and private CommandEffectBuilder(model : Model) =
         let model = newModel |? model
         let checker = TypeChecker(inference, InferredSelectScope.Root(model))
         let inferredStmt = checker.Stmt(stmt)
-        newModel <- ModelChange(model, inference).Stmt(inferredStmt)
+        newModel <- ModelChange(model, inference).Stmt(inferredStmt) |?? newModel
         inferredStmt
     member this.AddTotalStmt(stmt : TotalStmt) =
         match stmt with

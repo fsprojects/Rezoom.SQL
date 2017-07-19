@@ -5,6 +5,7 @@ open System.Collections
 open System.Collections.Generic
 
 let inline (|?) opt def = defaultArg opt def
+let inline (|??) opt def = match opt with | Some _ -> opt | None -> def
 
 let inline rmap (f : 'a -> 'b) (list : 'a array) = Array.map f list
 

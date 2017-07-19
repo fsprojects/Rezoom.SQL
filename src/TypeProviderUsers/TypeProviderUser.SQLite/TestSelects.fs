@@ -64,7 +64,9 @@ let ``test optional datetime parameter`` () =
     printfn "%A" results
 
 type TestGuidParameter = SQL<"""
-select * from Users where RandomId = @id
+create temp table bar(name string);
+select * from Users where RandomId = @id;
+drop table temp.bar;
 """>
 
 [<Test>]
