@@ -123,14 +123,14 @@ Each statically typed query comes with some useful info for caching:
 * A bitmask of the tables it writes to
 
 Rezoom uses this cache info to avoid unnecessarily re-querying for the same data
-during the transaction.
+during the execution of a `Plan` (i.e. within a transaction).
 
-This means if you have 30 different functions that call `LoadUserPermissions`
-only 1 query for permissions will actually be run when you use those functions
-together in a transaction. Unless, of course, you edit the permissions table
-during the course of the transaction, in which case the cached result will
-automatically be invalidated and the permissions re-queried next time they are
-needed.
+This means if you have 30 different functions that call
+`LoadUserPermissions(currentUserId)`, only 1 query for permissions will actually
+be run when you use those functions together in a transaction. Unless, of
+course, you edit the permissions table during the course of the transaction, in
+which case the cached result will automatically be invalidated and the
+permissions re-queried next time they are requested.
 
 This lets you safely check all the invariants you need for each method in your
 domain layer, without fear of causing mountains of redundant queries, and
