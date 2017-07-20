@@ -14,7 +14,9 @@ backends. Currently it supports SQLite and SQL Server, but PostgreSQL and MySQL
 support are coming soon.
 
 The type provider makes it fast and easy to write SQL statements, run them, and
-consume their results from your F# code with full type safety.
+consume their results from your F# code with full type safety. You don't need to
+install any editor extensions or custom tooling, just add a NuGet package and
+you're off and running writing code like this:
 
 ![animated example usage to write queries](doc/ReadmeResources/Queries.gif)
 
