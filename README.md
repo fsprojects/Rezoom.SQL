@@ -1,79 +1,70 @@
-[![Build Status](https://travis-ci.org/rspeele/Rezoom.SQL.svg?branch=master)](https://travis-ci.org/rspeele/Rezoom.SQL)
+![Build Status](https://travis-ci.org/rspeele/Rezoom.SQL.svg?branch=master)](https://travis-ci.org/rspeele/Rezoom.SQL)
 
 [Documentation](https://rspeele.gitbooks.io/rezoom-sql/doc/Tutorial/) (work-in-progress)
 
-# The ORM that understands SQL
+[Query playground](http://rzsql.net/#3AB1F9635DF0C97D31462380EEBE88B460AE73FC)
+
+# Statically typed SQL for F#
 
 Rezoom.SQL is an F# ORM for SQL databases.
 
-It integrates with the F# compiler via a type provider to statically typecheck its own dialect of SQL.
-It knows how to translate this SQL dialect to various backends. Currently it supports SQLite and SQL Server,
-but PostgreSQL and MySQL support are coming soon.
+It integrates with the F# compiler via a type provider to statically typecheck
+its own dialect of SQL. It knows how to translate this SQL dialect to various
+backends. Currently it supports SQLite and SQL Server, but PostgreSQL and MySQL
+support are coming soon.
 
-This means that it can infer your database model from your migration scripts
-(CREATE TABLE, CREATE VIEW, ALTER TABLE, etc.). Then, based on that model, it can validate
-all your SQL queries and tell what parameters they take and what types they'll output.
+The type provider makes it fast and easy to write SQL statements, run them, and
+consume their results from your F# code with full type safety.
 
-## How about a real example?
+![animated example usage to write queries](doc/ReadmeResources/Queries.gif)
 
-Let's say you have a migration script like this:
+## Database schema inferred from migration scripts
 
-```sql
--- filename: V1.model.sql
-create table Users -- we've got some users
-	( Id int primary key autoincrement
-	, Name string(64)
-	, Email string(128)
-	);
-create table Groups -- we've got some groups
-	( Id int primary key autoincrement
-	, Name string(64)
-	);
-create table UserGroupMaps -- we've got a mapping table that associates users with groups
-	( UserId int
-	, GroupId int
-	, primary key(UserId, GroupId)
-	);
-```
+In order to typecheck your queries, Rezoom.SQL has to know your database schema
+(so it can know, for example, that the `Id` column in the `Users` table is an
+int). It learns the schema by reading your migration scripts and observing what
+tables and views are created, columns added, and so on.
 
-Now you can write this code in your F# program:
+When developing the first iteration of your application (or a new feature with
+its own migration script), it's easy to sketch out a model then go back and
+change it as you code, without having to touch a real database until you're
+ready to run.
 
-```fsharp
-open Rezoom.SQL.Provider
-open Rezoom.SQL.Synchronous
+![animated example usage to write queries](doc/ReadmeResources/ModelChange.gif)
 
-type MyQuery = SQL<"""
-	select u.Id as UserId, u.Name as UserName, u.Email, g.Id as GroupId, g.Name as GroupName
-	from Users u
-	join UserGroupMaps m on m.UserId = u.Id
-	join Groups g on g.Id = m.GroupId
-	where u.Name like '%' || @search || '%'
-""">
-```
+Check out the [query
+playground](http://rzsql.net/#3AB1F9635DF0C97D31462380EEBE88B460AE73FC) to see
+what kinds of SQL you can write.
 
-If you flub a name in this query -- say you wrote `Usres` instead of `Users`, you'll get an
-error when you try to compile your program. You'll also get an error if you do something that
-doesn't make sense from a type standpoint, like writing `sqrt(u.Name)`.
+## The productivity of static typing
 
-When you have a large codebase, this is much nicer than having to run the queries to find these problems.
+When you make schema changes -- for example, replacing `FirstName` and
+`LastName` fields with a single `FullName` field -- it's comforting to know the
+compiler will point out the queries you need to update.
 
-## What can you do with the example `MyQuery` type?
+The typechecker also tightens up the feedback loop, so you don't waste your time
+tracking down typos and trivial SQL mistakes you'd normally only encounter at runtime.
 
-Rezoom.SQL knows that the command needs a string parameter (for `@search`), and it knows the column names
-and types that the query will output. So you can use it without any of the effort of manually creating
-`SqlParameter`s and processing `SqlDataReader`s.
+Here are just a handful of possible errors you'll be informed of at compile time
+and can fix in seconds. There are currently over 45 different error types that
+can be detected at compile time.
 
-```fsharp
-[<EntryPoint>]
-let main argv =
-	use conn = new SqlConnection(connectionString)
-	let results = MyQuery.Command(search = "example").Execute(conn)
-	for result in results do
-		let userId = result.UserId // statically typed as int
-		let userName = result.UserName // statically typed as string
-		let groupName = result.GroupName // statically typed as string
-		printfn "%d %s %s" userId userName groupName
-```
+![example error on mistyped table name](doc/ReadmeResources/NoTableError.png)
+![example error on comparing string to int](doc/ReadmeResources/TypeMismatch.png)
+![example error on selecting column not found in group by clause](doc/ReadmeResources/GroupByError.png)
+
+## Flexible migration order for working in teams
+
+Since Rezoom.SQL understands the language, it knows that some migrations like
+`alter table X add column Y` and `alter table X add column Z` can be run in any
+order and produce the same effects.
+
+When you're working with a team, you can take advantage of this to add the
+tables and columns you need for the feature you're coding, while your other team
+members do the same for their features -- _without_ having to decide the **One
+True Migration Order** when you merge.
+
+See details [here](https://rspeele.gitbooks.io/rezoom-sql/doc/Configuration/MigrationTrees.html).
 
 # Integration with Rezoom
 
@@ -83,3 +74,56 @@ But as the name implies, it's designed to work with
 [Rezoom](https://github.com/rspeele/Rezoom). When you use it with Rezoom, you can
 take advantage of automatic caching and combine units of business logic to share round trips
 to the database.
+
+## Automatic batching
+
+With Rezoom, you build up a `Plan` to represent a transaction, which may involve
+multiple SQL commands (or web API calls, or other high-latency data manipulation).
+
+If you have one `Plan` that makes 3 queries, and another that makes 2 queries,
+you can choose whether to combine them sequentially for 5 round trips to the
+database...
+
+```fsharp
+let sequential =
+    plan {
+        let! x = threeRoundTripPlan
+        let! y = twoRoundTripPlan
+        return (x, y)
+    }
+```
+
+Or concurrently, for 3 round trips to the database. The first two query batches
+sent to the database will include pending queries from *both*
+`threeRoundTripPlan` and `twoRoundTripPlan`:
+
+```fsharp
+let concurrent =
+    plan {
+        let! x, y = threeRoundTripPlan, twoRoundTripPlan
+        return (x, y)
+    }
+```
+
+## Automatic caching
+
+Each statically typed query comes with some useful info for caching:
+
+* A compiler-generated ID
+* A boolean indicating whether it could make sense to cache (has no side effects, does not use rand(), newid(), etc)
+* A bitmask of the tables it reads from
+* A bitmask of the tables it writes to
+
+Rezoom uses this cache info to avoid unnecessarily re-querying for the same data
+during the transaction.
+
+This means if you have 30 different functions that call `LoadUserPermissions`
+only 1 query for permissions will actually be run when you use those functions
+together in a transaction. Unless, of course, you edit the permissions table
+during the course of the transaction, in which case the cached result will
+automatically be invalidated and the permissions re-queried next time they are
+needed.
+
+This lets you safely check all the invariants you need for each method in your
+domain layer, without fear of causing mountains of redundant queries, and
+without any of the effort of writing your own caching layer.
