@@ -32,6 +32,9 @@ its own migration script), it's easy to sketch out a model then go back and
 change it as you code, without having to touch a real database until you're
 ready to run.
 
+Here's an example. You might want to refresh the page to start the GIF from the
+beginning.
+
 ![animated example usage to write queries](doc/ReadmeResources/ModelChange.gif)
 
 Check out the [query
