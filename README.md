@@ -1,4 +1,4 @@
-![Build Status](https://travis-ci.org/rspeele/Rezoom.SQL.svg?branch=master)](https://travis-ci.org/rspeele/Rezoom.SQL)
+[![Build Status](https://travis-ci.org/rspeele/Rezoom.SQL.svg?branch=master)](https://travis-ci.org/rspeele/Rezoom.SQL)
 
 [Documentation](https://rspeele.gitbooks.io/rezoom-sql/doc/Tutorial/) (work-in-progress)
 
