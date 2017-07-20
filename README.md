@@ -49,8 +49,16 @@ Here are just a handful of possible errors you'll be informed of at compile time
 and can fix in seconds. There are currently over 45 different error types that
 can be detected at compile time.
 
+### Mistyped table names
+
 ![example error on mistyped table name](doc/ReadmeResources/NoTableError.png)
+
+### Incompatible data types
+
 ![example error on comparing string to int](doc/ReadmeResources/TypeMismatch.png)
+
+### Selecting columns not included in a `GROUP BY` clause
+
 ![example error on selecting column not found in group by clause](doc/ReadmeResources/GroupByError.png)
 
 ## Flexible migration order for working in teams
