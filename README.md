@@ -93,30 +93,34 @@ to the database.
 With Rezoom, you build up a `Plan` to represent a transaction, which may involve
 multiple SQL commands (or web API calls, or other high-latency data manipulation).
 
-If you have one `Plan` that makes 3 queries, and another that makes 2 queries,
-you can choose whether to combine them sequentially for 5 round trips to the
-database...
+If you have one `Plan` called `threeTrip` that makes 3 queries, and another
+called `twoTrip` that makes 2 queries, you can choose whether to combine them
+sequentially for 5 round trips to the database...
 
 ```fsharp
 let sequential =
     plan {
-        let! x = threeRoundTripPlan
-        let! y = twoRoundTripPlan
+        let! x = threeTrip
+        let! y = twoTrip
         return (x, y)
     }
 ```
 
+![sequential execution diagram](doc/ReadmeResources/SequentialExecution.gv.png)
+
 Or concurrently, for 3 round trips to the database. The first two query batches
-sent to the database will include pending queries from *both*
-`threeRoundTripPlan` and `twoRoundTripPlan`:
+sent to the database will include pending queries from *both* `threePlan` and
+`twoTrip`:
 
 ```fsharp
 let concurrent =
     plan {
-        let! x, y = threeRoundTripPlan, twoRoundTripPlan
+        let! x, y = threeTrip, twoTrip
         return (x, y)
     }
 ```
+
+![sequential execution diagram](doc/ReadmeResources/ConcurrentExecution.gv.png)
 
 ## Automatic caching
 

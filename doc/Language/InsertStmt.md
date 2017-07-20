@@ -32,7 +32,7 @@ When there are a more than a couple of columns involved, it can be hard to see
 which datum in a `VALUES(...)` clause corresponds to which column name in the
 table.
 
-To make this easier, RZSQL supports a special syntax for inserting a single raw
+To make this easier, RZSQL supports a special syntax for inserting a single row
 of data, in which the column names are paired with the values being inserted.
 
 ```sql

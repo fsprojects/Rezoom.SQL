@@ -1,0 +1,35 @@
+digraph "Sequential Execution" {
+    rankdir=LR
+    compound=true
+    node[color=none,shape=rectangle,style=filled,fontname=Consolas,fontsize=12]
+
+    subgraph cluster_trip1 {
+        a1[label="threeTrip Query #1",fillcolor="#eeeeff"]
+        label="Batch 1"
+    }
+
+    subgraph cluster_trip2 {
+        a2[label="threeTrip Query #2",fillcolor="#eeeeff"]
+        label="Batch 2"
+    }
+
+    subgraph cluster_trip3 {
+        a3[label="threeTrip Query #3",fillcolor="#eeeeff"]
+        label="Batch 3"
+    }
+
+    subgraph cluster_trip4 {
+        b1[label="twoTrip Query #1",fillcolor="#eeffee"]
+        label="Batch 4"
+    }
+
+    subgraph cluster_trip5 {
+        b2[label="twoTrip Query #2",fillcolor="#eeffee"]
+        label="Batch 5"
+    }
+
+    a1 -> a2 [ltail=cluster_trip1,lhead=cluster_trip2]
+    a2 -> a3 [ltail=cluster_trip2,lhead=cluster_trip3]
+    a3 -> b1 [ltail=cluster_trip3,lhead=cluster_trip4]
+    b1 -> b2 [ltail=cluster_trip4,lhead=cluster_trip5]
+}
