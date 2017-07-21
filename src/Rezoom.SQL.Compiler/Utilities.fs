@@ -148,3 +148,64 @@ let inline (+@+) x y =
     let h1 = match box x with | null -> 0 | _ -> x.GetHashCode()
     let h2 = match box y with | null -> 0 | _ -> y.GetHashCode()
     ((h1 <<< 5) + h1) ^^^ h2
+
+/// State monad. Useful for complicated transforms on immutable structures.
+type State<'st, 'a> = 'st -> 'st * 'a
+
+module State =
+    let inline get state = state, state
+    let inline set (newState : 'st) (_ : 'st) = newState, ()
+    let inline ret x state = state, x
+    let inline zero state = state, ()
+
+    let inline delay (f : unit -> State<'st, 'a>) state =
+        f () state
+
+    let inline bind (previous : State<'st, 'a>) (next : 'a -> State<'st, 'b>) state =
+        let currentState, x = previous state
+        next x currentState
+
+    let inline combine (previous : State<'st, 'a>) (next : State<'st, 'b>) =
+        previous >> fst >> next
+
+    let inline forLoop xs (block : 'a -> State<'st, unit>) state =
+        let mutable state = state
+        for x in xs do
+            let newState, () = block x state
+            state <- newState
+        state, ()
+
+    let inline whileLoop cond (block : State<'st, unit>) state =
+        let mutable state = state
+        while cond() do
+            let newState, () = block state
+            state <- newState
+        state, ()
+
+    let inline tryWith (block : State<'st, 'a>) (catcher : exn -> State<'st, 'a>) state =
+        try block state
+        with | exn -> catcher exn state
+
+    let inline tryFinally (block : State<'st, 'a>) fin state =
+        try block state
+        with | _ -> fin()
+
+    let inline using disposable body (state : _ -> State<'st, 'a>) =
+        use d = disposable
+        body d state
+
+type StatefulBuilder() =
+    member inline this.Zero() : State<_, _> = State.zero
+    member inline this.Return(x) : State<_, _> = State.ret x
+    member inline this.ReturnFrom(st : State<_, _>) = st
+    member inline this.Delay(f) : State<_, _> = State.delay f
+    member inline this.Run(st : State<_, _>) = st
+    member inline this.Bind(st, cont) : State<_, _> = State.bind st cont
+    member inline this.Combine(st, cont) : State<_, _> = State.combine st cont
+    member inline this.TryWith(st, catcher) : State<_, _> = State.tryWith st catcher
+    member inline this.TryFinally(st, fin) : State<_, _> = State.tryFinally st fin
+    member inline this.While(cond, body) : State<_, _> = State.whileLoop cond body
+    member inline this.For(xs, body) : State<_, _> = State.forLoop xs body
+    member inline this.Using(disposable, body) : State<_, _> = State.using disposable body
+
+let stateful = StatefulBuilder()

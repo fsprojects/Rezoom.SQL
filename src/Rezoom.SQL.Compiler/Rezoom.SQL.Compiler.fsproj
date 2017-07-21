@@ -62,6 +62,7 @@
     <Compile Include="Parser.fs" />
     <Compile Include="TypeSystem.fs" />
     <Compile Include="Model.fs" />
+    <Compile Include="ModelOps.fs" />
     <Compile Include="ReadWriteReferences.fs" />
     <Compile Include="InferredTypes.fs" />
     <Compile Include="TypeInferenceContext.fs" />
