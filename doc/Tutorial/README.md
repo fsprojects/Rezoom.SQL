@@ -67,7 +67,7 @@ let migrate() =
     // customize the default migration config so that it outputs a message after running a migration
     let config =
         { MigrationConfig.Default with
-            LogMigrationRan = fun m -> printfn "Ran migration: %s" m.FileName
+            LogMigrationRan = fun m -> printfn "Ran migration: %s" m.MigrationName
         }
     // run the migrations, creating the database if it doesn't exist
     MyModel.Migrate(config)
@@ -79,8 +79,9 @@ let main argv =
     0
 ```
 
-Go ahead and run this program with ctrl+F5. You should see that it outputs V1.model.sql. If you run it again,
-it won't output anything, since the database already exists and there's no need to run migrations.
+Go ahead and run this program with ctrl+F5. You should see that it outputs that
+it ran the migration. If you run it again, it won't output anything, since the
+database already exists and there's no need to run migrations.
 
 You can find the database it created, named `rzsql.db`, in the `bin/Debug` folder of your project.
 If you'd like to take a look around it and see the tables, I recommend using
