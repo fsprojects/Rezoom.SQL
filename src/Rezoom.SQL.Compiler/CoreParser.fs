@@ -616,7 +616,12 @@ let private resultColumns =
         -|> Seq.toArray
 
 let private selectColumns =
+    let badTop =
+        (%ci "TOP" <?> "TOP")
+        .>> FParsec.Primitives.fail
+            "SELECT TOP (X) syntax is not supported, use LIMIT (X) at the end of your query instead"
     %% kw "SELECT"
+    -- (zeroOrOne * badTop)
     -- +.[  %% kw "DISTINCT" -|> Some Distinct
             preturn None
         ]

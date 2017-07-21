@@ -22,5 +22,13 @@ let ``small input`` () =
 [<Test>]
 let ``error at eof`` () =
     expectError
-        ("SQ000: Expecting: DISTINCT, MANY, ONE, OPTIONAL, expr, name, whitespace or '*'")
+        "SQ000: Expecting: DISTINCT, MANY, ONE, OPTIONAL, TOP, expr, name, whitespace or '*'"
         "select"
+
+[<Test>]
+let ``select top not supported`` () =
+    expectError
+        ("SQ000: SELECT TOP (X) syntax is not supported, use LIMIT (X) at the end of your query"
+        + Environment.NewLine
+        + "instead")
+        "select top 1 1 as x;"
