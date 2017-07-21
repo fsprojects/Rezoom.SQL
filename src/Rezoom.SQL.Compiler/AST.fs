@@ -465,24 +465,17 @@ and TableExprCore<'t, 'e> =
 
 and TableExpr<'t, 'e> = TableExprCore<'t, 'e> WithSource
 
-type ForeignKeyEvent =
-    | OnDelete
-    | OnUpdate
-
-type ForeignKeyEventHandler =
+type OnDeleteAction =
     | SetNull
     | SetDefault
     | Cascade
     | Restrict
     | NoAction
 
-type ForeignKeyRule =
-    | EventRule of ForeignKeyEvent * ForeignKeyEventHandler
-
 type ForeignKeyClause<'t> =
     {   ReferencesTable : ObjectName<'t>
         ReferencesColumns : Name WithSource array
-        Rules : ForeignKeyRule array
+        OnDelete : OnDeleteAction option
     }
 
 type PrimaryKeyClause =

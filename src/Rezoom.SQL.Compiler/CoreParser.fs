@@ -816,12 +816,9 @@ do
         -? +.selectStmtPendingCTE
         -|> (|>)
 
-let private foreignKeyRule =
+let private onDeleteAction =
     %% kw "ON"
-    -- +.[
-            %% kw "DELETE" -|> OnDelete
-            %% kw "UPDATE" -|> OnUpdate
-        ]
+    -- kw "DELETE"
     -- +.[
             %% kw "SET" -- +.[ %% kw "NULL" -|> SetNull; %% kw "DEFAULT" -|> SetDefault ] -|> id
             %% kw "CASCADE" -|> Cascade
@@ -829,18 +826,18 @@ let private foreignKeyRule =
             %% kw "NO" -- kw "ACTION" -|> NoAction
         ]
     -- FParsec.Primitives.fail "ON ... clauses for foreign keys are not yet supported"
-    -|> fun evt handler -> EventRule (evt, handler)
+    -|> id
 
 let private foreignKeyClause =
     %% kw "REFERENCES"
     -- +.objectName
     -- +.parenthesizedColumnNames
-    -- +.(qty.[0..] * foreignKeyRule)
-    -|> fun table cols rules ->
+    -- +.(zeroOrOne * onDeleteAction)
+    -|> fun table cols onDelete ->
         {
             ReferencesTable = table
             ReferencesColumns = cols
-            Rules = rules.ToArray()
+            OnDelete = onDelete
         }
 
 let private constraintName =

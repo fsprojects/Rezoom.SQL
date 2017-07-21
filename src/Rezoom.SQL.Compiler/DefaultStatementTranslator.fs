@@ -226,14 +226,11 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield linebreak
                 yield! this.Limit(limit)
         }
-    override this.ForeignKeyRule(EventRule(evt, handler)) =
+    override this.ForeignKeyOnDelete(handler) =
         seq {
             yield text "ON"
             yield ws
-            yield
-                match evt with
-                | OnDelete -> text "DELETE"
-                | OnUpdate -> text "UPDATE"
+            yield text "DELETE"
             yield ws
             yield
                 match handler with
@@ -252,9 +249,11 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield text "("
             yield! clause.ReferencesColumns |> Seq.map (srcValue >> this.Expr.Name) |> join1 ","
             yield text ")"
-            for rule in clause.Rules do
+            match clause.OnDelete with
+            | None -> ()
+            | Some onDelete ->
                 yield ws
-                yield! this.ForeignKeyRule(rule)
+                yield! this.ForeignKeyOnDelete(onDelete)
         }
     abstract member ConstraintName : TObjectName * Name -> Name
     default __.ConstraintName(_, name) = name

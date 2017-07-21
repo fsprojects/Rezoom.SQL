@@ -84,7 +84,7 @@ and SchemaCascade =
     {   TargetSchema : Name
         TargetTable : Name
         CausedByTargetConstraint : Name
-        OnDelete : ForeignKeyEvent
+        OnDelete : OnDeleteAction
     }
 
 and SchemaTable =

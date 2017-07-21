@@ -531,14 +531,11 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             base.Insert(insert)
         | Some _ ->
             failAt insert.InsertInto.Source "INSERT OR clause is not supported in TSQL"
-    override this.ForeignKeyRule(EventRule(evt, handler)) =
+    override this.ForeignKeyOnDelete(handler) =
         seq {
             yield text "ON"
             yield ws
-            yield
-                match evt with
-                | OnDelete -> text "DELETE"
-                | OnUpdate -> text "UPDATE"
+            yield text "DELETE"
             yield ws
             yield
                 match handler with

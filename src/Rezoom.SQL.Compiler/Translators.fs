@@ -49,7 +49,7 @@ type StatementTranslator() =
     abstract member Limit : TLimit -> Fragments
     abstract member OrderingTerm : TOrderingTerm -> Fragments
     abstract member Select : select : TSelectStmt -> Fragments
-    abstract member ForeignKeyRule : rule : ForeignKeyRule -> Fragments
+    abstract member ForeignKeyOnDelete : onDelete : OnDeleteAction -> Fragments
     abstract member ForeignKeyClause : clause : TForeignKeyClause -> Fragments
     abstract member TableConstraint : table : TObjectName * constr : TTableConstraint -> Fragments
     abstract member ColumnConstraint : table : TObjectName * constr : TColumnConstraint -> Fragments

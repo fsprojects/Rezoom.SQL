@@ -432,7 +432,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 failAt source <| Error.noSuchColumn referenceName
         {   ReferencesTable = referencesTable
             ReferencesColumns = foreignKey.ReferencesColumns
-            Rules = foreignKey.Rules
+            OnDelete = foreignKey.OnDelete
         }
 
     member this.ColumnConstraint(constr : ColumnConstraint, creating : CreateTableStmt option) =
