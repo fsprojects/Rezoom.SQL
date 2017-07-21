@@ -4,7 +4,7 @@ open System.Collections.Generic
 open Rezoom.SQL.Compiler.InferredTypes
 
 type private ModelChange(model : Model, inference : ITypeInferenceContext) =
-    member private this.CreateTableColumns(model, schemaName : Name, tableName : Name, asSelect : InfSelectStmt) =
+    member private this.CreateTableColumns(schemaName : Name, tableName : Name, asSelect : InfSelectStmt) =
         let query = asSelect.Value.Info.Query
         [| for column in query.Columns ->
             {   SchemaName = schemaName
@@ -30,7 +30,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                         {   SchemaName = schema.SchemaName
                             TableName = create.Name.ObjectName
                             Columns =
-                                this.CreateTableColumns(model, schema.SchemaName, tableName, select)
+                                this.CreateTableColumns(schema.SchemaName, tableName, select)
                                 |> mapBy (fun c -> c.ColumnName)
                             Indexes = Map.empty
                             Constraints = Map.empty
