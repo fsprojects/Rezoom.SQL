@@ -312,9 +312,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | InsertStmt insert -> InsertStmt <| this.Insert(insert)
         | SelectStmt select -> SelectStmt <| this.Select(select)
         | UpdateStmt update -> UpdateStmt <| this.Update(update)
-        | BeginStmt -> BeginStmt
-        | CommitStmt -> CommitStmt
-        | RollbackStmt -> RollbackStmt
 
     member this.Vendor(vendor : VendorStmt<'t1, 'e1>) =
         let frag = function

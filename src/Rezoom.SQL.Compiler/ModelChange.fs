@@ -154,11 +154,8 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
         | CreateViewStmt create -> this.CreateView(create)
         | CreateIndexStmt create -> this.CreateIndex(create)
         | DropObjectStmt drop -> this.DropObject(drop)
-        | BeginStmt
-        | CommitStmt
         | DeleteStmt _
         | InsertStmt _
-        | RollbackStmt
         | SelectStmt _
         | UpdateStmt _ -> None
 

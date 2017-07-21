@@ -668,9 +668,6 @@ and Stmt<'t, 'e> =
     | InsertStmt of InsertStmt<'t, 'e>
     | SelectStmt of SelectStmt<'t, 'e>
     | UpdateStmt of UpdateStmt<'t, 'e>
-    | BeginStmt
-    | CommitStmt
-    | RollbackStmt
 
 type TotalStmt<'t, 'e> =
     | CoreStmt of Stmt<'t, 'e>

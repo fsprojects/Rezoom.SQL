@@ -69,9 +69,6 @@ and private CommandEffectBuilder(model : Model) =
         | CreateIndexStmt _
         | CreateTableStmt _
         | SelectStmt _
-        | BeginStmt
-        | CommitStmt
-        | RollbackStmt
         | CreateViewStmt _ -> false
         | AlterTableStmt { Alteration = RenameTo _ }
         | DeleteStmt _

@@ -672,9 +672,6 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         | InsertStmt insert -> InsertStmt <| this.Insert(insert)
         | SelectStmt select -> SelectStmt <| this.Select(select, SelfQueryShape.Unknown)
         | UpdateStmt update -> UpdateStmt <| this.Update(update)
-        | BeginStmt -> BeginStmt
-        | CommitStmt -> CommitStmt
-        | RollbackStmt -> RollbackStmt
 
     interface IQueryTypeChecker with
         member this.Select(select) =

@@ -14,9 +14,6 @@ let private shortDescriptionCore (statement : Stmt<_, _>) =
     | InsertStmt _ -> "INSERT"
     | SelectStmt _ -> "SELECT"
     | UpdateStmt _ -> "UPDATE"
-    | BeginStmt -> "BEGIN TRAN"
-    | CommitStmt -> "COMMIT"
-    | RollbackStmt -> "ROLLBACK"
 
 let private shortDescription (statement : TotalStmt<_, _>) =
     match statement with

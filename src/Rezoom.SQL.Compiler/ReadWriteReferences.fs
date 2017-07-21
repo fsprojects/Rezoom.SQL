@@ -185,10 +185,7 @@ type private ReferenceFinder() =
         | CreateIndexStmt _
         | CreateTableStmt _
         | CreateViewStmt _
-        | DropObjectStmt _
-        | BeginStmt
-        | CommitStmt
-        | RollbackStmt -> ()
+        | DropObjectStmt _ -> ()
 
 type References =
     {   TablesRead : SchemaTable IReadOnlyList

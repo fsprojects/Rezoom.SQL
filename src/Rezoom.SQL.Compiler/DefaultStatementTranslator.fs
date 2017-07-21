@@ -572,9 +572,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
         | UpdateStmt update -> this.Update(update)
         | DeleteStmt delete -> this.Delete(delete)
 
-        | BeginStmt -> this.Begin
-        | CommitStmt -> this.Commit
-        | RollbackStmt -> this.Rollback
     override this.Statements(stmts) =
         seq {
             for stmt in stmts do

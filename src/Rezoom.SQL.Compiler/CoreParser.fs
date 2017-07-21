@@ -1005,21 +1005,6 @@ let private createTableStmt =
             As = createAs
         }
 
-let private beginStmt =
-    %% kw "BEGIN"
-    -- zeroOrOne * kw "TRANSACTION"
-    -|> BeginStmt
-
-let private commitStmt =
-    %% [ kw "COMMIT"; kw "END" ]
-    -- zeroOrOne * kw "TRANSACTION"
-    -|> CommitStmt
-
-let private rollbackStmt =
-    %% kw "ROLLBACK"
-    -- zeroOrOne * kw "TRANSACTION"
-    -|> RollbackStmt
-
 let private createIndexStmt =
     %% kw "CREATE"
     -- +.(zeroOrOne * kw "UNIQUE")
@@ -1186,9 +1171,6 @@ let coreStmt =
         %% +.createViewStmt -|> CreateViewStmt
         %% +.dropObjectStmt -|> DropObjectStmt
         cteStmt
-        beginStmt
-        commitStmt
-        rollbackStmt
     ]
 
 let coreStmts =
