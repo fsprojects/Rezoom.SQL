@@ -41,7 +41,7 @@ and SchemaIndex =
 and SchemaConstraintType =
     | DefaultConstraintType
     | PrimaryKeyConstraintType of auto : bool
-    | ForeignKeyConstraintType
+    | ForeignKeyConstraintType of ForeignKeyClause<unit>
     | NullableConstraintType
     | OtherConstraintType
 
@@ -58,7 +58,7 @@ and SchemaConstraint =
             match constr.ColumnConstraintType with
             | PrimaryKeyConstraint { AutoIncrement = auto } -> PrimaryKeyConstraintType auto
             | DefaultConstraint _ -> DefaultConstraintType
-            | ForeignKeyConstraint _ -> ForeignKeyConstraintType
+            | ForeignKeyConstraint c -> ForeignKeyConstraintType (ASTMapping.Stripper().ForeignKey(c))
             | NullableConstraint -> NullableConstraintType
             | _ -> OtherConstraintType
         ty, constr.Name, Set.singleton columnName
@@ -70,7 +70,8 @@ and SchemaConstraint =
             for constr in createTable.Constraints ->
                 let ty =
                     match constr.TableConstraintType with
-                    | TableForeignKeyConstraint _ -> ForeignKeyConstraintType
+                    | TableForeignKeyConstraint (_, c) ->
+                        ForeignKeyConstraintType (ASTMapping.Stripper().ForeignKey(c))
                     | _ -> OtherConstraintType
                 ty, constr.Name,
                     match constr.TableConstraintType with
@@ -80,11 +81,11 @@ and SchemaConstraint =
                     | TableCheckConstraint _ -> Set.empty
         }
 
-and SchemaCascade =
-    {   TargetSchema : Name
-        TargetTable : Name
-        CausedByTargetConstraint : Name
-        OnDelete : OnDeleteAction
+and SchemaBackReference =
+    {   ReferencedBySchema : Name
+        ReferencedByTable : Name
+        ReferencedByConstraint : Name
+        OnDelete : OnDeleteAction option
     }
 
 and SchemaTable =
@@ -93,7 +94,7 @@ and SchemaTable =
         Columns : Map<Name, SchemaColumn>
         Indexes : Map<Name, SchemaIndex>
         Constraints : Map<Name, SchemaConstraint>
-        CascadesTo : SchemaCascade Set
+        BackReferences : SchemaBackReference Set
     }
     member this.WithAdditionalColumn(col : ColumnDef<_, _>) =
         match this.Columns |> Map.tryFind col.Name with
@@ -153,7 +154,7 @@ and SchemaTable =
             TableName = tableName
             Columns = tableColumns |> mapBy (fun c -> c.ColumnName)
             Indexes = Map.empty
-            CascadesTo = Set.empty
+            BackReferences = Set.empty
             Constraints =
                 seq {
                     for ty, constr, names in SchemaConstraint.AllConstraints(def) ->

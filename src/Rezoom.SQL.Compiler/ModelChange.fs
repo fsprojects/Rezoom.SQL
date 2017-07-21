@@ -14,6 +14,27 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 ColumnType = inference.Concrete(column.Expr.Info.Type) // unfortunate but necessary
             }
         |]
+    static member private FillBackReferences(model : Model, updatedTable : SchemaTable) =
+        let fold (model : Model) (KeyValue(_, constr : SchemaConstraint)) =
+            match constr.ConstraintType with
+            | ForeignKeyConstraintType fk ->
+                let schema = model.Schemas.[fk.ReferencesTable.SchemaName |? model.DefaultSchema]
+                let table = schema.Objects.[fk.ReferencesTable.ObjectName]
+                match table with
+                | SchemaTable table ->
+                    let backRef =
+                        {   ReferencedBySchema = updatedTable.SchemaName
+                            ReferencedByTable = updatedTable.TableName
+                            ReferencedByConstraint = constr.ConstraintName
+                            OnDelete = fk.OnDelete
+                        }
+                    let table = { table with BackReferences = table.BackReferences |> Set.add backRef }
+                    let schema = { schema with Objects = Map.add table.TableName (SchemaTable table) schema.Objects }
+                    { model with Schemas = Map.add schema.SchemaName schema model.Schemas }
+                | SchemaView _ ->
+                    failAt fk.ReferencesTable.Source "Foreign key cannot reference a view"
+            | _ -> model
+        updatedTable.Constraints |> Seq.fold fold model
     member private this.CreateTable(create : InfCreateTableStmt) =
         let defaultSchema = if create.Temporary then model.TemporarySchema else model.DefaultSchema
         let schema = create.Name.SchemaName |? defaultSchema
@@ -34,7 +55,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                                 |> mapBy (fun c -> c.ColumnName)
                             Indexes = Map.empty
                             Constraints = Map.empty
-                            CascadesTo = Set.empty
+                            BackReferences = Set.empty
                         }
                     | CreateAsDefinition def ->
                         SchemaTable.OfCreateDefinition(schema.SchemaName, tableName, def)
