@@ -34,6 +34,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                                 |> mapBy (fun c -> c.ColumnName)
                             Indexes = Map.empty
                             Constraints = Map.empty
+                            CascadesTo = Set.empty
                         }
                     | CreateAsDefinition def ->
                         SchemaTable.OfCreateDefinition(schema.SchemaName, tableName, def)
@@ -61,18 +62,6 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                         failAt alter.Table.Source <| Error.objectAlreadyExists newName
                 | AddColumn col ->
                     let newTbl = tbl.WithAdditionalColumn(col) |> resultAt alter.Table.Source
-                    let constraints =
-                        col.Constraints
-                        |> Seq.fold (fun state con ->
-                            let ty, name, cols = SchemaConstraint.Constraint(con, col.Name)
-                            Map.add con.Name
-                                {   ConstraintType = ty
-                                    SchemaName = tbl.SchemaName
-                                    TableName = tbl.TableName
-                                    ConstraintName = con.Name
-                                    Columns = cols
-                                } state) newTbl.Constraints
-                    let newTbl = { newTbl with Constraints = constraints }
                     let schema = { schema with Objects = schema.Objects |> Map.add tbl.TableName (SchemaTable newTbl) }
                     Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
             | Some _ -> failAt alter.Table.Source <| Error.objectNotATable alter.Table

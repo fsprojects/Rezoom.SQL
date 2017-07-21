@@ -80,12 +80,20 @@ and SchemaConstraint =
                     | TableCheckConstraint _ -> Set.empty
         }
 
+and SchemaCascade =
+    {   TargetSchema : Name
+        TargetTable : Name
+        CausedByTargetConstraint : Name
+        OnDelete : ForeignKeyEvent
+    }
+
 and SchemaTable =
     {   SchemaName : Name
         TableName : Name
         Columns : Map<Name, SchemaColumn>
         Indexes : Map<Name, SchemaIndex>
         Constraints : Map<Name, SchemaConstraint>
+        CascadesTo : SchemaCascade Set
     }
     member this.WithAdditionalColumn(col : ColumnDef<_, _>) =
         match this.Columns |> Map.tryFind col.Name with
@@ -102,7 +110,21 @@ and SchemaTable =
                     ColumnName = col.Name
                     ColumnType = ColumnType.OfTypeName(col.Type, col.Nullable)
                 }
-            Ok { this with Columns = this.Columns |> Map.add newCol.ColumnName newCol }
+            let constraints =
+                col.Constraints
+                |> Seq.fold (fun state con ->
+                    let ty, name, cols = SchemaConstraint.Constraint(con, col.Name)
+                    Map.add con.Name
+                        {   ConstraintType = ty
+                            SchemaName = this.SchemaName
+                            TableName = this.TableName
+                            ConstraintName = name
+                            Columns = cols
+                        } state) this.Constraints
+            { this with
+                Columns = this.Columns |> Map.add newCol.ColumnName newCol
+                Constraints = constraints
+            } |> Ok
     static member OfCreateDefinition(schemaName, tableName, def : CreateTableDefinition<_, _>) =
         let tablePkColumns =
             seq {
@@ -131,6 +153,7 @@ and SchemaTable =
             TableName = tableName
             Columns = tableColumns |> mapBy (fun c -> c.ColumnName)
             Indexes = Map.empty
+            CascadesTo = Set.empty
             Constraints =
                 seq {
                     for ty, constr, names in SchemaConstraint.AllConstraints(def) ->
