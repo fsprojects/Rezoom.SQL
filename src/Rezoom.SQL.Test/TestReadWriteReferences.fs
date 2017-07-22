@@ -32,3 +32,17 @@ let ``deletes stop cascade at set null`` () =
                 WriteTables = Some [ "main.Parent"; "main.Child" ]
             } |> Good
     } |> assertSimple
+
+[<Test>]
+let ``self-referential cascades work`` () =
+    { sqliteTest with
+        Migration = """
+            create table Folders(Id int primary key, ParentId int references Folders(Id) on delete cascade);
+        """
+        Command = "delete from Folders"
+        Expect =
+            { expect with
+                Idempotent = Some false
+                WriteTables = Some [ "main.Folders" ]
+            } |> Good
+    } |> assertSimple

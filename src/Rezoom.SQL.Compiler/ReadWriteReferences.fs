@@ -147,7 +147,8 @@ type private ReferenceFinder(model : Model) =
         match select.Value.OrderBy with
         | Some terms -> for term in terms do this.OrderingTerm(term)
         | None -> ()
-    member this.DeleteFrom(qual : QualifiedObjectName WithSource) =
+    member this.DeleteFrom(qual : QualifiedObjectName WithSource, visited : QualifiedObjectName Set) =
+        if visited |> Set.contains qual.Value then () else
         addReference qual.Value WriteReference
         stateful {
             let! table = ModelOps.getRequiredTable qual
@@ -155,7 +156,7 @@ type private ReferenceFinder(model : Model) =
                 match reverse.OnDelete with
                 | None -> ()
                 | Some Cascade ->
-                    this.DeleteFrom(artificialSource reverse.FromTable)
+                    this.DeleteFrom(artificialSource reverse.FromTable, visited |> Set.add qual.Value)
                 | Some SetNull
                 | Some SetDefault ->
                     addReference reverse.FromTable WriteReference
@@ -171,7 +172,7 @@ type private ReferenceFinder(model : Model) =
         | None -> ()
         stateful {
             let! qual = ComplexModelOps.qualify delete.DeleteFrom
-            return this.DeleteFrom(qual)
+            return this.DeleteFrom(qual, Set.empty)
         } |> State.runForOuputValue model
     member this.Insert(insert : TInsertStmt) =
         this.ReferenceObject(WriteReference, insert.InsertInto)
