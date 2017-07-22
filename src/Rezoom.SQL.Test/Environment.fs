@@ -59,6 +59,8 @@ type SimpleTestCheck =
         Parameters : (string * ColumnType) list option
         OutputMigration : string option
         OutputCommand : string option
+        WriteTables : string list option
+        ReadTables : string list option
     }
 
 let expect =
@@ -67,6 +69,8 @@ let expect =
         Parameters = None
         OutputMigration = None
         OutputCommand = None
+        WriteTables = None
+        ReadTables = None
     }
 
 type SimpleTestExpectation =
@@ -124,6 +128,14 @@ let private runSimple (test : SimpleTest) =
                     ] |> Some
                 OutputMigration = Some outputMigration
                 OutputCommand = Some outputCommand
+                WriteTables =
+                    match commandEffect.CacheInfo.Value with
+                    | None -> None
+                    | Some x -> x.WriteTables |> Seq.map string |> Seq.toList |> Some
+                ReadTables =
+                    match commandEffect.CacheInfo.Value with
+                    | None -> None
+                    | Some x -> x.ReadTables |> Seq.map string |> Seq.toList |> Some
             } |> Good
         with
         | :? SQLCompilerException as cexn ->
@@ -149,6 +161,8 @@ let private assertMatchExpectation (expect : SimpleTestExpectation) (result : Si
             && e.Parameters ?== r.Parameters
             && e.OutputCommand ?== r.OutputCommand
             && e.OutputMigration ?== r.OutputMigration
+            && e.WriteTables ?== r.WriteTables
+            && e.ReadTables ?== r.ReadTables
         if matched then () else failwithf "Mismatch: %A vs %A" e r
     | e, r ->
         failwithf "Mismatch: %A vs %A" e r
