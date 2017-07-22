@@ -154,9 +154,13 @@ type State<'st, 'a> = 'st -> 'st * 'a
 
 module State =
     let inline get state = state, state
-    let inline set (newState : 'st) (_ : 'st) = newState, ()
+    let inline put (newState : 'st) (_ : 'st) = newState, ()
     let inline ret x state = state, x
     let inline zero state = state, ()
+
+    let inline map f stateful state =
+        let newState, x = stateful state
+        newState, f x
 
     let inline delay (f : unit -> State<'st, 'a>) state =
         f () state

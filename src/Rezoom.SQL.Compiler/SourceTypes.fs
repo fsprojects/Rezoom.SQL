@@ -98,6 +98,7 @@ type WithSource<'a> =
     }
     member this.Map(f) = { Source = this.Source; Value = f this.Value }
     member this.Equals(other) = EqualityComparer<'a>.Default.Equals(this.Value, other.Value)
+    override this.ToString() = string (box this.Value)
     override this.Equals(other) =
         match other with
         | :? WithSource<'a> as other -> this.Equals(other)
@@ -133,6 +134,7 @@ type SourceException(msg : string, pos : SourceInfo, source, fileName) =
 
 [<AutoOpen>]
 module SourceInfoModule =
+    let artificialSource x = { Source = SourceInfo.Invalid; Value = x }
     let inline catchSource fileName source f =
         try f()
         with

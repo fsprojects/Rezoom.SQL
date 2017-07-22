@@ -105,3 +105,7 @@ let commandChangesSchema =
     sprintf "SQ046: The command includes a change to the database schema which it does not undo"
 let commandLeavesTempTable = // special case of SQ046
     sprintf "SQ047: The command creates a temp table and does not drop it"
+let constraintAlreadyExists name =
+    sprintf "SQ048: Constraint ``%O`` already exists" name
+let indexAlreadyExists name =
+    sprintf "SQ049: Index ``%O`` already exists" name

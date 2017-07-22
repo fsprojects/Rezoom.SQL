@@ -1,12 +1,16 @@
 ﻿namespace Rezoom.SQL.Compiler
-open System
-open System.Data
-open System.Data.Common
 open System.Collections.Generic
 
 type DatabaseBuiltin =
     {   Functions : Map<Name, FunctionType>
     }
+
+type QualifiedObjectName =
+    {   SchemaName : Name
+        ObjectName : Name
+    }
+    override this.ToString() =
+        this.SchemaName.Value + "." + this.ObjectName.Value
 
 type Model =
     {   Schemas : Map<Name, Schema>
@@ -38,10 +42,16 @@ and SchemaIndex =
         Columns : Name Set
     }
 
+and SchemaForeignKey =
+    {   ToTable : QualifiedObjectName
+        ToColumns : Name Set
+        OnDelete : OnDeleteAction option
+    }
+
 and SchemaConstraintType =
     | DefaultConstraintType
     | PrimaryKeyConstraintType of auto : bool
-    | ForeignKeyConstraintType of ForeignKeyClause<unit>
+    | ForeignKeyConstraintType of SchemaForeignKey
     | NullableConstraintType
     | OtherConstraintType
 
@@ -58,7 +68,7 @@ and SchemaConstraint =
             match constr.ColumnConstraintType with
             | PrimaryKeyConstraint { AutoIncrement = auto } -> PrimaryKeyConstraintType auto
             | DefaultConstraint _ -> DefaultConstraintType
-            | ForeignKeyConstraint c -> ForeignKeyConstraintType (ASTMapping.Stripper().ForeignKey(c))
+            | ForeignKeyConstraint c -> ForeignKeyConstraintType (failwith "FIXME") // TODO
             | NullableConstraint -> NullableConstraintType
             | _ -> OtherConstraintType
         ty, constr.Name, Set.singleton columnName
@@ -71,7 +81,7 @@ and SchemaConstraint =
                 let ty =
                     match constr.TableConstraintType with
                     | TableForeignKeyConstraint (_, c) ->
-                        ForeignKeyConstraintType (ASTMapping.Stripper().ForeignKey(c))
+                        ForeignKeyConstraintType (failwith "FIXME") // TODO
                     | _ -> OtherConstraintType
                 ty, constr.Name,
                     match constr.TableConstraintType with
@@ -81,10 +91,9 @@ and SchemaConstraint =
                     | TableCheckConstraint _ -> Set.empty
         }
 
-and SchemaBackReference =
-    {   ReferencedBySchema : Name
-        ReferencedByTable : Name
-        ReferencedByConstraint : Name
+and SchemaReverseForeignKey =
+    {   FromTable : QualifiedObjectName
+        FromConstraint : Name
         OnDelete : OnDeleteAction option
     }
 
@@ -94,7 +103,7 @@ and SchemaTable =
         Columns : Map<Name, SchemaColumn>
         Indexes : Map<Name, SchemaIndex>
         Constraints : Map<Name, SchemaConstraint>
-        BackReferences : SchemaBackReference Set
+        ReverseForeignKeys : SchemaReverseForeignKey Set
     }
     member this.WithAdditionalColumn(col : ColumnDef<_, _>) =
         match this.Columns |> Map.tryFind col.Name with
@@ -154,7 +163,7 @@ and SchemaTable =
             TableName = tableName
             Columns = tableColumns |> mapBy (fun c -> c.ColumnName)
             Indexes = Map.empty
-            BackReferences = Set.empty
+            ReverseForeignKeys = Set.empty
             Constraints =
                 seq {
                     for ty, constr, names in SchemaConstraint.AllConstraints(def) ->
