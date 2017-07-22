@@ -77,7 +77,7 @@ let ``delete`` () =
 [<Test>]
 let ``drop`` () =
     roundtrip """
-        drop table main.Users
+        drop table main.UserGroupMaps
     """
 
 [<Test>]

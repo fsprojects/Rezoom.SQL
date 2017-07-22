@@ -1,4 +1,8 @@
-﻿module Rezoom.SQL.Compiler.ModelOps
+﻿/// Fundamental operations on the model.
+/// The model should only be modified (it's immutable, so by modified I mean creation of altered copies)
+/// via these primitives. This will ensure invariants like that every foreign key constraint has a reverse foreign
+/// key tracking it in the referenced table.
+module Rezoom.SQL.Compiler.ModelOps
 
 let getSchema (name : Name) =
     stateful {

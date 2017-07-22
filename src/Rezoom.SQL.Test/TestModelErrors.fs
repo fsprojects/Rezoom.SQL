@@ -7,7 +7,7 @@ open Rezoom.SQL.Mapping
 
 [<Test>]
 let ``duplicate create view complains`` () =
-    expectError (Error.objectAlreadyExists "VUsers")
+    expectError (Error.objectAlreadyExists "main.VUsers")
         """
             create view VUsers as
                 select * from Users;
@@ -17,7 +17,7 @@ let ``duplicate create view complains`` () =
 
 [<Test>]
 let ``duplicate create table complains`` () =
-    expectError (Error.objectAlreadyExists "Users")
+    expectError (Error.objectAlreadyExists "main.Users")
         """
             create view Users as
                 select * from Users;

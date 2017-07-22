@@ -461,17 +461,18 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         match alteration with
         | RenameTo name -> RenameTo name
         | AddColumn cdef ->
-            let fake =
-                resultAt tableName.Source <|
-                match tableName.Info.Table.Table with
-                | TableReference schemaTable -> failwith "FIXME" : Result<SchemaTable, string> // schemaTable.WithAdditionalColumn(cdef)
-                | _ -> Error <| Error.objectNotATable tableName
+            let hypothetical =
+                stateful {
+                    let! qualified = ComplexModelOps.qualify tableName
+                    do! ComplexModelOps.addColumnDef qualified cdef
+                    return! ModelOps.getRequiredTable qualified
+                } |> State.runForOuputValue scope.Model
             let from =
                 InferredFromClause.FromSingleObject
                     ({ tableName with
                         Info =
-                            {   Table = TableReference fake
-                                Query = inferredOfTable(fake)
+                            {   Table = TableReference hypothetical
+                                Query = inferredOfTable(hypothetical)
                             } |> TableLike })
             let this = this.WithScope({ scope with FromClause = Some from })
             AddColumn <| this.ColumnDef(cdef, None)
@@ -522,13 +523,18 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
 
     member this.CreateTableDefinition
         (tableName : InfObjectName, createTable : CreateTableDefinition, creating : CreateTableStmt) =
-        let fake = failwith "FIXME fake query with table columns typed (including nullability...)"
+        let hypothetical =
+            stateful {
+                let! qualified = ComplexModelOps.qualifyTemp creating.Temporary tableName
+                do! ComplexModelOps.createTableByDefinition qualified createTable
+                return! ModelOps.getRequiredTable qualified
+            } |> State.runForOuputValue scope.Model
         let from =
             InferredFromClause.FromSingleObject
                 ({ tableName with
                     Info =
-                        {   Table = TableReference fake
-                            Query = inferredOfTable(fake)
+                        {   Table = TableReference hypothetical
+                            Query = inferredOfTable hypothetical
                         } |> TableLike })
         let this = this.WithScope({ scope with FromClause = Some from })
         let creating = Some creating
