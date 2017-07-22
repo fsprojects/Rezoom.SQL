@@ -81,6 +81,13 @@ let ``drop`` () =
     """
 
 [<Test>]
+let ``drop then drop`` () =
+    roundtrip """
+        drop table main.UserGroupMaps;
+        drop table main.Users
+    """
+
+[<Test>]
 let ``create table with column list and fk`` () =
     roundtrip """
         create table Foo
