@@ -345,7 +345,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
     override this.CreateTableDefinition(table, create) =
         seq {
             let columns = create.Columns |> Seq.map (fun c -> this.ColumnDefinition(table, c.Value))
-            let constraints = create.Constraints |> Seq.map (fun c -> this.TableConstraint(table, c))
+            let constraints = create.Constraints |> Seq.map (fun c -> this.TableConstraint(table, c.Value))
             yield! Seq.append columns constraints |> parencols
         }
     override this.CreateTable(create) =

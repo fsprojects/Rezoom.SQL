@@ -505,15 +505,19 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             IndexedColumns = constr.IndexedColumns
         }
 
-    member this.TableConstraint(constr : TableConstraint, creating : CreateTableStmt option) =
-        {   Name = constr.Name
-            TableConstraintType =
-                match constr.TableConstraintType with
-                | TableIndexConstraint clause ->
-                    TableIndexConstraint <| this.TableIndexConstraint(clause, creating)
-                | TableForeignKeyConstraint (names, foreignKey) ->
-                    TableForeignKeyConstraint (names, this.ForeignKey(foreignKey, creating))
-                | TableCheckConstraint expr -> TableCheckConstraint <| this.Expr(expr)
+    member this.TableConstraint(constr : TableConstraint WithSource, creating : CreateTableStmt option) =
+        {   Source = constr.Source
+            Value =
+                let constr = constr.Value
+                {   Name = constr.Name
+                    TableConstraintType =
+                        match constr.TableConstraintType with
+                        | TableIndexConstraint clause ->
+                            TableIndexConstraint <| this.TableIndexConstraint(clause, creating)
+                        | TableForeignKeyConstraint (names, foreignKey) ->
+                            TableForeignKeyConstraint (names, this.ForeignKey(foreignKey, creating))
+                        | TableCheckConstraint expr -> TableCheckConstraint <| this.Expr(expr)
+                }
         }
 
     member this.CreateTableDefinition

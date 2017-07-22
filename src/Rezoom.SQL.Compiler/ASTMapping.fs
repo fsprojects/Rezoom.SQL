@@ -244,15 +244,19 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         {   Type = constr.Type
             IndexedColumns = constr.IndexedColumns
         }
-    member this.TableConstraint(constr : TableConstraint<'t1, 'e1>) =
-        {   Name = constr.Name
-            TableConstraintType =
-                match constr.TableConstraintType with
-                | TableIndexConstraint clause ->
-                    TableIndexConstraint <| this.TableIndexConstraint(clause)
-                | TableForeignKeyConstraint (names, foreignKey) ->
-                    TableForeignKeyConstraint (names, this.ForeignKey(foreignKey))
-                | TableCheckConstraint expr -> TableCheckConstraint <| this.Expr(expr)
+    member this.TableConstraint(constr : TableConstraint<'t1, 'e1> WithSource) =
+        {   Source = constr.Source
+            Value =
+                let constr = constr.Value
+                {   Name = constr.Name
+                    TableConstraintType =
+                        match constr.TableConstraintType with
+                        | TableIndexConstraint clause ->
+                            TableIndexConstraint <| this.TableIndexConstraint(clause)
+                        | TableForeignKeyConstraint (names, foreignKey) ->
+                            TableForeignKeyConstraint (names, this.ForeignKey(foreignKey))
+                        | TableCheckConstraint expr -> TableCheckConstraint <| this.Expr(expr)
+                }
         }
     member this.CreateTableDefinition(createTable : CreateTableDefinition<'t1, 'e1>) =
         {   Columns = createTable.Columns |> rmap this.ColumnDef

@@ -563,7 +563,7 @@ type TableConstraint<'t, 'e> =
 
 type CreateTableDefinition<'t, 'e> =
     {   Columns : ColumnDef<'t, 'e> WithSource array
-        Constraints : TableConstraint<'t, 'e> array
+        Constraints : TableConstraint<'t, 'e> WithSource array
     }
 
 type CreateTableAs<'t, 'e> =

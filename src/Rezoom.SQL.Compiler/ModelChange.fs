@@ -4,6 +4,43 @@ open System.Collections.Generic
 open Rezoom.SQL.Compiler.InferredTypes
 
 type private ModelChange(model : Model, inference : ITypeInferenceContext) =
+    static member private ColumnConstraintType(colConstraint : ColumnConstraint<_, _>) =
+        stateful {
+            let! model = State.get
+            return
+                match colConstraint.ColumnConstraintType with
+                | NullableConstraint -> NullableConstraintType
+                | PrimaryKeyConstraint pk -> PrimaryKeyConstraintType pk.AutoIncrement
+                | DefaultConstraint _ -> DefaultConstraintType
+                | ForeignKeyConstraint fk ->
+                    let toSchema = fk.ReferencesTable.SchemaName |? model.DefaultSchema
+                    {   ToTable = { SchemaName = toSchema; ObjectName = fk.ReferencesTable.ObjectName }
+                        ToColumns = fk.ReferencesColumns |> Seq.map (fun c -> c.Value) |> Set.ofSeq
+                        OnDelete = fk.OnDelete
+                    } |> ForeignKeyConstraintType
+                | CollateConstraint _
+                | UniqueConstraint -> OtherConstraintType
+        }
+    static member private TableConstraint(tblConstraint : TableConstraint<_, _>) =
+        stateful {
+            let! model = State.get
+            return
+                match tblConstraint.TableConstraintType with
+                | TableIndexConstraint indexClause ->
+                    let cols = indexClause.IndexedColumns |> Seq.map (fun c -> fst c.Value) |> Set.ofSeq
+                    match indexClause.Type with
+                    | PrimaryKey -> PrimaryKeyConstraintType false, cols
+                    | Unique -> OtherConstraintType, cols
+                | TableForeignKeyConstraint (names, fk) ->
+                    let cols = names |> Seq.map (fun c -> c.Value) |> Set.ofSeq
+                    let toSchema = fk.ReferencesTable.SchemaName |? model.DefaultSchema
+                    {   ToTable = { SchemaName = toSchema; ObjectName = fk.ReferencesTable.ObjectName }
+                        ToColumns = fk.ReferencesColumns |> Seq.map (fun c -> c.Value) |> Set.ofSeq
+                        OnDelete = fk.OnDelete
+                    } |> ForeignKeyConstraintType, cols
+                | TableCheckConstraint _ ->
+                    OtherConstraintType, Set.empty
+        }
     member private this.CreateTable(create : InfCreateTableStmt) =
         stateful {
             let tableName =
@@ -27,11 +64,16 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     let ty = ColumnType.OfTypeName(column.Value.Type, nullable = false)
                     let columnName = { Source = column.Source; Value = column.Value.Name }
                     do! ModelOps.addTableColumn tableName columnName ty
-                for column in def.Columns do
-                for constr in column.Value.Constraints do
-                    ()
+                    for constr in column.Value.Constraints do
+                        let! constraintType = ModelChange.ColumnConstraintType(constr)
+                        // more specific source info here?
+                        let constraintName = { Source = column.Source; Value = constr.Name }
+                        let cols = Set.singleton column.Value.Name
+                        do! ModelOps.addConstraint tableName constraintName constraintType cols
                 for constr in def.Constraints do
-                    ()
+                    let! constraintType, cols = ModelChange.TableConstraint(constr.Value)
+                    let constraintName = constr.Map(fun c -> c.Name)
+                    do! ModelOps.addConstraint tableName constraintName constraintType cols
         } |> State.runForOutputState model |> Some
     member this.AlterTable(alter : InfAlterTableStmt) =
         failwith "FIXME"

@@ -973,7 +973,7 @@ let private tableConstraint =
 let private createTableDefinition =
     let part =
         %[
-            %% +.tableConstraint -|> Choice1Of2
+            %% +.withSource tableConstraint -|> Choice1Of2
             %% +.withSource columnDef -|> Choice2Of2
         ]
     %% '('
