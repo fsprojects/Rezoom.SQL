@@ -114,3 +114,8 @@ let tableIsReferencedByFKs name referencing =
         "SQ050: The table ``%O`` cannot be dropped because it is referenced by other tables %s" 
         name
         (String.concat ", " (referencing |> Seq.map (sprintf "``%O``")))
+let columnIsReferencedByConstraints name referencing =
+    sprintf
+        "SQ051: The column ``%O`` cannot be dropped because it is referenced by constraints %s"
+        name
+        (String.concat ", " (referencing |> Seq.map (sprintf "``%O``")))

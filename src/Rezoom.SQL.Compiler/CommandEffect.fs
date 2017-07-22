@@ -70,7 +70,7 @@ and private CommandEffectBuilder(model : Model) =
         | CreateTableStmt _
         | SelectStmt _
         | CreateViewStmt _ -> false
-        | AlterTableStmt { Alteration = RenameTo _ }
+        | AlterTableStmt { Alteration = RenameTo _ | DropColumn _ }
         | DeleteStmt _
         | DropObjectStmt _
         | InsertStmt _

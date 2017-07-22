@@ -460,6 +460,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
     member this.Alteration(tableName : InfObjectName, alteration : AlterTableAlteration) =
         match alteration with
         | RenameTo name -> RenameTo name
+        | DropColumn name -> DropColumn name
         | AddColumn cdef ->
             let hypothetical =
                 stateful {

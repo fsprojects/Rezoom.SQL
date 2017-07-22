@@ -521,6 +521,7 @@ type ColumnDef<'t, 'e> =
 type AlterTableAlteration<'t, 'e> =
     | RenameTo of Name
     | AddColumn of ColumnDef<'t, 'e> WithSource
+    | DropColumn of Name
 
 type AlterTableStmt<'t, 'e> =
     {   Table : ObjectName<'t>

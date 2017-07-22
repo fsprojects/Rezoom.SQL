@@ -25,6 +25,8 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                         Value = { SchemaName = tableName.Value.SchemaName; ObjectName = newName }
                     }
                 return! ModelOps.renameTable tableName newName
+            | DropColumn name ->
+                return! ComplexModelOps.dropColumn tableName name
             | AddColumn column ->
                 return! ComplexModelOps.addColumnDef tableName column
         } |> State.runForOutputState model |> Some

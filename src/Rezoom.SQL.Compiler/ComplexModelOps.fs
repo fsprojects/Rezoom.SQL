@@ -92,3 +92,33 @@ let createTableByQuery tableName (query : ColumnType QueryExprInfo) =
             let columnName = { Source = column.Expr.Source; Value = column.ColumnName }
             do! ModelOps.addTableColumn tableName columnName ty
     }
+
+let dropColumn tableName (column : Name) =
+    stateful {
+        let! table = ModelOps.getRequiredTable tableName
+        match table.Columns |> Map.tryFind column with
+        | None ->
+            // IMPROVEMENT oughta have better source location
+            failAt tableName.Source <| Error.noSuchColumn column
+        | Some _ ->
+            let coveredByConstraints =
+                table.Constraints
+                |> Seq.filter (function KeyValue(_, constr) -> constr.Columns |> Set.contains column)
+                |> Seq.map (function KeyValue(_, constr) -> constr.ConstraintName)
+                |> Seq.cache
+            if Seq.isEmpty coveredByConstraints then
+                for rfk in table.ReverseForeignKeys do
+                    let! referencingTable = ModelOps.getRequiredTable (artificialSource rfk.FromTable)
+                    let referencingConstr = table.Constraints |> Map.find rfk.FromConstraint
+                    match referencingConstr.ConstraintType with
+                    | ForeignKeyConstraintType fk ->
+                        if fk.ToColumns |> Set.contains column then
+                            let refName =
+                                string referencingTable.Name + "." + string referencingConstr.ConstraintName
+                            failAt tableName.Source <| Error.columnIsReferencedByConstraints column [refName]
+                    | _ -> ()
+                let table = { table with Columns = table.Columns |> Map.remove column }
+                return! ModelOps.putObject tableName (SchemaTable table)
+            else
+                failAt tableName.Source <| Error.columnIsReferencedByConstraints column coveredByConstraints
+    }

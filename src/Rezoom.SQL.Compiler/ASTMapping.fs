@@ -232,6 +232,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.Alteration(alteration : AlterTableAlteration<'t1, 'e1>) =
         match alteration with
         | RenameTo name -> RenameTo name
+        | DropColumn name -> DropColumn name
         | AddColumn cdef -> AddColumn <| this.ColumnDef(cdef)
     member this.CreateIndex(createIndex : CreateIndexStmt<'t1, 'e1>) =
         {   Unique = createIndex.Unique

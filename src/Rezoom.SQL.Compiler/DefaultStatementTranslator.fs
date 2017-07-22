@@ -383,6 +383,9 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield text "ADD COLUMN"
                 yield ws
                 yield! this.ColumnDefinition(alter.Table, columnDef.Value)
+            | DropColumn name ->
+                yield text "DROP COLUMN"
+                yield this.Expr.Name(name)
         }
     override this.CreateView(create) =
         seq {

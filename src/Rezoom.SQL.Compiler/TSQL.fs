@@ -552,14 +552,16 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield! this.Expr.ObjectName(alter.Table)
             yield ws
             match alter.Alteration with
-            | RenameTo newName ->
-                yield text "RENAME TO"
-                yield ws
-                yield this.Expr.Name(newName)
+            | RenameTo _ ->
+                fail "TSQL does not support ALTER TABLE RENAME TO"
             | AddColumn columnDef ->
                 yield text "ADD" // no COLUMN keyword
                 yield ws
                 yield! this.ColumnDefinition(alter.Table, columnDef.Value)
+            | DropColumn name ->
+                yield text "DROP COLUMN" // yes COLUMN keyword, yay for consistency
+                yield ws
+                yield this.Expr.Name(name)
         }
 
 type TSQLMigrationBackend(settings : ConnectionStringSettings) =
