@@ -520,7 +520,7 @@ type ColumnDef<'t, 'e> =
 
 type AlterTableAlteration<'t, 'e> =
     | RenameTo of Name
-    | AddColumn of ColumnDef<'t, 'e>
+    | AddColumn of ColumnDef<'t, 'e> WithSource
 
 type AlterTableStmt<'t, 'e> =
     {   Table : ObjectName<'t>
@@ -562,7 +562,7 @@ type TableConstraint<'t, 'e> =
     }
 
 type CreateTableDefinition<'t, 'e> =
-    {   Columns : ColumnDef<'t, 'e> array
+    {   Columns : ColumnDef<'t, 'e> WithSource array
         Constraints : TableConstraint<'t, 'e> array
     }
 

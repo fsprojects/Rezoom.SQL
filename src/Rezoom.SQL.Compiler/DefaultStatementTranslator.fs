@@ -344,7 +344,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
         }
     override this.CreateTableDefinition(table, create) =
         seq {
-            let columns = create.Columns |> Seq.map (fun c -> this.ColumnDefinition(table, c))
+            let columns = create.Columns |> Seq.map (fun c -> this.ColumnDefinition(table, c.Value))
             let constraints = create.Constraints |> Seq.map (fun c -> this.TableConstraint(table, c))
             yield! Seq.append columns constraints |> parencols
         }
@@ -382,7 +382,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             | AddColumn columnDef ->
                 yield text "ADD COLUMN"
                 yield ws
-                yield! this.ColumnDefinition(alter.Table, columnDef)
+                yield! this.ColumnDefinition(alter.Table, columnDef.Value)
         }
     override this.CreateView(create) =
         seq {

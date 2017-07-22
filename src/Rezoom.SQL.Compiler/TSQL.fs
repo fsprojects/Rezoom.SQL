@@ -559,7 +559,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             | AddColumn columnDef ->
                 yield text "ADD" // no COLUMN keyword
                 yield ws
-                yield! this.ColumnDefinition(alter.Table, columnDef)
+                yield! this.ColumnDefinition(alter.Table, columnDef.Value)
         }
 
 type TSQLMigrationBackend(settings : ConnectionStringSettings) =

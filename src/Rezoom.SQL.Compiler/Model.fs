@@ -64,33 +64,6 @@ and SchemaConstraint =
         /// Which columns this constraint relates to in the table.
         Columns : Name Set
     }
-    static member Constraint (constr, columnName) =
-        let ty =
-            match constr.ColumnConstraintType with
-            | PrimaryKeyConstraint { AutoIncrement = auto } -> PrimaryKeyConstraintType auto
-            | DefaultConstraint _ -> DefaultConstraintType
-            | ForeignKeyConstraint c -> ForeignKeyConstraintType (failwith "FIXME") // TODO
-            | NullableConstraint -> NullableConstraintType
-            | _ -> OtherConstraintType
-        ty, constr.Name, Set.singleton columnName
-    static member AllConstraints (createTable : CreateTableDefinition<_, _>) =
-        seq {
-            for column in createTable.Columns do
-                for constr in column.Constraints ->
-                    SchemaConstraint.Constraint(constr, column.Name)
-            for constr in createTable.Constraints ->
-                let ty =
-                    match constr.TableConstraintType with
-                    | TableForeignKeyConstraint (_, c) ->
-                        ForeignKeyConstraintType (failwith "FIXME") // TODO
-                    | _ -> OtherConstraintType
-                ty, constr.Name,
-                    match constr.TableConstraintType with
-                    | TableIndexConstraint constr ->
-                        constr.IndexedColumns |> Seq.map (fun w -> fst w.Value) |> Set.ofSeq
-                    | TableForeignKeyConstraint (names, _) -> names |> Seq.map (fun v -> v.Value) |> Set.ofSeq
-                    | TableCheckConstraint _ -> Set.empty
-        }
 
 and SchemaReverseForeignKey =
     {   FromTable : QualifiedObjectName
@@ -106,77 +79,6 @@ and SchemaTable =
         Constraints : Map<Name, SchemaConstraint>
         ReverseForeignKeys : SchemaReverseForeignKey Set
     }
-    member this.WithAdditionalColumn(col : ColumnDef<_, _>) =
-        match this.Columns |> Map.tryFind col.Name with
-        | Some _ -> Error <| Error.columnAlreadyExists col.Name
-        | None ->
-            let isPrimaryKey =
-                col.Constraints
-                |> Seq.exists(
-                    function | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true | _ -> false)
-            let newCol =
-                {   SchemaName = this.SchemaName
-                    TableName = this.TableName
-                    PrimaryKey = isPrimaryKey
-                    ColumnName = col.Name
-                    ColumnType = ColumnType.OfTypeName(col.Type, col.Nullable)
-                }
-            let constraints =
-                col.Constraints
-                |> Seq.fold (fun state con ->
-                    let ty, name, cols = SchemaConstraint.Constraint(con, col.Name)
-                    Map.add con.Name
-                        {   ConstraintType = ty
-                            SchemaName = this.SchemaName
-                            TableName = this.TableName
-                            ConstraintName = name
-                            Columns = cols
-                        } state) this.Constraints
-            { this with
-                Columns = this.Columns |> Map.add newCol.ColumnName newCol
-                Constraints = constraints
-            } |> Ok
-    static member OfCreateDefinition(schemaName, tableName, def : CreateTableDefinition<_, _>) =
-        let tablePkColumns =
-            seq {
-                for constr in def.Constraints do
-                    match constr.TableConstraintType with
-                    | TableIndexConstraint { Type = PrimaryKey; IndexedColumns = indexed } ->
-                        for { Value = name, _ } in indexed -> name
-                    | _ -> ()
-            } |> Set.ofSeq
-        let tableColumns =
-            seq {
-                for column in def.Columns ->
-                    let isPrimaryKey =
-                        tablePkColumns.Contains(column.Name)
-                        || column.Constraints |> Seq.exists(function
-                            | { ColumnConstraintType = PrimaryKeyConstraint _ } -> true
-                            | _ -> false)
-                    {   SchemaName = schemaName
-                        TableName = tableName
-                        PrimaryKey = isPrimaryKey
-                        ColumnName = column.Name
-                        ColumnType = ColumnType.OfTypeName(column.Type, column.Nullable)
-                    }
-            }
-        {   SchemaName = schemaName
-            TableName = tableName
-            Columns = tableColumns |> mapBy (fun c -> c.ColumnName)
-            Indexes = Map.empty
-            ReverseForeignKeys = Set.empty
-            Constraints =
-                seq {
-                    for ty, constr, names in SchemaConstraint.AllConstraints(def) ->
-                        constr,
-                            {   ConstraintType = ty
-                                SchemaName = schemaName
-                                TableName = tableName
-                                ConstraintName = constr
-                                Columns = names
-                            }
-                } |> Map.ofSeq
-        }
 
 and SchemaColumn =
     {   SchemaName : Name

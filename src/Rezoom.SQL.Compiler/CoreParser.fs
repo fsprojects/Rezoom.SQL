@@ -913,7 +913,7 @@ let private alterTableStmt =
                 -- FParsec.Primitives.fail "ALTER TABLE ADD CONSTRAINT statements are not yet supported"
                 -%> ()
             ]
-        -- +.columnDef
+        -- +.withSource columnDef
         -|> AddColumn
     let dropErr =
         %% kw "DROP"
@@ -974,7 +974,7 @@ let private createTableDefinition =
     let part =
         %[
             %% +.tableConstraint -|> Choice1Of2
-            %% +.columnDef -|> Choice2Of2
+            %% +.withSource columnDef -|> Choice2Of2
         ]
     %% '('
     -- ws

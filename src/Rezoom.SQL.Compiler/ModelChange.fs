@@ -4,67 +4,37 @@ open System.Collections.Generic
 open Rezoom.SQL.Compiler.InferredTypes
 
 type private ModelChange(model : Model, inference : ITypeInferenceContext) =
-    member private this.CreateTableColumns(schemaName : Name, tableName : Name, asSelect : InfSelectStmt) =
-        let query = asSelect.Value.Info.Query
-        [| for column in query.Columns ->
-            {   SchemaName = schemaName
-                TableName = tableName
-                ColumnName = column.ColumnName
-                PrimaryKey = column.Expr.Info.PrimaryKey
-                ColumnType = inference.Concrete(column.Expr.Info.Type) // unfortunate but necessary
-            }
-        |]
     member private this.CreateTable(create : InfCreateTableStmt) =
-        let defaultSchema = if create.Temporary then model.TemporarySchema else model.DefaultSchema
-        let schema = create.Name.SchemaName |? defaultSchema
-        match model.Schemas.TryFind(schema) with
-        | None -> failAt create.Name.Source <| Error.noSuchSchema schema
-        | Some schema ->
-            let tableName = create.Name.ObjectName
-            match schema.Objects |> Map.tryFind tableName with
-            | Some _ -> failAt create.Name.Source <| Error.objectAlreadyExists create.Name
-            | None ->
-                let table =
-                    match create.As with
-                    | CreateAsSelect select ->
-                        {   SchemaName = schema.SchemaName
-                            TableName = create.Name.ObjectName
-                            Columns =
-                                this.CreateTableColumns(schema.SchemaName, tableName, select)
-                                |> mapBy (fun c -> c.ColumnName)
-                            Indexes = Map.empty
-                            Constraints = Map.empty
-                            ReverseForeignKeys = Set.empty
+        stateful {
+            let tableName =
+                let defaultSchema = if create.Temporary then model.TemporarySchema else model.DefaultSchema
+                {   Source = create.Name.Source
+                    Value =
+                        {   SchemaName = create.Name.SchemaName |? defaultSchema
+                            ObjectName = create.Name.ObjectName
                         }
-                    | CreateAsDefinition def ->
-                        SchemaTable.OfCreateDefinition(schema.SchemaName, tableName, def)
-                let schema =
-                    { schema with Objects = schema.Objects |> Map.add table.TableName (SchemaTable table) }
-                Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
+                }
+            do! ModelOps.createEmptyTable tableName
+            match create.As with
+            | CreateAsSelect select ->
+                let query = select.Value.Info.Query
+                for column in query.Columns do
+                    let ty = inference.Concrete(column.Expr.Info.Type)
+                    let columnName = { Source = column.Expr.Source; Value = column.ColumnName }
+                    do! ModelOps.addTableColumn tableName columnName ty
+            | CreateAsDefinition def ->
+                for column in def.Columns do
+                    let ty = ColumnType.OfTypeName(column.Value.Type, nullable = false)
+                    let columnName = { Source = column.Source; Value = column.Value.Name }
+                    do! ModelOps.addTableColumn tableName columnName ty
+                for column in def.Columns do
+                for constr in column.Value.Constraints do
+                    ()
+                for constr in def.Constraints do
+                    ()
+        } |> State.runForOutputState model |> Some
     member this.AlterTable(alter : InfAlterTableStmt) =
-        let stripper = ASTMapping.Stripper()
-        match model.Schema(alter.Table.SchemaName) with
-        | None -> failAt alter.Table.Source <| Error.noSuchSchema alter.Table
-        | Some schema ->
-            let tblName = alter.Table.ObjectName
-            match schema.Objects |> Map.tryFind tblName with
-            | None -> failAt alter.Table.Source <| Error.noSuchTable alter.Table
-            | Some (SchemaTable tbl) ->
-                match alter.Alteration with
-                | RenameTo newName ->
-                    match schema.Objects |> Map.tryFind newName with
-                    | None ->
-                        let objects =
-                            schema.Objects |> Map.remove tblName |> Map.add newName (SchemaTable tbl)
-                        let schema = { schema with Objects = objects }
-                        Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
-                    | Some existing ->
-                        failAt alter.Table.Source <| Error.objectAlreadyExists newName
-                | AddColumn col ->
-                    let newTbl = tbl.WithAdditionalColumn(col) |> resultAt alter.Table.Source
-                    let schema = { schema with Objects = schema.Objects |> Map.add tbl.TableName (SchemaTable newTbl) }
-                    Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
-            | Some _ -> failAt alter.Table.Source <| Error.objectNotATable alter.Table
+        failwith "FIXME"
     member this.CreateView(create : InfCreateViewStmt) =
         let viewName = create.ViewName.ObjectName
         match model.Schema(create.ViewName.SchemaName) with

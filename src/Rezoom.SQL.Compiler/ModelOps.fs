@@ -115,7 +115,7 @@ let addTableColumn (tableName : QualifiedObjectName WithSource) (columnName : Na
                 {   SchemaName = tableName.Value.SchemaName
                     TableName = tableName.Value.ObjectName
                     ColumnName = columnName.Value
-                    ColumnType = { Type = columnType; Nullable = false }
+                    ColumnType = columnType
                     PrimaryKey = false
                 }
             let table =
@@ -151,9 +151,15 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                 | PrimaryKeyConstraintType _ ->
                     let columns = cols |> Seq.map (fun c -> { Map.find c table.Columns with PrimaryKey = true })
                     { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
+                | NullableConstraintType ->
+                    let columns =
+                        cols
+                        |> Seq.map (fun c ->
+                            let c = Map.find c table.Columns
+                            { c with ColumnType = { c.ColumnType with Nullable = true } })
+                    { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
                 | ForeignKeyConstraintType _
                 | DefaultConstraintType
-                | NullableConstraintType
                 | OtherConstraintType -> table
             do! putObject tableName (SchemaTable table)
             match constraintType with

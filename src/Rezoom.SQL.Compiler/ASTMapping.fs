@@ -221,10 +221,13 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                 | CollateConstraint name -> CollateConstraint name
                 | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey)
         }
-    member this.ColumnDef(cdef : ColumnDef<'t1, 'e1>) =
-        {   Name = cdef.Name
-            Type = cdef.Type
-            Constraints = rmap this.ColumnConstraint cdef.Constraints
+    member this.ColumnDef(cdef : ColumnDef<'t1, 'e1> WithSource) =
+        {   Source = cdef.Source
+            Value =
+                {   Name = cdef.Value.Name
+                    Type = cdef.Value.Type
+                    Constraints = rmap this.ColumnConstraint cdef.Value.Constraints
+                }
         }
     member this.Alteration(alteration : AlterTableAlteration<'t1, 'e1>) =
         match alteration with

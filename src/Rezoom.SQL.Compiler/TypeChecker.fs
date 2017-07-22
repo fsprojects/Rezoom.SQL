@@ -422,7 +422,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             | Some tbl when tbl.Name = foreignKey.ReferencesTable -> // self-referencing
                 this.ObjectName(foreignKey.ReferencesTable, allowNotFound = true),
                     match tbl.As with
-                    | CreateAsDefinition cdef -> cdef.Columns |> Seq.map (fun c -> c.Name)
+                    | CreateAsDefinition cdef -> cdef.Columns |> Seq.map (fun c -> c.Value.Name)
                     | CreateAsSelect _ -> bug "Self-referencing constraints can't exist in a CREATE AS SELECT"
             | _ ->
                 let name = this.ObjectName(foreignKey.ReferencesTable)
@@ -447,10 +447,14 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey, creating)
         }
 
-    member this.ColumnDef(cdef : ColumnDef, creating : CreateTableStmt option) =
-        {   Name = cdef.Name
-            Type = cdef.Type
-            Constraints = cdef.Constraints |> rmap (fun con -> this.ColumnConstraint(con, creating))
+    member this.ColumnDef(cdef : ColumnDef WithSource, creating : CreateTableStmt option) =
+        {   Source = cdef.Source
+            Value =
+                let cdef = cdef.Value
+                {   Name = cdef.Name
+                    Type = cdef.Type
+                    Constraints = cdef.Constraints |> rmap (fun con -> this.ColumnConstraint(con, creating))
+                }
         }
 
     member this.Alteration(tableName : InfObjectName, alteration : AlterTableAlteration) =
@@ -460,7 +464,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             let fake =
                 resultAt tableName.Source <|
                 match tableName.Info.Table.Table with
-                | TableReference schemaTable -> schemaTable.WithAdditionalColumn(cdef)
+                | TableReference schemaTable -> failwith "FIXME" : Result<SchemaTable, string> // schemaTable.WithAdditionalColumn(cdef)
                 | _ -> Error <| Error.objectNotATable tableName
             let from =
                 InferredFromClause.FromSingleObject
@@ -492,7 +496,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
     member this.TableIndexConstraint(constr : TableIndexConstraintClause, creating : CreateTableStmt option) =
         match creating with
         | Some { As = CreateAsDefinition def } ->
-            let columnNames = def.Columns |> Seq.map (fun c -> c.Name) |> Set.ofSeq
+            let columnNames = def.Columns |> Seq.map (fun c -> c.Value.Name) |> Set.ofSeq
             for { Source = source; Value = (name, _) } in constr.IndexedColumns do
                 if columnNames |> (not << Set.contains name) then
                     failAt source <| Error.noSuchColumn name
@@ -514,12 +518,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
 
     member this.CreateTableDefinition
         (tableName : InfObjectName, createTable : CreateTableDefinition, creating : CreateTableStmt) =
-        let fake =
-            SchemaTable.OfCreateDefinition
-                ( tableName.SchemaName |? scope.Model.DefaultSchema
-                , tableName.ObjectName
-                , createTable
-                )
+        let fake = failwith "FIXME fake query with table columns typed (including nullability...)"
         let from =
             InferredFromClause.FromSingleObject
                 ({ tableName with

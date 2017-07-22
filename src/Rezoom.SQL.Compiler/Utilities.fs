@@ -153,6 +153,9 @@ let inline (+@+) x y =
 type State<'st, 'a> = 'st -> 'st * 'a
 
 module State =
+    let runForOutputState input stateful = stateful input |> fst
+    let runForOuputValue input stateful = stateful input |> snd
+
     let inline get state = state, state
     let inline put (newState : 'st) (_ : 'st) = newState, ()
     let inline ret x state = state, x
