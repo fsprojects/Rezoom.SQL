@@ -41,16 +41,34 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 | TableCheckConstraint _ ->
                     OtherConstraintType, Set.empty
         }
-    member private this.CreateTable(create : InfCreateTableStmt) =
+    static member private Qualify(objName : ObjectName<_>, temp : bool) =
         stateful {
-            let tableName =
-                let defaultSchema = if create.Temporary then model.TemporarySchema else model.DefaultSchema
-                {   Source = create.Name.Source
+            let! model = State.get
+            let defaultSchema = if temp then model.TemporarySchema else model.DefaultSchema
+            return
+                {   Source = objName.Source
                     Value =
-                        {   SchemaName = create.Name.SchemaName |? defaultSchema
-                            ObjectName = create.Name.ObjectName
+                        {   SchemaName = objName.SchemaName |? defaultSchema
+                            ObjectName = objName.ObjectName
                         }
                 }
+        }
+    static member private Qualify(objName) = ModelChange.Qualify(objName, false)
+    static member private AddColumnDef(tableName, column : ColumnDef<_, _> WithSource) =
+        stateful {
+            let ty = ColumnType.OfTypeName(column.Value.Type, nullable = false)
+            let columnName = { Source = column.Source; Value = column.Value.Name }
+            do! ModelOps.addTableColumn tableName columnName ty
+            for constr in column.Value.Constraints do
+                let! constraintType = ModelChange.ColumnConstraintType(constr)
+                // more specific source info here?
+                let constraintName = { Source = column.Source; Value = constr.Name }
+                let cols = Set.singleton column.Value.Name
+                do! ModelOps.addConstraint tableName constraintName constraintType cols
+        }
+    member private this.CreateTable(create : InfCreateTableStmt) =
+        stateful {
+            let! tableName = ModelChange.Qualify(create.Name, create.Temporary)
             do! ModelOps.createEmptyTable tableName
             match create.As with
             | CreateAsSelect select ->
@@ -61,93 +79,50 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                     do! ModelOps.addTableColumn tableName columnName ty
             | CreateAsDefinition def ->
                 for column in def.Columns do
-                    let ty = ColumnType.OfTypeName(column.Value.Type, nullable = false)
-                    let columnName = { Source = column.Source; Value = column.Value.Name }
-                    do! ModelOps.addTableColumn tableName columnName ty
-                    for constr in column.Value.Constraints do
-                        let! constraintType = ModelChange.ColumnConstraintType(constr)
-                        // more specific source info here?
-                        let constraintName = { Source = column.Source; Value = constr.Name }
-                        let cols = Set.singleton column.Value.Name
-                        do! ModelOps.addConstraint tableName constraintName constraintType cols
+                    do! ModelChange.AddColumnDef(tableName, column)
                 for constr in def.Constraints do
                     let! constraintType, cols = ModelChange.TableConstraint(constr.Value)
                     let constraintName = constr.Map(fun c -> c.Name)
                     do! ModelOps.addConstraint tableName constraintName constraintType cols
         } |> State.runForOutputState model |> Some
     member this.AlterTable(alter : InfAlterTableStmt) =
-        failwith "FIXME"
+        stateful {
+            let! tableName = ModelChange.Qualify(alter.Table)
+            match alter.Alteration with
+            | RenameTo newName ->
+                let newName = 
+                    {   Source = tableName.Source
+                        Value = { SchemaName = tableName.Value.SchemaName; ObjectName = newName }
+                    }
+                return! ModelOps.renameTable tableName newName
+            | AddColumn column ->
+                return! ModelChange.AddColumnDef(tableName, column)
+        } |> State.runForOutputState model |> Some
     member this.CreateView(create : InfCreateViewStmt) =
-        let viewName = create.ViewName.ObjectName
-        match model.Schema(create.ViewName.SchemaName) with
-        | None -> failAt create.ViewName.Source <| Error.noSuchSchema create.ViewName
-        | Some schema ->
-            match schema.Objects |> Map.tryFind viewName with
-            | Some _ ->
-                failAt create.ViewName.Source <| Error.objectAlreadyExists create.ViewName
-            | None ->
-                let view =
-                    {   SchemaName = schema.SchemaName
-                        ViewName = viewName
-                        CreateDefinition = ASTMapping.Stripper().CreateView(create)
-                    } |> SchemaView
-                let schema = { schema with Objects = schema.Objects |> Map.add create.ViewName.ObjectName view }
-                Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
+        stateful {
+            let stripper = ASTMapping.Stripper()
+            let stripped = stripper.CreateView(create)
+            let! viewName = ModelChange.Qualify(create.ViewName)
+            return! ModelOps.createView viewName stripped
+        } |> State.runForOutputState model |> Some
     member this.DropObject(drop : InfDropObjectStmt) =
-        let objName = drop.ObjectName.ObjectName
-        let typeName =
+        stateful {
+            let! objName = ModelChange.Qualify(drop.ObjectName)
             match drop.Drop with
-            | DropTable -> "table"
-            | DropView -> "view"
-            | DropIndex -> "index"
-        match model.Schema(drop.ObjectName.SchemaName) with
-        | None -> failAt drop.ObjectName.Source <| Error.noSuchSchema objName
-        | Some schema ->
-            let dropped() =
-                let droppedSchema = { schema with Objects = schema.Objects |> Map.remove objName }
-                Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName droppedSchema }
-            match schema.Objects |> Map.tryFind objName with
-            | None ->
-                failAt drop.ObjectName.Source <| Error.noSuchObject typeName objName
-            | Some o ->
-                match drop.Drop, o with
-                | DropTable, SchemaTable _
-                | DropView, SchemaView _ ->
-                    dropped()
-                | _ ->
-                    failAt drop.ObjectName.Source <| Error.objectIsNotA typeName objName
+            | DropIndex ->
+                return! ModelOps.dropIndex objName
+            | DropView ->
+                return! ModelOps.dropView objName
+            | DropTable ->
+                return! ModelOps.dropTable objName
+        } |> State.runForOutputState model |> Some
     member this.CreateIndex(create : InfCreateIndexStmt) =
-        match model.Schema(create.IndexName.SchemaName), model.Schema(create.TableName.SchemaName) with
-        | Some schema, Some tableSchema when schema.SchemaName = tableSchema.SchemaName ->
-            let table =
-                match schema.Objects |> Map.tryFind create.TableName.ObjectName with
-                | None -> failAt create.TableName.Source <| Error.noSuchTable create.TableName
-                | Some (SchemaTable table) -> table
-                | Some _ -> failAt create.TableName.Source <| Error.objectIsNotA "table" create.TableName
-            if schema.ContainsObject(create.IndexName.ObjectName) then
-                failAt create.IndexName.Source <| Error.objectAlreadyExists create.IndexName
-            let index =
-                {   SchemaName = schema.SchemaName
-                    TableName = table.TableName
-                    IndexName = create.IndexName.ObjectName
-                    Columns = create.IndexedColumns |> Seq.map (fun w -> fst w.Value) |> Set.ofSeq
-                }
-            let table =
-                { table with
-                    Indexes = Map.add index.IndexName index table.Indexes
-                }
-            let schema =
-                { schema with
-                    Objects = schema.Objects |> Map.add table.TableName (SchemaTable table)
-                }
-            Some { model with Schemas = model.Schemas |> Map.add schema.SchemaName schema }
-        | Some _, Some _ ->
-            failAt create.IndexName.Source <| Error.indexSchemasMismatch create.IndexName create.TableName
-        | None, Some _ ->
-            failAt create.IndexName.Source <| Error.noSuchSchema create.IndexName
-        | _, None ->
-            failAt create.TableName.Source <| Error.noSuchSchema create.TableName
-            
+        stateful {
+            let! tableName = ModelChange.Qualify(create.TableName)
+            let! indexName = ModelChange.Qualify(create.IndexName)
+            let cols = create.IndexedColumns |> Seq.map (fun w -> fst w.Value) |> Set.ofSeq
+            return! ModelOps.createIndex tableName indexName cols
+        } |> State.runForOutputState model |> Some         
     member this.Stmt(stmt : InfStmt) =
         match stmt with
         | AlterTableStmt alter -> this.AlterTable(alter)
