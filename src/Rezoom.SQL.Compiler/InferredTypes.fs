@@ -266,6 +266,7 @@ and InferredSelectScope =
             let def = inferView view.CreateDefinition
             let query = def.AsSelect.Value.Info.Query.Map(InferredType.Of)
             { Table = ViewReference(view, def); Query = query } |> TableLike |> Found
+        | Some (SchemaIndex _)
         | None -> NotFound <| Error.noSuchTable name
 
     /// Resolve a reference to a table which may occur as part of a TableExpr.

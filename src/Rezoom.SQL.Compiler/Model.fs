@@ -34,6 +34,7 @@ and Schema =
 and SchemaObject =
     | SchemaTable of SchemaTable
     | SchemaView of SchemaView
+    | SchemaIndex of SchemaIndex
 
 and SchemaIndex =
     {   SchemaName : Name

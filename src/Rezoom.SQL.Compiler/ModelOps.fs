@@ -33,6 +33,18 @@ let getRequiredTable name =
         | SchemaTable t -> t
         | _ -> failAt name.Source <| Error.objectIsNotA "table" name.Value)
 
+let getRequiredView name =
+    getRequiredObject "view" name
+    |> State.map (function
+        | SchemaView v -> v
+        | _ -> failAt name.Source <| Error.objectIsNotA "view" name.Value)
+
+let getRequiredIndex name =
+    getRequiredObject "index" name
+    |> State.map (function
+        | SchemaIndex i -> i
+        | _ -> failAt name.Source <| Error.objectIsNotA "index" name.Value)
+
 let getRequiredColumn tableName (columnName : Name WithSource) =
     getRequiredTable tableName
     |> State.map (fun tbl ->
@@ -161,20 +173,28 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
     }
 
 /// Create an index to a table. There must not be an existing index with the same name.
-let createIndex (tableName : QualifiedObjectName WithSource) (indexName : Name WithSource) cols =
+let createIndex (tableName : QualifiedObjectName WithSource) (indexName : QualifiedObjectName WithSource) cols =
     stateful {
-        let! table = getRequiredTable tableName
-        match table.Indexes |> Map.tryFind indexName.Value with
+        if indexName.Value.SchemaName <> tableName.Value.SchemaName then
+            failAt indexName.Source <| Error.indexSchemasMismatch indexName.Value tableName.Value
+        let! existing = getObject indexName.Value
+        match existing with
+        | Some _ ->
+            failAt indexName.Source <| Error.objectAlreadyExists indexName.Value
         | None ->
-            let index =
-                {   SchemaName = tableName.Value.SchemaName
-                    TableName = tableName.Value.ObjectName
-                    IndexName = indexName.Value
-                    Columns = cols
-                }
-            let table = { table with Indexes = table.Indexes |> Map.add indexName.Value index }
-            return! putObject tableName (SchemaTable table)
-        | Some _ -> failAt indexName.Source <| Error.indexAlreadyExists indexName.Value
+            let! table = getRequiredTable tableName
+            match table.Indexes |> Map.tryFind indexName.Value.ObjectName with
+            | None ->
+                let index =
+                    {   SchemaName = tableName.Value.SchemaName
+                        TableName = tableName.Value.ObjectName
+                        IndexName = indexName.Value.ObjectName
+                        Columns = cols
+                    }
+                let table = { table with Indexes = table.Indexes |> Map.add indexName.Value.ObjectName index }
+                do! putObject indexName (SchemaIndex index)
+                return! putObject tableName (SchemaTable table)
+            | Some _ -> failAt indexName.Source <| Error.indexAlreadyExists indexName.Value
     }
 
 /// Create a view.
@@ -228,5 +248,44 @@ let renameTable (oldName : QualifiedObjectName WithSource) (newName : QualifiedO
                         Constraints = fromTable.Constraints |> mapValues updateConstraint
                     }
                 do! putObject fromTableName (SchemaTable fromTable)
+    }
 
+/// Remove an existing table from the model.
+/// This handles checking for references to the table, and removing reverse references.
+let dropTable (tableName : QualifiedObjectName WithSource) =
+    stateful {
+        let! tbl = getRequiredTable tableName
+        let referencingTables = tbl.ReverseForeignKeys |> Set.map (fun fk -> fk.FromTable)
+        if Set.isEmpty referencingTables then
+            for constr in tbl.Constraints do
+                match constr.Value.ConstraintType with
+                | ForeignKeyConstraintType fk -> // remove reverse foreign keys from target table
+                    let targetTableName = artificialSource fk.ToTable
+                    let! targetTable = getRequiredTable targetTableName
+                    let reverseKeys =
+                        targetTable.ReverseForeignKeys
+                        |> Set.filter (fun r -> r.FromTable <> tableName.Value)
+                    do! putObject targetTableName (SchemaTable { targetTable with ReverseForeignKeys = reverseKeys })
+                | _ -> ()
+            return! removeObject tableName
+        else
+            failAt tableName.Source <| Error.tableIsReferencedByFKs tableName.Value referencingTables
+    }
+
+/// Remove an existing view from the model.
+let dropView (viewName : QualifiedObjectName WithSource) =
+    stateful {
+        let! _ = getRequiredView viewName // ensure it exists
+        return! removeObject viewName
+    }
+
+/// Remove an existing index from the model.
+let dropIndex (indexName : QualifiedObjectName WithSource) =
+    stateful {
+        let! index = getRequiredIndex indexName
+        let tableName = artificialSource { SchemaName = index.SchemaName; ObjectName = index.TableName }
+        let! table = getRequiredTable tableName
+        let table = { table with Indexes = table.Indexes |> Map.remove index.IndexName }
+        do! putObject tableName (SchemaTable table)
+        return! removeObject indexName
     }

@@ -109,3 +109,8 @@ let constraintAlreadyExists name =
     sprintf "SQ048: Constraint ``%O`` already exists" name
 let indexAlreadyExists name =
     sprintf "SQ049: Index ``%O`` already exists" name
+let tableIsReferencedByFKs name referencing =
+    sprintf
+        "SQ050: The table ``%O`` cannot be dropped because it is referenced by other tables %s" 
+        name
+        (String.concat ", " (referencing |> Seq.map (sprintf "``%O``")))
