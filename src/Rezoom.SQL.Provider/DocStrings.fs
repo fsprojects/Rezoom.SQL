@@ -38,12 +38,12 @@ let commandEffectDocString (commandEffect : CommandEffect) =
                 if info.ReadTables.Count > 0 then
                     yield
                         "Reads from tables: "
-                        + (info.ReadTables |> Seq.map (snd >> string) |> String.concat ", ")
+                        + (info.ReadTables |> Seq.map (fun t -> string t.ObjectName) |> String.concat ", ")
                         + "."
                 if info.WriteTables.Count > 0 then
                     yield
                         "Writes to tables: "
-                        + (info.WriteTables |> Seq.map (snd >> string) |> String.concat ", ")
+                        + (info.WriteTables |> Seq.map (fun t -> string t.ObjectName) |> String.concat ", ")
                         + "."     
             ] |> String.concat " "
     let statementDescrs =

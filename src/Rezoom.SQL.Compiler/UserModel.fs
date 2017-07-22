@@ -128,7 +128,7 @@ module private UserModelLoader =
             for KeyValue(_, obj) in schema.Objects do
                 match obj with
                 | SchemaTable tbl ->
-                    yield (tbl.SchemaName, tbl.TableName), i
+                    yield { SchemaName = tbl.SchemaName; ObjectName = tbl.TableName }, i
                     i <- i + 1
                 | _ -> ()
         } |> Map.ofSeq
@@ -142,7 +142,7 @@ type UserModel =
         MigrationsDirectory : string
         Backend : IBackend
         Model : Model
-        TableIds : Map<Name * Name, int> Lazy
+        TableIds : Map<QualifiedObjectName, int> Lazy
         Migrations : string MigrationTree IReadOnlyList
     }
     static member ConfigFileName = "rzsql.json"

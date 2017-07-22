@@ -7,16 +7,9 @@ type private ReferenceType =
     | ReadReference
     | WriteReference
 
-type private ReferenceFinder() =
+type private ReferenceFinder(model : Model) =
     let referencedViews = HashSet<Name * Name>()
-    let references =
-        { new IEqualityComparer<SchemaTable> with
-            member __.Equals(left, right) =
-                left.SchemaName = right.SchemaName
-                && left.TableName = right.TableName
-            member __.GetHashCode(tbl) =
-                (tbl.SchemaName, tbl.TableName).GetHashCode()
-        } |> Dictionary<SchemaTable, ReferenceType Set>
+    let references = Dictionary<QualifiedObjectName, ReferenceType Set>()
     let addReference table refType =
         let succ, existing = references.TryGetValue(table)
         let updated =
@@ -32,7 +25,7 @@ type private ReferenceFinder() =
     member this.ReferenceObject(reference : ReferenceType, name : TObjectName) =
         match name.Info with
         | TableLike { Table = TableReference schemaTable } ->
-            addReference schemaTable reference
+            addReference schemaTable.Name reference
         | TableLike { Table = ViewReference(schemaView, createDef) } ->
             if referencedViews.Add(schemaView.SchemaName, schemaView.ViewName) then
                 this.Select(createDef.AsSelect)
@@ -154,14 +147,32 @@ type private ReferenceFinder() =
         match select.Value.OrderBy with
         | Some terms -> for term in terms do this.OrderingTerm(term)
         | None -> ()
+    member this.DeleteFrom(qual : QualifiedObjectName WithSource) =
+        addReference qual.Value WriteReference
+        stateful {
+            let! table = ModelOps.getRequiredTable qual
+            for reverse in table.ReverseForeignKeys do
+                match reverse.OnDelete with
+                | None -> ()
+                | Some Cascade ->
+                    this.DeleteFrom(artificialSource reverse.FromTable)
+                | Some SetNull
+                | Some SetDefault ->
+                    addReference reverse.FromTable WriteReference
+                | Some NoAction
+                | Some Restrict -> ()
+        } |> State.runForOuputValue model
     member this.Delete(delete : TDeleteStmt) =
-        this.ReferenceObject(WriteReference, delete.DeleteFrom)
         Option.iter this.WithClause delete.With
         Option.iter this.Expr delete.Where
         Option.iter this.Limit delete.Limit
         match delete.OrderBy with
         | Some terms -> for term in terms do this.OrderingTerm(term)
         | None -> ()
+        stateful {
+            let! qual = ComplexModelOps.qualify delete.DeleteFrom
+            return this.DeleteFrom(qual)
+        } |> State.runForOuputValue model
     member this.Insert(insert : TInsertStmt) =
         this.ReferenceObject(WriteReference, insert.InsertInto)
         Option.iter this.WithClause insert.With
@@ -188,16 +199,15 @@ type private ReferenceFinder() =
         | DropObjectStmt _ -> ()
 
 type References =
-    {   TablesRead : SchemaTable IReadOnlyList
-        TablesWritten : SchemaTable IReadOnlyList
+    {   TablesRead : QualifiedObjectName IReadOnlyList
+        TablesWritten : QualifiedObjectName IReadOnlyList
     }
 
-let references (stmts : TStmt seq) =
-    let finder = ReferenceFinder()
+let references (model : Model) (stmts : TStmt seq) =
+    let finder = ReferenceFinder(model)
     for stmt in stmts do finder.Stmt(stmt)
     let tablesRead = ResizeArray()
     let tablesWritten = ResizeArray()
-    let dependencyTargets = ResizeArray()
     for table, set in finder.References do
         for depTy in set do
             match depTy with

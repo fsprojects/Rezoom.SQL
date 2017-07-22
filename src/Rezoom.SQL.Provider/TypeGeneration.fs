@@ -158,7 +158,7 @@ let private generateRowType (model : UserModel) (name : string) (query : ColumnT
     CompileTimeColumnMap.Parse(query.Columns)
     |> generateRowTypeFromColumns model name
 
-let private maskOfTables (model : UserModel) (tables : (Name * Name) seq) =
+let private maskOfTables (model : UserModel) (tables : QualifiedObjectName seq) =
     let mutable mask = BitMask.Zero
     for table in tables do
         match model.TableIds.Value |> Map.tryFind table with

@@ -71,6 +71,7 @@
     <Compile Include="TestPrimitiveReaders.fs" />
     <Compile Include="TestManyPrimitives.fs" />
     <Compile Include="TestQueryParents.fs" />
+    <Compile Include="TestReadWriteReferences.fs" />
     <Compile Include="TestCTEs.fs" />
     <Compile Include="TestSQLite.fs" />
     <Content Include="packages.config" />

@@ -825,7 +825,6 @@ let private onDeleteAction =
             %% kw "RESTRICT" -|> Restrict
             %% kw "NO" -- kw "ACTION" -|> NoAction
         ]
-    -- FParsec.Primitives.fail "ON ... clauses for foreign keys are not yet supported"
     -|> id
 
 let private foreignKeyClause =

@@ -99,8 +99,7 @@ let createEmptyTable (tableName : QualifiedObjectName WithSource) =
             failAt tableName.Source <| Error.objectAlreadyExists tableName.Value
         | None ->
             let table =
-                {   SchemaName = tableName.Value.SchemaName
-                    TableName = tableName.Value.ObjectName
+                {   Name = tableName.Value
                     Columns = Map.empty
                     Indexes = Map.empty
                     Constraints = Map.empty
@@ -235,8 +234,7 @@ let renameTable (oldName : QualifiedObjectName WithSource) (newName : QualifiedO
         | None ->
             let tn = newName.Value.ObjectName
             let newTable =
-                {   SchemaName = oldTable.SchemaName
-                    TableName = tn
+                {   Name = { SchemaName = oldTable.SchemaName; ObjectName = tn }
                     Columns = oldTable.Columns |> mapValues (fun c -> { c with TableName = tn })
                     Indexes = oldTable.Indexes |> mapValues (fun i -> { i with TableName = tn })
                     Constraints = oldTable.Constraints |> mapValues (fun c -> { c with TableName = tn })

@@ -9,8 +9,8 @@ open Rezoom.SQL.Compiler.InferredTypes
 type CommandEffectCacheInfo =
     {   Idempotent : bool
         // schema name * table name
-        WriteTables : (Name * Name) IReadOnlyList
-        ReadTables : (Name * Name) IReadOnlyList
+        WriteTables : QualifiedObjectName IReadOnlyList
+        ReadTables : QualifiedObjectName IReadOnlyList
     }
 
 type CommandEffect =
@@ -94,14 +94,14 @@ and private CommandEffectBuilder(model : Model) =
             lazy (
                 let vendorStmts = stmts |> Seq.choose (function | VendorStmt v -> Some v | _ -> None)
                 if vendorStmts |> Seq.forall (fun v -> Option.isSome v.ImaginaryStmts) then
-                    let references = ReadWriteReferences.references (stmts |> Seq.collect (fun s -> s.CoreStmts()))
-                    let toTuple (ref : SchemaTable) = ref.SchemaName, ref.TableName
+                    let references =
+                        ReadWriteReferences.references model (stmts |> Seq.collect (fun s -> s.CoreStmts()))
                     let inline selectsIdempotent() =
                         stmts
                         |> Seq.collect (fun s -> s.SelectStmts())
                         |> Seq.forall (fun s -> s.Value.Info.Idempotent)
-                    {   WriteTables = references.TablesWritten |> Seq.map toTuple |> toReadOnlyList
-                        ReadTables = references.TablesRead |> Seq.map toTuple |> toReadOnlyList
+                    {   WriteTables = references.TablesWritten
+                        ReadTables = references.TablesRead
                         Idempotent = references.TablesWritten.Count <= 0 && selectsIdempotent()
                     } |> Some
                 else

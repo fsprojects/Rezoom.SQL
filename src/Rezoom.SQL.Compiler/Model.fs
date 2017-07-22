@@ -72,13 +72,14 @@ and SchemaReverseForeignKey =
     }
 
 and SchemaTable =
-    {   SchemaName : Name
-        TableName : Name
+    {   Name : QualifiedObjectName
         Columns : Map<Name, SchemaColumn>
         Indexes : Map<Name, SchemaIndex>
         Constraints : Map<Name, SchemaConstraint>
         ReverseForeignKeys : SchemaReverseForeignKey Set
     }
+    member this.SchemaName = this.Name.SchemaName
+    member this.TableName = this.Name.ObjectName
 
 and SchemaColumn =
     {   SchemaName : Name
