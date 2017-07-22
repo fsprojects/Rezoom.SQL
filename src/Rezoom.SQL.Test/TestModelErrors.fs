@@ -41,3 +41,8 @@ let ``no such column to index on creation`` () =
                 , unique (Foo, Bar, Qux)
                 );
         """
+
+[<Test>]
+let ``can't drop table referenced by others`` () =
+    expectError (Error.tableIsReferencedByFKs "main.Users" ["main.UserGroupMaps"])
+        "drop table Users"
