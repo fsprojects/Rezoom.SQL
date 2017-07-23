@@ -3,7 +3,7 @@ open NUnit.Framework
 
 [<Test>]
 let ``deletes cascade`` () =
-    { sqliteTest with
+    { defaultTest with
         Migration = """
             create table Parent(Id int primary key);
             create table Child(Id int primary key, ParentId int references Parent(Id) on delete cascade);
@@ -19,7 +19,7 @@ let ``deletes cascade`` () =
 
 [<Test>]
 let ``deletes stop cascade at set null`` () =
-    { sqliteTest with
+    { defaultTest with
         Migration = """
             create table Parent(Id int primary key);
             create table Child(Id int primary key, ParentId int references Parent(Id) on delete set null);
@@ -35,7 +35,7 @@ let ``deletes stop cascade at set null`` () =
 
 [<Test>]
 let ``self-referential cascades work`` () =
-    { sqliteTest with
+    { defaultTest with
         Migration = """
             create table Folders(Id int primary key, ParentId int references Folders(Id) on delete cascade);
         """
@@ -49,7 +49,7 @@ let ``self-referential cascades work`` () =
 
 [<Test>]
 let ``cyclic cascades work (even if they perhaps shouldn't)`` () =
-    { sqliteTest with
+    { defaultTest with
         Migration = """
             create table Parent(Id int primary key);
             create table Child(Id int primary key, ParentId int references Parent(Id) on delete cascade);

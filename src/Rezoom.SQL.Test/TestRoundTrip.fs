@@ -246,3 +246,9 @@ let ``non-grouped literal is ok`` () =
         from Users
         group by Id
     """
+
+[<Test>]
+let ``alter add default roundtrip`` () =
+    roundtrip """
+        alter table Users add default for Email 'bob@example.com'
+    """

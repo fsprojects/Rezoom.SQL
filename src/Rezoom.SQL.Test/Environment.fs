@@ -85,7 +85,7 @@ type SimpleTest =
         Expect : SimpleTestExpectation
     }
 
-let private defaultTest =
+let defaultTest =
     {   Migration = ""
         Command = ""
         TestBackend = DefaultBackend()
@@ -138,9 +138,13 @@ let private runSimple (test : SimpleTest) =
                     | Some x -> x.ReadTables |> Seq.map string |> Seq.toList |> Some
             } |> Good
         with
+        | :? SourceException as sexn ->
+            BadCommand sexn.Reason
         | :? SQLCompilerException as cexn ->
             BadCommand cexn.Message
     with
+    | :? SourceException as sexn ->
+            BadCommand sexn.Reason
     | :? SQLCompilerException as mexn ->
         BadMigration mexn.Message
 
