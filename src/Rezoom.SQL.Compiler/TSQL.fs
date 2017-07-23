@@ -551,15 +551,63 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield ws
             match alter.Alteration with
             | RenameTo _ ->
-                fail "TSQL does not support ALTER TABLE RENAME TO"
+                fail <| Error.backendDoesNotSupportFeature "TSQL" "ALTER TABLE RENAME TO"
             | AddColumn columnDef ->
                 yield text "ADD" // no COLUMN keyword
                 yield ws
                 yield! this.ColumnDefinition(alter.Table, columnDef.Value)
+            | AddConstraint constr ->
+                yield text "ADD"
+                yield ws
+                yield! this.TableConstraint(alter.Table, constr.Value) // includes CONSTRAINT keyword
+            | AddDefault (name, defaultValue) ->
+                let dummyConstraintType = DefaultConstraint defaultValue
+                let dummyConstraint =
+                    { Name = dummyConstraintType.DefaultName(name); ColumnConstraintType = dummyConstraintType }
+                yield text "ADD"
+                yield ws
+                yield! this.ColumnConstraint(alter.Table, dummyConstraint)
             | DropColumn name ->
                 yield text "DROP COLUMN" // yes COLUMN keyword, yay for consistency
                 yield ws
                 yield this.Expr.Name(name)
+            | DropConstraint constr ->
+                yield text "DROP CONSTRAINT"
+                yield ws
+                yield this.Expr.Name(this.ConstraintName(alter.Table, constr))
+            | DropDefault col ->
+                let unqualifiedConstraintName = ColumnConstraintType<unit, unit>.DefaultConstraintName(col)
+                let constraintName = this.ConstraintName(alter.Table, unqualifiedConstraintName)
+                yield text "DROP CONSTRAINT"
+                yield ws
+                yield this.Expr.Name(constraintName)
+            | ChangeType change ->
+                let existingType = change.ExistingInfo.Type
+                yield text "ALTER COLUMN"
+                yield ws
+                yield this.Expr.Name(change.Column)
+                yield ws
+                yield! this.Expr.TypeName(change.NewType)
+                yield ws
+                // preserve existing nullability
+                if existingType.Nullable then
+                    yield text "NULL"
+                else
+                    yield text "NOT NULL"
+            | ChangeNullability change ->
+                match change.ExistingInfo.Column with
+                | None -> bug "Column schema info was not set by typechecker"
+                | Some schemaColumn ->
+                    yield text "ALTER COLUMN"
+                    yield ws
+                    yield this.Expr.Name(change.Column)
+                    yield ws
+                    yield! this.Expr.TypeName(schemaColumn.ColumnTypeName)
+                    yield ws
+                    if change.NewNullable then
+                        yield text "NULL"
+                    else
+                        yield text "NOT NULL"
         }
 
 type TSQLMigrationBackend(settings : ConnectionStringSettings) =

@@ -232,8 +232,18 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.Alteration(alteration : AlterTableAlteration<'t1, 'e1>) =
         match alteration with
         | RenameTo name -> RenameTo name
-        | DropColumn name -> DropColumn name
         | AddColumn cdef -> AddColumn <| this.ColumnDef(cdef)
+        | AddConstraint constr -> AddConstraint <| this.TableConstraint(constr)
+        | AddDefault (name, expr) -> AddDefault (name, this.Expr(expr))
+        | DropColumn name -> DropColumn name
+        | DropConstraint name -> DropConstraint name
+        | DropDefault name -> DropDefault name
+        | ChangeType change ->
+            ChangeType
+                { ExistingInfo = mapE change.ExistingInfo; Column = change.Column; NewType = change.NewType }
+        | ChangeNullability change ->
+            ChangeNullability
+                { ExistingInfo = mapE change.ExistingInfo; Column = change.Column; NewNullable = change.NewNullable }
     member this.CreateIndex(createIndex : CreateIndexStmt<'t1, 'e1>) =
         {   Unique = createIndex.Unique
             IndexName = this.ObjectName(createIndex.IndexName)

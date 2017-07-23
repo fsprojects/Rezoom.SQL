@@ -80,6 +80,28 @@ type CoreColumnType =
         | ScalarTypeClass -> "<scalar>"
         | AnyTypeClass -> "<any>"
         | ListType t -> "[" + string t + "]"
+    member this.ApproximateTypeName() =
+        match this with
+        | BooleanType -> BooleanTypeName
+        | GuidType -> GuidTypeName
+        | StringishTypeClass
+        | ScalarTypeClass
+        | AnyTypeClass 
+        | ListType _
+        | StringType -> StringTypeName(None)
+        | IntegerType Integer8 -> IntegerTypeName Integer8
+        | IntegerType Integer16 -> IntegerTypeName Integer16
+        | IntegerType Integer32 -> IntegerTypeName Integer32
+        | IntegralTypeClass
+        | IntegerType Integer64 -> IntegerTypeName Integer64
+        | FloatType Float32 -> FloatTypeName Float32
+        | FloatType Float64 -> FloatTypeName Float64
+        | FractionalTypeClass
+        | NumericTypeClass
+        | DecimalType -> DecimalTypeName
+        | BinaryType -> BinaryTypeName(None)
+        | DateTimeType -> DateTimeTypeName
+        | DateTimeOffsetType -> DateTimeOffsetTypeName
     static member OfTypeName(typeName : TypeName) =
         match typeName with
         | GuidTypeName -> GuidType

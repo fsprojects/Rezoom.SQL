@@ -65,12 +65,18 @@ and private CommandEffectBuilder(model : Model) =
 
     static member PerformsDestructiveUpdate(stmt : TStmt) =
         match stmt with
-        | AlterTableStmt { Alteration = AddColumn _ }
+        | AlterTableStmt { Alteration = AddColumn _ | AddConstraint _ | AddDefault _ }
         | CreateIndexStmt _
         | CreateTableStmt _
         | SelectStmt _
         | CreateViewStmt _ -> false
-        | AlterTableStmt { Alteration = RenameTo _ | DropColumn _ }
+        | AlterTableStmt
+            { Alteration = RenameTo _
+                | DropColumn _
+                | DropConstraint _
+                | DropDefault _
+                | ChangeType _
+                | ChangeNullability _ }
         | DeleteStmt _
         | DropObjectStmt _
         | InsertStmt _

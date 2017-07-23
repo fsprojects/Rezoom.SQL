@@ -109,7 +109,11 @@ let createEmptyTable (tableName : QualifiedObjectName WithSource) =
     }
 
 /// Add a column to an existing table.
-let addTableColumn (tableName : QualifiedObjectName WithSource) (columnName : Name WithSource) columnType =
+let addTableColumn
+    (tableName : QualifiedObjectName WithSource)
+    (columnName : Name WithSource)
+    (columnTypeName : TypeName)
+    (columnNullable : bool) =
     stateful {
         let! table = getRequiredTable tableName
         match table.Columns |> Map.tryFind columnName.Value with
@@ -118,7 +122,8 @@ let addTableColumn (tableName : QualifiedObjectName WithSource) (columnName : Na
                 {   SchemaName = tableName.Value.SchemaName
                     TableName = tableName.Value.ObjectName
                     ColumnName = columnName.Value
-                    ColumnType = columnType
+                    ColumnType = ColumnType.OfTypeName(columnTypeName, columnNullable)
+                    ColumnTypeName = columnTypeName
                     PrimaryKey = false
                 }
             let table =

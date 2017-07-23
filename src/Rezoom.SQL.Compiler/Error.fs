@@ -119,3 +119,6 @@ let columnIsReferencedByConstraints name referencing =
         "SQ051: The column ``%O`` cannot be dropped because it is referenced by constraints %s"
         name
         (String.concat ", " (referencing |> Seq.map (sprintf "``%O``")))
+let backendDoesNotSupportFeature backend feature =
+    sprintf
+        "SQ052: The %O backend does not support the feature ``%O``" backend feature

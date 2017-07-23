@@ -87,6 +87,7 @@ and SchemaColumn =
         /// True if this column is part of the table's primary key.
         PrimaryKey : bool
         ColumnType : ColumnType
+        ColumnTypeName : TypeName
     }
 
 and SchemaView =

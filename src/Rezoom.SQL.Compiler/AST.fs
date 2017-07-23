@@ -489,11 +489,12 @@ type ColumnConstraintType<'t, 'e> =
     | DefaultConstraint of Expr<'t, 'e>
     | CollateConstraint of Name
     | ForeignKeyConstraint of ForeignKeyClause<'t>
+    static member DefaultConstraintName(columnName : Name) = columnName + "_DEFAULT"
     member this.DefaultName(columnName : Name) =
         match this with
         | PrimaryKeyConstraint _ -> columnName + "_PK"
         | UniqueConstraint -> columnName + "_UNIQUE"
-        | DefaultConstraint _ -> columnName + "_DEFAULT"
+        | DefaultConstraint _ -> ColumnConstraintType<unit, unit>.DefaultConstraintName(columnName)
         | CollateConstraint _ -> columnName + "_COLLATION"
         | ForeignKeyConstraint fk ->
             columnName
@@ -512,16 +513,6 @@ type ColumnDef<'t, 'e> =
         Type : TypeName
         Nullable : bool
         Constraints : ColumnConstraint<'t, 'e> array
-    }
-
-type AlterTableAlteration<'t, 'e> =
-    | RenameTo of Name
-    | AddColumn of ColumnDef<'t, 'e> WithSource
-    | DropColumn of Name
-
-type AlterTableStmt<'t, 'e> =
-    {   Table : ObjectName<'t>
-        Alteration : AlterTableAlteration<'t, 'e>
     }
 
 type TableIndexConstraintType =
@@ -579,6 +570,34 @@ type CreateIndexStmt<'t, 'e> =
         TableName : ObjectName<'t>
         IndexedColumns : (Name * OrderDirection) WithSource array
         Where : Expr<'t, 'e> option
+    }
+
+type AlterTableChangeType<'e> =
+    {   ExistingInfo : 'e
+        Column : Name
+        NewType : TypeName
+    }
+
+type AlterTableChangeNullability<'e> =
+    {   ExistingInfo : 'e
+        Column : Name
+        NewNullable : bool
+    }
+
+type AlterTableAlteration<'t, 'e> =
+    | RenameTo of Name
+    | AddColumn of ColumnDef<'t, 'e> WithSource
+    | AddConstraint of TableConstraint<'t, 'e> WithSource
+    | AddDefault of column : Name * defaultValue : Expr<'t, 'e>
+    | DropColumn of column : Name
+    | DropConstraint of constr : Name
+    | DropDefault of column : Name
+    | ChangeType of AlterTableChangeType<'e>
+    | ChangeNullability of AlterTableChangeNullability<'e>
+
+type AlterTableStmt<'t, 'e> =
+    {   Table : ObjectName<'t>
+        Alteration : AlterTableAlteration<'t, 'e>
     }
 
 type DeleteStmt<'t, 'e> =

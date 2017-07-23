@@ -61,9 +61,8 @@ let qualify objName = qualifyTemp false objName
 /// Adds a column def to a table.
 let addColumnDef tableName (column : ColumnDef<'t, 'e> WithSource) =
     stateful {
-        let ty = ColumnType.OfTypeName(column.Value.Type, nullable = column.Value.Nullable)
         let columnName = { Source = column.Source; Value = column.Value.Name }
-        do! ModelOps.addTableColumn tableName columnName ty
+        do! ModelOps.addTableColumn tableName columnName column.Value.Type column.Value.Nullable
         for constr in column.Value.Constraints do
             let! constraintType = columnConstraintType constr
             // more specific source info here?
@@ -88,8 +87,9 @@ let createTableByQuery tableName (query : ColumnType QueryExprInfo) =
         do! ModelOps.createEmptyTable tableName
         for column in query.Columns do
             let ty = column.Expr.Info.Type
+            let typeName = ty.Type.ApproximateTypeName()
             let columnName = { Source = column.Expr.Source; Value = column.ColumnName }
-            do! ModelOps.addTableColumn tableName columnName ty
+            do! ModelOps.addTableColumn tableName columnName typeName ty.Nullable
     }
 
 let dropColumn tableName (column : Name) =

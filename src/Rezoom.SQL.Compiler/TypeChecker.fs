@@ -460,7 +460,6 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
     member this.Alteration(tableName : InfObjectName, alteration : AlterTableAlteration) =
         match alteration with
         | RenameTo name -> RenameTo name
-        | DropColumn name -> DropColumn name
         | AddColumn cdef ->
             let hypothetical =
                 stateful {
@@ -477,6 +476,15 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                             } |> TableLike })
             let this = this.WithScope({ scope with FromClause = Some from })
             AddColumn <| this.ColumnDef(cdef, None)
+        | AddConstraint constr -> AddConstraint <| this.TableConstraint(constr, None)
+        | AddDefault (name, expr) -> AddDefault (name, this.Expr(expr))
+        | DropColumn name -> DropColumn name
+        | DropConstraint name -> DropConstraint name
+        | DropDefault name -> DropDefault name
+        | ChangeType change ->
+            failwith "nimpl"
+        | ChangeNullability change ->
+            failwith "nimpl"
 
     member this.CreateIndex(createIndex : CreateIndexStmt) =
         let tableName = this.SchemaTableName(createIndex.TableName)
