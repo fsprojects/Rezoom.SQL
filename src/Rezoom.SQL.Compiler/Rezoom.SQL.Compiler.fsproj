@@ -83,6 +83,7 @@
     <Compile Include="DefaultBackend.fs" />
     <Compile Include="SQLite.fs" />
     <Compile Include="TSQL.fs" />
+    <Compile Include="Postgres.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="UserModel.fs" />
     <Content Include="packages.config" />

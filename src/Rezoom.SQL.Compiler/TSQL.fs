@@ -264,13 +264,11 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         seq {
             match name.SchemaName with
             | Some schema ->
-                if schema = Name("main") then
-                    yield text ("dbo.")
-                    yield this.Name(name.ObjectName) 
-                elif schema = Name("temp") then
+                if schema = Name("temp") then
                     yield this.Name("#" + name.ObjectName)
                 else
-                    yield text (schema.Value + ".")
+                    yield this.Name(schema)
+                    yield text "."
                     yield this.Name(name.ObjectName) 
             | None -> yield this.Name(name.ObjectName) 
         }
