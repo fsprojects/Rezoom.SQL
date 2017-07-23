@@ -900,34 +900,6 @@ let private columnDef =
             Constraints = constraints |> Seq.map ((|>) name) |> Seq.toArray
         }
 
-let private alterTableStmt =
-    let renameTo =  
-        %% kw "RENAME"
-        -- kw "TO"
-        -- +.name
-        -|> RenameTo
-    let addColumn =
-        %% kw "ADD"
-        --  [   kw "COLUMN"
-                %% kw "CONSTRAINT"
-                -- FParsec.Primitives.fail "ALTER TABLE ADD CONSTRAINT statements are not yet supported"
-                -%> ()
-            ]
-        -- +.withSource columnDef
-        -|> AddColumn
-    let dropErr =
-        %% kw "DROP"
-        -- +.FParsec.Primitives.fail "ALTER TABLE DROP x statements are not yet supported"
-        -|> id
-    %% kw "ALTER"
-    -- kw "TABLE"
-    -- +.objectName
-    -- +.[  renameTo
-            addColumn
-            dropErr
-        ]
-    -|> fun table alteration -> { Table = table; Alteration = alteration }
-
 let private tableIndexConstraintType =
     %[
         %% kw "PRIMARY" -- kw "KEY" -|> PrimaryKey
@@ -969,6 +941,63 @@ let private tableConstraint =
         {   Name = match name with | Some name -> name | None -> Name(cty.DefaultName())
             TableConstraintType = cty
         }
+
+let private alterTableStmt =
+    let renameTo =  
+        %% kw "RENAME"
+        -- kw "TO"
+        -- +.name
+        -|> RenameTo
+    let add =
+        let addColumn = %% kw "COLUMN" -- +.withSource columnDef -|> AddColumn
+        let addDefault =
+            %% kw "DEFAULT" -- kw "FOR" -- +.name -- ws -- +.expr -|> fun name expr -> AddDefault (name, expr)
+        let addConstraint = withSource tableConstraint |>> AddConstraint
+        %% kw "ADD"
+        -- +.[  addColumn
+                addDefault
+                addConstraint
+            ]
+        -|> id
+    let drop =
+        let dropColumn = %% kw "COLUMN" -- +.name -|> DropColumn
+        let dropConstraint = %% kw "CONSTRAINT" -- +.name -|> DropConstraint
+        let dropDefault = %% kw "DEFAULT" -- kw "FOR" -- +.name -|> DropDefault
+        %% kw "DROP"
+        -- +.[  dropColumn
+                dropConstraint
+                dropDefault
+            ]
+        -|> id
+    let alterColumn =
+        let makeNotNullable =
+            %% kw "NOT" -- kw "NULL" -|> fun name ->
+                ChangeNullability { ExistingInfo = (); Column = name; NewNullable = false }
+        let makeNullable =
+            %% kw "NULL" -|> fun name ->
+                ChangeNullability { ExistingInfo = (); Column = name; NewNullable = false }
+        let changeType =
+            %% +.typeName
+            -|> fun typeName columnName ->
+                ChangeType { ExistingInfo = (); Column = columnName; NewType = typeName }
+        %% kw "ALTER"
+        -- kw "COLUMN"
+        -- +.name
+        -- ws
+        -- +.[  makeNotNullable
+                makeNullable
+                changeType
+            ]
+        -|> (|>)
+    %% kw "ALTER"
+    -- kw "TABLE"
+    -- +.objectName
+    -- +.[  renameTo
+            add
+            drop
+            alterColumn
+        ]
+    -|> fun table alteration -> { Table = table; Alteration = alteration }
 
 let private createTableDefinition =
     let part =
