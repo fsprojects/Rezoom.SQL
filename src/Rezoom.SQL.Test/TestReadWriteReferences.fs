@@ -46,3 +46,19 @@ let ``self-referential cascades work`` () =
                 WriteTables = Some [ "main.Folders" ]
             } |> Good
     } |> assertSimple
+
+[<Test>]
+let ``cyclic cascades work (even if they perhaps shouldn't)`` () =
+    { sqliteTest with
+        Migration = """
+            create table Parent(Id int primary key);
+            create table Child(Id int primary key, ParentId int references Parent(Id) on delete cascade);
+            alter table Parent add column FavoriteChildId int references Child(Id) on delete cascade;
+        """
+        Command = "delete from Parent"
+        Expect =
+            { expect with
+                Idempotent = Some false
+                WriteTables = Some [ "main.Parent"; "main.Child" ]
+            } |> Good
+    } |> assertSimple
