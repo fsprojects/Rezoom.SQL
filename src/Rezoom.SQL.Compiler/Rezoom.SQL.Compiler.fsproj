@@ -63,6 +63,7 @@
     <Compile Include="TypeSystem.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="ModelOps.fs" />
+    <Compile Include="ExprInfo.fs" />
     <Compile Include="ComplexModelOps.fs" />
     <Compile Include="ReadWriteReferences.fs" />
     <Compile Include="InferredTypes.fs" />
