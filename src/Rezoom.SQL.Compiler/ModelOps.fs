@@ -280,7 +280,7 @@ let dropColumn tableName (column : Name) =
             if Seq.isEmpty coveredByConstraints then
                 for rfk in table.ReverseForeignKeys do
                     let! referencingTable = getRequiredTable (artificialSource rfk.FromTable)
-                    let referencingConstr = table.Constraints |> Map.find rfk.FromConstraint
+                    let referencingConstr = referencingTable.Constraints |> Map.find rfk.FromConstraint
                     match referencingConstr.ConstraintType with
                     | ForeignKeyConstraintType fk ->
                         if fk.ToColumns |> Set.contains column then

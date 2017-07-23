@@ -252,3 +252,16 @@ let ``alter add default roundtrip`` () =
     roundtrip """
         alter table Users add default for Email 'bob@example.com'
     """
+
+[<Test>]
+let ``alter drop default roundtrip`` () =
+    roundtrip """
+        alter table Users add default for Email 'bob@example.com';
+        alter table Users drop default for Email;
+    """
+
+[<Test>]
+let ``alter drop column roundtrip`` () =
+    roundtrip """
+        alter table Users drop column Name;
+    """
