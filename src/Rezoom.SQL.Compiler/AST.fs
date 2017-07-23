@@ -484,7 +484,6 @@ type PrimaryKeyClause =
     }
 
 type ColumnConstraintType<'t, 'e> =
-    | NullableConstraint
     | PrimaryKeyConstraint of PrimaryKeyClause
     | UniqueConstraint
     | DefaultConstraint of Expr<'t, 'e>
@@ -492,7 +491,6 @@ type ColumnConstraintType<'t, 'e> =
     | ForeignKeyConstraint of ForeignKeyClause<'t>
     member this.DefaultName(columnName : Name) =
         match this with
-        | NullableConstraint -> columnName + "_NULL"
         | PrimaryKeyConstraint _ -> columnName + "_PK"
         | UniqueConstraint -> columnName + "_UNIQUE"
         | DefaultConstraint _ -> columnName + "_DEFAULT"
@@ -512,11 +510,9 @@ type ColumnConstraint<'t, 'e> =
 type ColumnDef<'t, 'e> =
     {   Name : Name
         Type : TypeName
+        Nullable : bool
         Constraints : ColumnConstraint<'t, 'e> array
     }
-    member this.Nullable =
-        this.Constraints
-        |> Array.exists (function | { ColumnConstraintType = NullableConstraint } -> true | _ -> false)
 
 type AlterTableAlteration<'t, 'e> =
     | RenameTo of Name

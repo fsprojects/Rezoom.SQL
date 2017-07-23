@@ -43,7 +43,7 @@ let ``sqlite custom constraint name`` () =
             { expect with
                 OutputCommand =
                     """
-                    CREATE TABLE "X"  ( "a" INTEGER CONSTRAINT "a_NOTNULL" NOT NULL CONSTRAINT "myname" UNIQUE );
+                    CREATE TABLE "X"  ( "a" INTEGER NOT NULL CONSTRAINT "myname" UNIQUE );
                     """.Trim() |> Some
             } |> Good
     } |> assertSimple
@@ -56,7 +56,7 @@ let ``sqlite custom table constraint name`` () =
             { expect with
                 OutputCommand =
                     """
-                    CREATE TABLE "X"  ( "a" INTEGER CONSTRAINT "a_NOTNULL" NOT NULL , CONSTRAINT "myname" UNIQUE("a" ASC) );
+                    CREATE TABLE "X"  ( "a" INTEGER NOT NULL , CONSTRAINT "myname" UNIQUE("a" ASC) );
                     """.Trim() |> Some
             } |> Good
     } |> assertSimple

@@ -16,7 +16,7 @@ let zeroModel =
 [<Test>]
 let ``simple select`` () =
     let cmd = CommandEffect.OfSQL(zeroModel, "anonymous", @"
-        create table Users(id int primary key null, name string(128) null, email string(128) null);
+        create table Users(id int null primary key, name string(128) null, email string(128) null);
         select * from Users
     ")
     Assert.AreEqual(0, cmd.Parameters.Count)
@@ -36,7 +36,7 @@ let ``simple select`` () =
 [<Test>]
 let ``simple select with parameter`` () =
     let cmd = CommandEffect.OfSQL(zeroModel, "anonymous", @"
-        create table Users(id int primary key null, name string(128) null, email string(128) null);
+        create table Users(id int null primary key, name string(128) null, email string(128) null);
         select * from Users u
         where u.id = @id
     ")
@@ -60,7 +60,7 @@ let ``simple select with parameter`` () =
 [<Test>]
 let ``simple select with parameter nullable id`` () =
     let cmd = CommandEffect.OfSQL(zeroModel, "anonymous", @"
-        create table Users(id int primary key null, name string(128) null, email string(128) null);
+        create table Users(id int null primary key, name string(128) null, email string(128) null);
         select * from Users u
         where u.id is @id
     ")

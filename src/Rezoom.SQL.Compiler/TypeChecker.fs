@@ -439,7 +439,6 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         {   Name = constr.Name
             ColumnConstraintType =
                 match constr.ColumnConstraintType with
-                | NullableConstraint -> NullableConstraint
                 | PrimaryKeyConstraint clause -> PrimaryKeyConstraint clause
                 | UniqueConstraint -> UniqueConstraint
                 | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
@@ -453,6 +452,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 let cdef = cdef.Value
                 {   Name = cdef.Name
                     Type = cdef.Type
+                    Nullable = cdef.Nullable
                     Constraints = cdef.Constraints |> rmap (fun con -> this.ColumnConstraint(con, creating))
                 }
         }
@@ -606,15 +606,19 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         match table.Info with
         | TableLike { Table = TableReference tbl } ->
             let optionalColumns =
+                let nullableColumns =
+                    tbl.Columns
+                    |> Seq.filter (fun c -> c.Value.ColumnType.Nullable)
+                    |> Seq.map (fun c -> c.Value.ColumnName)
+                    |> Set.ofSeq
                 tbl.Constraints
                 |> Seq.filter (fun c ->
                     match c.Value.ConstraintType with
-                    | NullableConstraintType
                     | DefaultConstraintType
                     | PrimaryKeyConstraintType true -> true
                     | _ -> false)
                 |> Seq.map (fun c -> c.Value.Columns)
-                |> Seq.fold Set.union Set.empty
+                |> Seq.fold Set.union nullableColumns
             let suppliedColumns =
                 columns
                 |> Seq.map (fun c -> c.Value)

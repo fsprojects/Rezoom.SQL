@@ -281,8 +281,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield this.Expr.Name(this.ConstraintName(table, constr.Name))
             yield ws
             match constr.ColumnConstraintType with
-            | NullableConstraint ->
-                yield text "NULL"
             | PrimaryKeyConstraint pk ->
                 yield! this.PrimaryKeyClause(pk)
             | UniqueConstraint ->
@@ -332,11 +330,11 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             yield ws
             yield! this.Expr.TypeName(col.Type)
             if this.ColumnsNullableByDefault && not col.Nullable then
-                yield!
-                    [|  linebreak; text "CONSTRAINT"; ws
-                        this.Expr.Name(this.ConstraintName(table, col.Name + "_NOTNULL"))
-                        ws; text "NOT NULL"
-                    |] |> indent
+                yield ws
+                yield text "NOT NULL"
+            elif not this.ColumnsNullableByDefault && col.Nullable then
+                yield ws
+                yield text "NULL"
             yield!
                 col.Constraints
                 |> Seq.collect (fun constr -> seq { yield linebreak; yield! this.ColumnConstraint(table, constr) })

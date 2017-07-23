@@ -7,7 +7,6 @@ let columnConstraintType (colConstraint : ColumnConstraint<'t, 'e>) =
         let! model = State.get
         return
             match colConstraint.ColumnConstraintType with
-            | NullableConstraint -> NullableConstraintType
             | PrimaryKeyConstraint pk -> PrimaryKeyConstraintType pk.AutoIncrement
             | DefaultConstraint _ -> DefaultConstraintType
             | ForeignKeyConstraint fk ->
@@ -62,7 +61,7 @@ let qualify objName = qualifyTemp false objName
 /// Adds a column def to a table.
 let addColumnDef tableName (column : ColumnDef<'t, 'e> WithSource) =
     stateful {
-        let ty = ColumnType.OfTypeName(column.Value.Type, nullable = false)
+        let ty = ColumnType.OfTypeName(column.Value.Type, nullable = column.Value.Nullable)
         let columnName = { Source = column.Source; Value = column.Value.Name }
         do! ModelOps.addTableColumn tableName columnName ty
         for constr in column.Value.Constraints do

@@ -214,7 +214,6 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         {   Name = constr.Name
             ColumnConstraintType =
                 match constr.ColumnConstraintType with
-                | NullableConstraint -> NullableConstraint
                 | PrimaryKeyConstraint clause -> PrimaryKeyConstraint clause
                 | UniqueConstraint -> UniqueConstraint
                 | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
@@ -226,6 +225,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             Value =
                 {   Name = cdef.Value.Name
                     Type = cdef.Value.Type
+                    Nullable = cdef.Value.Nullable
                     Constraints = rmap this.ColumnConstraint cdef.Value.Constraints
                 }
         }

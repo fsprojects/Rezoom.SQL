@@ -872,7 +872,6 @@ let private constraintType =
         ]
     %[
         %% +.primaryKeyClause -|> PrimaryKeyConstraint
-        %% kw "NULL" -|> NullableConstraint
         %% kw "UNIQUE" -|> UniqueConstraint
         %% kw "DEFAULT" -- +.defaultValue -|> DefaultConstraint
         %% kw "COLLATE" -- +.name -|> CollateConstraint
@@ -892,10 +891,12 @@ let private columnDef =
     %% +.nameOrKeyword
     -- ws
     -- +.typeName
+    -- +.(zeroOrOne * kw "NULL")
     -- +.(columnConstraint * qty.[0..])
-    -|> fun name typeName constraints ->
+    -|> fun name typeName nullable constraints ->
         {   Name = name
             Type = typeName
+            Nullable = Option.isSome nullable
             Constraints = constraints |> Seq.map ((|>) name) |> Seq.toArray
         }
 

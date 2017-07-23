@@ -53,7 +53,6 @@ and SchemaConstraintType =
     | DefaultConstraintType
     | PrimaryKeyConstraintType of auto : bool
     | ForeignKeyConstraintType of SchemaForeignKey
-    | NullableConstraintType
     | OtherConstraintType
 
 and SchemaConstraint =

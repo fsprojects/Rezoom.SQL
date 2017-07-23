@@ -154,13 +154,6 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                 | PrimaryKeyConstraintType _ ->
                     let columns = cols |> Seq.map (fun c -> { Map.find c table.Columns with PrimaryKey = true })
                     { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
-                | NullableConstraintType ->
-                    let columns =
-                        cols
-                        |> Seq.map (fun c ->
-                            let c = Map.find c table.Columns
-                            { c with ColumnType = { c.ColumnType with Nullable = true } })
-                    { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
                 | ForeignKeyConstraintType _
                 | DefaultConstraintType
                 | OtherConstraintType -> table
