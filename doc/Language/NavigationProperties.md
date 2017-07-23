@@ -90,7 +90,7 @@ This automatic deduplication key behavior is designed to work well when you use
 table wildcards to generate your select lists, as in this example:
 
 ```sql
-select c.*, many Products(c.*)
+select c.*, many Products(p.*)
 from ProductCategories c
 join Products p on p.ProductCategoryId = c.Id
 ```
