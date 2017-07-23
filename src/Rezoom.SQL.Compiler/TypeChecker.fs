@@ -458,6 +458,13 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         }
 
     member this.Alteration(tableName : InfObjectName, alteration : AlterTableAlteration) =
+        let inline resolveColumn name =
+            stateful {
+                let! qualified = ComplexModelOps.qualify tableName
+                // IMPROVEMENT source column name?
+                let! column = ModelOps.getRequiredColumn qualified { Source = tableName.Source; Value = name }
+                return column
+            } |> State.runForOuputValue scope.Model
         match alteration with
         | RenameTo name -> RenameTo name
         | AddColumn cdef ->
@@ -482,9 +489,17 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         | DropConstraint name -> DropConstraint name
         | DropDefault name -> DropDefault name
         | ChangeType change ->
-            failwith "nimpl"
+            let schemaColumn = resolveColumn change.Column
+            {   ExistingInfo = exprInfoOfColumn schemaColumn
+                Column = change.Column
+                NewType = change.NewType
+            } |> ChangeType
         | ChangeNullability change ->
-            failwith "nimpl"
+            let schemaColumn = resolveColumn change.Column
+            {   ExistingInfo = exprInfoOfColumn schemaColumn
+                Column = change.Column
+                NewNullable = change.NewNullable
+            } |> ChangeNullability
 
     member this.CreateIndex(createIndex : CreateIndexStmt) =
         let tableName = this.SchemaTableName(createIndex.TableName)

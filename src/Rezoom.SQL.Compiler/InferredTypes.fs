@@ -154,16 +154,18 @@ type ITypeInferenceContext =
     abstract member Concrete : InferredType -> ColumnType
     abstract member Parameters : BindParameter seq
 
-type InferredQueryColumn() =
-    static member OfColumn(fromAlias : Name option, column : SchemaColumn) =
-        {   Expr =
-                {   Source = SourceInfo.Invalid
-                    Info = { ExprInfo<_>.OfType(InferredType.Of(column.ColumnType)) with Column = Some column }
-                    Value = ColumnNameExpr { ColumnName = column.ColumnName; Table = None }
-                }
-            ColumnName = column.ColumnName
-            FromAlias = fromAlias
-        }
+let exprInfoOfColumn (column : SchemaColumn) =
+    { ExprInfo<_>.OfType(InferredType.Of(column.ColumnType)) with Column = Some column }
+
+let private queryColumnInfoOf (fromAlias : Name option) (column : SchemaColumn) =
+    {   Expr =  
+            {   Expr.Source = SourceInfo.Invalid
+                Info = exprInfoOfColumn column
+                Value = ColumnNameExpr { ColumnName = column.ColumnName; Table = None }
+            }
+        ColumnName = column.ColumnName
+        FromAlias = fromAlias
+    }
 
 let foundAt source nameResolution =
     match nameResolution with
@@ -174,7 +176,7 @@ let foundAt source nameResolution =
 let inferredOfTable (table : SchemaTable) =
     {   Columns =
             table.Columns
-            |> Seq.map (function KeyValue(_, c) -> InferredQueryColumn.OfColumn(Some table.TableName, c))
+            |> Seq.map (function KeyValue(_, c) -> queryColumnInfoOf (Some table.TableName) c)
             |> toReadOnlyList
         StaticRowCount = None
     }
