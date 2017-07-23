@@ -567,6 +567,10 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield text "ADD"
                 yield ws
                 yield! this.ColumnConstraint(alter.Table, dummyConstraint)
+                yield ws
+                yield text "FOR"
+                yield ws
+                yield this.Expr.Name(name)
             | DropColumn name ->
                 yield text "DROP COLUMN" // yes COLUMN keyword, yay for consistency
                 yield ws

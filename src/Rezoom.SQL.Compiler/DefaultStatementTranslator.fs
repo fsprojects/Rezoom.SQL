@@ -381,9 +381,40 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield text "ADD COLUMN"
                 yield ws
                 yield! this.ColumnDefinition(alter.Table, columnDef.Value)
+            | AddConstraint constr ->
+                yield text "ADD"
+                yield ws
+                yield! this.TableConstraint(alter.Table, constr.Value) // includes CONSTRAINT keyword
+            | AddDefault (name, defaultValue) ->
+                yield text "ADD DEFAULT FOR"
+                yield ws
+                yield this.Expr.Name(name)
+                yield ws
+                yield! this.Expr.Expr(defaultValue, FirstClassValue)
             | DropColumn name ->
                 yield text "DROP COLUMN"
+                yield ws
                 yield this.Expr.Name(name)
+            | DropConstraint name ->
+                yield text "DROP CONSTRAINT"
+                yield ws
+                yield this.Expr.Name(name)
+            | DropDefault columnName ->
+                yield text "DROP DEFAULT FOR"
+                yield ws
+                yield this.Expr.Name(columnName)
+            | ChangeType change ->
+                yield text "ALTER COLUMN"
+                yield ws
+                yield this.Expr.Name(change.Column)
+                yield ws
+                yield! this.Expr.TypeName(change.NewType)
+            | ChangeNullability change ->
+                yield text "ALTER COLUMN"
+                yield ws
+                yield this.Expr.Name(change.Column)
+                yield ws
+                yield text (if change.NewNullable then "NULL" else "NOT NULL")
         }
     override this.CreateView(create) =
         seq {
