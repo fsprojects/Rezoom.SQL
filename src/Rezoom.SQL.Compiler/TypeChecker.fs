@@ -483,7 +483,26 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                             } |> TableLike })
             let this = this.WithScope({ scope with FromClause = Some from })
             AddColumn <| this.ColumnDef(cdef, None)
-        | AddConstraint constr -> AddConstraint <| this.TableConstraint(constr, None)
+        | AddConstraint constr ->
+            let this =
+                match constr.Value.TableConstraintType with
+                | TableCheckConstraint _ ->
+                    // TODO clean up this code -- but need FROM scope for check expr typechecking!
+                    let hypothetical =
+                        stateful {
+                            let! qualified = ComplexModelOps.qualify tableName
+                            return! ModelOps.getRequiredTable qualified
+                        } |> State.runForOuputValue scope.Model
+                    let from =
+                        InferredFromClause.FromSingleObject
+                            ({ tableName with
+                                Info =
+                                    {   Table = TableReference hypothetical
+                                        Query = inferredOfTable(hypothetical)
+                                    } |> TableLike })
+                    this.WithScope({ scope with FromClause = Some from })
+                | _ -> this
+            AddConstraint <| this.TableConstraint(constr, None)
         | AddDefault (name, expr) -> AddDefault (name, this.Expr(expr))
         | DropColumn name -> DropColumn name
         | DropConstraint name -> DropConstraint name

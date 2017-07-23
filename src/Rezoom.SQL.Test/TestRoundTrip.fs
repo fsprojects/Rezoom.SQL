@@ -248,20 +248,46 @@ let ``non-grouped literal is ok`` () =
     """
 
 [<Test>]
-let ``alter add default roundtrip`` () =
+let ``alter add default`` () =
     roundtrip """
         alter table Users add default for Email 'bob@example.com'
     """
 
 [<Test>]
-let ``alter drop default roundtrip`` () =
+let ``alter drop default`` () =
     roundtrip """
         alter table Users add default for Email 'bob@example.com';
         alter table Users drop default for Email;
     """
 
 [<Test>]
-let ``alter drop column roundtrip`` () =
+let ``alter drop column`` () =
     roundtrip """
         alter table Users drop column Name;
+    """
+
+[<Test>]
+let ``alter add constraint without CONSTRAINT keyword`` () =
+    roundtrip """
+        alter table Users add unique(Name);
+    """
+
+[<Test>]
+let ``alter add constraint with CONSTRAINT keyword`` () =
+    roundtrip """
+        alter table Users add constraint foo unique(Name);
+    """
+
+[<Test>]
+let ``alter add/drop check constraint with expected default name`` () =
+    roundtrip """
+        alter table Users add check(Name <> '');
+        alter table Users drop constraint check;
+    """
+
+[<Test>]
+let ``alter ad//drop check constraint with custom name`` () =
+    roundtrip """
+        alter table Users add constraint MYCUSTOMNAME check(Name <> '');
+        alter table Users drop constraint MYCUSTOMNAME;
     """

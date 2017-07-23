@@ -960,9 +960,9 @@ let private alterTableStmt =
             ]
         -|> id
     let drop =
-        let dropColumn = %% kw "COLUMN" -- +.name -|> DropColumn
-        let dropConstraint = %% kw "CONSTRAINT" -- +.name -|> DropConstraint
-        let dropDefault = %% kw "DEFAULT" -- kw "FOR" -- +.name -|> DropDefault
+        let dropColumn = %% kw "COLUMN" -- +.nameOrKeyword -|> DropColumn
+        let dropConstraint = %% kw "CONSTRAINT" -- +.nameOrKeyword -|> DropConstraint
+        let dropDefault = %% kw "DEFAULT" -- kw "FOR" -- +.nameOrKeyword -|> DropDefault
         %% kw "DROP"
         -- +.[  dropColumn
                 dropConstraint
