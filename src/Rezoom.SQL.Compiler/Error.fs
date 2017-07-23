@@ -122,3 +122,12 @@ let columnIsReferencedByConstraints name referencing =
 let backendDoesNotSupportFeature backend feature =
     sprintf
         "SQ052: The %O backend does not support the feature ``%O``" backend feature
+let noSuchConstraint tableName name =
+    sprintf "SQ053: No such constraint ``%O`` in table ``%O``" name tableName
+let noDefaultConstraintToDrop tableName columnName =
+    sprintf "SQ054: The column ``%O`` in table ``%O`` has no default constraint to drop``" columnName tableName
+let columnTypeIsAlready columnName columnType =
+    sprintf "SQ055: Column ``%O`` already has type %O" columnName columnType
+let columnNullabilityIsAlready columnName nullability =
+    let msg = if nullability then "nullable" else "not nullable"
+    sprintf "SQ056: Column ``%O`` is already %s" columnName msg

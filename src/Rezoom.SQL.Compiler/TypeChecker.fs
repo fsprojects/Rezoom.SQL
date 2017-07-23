@@ -629,19 +629,18 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         match table.Info with
         | TableLike { Table = TableReference tbl } ->
             let optionalColumns =
-                let nullableColumns =
+                let colsWithDefaults =
                     tbl.Columns
-                    |> Seq.filter (fun c -> c.Value.ColumnType.Nullable)
+                    |> Seq.filter (fun c -> c.Value.ColumnType.Nullable || c.Value.DefaultConstraintName.IsSome)
                     |> Seq.map (fun c -> c.Value.ColumnName)
                     |> Set.ofSeq
                 tbl.Constraints
                 |> Seq.filter (fun c ->
                     match c.Value.ConstraintType with
-                    | DefaultConstraintType
                     | PrimaryKeyConstraintType true -> true
                     | _ -> false)
                 |> Seq.map (fun c -> c.Value.Columns)
-                |> Seq.fold Set.union nullableColumns
+                |> Seq.fold Set.union colsWithDefaults
             let suppliedColumns =
                 columns
                 |> Seq.map (fun c -> c.Value)

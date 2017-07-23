@@ -50,10 +50,12 @@ and SchemaForeignKey =
     }
 
 and SchemaConstraintType =
-    | DefaultConstraintType
     | PrimaryKeyConstraintType of auto : bool
     | ForeignKeyConstraintType of SchemaForeignKey
-    | OtherConstraintType
+    | CollateConstraintType
+    | CheckConstraintType
+    | DefaultConstraintType
+    | UniqueConstraintType
 
 and SchemaConstraint =
     {   ConstraintType : SchemaConstraintType
@@ -86,6 +88,8 @@ and SchemaColumn =
         ColumnName : Name
         /// True if this column is part of the table's primary key.
         PrimaryKey : bool
+        /// Only present if this column has a default(...) constraint.
+        DefaultConstraintName : Name option
         ColumnType : ColumnType
         ColumnTypeName : TypeName
     }

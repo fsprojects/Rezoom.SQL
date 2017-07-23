@@ -8,15 +8,15 @@ let columnConstraintType (colConstraint : ColumnConstraint<'t, 'e>) =
         return
             match colConstraint.ColumnConstraintType with
             | PrimaryKeyConstraint pk -> PrimaryKeyConstraintType pk.AutoIncrement
-            | DefaultConstraint _ -> DefaultConstraintType
             | ForeignKeyConstraint fk ->
                 let toSchema = fk.ReferencesTable.SchemaName |? model.DefaultSchema
                 {   ToTable = { SchemaName = toSchema; ObjectName = fk.ReferencesTable.ObjectName }
                     ToColumns = fk.ReferencesColumns |> Seq.map (fun c -> c.Value) |> Set.ofSeq
                     OnDelete = fk.OnDelete
                 } |> ForeignKeyConstraintType
-            | CollateConstraint _
-            | UniqueConstraint -> OtherConstraintType
+            | CollateConstraint _ -> CollateConstraintType
+            | DefaultConstraint _ -> DefaultConstraintType
+            | UniqueConstraint -> UniqueConstraintType
     }
 
 /// Converts an AST column constraint to a schema constraint type and set of encompassed columns.
@@ -29,7 +29,7 @@ let tableConstraint (tblConstraint : TableConstraint<'t, 'e>) =
                 let cols = indexClause.IndexedColumns |> Seq.map (fun c -> fst c.Value) |> Set.ofSeq
                 match indexClause.Type with
                 | PrimaryKey -> PrimaryKeyConstraintType false, cols
-                | Unique -> OtherConstraintType, cols
+                | Unique -> UniqueConstraintType, cols
             | TableForeignKeyConstraint (names, fk) ->
                 let cols = names |> Seq.map (fun c -> c.Value) |> Set.ofSeq
                 let toSchema = fk.ReferencesTable.SchemaName |? model.DefaultSchema
@@ -38,7 +38,7 @@ let tableConstraint (tblConstraint : TableConstraint<'t, 'e>) =
                     OnDelete = fk.OnDelete
                 } |> ForeignKeyConstraintType, cols
             | TableCheckConstraint _ ->
-                OtherConstraintType, Set.empty
+                CheckConstraintType, Set.empty
     }
 
 /// Qualifies an object name, depending on whether we are operating in a temporary context (CREATE TEMP) or not.
@@ -58,6 +58,13 @@ let qualifyTemp (temp : bool) (objName : ObjectName<'t>)=
 /// Qualifies an object name, assuming we are not operating in a temporary context.
 let qualify objName = qualifyTemp false objName
 
+let addTableConstraint tableName (constr : TableConstraint<'t, 'e> WithSource) =
+    stateful {
+        let! constraintType, cols = tableConstraint constr.Value
+        let constraintName = constr.Map(fun c -> c.Name)
+        do! ModelOps.addConstraint tableName constraintName constraintType cols
+    }
+
 /// Adds a column def to a table.
 let addColumnDef tableName (column : ColumnDef<'t, 'e> WithSource) =
     stateful {
@@ -66,7 +73,7 @@ let addColumnDef tableName (column : ColumnDef<'t, 'e> WithSource) =
         for constr in column.Value.Constraints do
             let! constraintType = columnConstraintType constr
             // more specific source info here?
-            let constraintName = { Source = column.Source; Value = constr.Name }
+            let constraintName = constr.Name |> nearSourceOf column
             let cols = Set.singleton column.Value.Name
             do! ModelOps.addConstraint tableName constraintName constraintType cols
     }
@@ -77,9 +84,7 @@ let createTableByDefinition tableName (def : CreateTableDefinition<'t, 'e>) =
         for column in def.Columns do
             do! addColumnDef tableName column
         for constr in def.Constraints do
-            let! constraintType, cols = tableConstraint constr.Value
-            let constraintName = constr.Map(fun c -> c.Name)
-            do! ModelOps.addConstraint tableName constraintName constraintType cols
+            do! addTableConstraint tableName constr
     }
 
 let createTableByQuery tableName (query : ColumnType QueryExprInfo) =
@@ -92,32 +97,19 @@ let createTableByQuery tableName (query : ColumnType QueryExprInfo) =
             do! ModelOps.addTableColumn tableName columnName typeName ty.Nullable
     }
 
-let dropColumn tableName (column : Name) =
+let addColumnDefault (tableName : QualifiedObjectName WithSource) columnName =
     stateful {
-        let! table = ModelOps.getRequiredTable tableName
-        match table.Columns |> Map.tryFind column with
-        | None ->
-            // IMPROVEMENT oughta have better source location
-            failAt tableName.Source <| Error.noSuchColumn column
-        | Some _ ->
-            let coveredByConstraints =
-                table.Constraints
-                |> Seq.filter (function KeyValue(_, constr) -> constr.Columns |> Set.contains column)
-                |> Seq.map (function KeyValue(_, constr) -> constr.ConstraintName)
-                |> Seq.cache
-            if Seq.isEmpty coveredByConstraints then
-                for rfk in table.ReverseForeignKeys do
-                    let! referencingTable = ModelOps.getRequiredTable (artificialSource rfk.FromTable)
-                    let referencingConstr = table.Constraints |> Map.find rfk.FromConstraint
-                    match referencingConstr.ConstraintType with
-                    | ForeignKeyConstraintType fk ->
-                        if fk.ToColumns |> Set.contains column then
-                            let refName =
-                                string referencingTable.Name + "." + string referencingConstr.ConstraintName
-                            failAt tableName.Source <| Error.columnIsReferencedByConstraints column [refName]
-                    | _ -> ()
-                let table = { table with Columns = table.Columns |> Map.remove column }
-                return! ModelOps.putObject tableName (SchemaTable table)
-            else
-                failAt tableName.Source <| Error.columnIsReferencedByConstraints column coveredByConstraints
+        let cols = Set.singleton columnName
+        let constraintName =
+            ColumnConstraintType<unit, unit>.DefaultConstraintName(columnName) |> nearSourceOf tableName
+        return! ModelOps.addConstraint tableName constraintName DefaultConstraintType cols
+    }
+
+let dropColumnDefault (tableName : QualifiedObjectName WithSource) columnName =
+    stateful {
+        let! column = ModelOps.getRequiredColumn tableName columnName
+        match column.DefaultConstraintName with
+        | None -> failAt columnName.Source <| Error.noDefaultConstraintToDrop tableName.Value columnName.Value
+        | Some defaultConstraintName ->
+            return! ModelOps.dropConstraint tableName (artificialSource defaultConstraintName)
     }

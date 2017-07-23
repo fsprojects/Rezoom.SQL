@@ -125,6 +125,7 @@ let addTableColumn
                     ColumnType = ColumnType.OfTypeName(columnTypeName, columnNullable)
                     ColumnTypeName = columnTypeName
                     PrimaryKey = false
+                    DefaultConstraintName = None
                 }
             let table =
                 { table with Columns = table.Columns |> Map.add columnName.Value column }
@@ -139,7 +140,7 @@ let private mapValues f map =
 let private replaceMany xs key map =
     xs |> Seq.fold (fun m x -> Map.add (key x) x m) map
 
-/// Add a column-scoped constraint
+/// Add a table constraint.
 let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName : Name WithSource) constraintType cols =
     stateful {
         let! table = getRequiredTable tableName
@@ -159,9 +160,16 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                 | PrimaryKeyConstraintType _ ->
                     let columns = cols |> Seq.map (fun c -> { Map.find c table.Columns with PrimaryKey = true })
                     { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
+                | DefaultConstraintType ->
+                    let name = Some constraintName.Value
+                    let columns =
+                        cols
+                        |> Seq.map (fun c -> { Map.find c table.Columns with DefaultConstraintName = name })
+                    { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
                 | ForeignKeyConstraintType _
-                | DefaultConstraintType
-                | OtherConstraintType -> table
+                | CheckConstraintType
+                | CollateConstraintType
+                | UniqueConstraintType -> table
             do! putObject tableName (SchemaTable table)
             match constraintType with
             | ForeignKeyConstraintType fk ->
@@ -256,6 +264,36 @@ let renameTable (oldName : QualifiedObjectName WithSource) (newName : QualifiedO
                 do! putObject fromTableName (SchemaTable fromTable)
     }
 
+let dropColumn tableName (column : Name) =
+    stateful {
+        let! table = getRequiredTable tableName
+        match table.Columns |> Map.tryFind column with
+        | None ->
+            // IMPROVEMENT oughta have better source location
+            failAt tableName.Source <| Error.noSuchColumn column
+        | Some _ ->
+            let coveredByConstraints =
+                table.Constraints
+                |> Seq.filter (function KeyValue(_, constr) -> constr.Columns |> Set.contains column)
+                |> Seq.map (function KeyValue(_, constr) -> constr.ConstraintName)
+                |> Seq.cache
+            if Seq.isEmpty coveredByConstraints then
+                for rfk in table.ReverseForeignKeys do
+                    let! referencingTable = getRequiredTable (artificialSource rfk.FromTable)
+                    let referencingConstr = table.Constraints |> Map.find rfk.FromConstraint
+                    match referencingConstr.ConstraintType with
+                    | ForeignKeyConstraintType fk ->
+                        if fk.ToColumns |> Set.contains column then
+                            let refName =
+                                string referencingTable.Name + "." + string referencingConstr.ConstraintName
+                            failAt tableName.Source <| Error.columnIsReferencedByConstraints column [refName]
+                    | _ -> ()
+                let table = { table with Columns = table.Columns |> Map.remove column }
+                return! putObject tableName (SchemaTable table)
+            else
+                failAt tableName.Source <| Error.columnIsReferencedByConstraints column coveredByConstraints
+    }
+
 /// Remove an existing table from the model.
 /// This handles checking for references to the table, and removing reverse references.
 let dropTable (tableName : QualifiedObjectName WithSource) =
@@ -294,4 +332,75 @@ let dropIndex (indexName : QualifiedObjectName WithSource) =
         let table = { table with Indexes = table.Indexes |> Map.remove index.IndexName }
         do! putObject tableName (SchemaTable table)
         return! removeObject indexName
+    }
+
+/// Remove an existing table constraint from the mode.
+let dropConstraint (tableName : QualifiedObjectName WithSource) (constraintName : Name WithSource) =
+    stateful {
+        let! table = getRequiredTable tableName
+        match table.Constraints |> Map.tryFind constraintName.Value with
+        | None -> failAt constraintName.Source <| Error.noSuchConstraint tableName.Value constraintName.Value
+        | Some constr ->
+            let table = { table with Constraints = table.Constraints |> Map.remove constraintName.Value }
+            do! putObject tableName (SchemaTable table)
+            match constr.ConstraintType with
+            | ForeignKeyConstraintType fk ->
+                // go remove reverse FK from targeted table
+                let targetTableName = artificialSource fk.ToTable
+                let! targetTable = getRequiredTable targetTableName
+                let reverseForeignKeys =
+                    targetTable.ReverseForeignKeys
+                    |> Set.filter (fun r -> r.FromTable <> tableName.Value || r.FromConstraint <> constraintName.Value)
+                let targetTable = { targetTable with ReverseForeignKeys = reverseForeignKeys }
+                return! putObject targetTableName (SchemaTable targetTable)
+            | PrimaryKeyConstraintType _ ->
+                // remove PK attribute from columns
+                let unPKed = constr.Columns |> Seq.map (fun c -> { Map.find c table.Columns with PrimaryKey = false })
+                let table = { table with Columns = table.Columns |> replaceMany unPKed (fun c -> c.ColumnName) }
+                return! putObject tableName (SchemaTable table)
+            | DefaultConstraintType ->
+                // make columns not have a default anymore
+                let unDefaulted =
+                    constr.Columns
+                    |> Seq.map (fun c -> { Map.find c table.Columns with DefaultConstraintName = None })
+                let table = { table with Columns = table.Columns |> replaceMany unDefaulted (fun c -> c.ColumnName) }
+                return! putObject tableName (SchemaTable table)
+            | _ -> ()
+    }
+
+/// Change a column's type.
+let changeColumnType tableName (columnName : Name WithSource) newType =
+    stateful {
+        let! table = getRequiredTable tableName
+        match table.Columns |> Map.tryFind columnName.Value with
+        | None ->
+            failAt columnName.Source <| Error.noSuchColumn columnName.Value
+        | Some col ->
+            if col.ColumnTypeName = newType then
+                failAt columnName.Source <| Error.columnTypeIsAlready columnName.Value newType
+            else
+                // FUTURE validate that referencing FKs have compatible type? default value has compatible type?
+                let newColumn =
+                    { col with
+                        ColumnType = ColumnType.OfTypeName(newType, col.ColumnType.Nullable)
+                        ColumnTypeName = newType
+                    }
+                let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
+                return! putObject tableName (SchemaTable table)
+    }
+
+let changeColumnNullability tableName (columnName : Name WithSource) newNullable =
+    stateful {
+        let! table = getRequiredTable tableName
+        match table.Columns |> Map.tryFind columnName.Value with
+        | None ->
+            failAt columnName.Source <| Error.noSuchColumn columnName.Value
+        | Some col ->
+            if col.ColumnType.Nullable = newNullable then
+                failAt columnName.Source <| Error.columnNullabilityIsAlready columnName.Value newNullable
+            else
+                let newColumn =
+                    { col with ColumnType = { col.ColumnType with Nullable = newNullable } }
+                let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
+                return! putObject tableName (SchemaTable table)
     }
