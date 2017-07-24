@@ -40,7 +40,7 @@ def compound_expr():
     return NonTerminal('compound-expr', language('SelectStmt', 'compound-expr'))
 
 def column_constraint():
-    return NonTerminal('compound-expr', language('CreateTableStmt', 'column-constraint'))
+    return NonTerminal('column-constraint', language('CreateTableStmt', 'column-constraint'))
 
 def column_def():
     return NonTerminal('column-def', language('CreateTableStmt', 'column-def'))
@@ -55,13 +55,25 @@ def primary_key_clause():
         order_direction(),
         Optional('AUTOINCREMENT', 'skip'))
 
+def on_delete():
+    return Sequence(
+        'ON',
+        'DELETE',
+        Choice(0,
+            Sequence('SET', 'NULL'),
+            Sequence('SET', 'DEFAULT'),
+            'CASCADE',
+            'RESTRICT',
+            Sequence('NO', 'ACTION')))
+
 def foreign_key_clause():
     return Sequence(
         'REFERENCES',
         object_name(),
         '(',
         ZeroOrMore(name(), ','),
-        ')')
+        ')',
+        Optional(on_delete(), 'skip'))
 
 def export(filename, diagram):
     with open(filename, 'w') as f:
@@ -115,24 +127,25 @@ export('ColumnName.svg', Diagram(
 
 export('ColumnConstraint.svg', Diagram(
     Optional(Sequence('CONSTRAINT', name()), 'skip'),
-    Choice(3,
-        'NULL',
+    Choice(0,
         'UNIQUE',
-        Sequence('DEFAULT', expr()),
-        Sequence('COLLATE', name()),
         primary_key_clause(),
         foreign_key_clause())))
 
 export('ColumnDef.svg', Diagram(
     name(),
     type_name(),
+    Optional('NULL', 'skip'),
+    Optional(Sequence('COLLATE', name()), 'skip'),
+    Optional(Sequence('DEFAULT', expr()), 'skip'),
     ZeroOrMore(column_constraint())))
 
 export('TableConstraint.svg', Diagram(
     Stack(
         Optional(Sequence('CONSTRAINT', name()), 'skip'),
         Choice(0,
-            Sequence('FOREIGN', 'KEY', '(', ZeroOrMore(name(), ','), ')', foreign_key_clause()),
+            Stack(Sequence('FOREIGN', 'KEY', '(', ZeroOrMore(name(), ','), ')'),
+                foreign_key_clause()),
             Sequence('CHECK', '(', expr(), ')'),
             Sequence(
                 Choice(0, 'UNIQUE', Sequence('PRIMARY', 'KEY')),
