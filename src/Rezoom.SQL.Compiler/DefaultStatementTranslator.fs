@@ -426,6 +426,8 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield this.Expr.Name(change.Column)
                 yield ws
+                yield text "COLLATE"
+                yield ws
                 yield this.Expr.Name(change.NewCollation)
         }
     override this.CreateView(create) =

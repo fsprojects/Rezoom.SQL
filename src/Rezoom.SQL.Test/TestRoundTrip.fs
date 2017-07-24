@@ -286,8 +286,14 @@ let ``alter add/drop check constraint with expected default name`` () =
     """
 
 [<Test>]
-let ``alter ad//drop check constraint with custom name`` () =
+let ``alter add/drop check constraint with custom name`` () =
     roundtrip """
         alter table Users add constraint MYCUSTOMNAME check(Name <> '');
         alter table Users drop constraint MYCUSTOMNAME;
+    """
+
+[<Test>]
+let ``alter change collation`` () =
+    roundtrip """
+        alter table Users alter column Email collate some_collation;
     """

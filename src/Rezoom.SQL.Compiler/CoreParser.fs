@@ -967,6 +967,12 @@ let private alterTableStmt =
         let makeNullable =
             %% kw "NULL" -|> fun name ->
                 ChangeNullability { ExistingInfo = (); Column = name; NewNullable = true }
+        let changeCollation =
+            %% kw "COLLATE"
+            -- ws
+            -- +.name
+            -|> fun collation columnName ->
+                ChangeCollation { ExistingInfo = (); Column = columnName; NewCollation = collation }
         let changeType =
             %% +.typeName
             -|> fun typeName columnName ->
@@ -977,6 +983,7 @@ let private alterTableStmt =
         -- ws
         -- +.[  makeNotNullable
                 makeNullable
+                changeCollation
                 changeType
             ]
         -|> (|>)
