@@ -119,8 +119,7 @@ let addTableColumn
         match table.Columns |> Map.tryFind columnName.Value with
         | None ->
             let column =
-                {   SchemaName = tableName.Value.SchemaName
-                    TableName = tableName.Value.ObjectName
+                {   TableName = tableName.Value
                     ColumnName = columnName.Value
                     ColumnType = ColumnType.OfTypeName(columnTypeName, columnNullable)
                     ColumnTypeName = columnTypeName
@@ -147,8 +146,7 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
         match table.Constraints |> Map.tryFind constraintName.Value with
         | None ->
             let constr =
-                {   SchemaName = tableName.Value.SchemaName
-                    TableName = tableName.Value.ObjectName
+                {   TableName = tableName.Value
                     ConstraintName = constraintName.Value
                     ConstraintType = constraintType
                     Columns = cols
@@ -201,8 +199,7 @@ let createIndex (tableName : QualifiedObjectName WithSource) (indexName : Qualif
             match table.Indexes |> Map.tryFind indexName.Value.ObjectName with
             | None ->
                 let index =
-                    {   SchemaName = tableName.Value.SchemaName
-                        TableName = tableName.Value.ObjectName
+                    {   TableName = tableName.Value
                         IndexName = indexName.Value.ObjectName
                         Columns = cols
                     }
@@ -238,9 +235,9 @@ let renameTable (oldName : QualifiedObjectName WithSource) (newName : QualifiedO
         | Some _ ->
             failAt newName.Source <| Error.objectAlreadyExists newName.Value
         | None ->
-            let tn = newName.Value.ObjectName
+            let tn = newName.Value
             let newTable =
-                {   Name = { SchemaName = oldTable.SchemaName; ObjectName = tn }
+                {   Name = tn
                     Columns = oldTable.Columns |> mapValues (fun c -> { c with TableName = tn })
                     Indexes = oldTable.Indexes |> mapValues (fun i -> { i with TableName = tn })
                     Constraints = oldTable.Constraints |> mapValues (fun c -> { c with TableName = tn })
@@ -327,7 +324,7 @@ let dropView (viewName : QualifiedObjectName WithSource) =
 let dropIndex (indexName : QualifiedObjectName WithSource) =
     stateful {
         let! index = getRequiredIndex indexName
-        let tableName = artificialSource { SchemaName = index.SchemaName; ObjectName = index.TableName }
+        let tableName = artificialSource index.TableName
         let! table = getRequiredTable tableName
         let table = { table with Indexes = table.Indexes |> Map.remove index.IndexName }
         do! putObject tableName (SchemaTable table)

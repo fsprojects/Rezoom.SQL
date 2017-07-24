@@ -37,8 +37,7 @@ and SchemaObject =
     | SchemaIndex of SchemaIndex
 
 and SchemaIndex =
-    {   SchemaName : Name
-        TableName : Name
+    {   TableName : QualifiedObjectName
         IndexName : Name
         Columns : Name Set
     }
@@ -59,8 +58,7 @@ and SchemaConstraintType =
 
 and SchemaConstraint =
     {   ConstraintType : SchemaConstraintType
-        SchemaName : Name
-        TableName : Name
+        TableName : QualifiedObjectName
         ConstraintName : Name
         /// Which columns this constraint relates to in the table.
         Columns : Name Set
@@ -83,8 +81,7 @@ and SchemaTable =
     member this.TableName = this.Name.ObjectName
 
 and SchemaColumn =
-    {   SchemaName : Name
-        TableName : Name
+    {   TableName : QualifiedObjectName
         ColumnName : Name
         /// True if this column is part of the table's primary key.
         PrimaryKey : bool
