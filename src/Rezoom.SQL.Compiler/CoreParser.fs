@@ -628,7 +628,7 @@ let private selectColumns =
     -- +.resultColumns
     -|> fun distinct cols -> { Distinct = distinct; Columns = cols }
 
-let private tableOrSubquery (tableExpr : Parser<TableExpr<unit, unit>, unit>) =
+let private tableOrSubquery =
     let subterm =
         %% +.selectStmtWithoutCTE
         -|> fun select alias -> TableOrSubquery { Table = Subquery select; Alias = alias; Info = () }
@@ -655,37 +655,36 @@ let private joinConstraint =
     ]
 
 let private tableExpr = // parses table expr (with left-associative joins)
-    precursive <| fun tableExpr ->
-        let term = tableOrSubquery tableExpr |> withSource
-        let natural = %% kw "NATURAL" -|> ()   
-        let join =
-            %% +.(
-                    %[
-                        %% ','
-                            -|> fun left right constr ->
-                                {   JoinType = Inner
-                                    LeftTable = left
-                                    RightTable = right
-                                    Constraint = constr
-                                } |> Join
-                        %% +.(natural * zeroOrOne) -- +.joinType -- kw "JOIN"
-                            -|> fun natural join left right constr ->
-                                let joinType = if Option.isSome natural then Natural join else join
-                                {   JoinType = joinType
-                                    LeftTable = left
-                                    RightTable = right
-                                    Constraint = constr
-                                } |> Join
-                    ] |> withSource)
-            -- ws
-            -- +.term
-            -- ws
-            -- +.joinConstraint
-            -|> fun f joinTo joinOn left -> { TableExpr.Source = f.Source; Value = f.Value left joinTo joinOn }
-        %% +.term
+    let term = tableOrSubquery |> withSource
+    let natural = %% kw "NATURAL" -|> ()   
+    let join =
+        %% +.(
+                %[
+                    %% ','
+                        -|> fun left right constr ->
+                            {   JoinType = Inner
+                                LeftTable = left
+                                RightTable = right
+                                Constraint = constr
+                            } |> Join
+                    %% +.(natural * zeroOrOne) -- +.joinType -- kw "JOIN"
+                        -|> fun natural join left right constr ->
+                            let joinType = if Option.isSome natural then Natural join else join
+                            {   JoinType = joinType
+                                LeftTable = left
+                                RightTable = right
+                                Constraint = constr
+                            } |> Join
+                ] |> withSource)
         -- ws
-        -- +.(join * qty.[0..])
-        -|> Seq.fold (|>)
+        -- +.term
+        -- ws
+        -- +.joinConstraint
+        -|> fun f joinTo joinOn left -> { TableExpr.Source = f.Source; Value = f.Value left joinTo joinOn }
+    %% +.term
+    -- ws
+    -- +.(join * qty.[0..])
+    -|> Seq.fold (|>)
 
 let private valuesClause =
     let valuesRow =
