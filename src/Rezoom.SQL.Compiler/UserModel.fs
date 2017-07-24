@@ -125,10 +125,11 @@ module private UserModelLoader =
         seq {
             let mutable i = 0
             for KeyValue(_, schema) in model.Schemas do
+            if schema.SchemaName = model.TemporarySchema then () else
             for KeyValue(_, obj) in schema.Objects do
                 match obj with
                 | SchemaTable tbl ->
-                    yield { SchemaName = tbl.SchemaName; ObjectName = tbl.TableName }, i
+                    yield tbl.Name, i
                     i <- i + 1
                 | _ -> ()
         } |> Map.ofSeq

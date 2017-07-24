@@ -77,8 +77,6 @@ and SchemaTable =
         Constraints : Map<Name, SchemaConstraint>
         ReverseForeignKeys : SchemaReverseForeignKey Set
     }
-    member this.SchemaName = this.Name.SchemaName
-    member this.TableName = this.Name.ObjectName
 
 and SchemaColumn =
     {   TableName : QualifiedObjectName

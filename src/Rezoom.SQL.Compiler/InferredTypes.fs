@@ -176,7 +176,7 @@ let foundAt source nameResolution =
 let inferredOfTable (table : SchemaTable) =
     {   Columns =
             table.Columns
-            |> Seq.map (function KeyValue(_, c) -> queryColumnInfoOf (Some table.TableName) c)
+            |> Seq.map (function KeyValue(_, c) -> queryColumnInfoOf (Some table.Name.ObjectName) c)
             |> toReadOnlyList
         StaticRowCount = None
     }
