@@ -36,6 +36,7 @@ let tableConstraint (tblConstraint : TableConstraint<'t, 'e>) =
                     OnDelete = fk.OnDelete
                 } |> ForeignKeyConstraintType, cols
             | TableCheckConstraint _ ->
+                 // IMPROVEMENT could we find the column names involved, so we can yell if you try to drop them?
                 CheckConstraintType, Set.empty
     }
 
@@ -67,7 +68,15 @@ let addTableConstraint tableName (constr : TableConstraint<'t, 'e> WithSource) =
 let addColumnDef tableName (column : ColumnDef<'t, 'e> WithSource) =
     stateful {
         let columnName = { Source = column.Source; Value = column.Value.Name }
-        do! ModelOps.addTableColumn tableName columnName column.Value.Type column.Value.Nullable
+        let addColumn =
+            let stripper = ASTMapping.Stripper()
+            {   ModelOps.AddingColumn.Name = columnName
+                ModelOps.AddingColumn.TypeName = column.Value.Type
+                ModelOps.AddingColumn.Nullable = column.Value.Nullable
+                ModelOps.AddingColumn.DefaultValue = Option.map stripper.Expr column.Value.DefaultValue
+                ModelOps.AddingColumn.Collation = column.Value.Collation
+            }
+        do! ModelOps.addTableColumn tableName addColumn
         for constr in column.Value.Constraints do
             let! constraintType = columnConstraintType constr
             // more specific source info here?
@@ -92,22 +101,18 @@ let createTableByQuery tableName (query : ColumnType QueryExprInfo) =
             let ty = column.Expr.Info.Type
             let typeName = ty.Type.ApproximateTypeName()
             let columnName = { Source = column.Expr.Source; Value = column.ColumnName }
-            do! ModelOps.addTableColumn tableName columnName typeName ty.Nullable
+            let addColumn =
+                {   ModelOps.AddingColumn.Name = columnName
+                    ModelOps.AddingColumn.TypeName = typeName
+                    ModelOps.AddingColumn.Nullable = ty.Nullable
+                    ModelOps.AddingColumn.DefaultValue = None
+                    ModelOps.AddingColumn.Collation = None
+                }
+            do! ModelOps.addTableColumn tableName addColumn
     }
 
-let addColumnDefault (tableName : QualifiedObjectName WithSource) columnName =
+let addColumnDefault (tableName : QualifiedObjectName WithSource) columnName expr =
     stateful {
-        let cols = Set.singleton columnName
-        let constraintName =
-            ColumnConstraintType<unit, unit>.DefaultConstraintName(columnName) |> nearSourceOf tableName
-        return! ModelOps.addConstraint tableName constraintName DefaultConstraintType cols
-    }
-
-let dropColumnDefault (tableName : QualifiedObjectName WithSource) columnName =
-    stateful {
-        let! column = ModelOps.getRequiredColumn tableName columnName
-        match column.DefaultConstraintName with
-        | None -> failAt columnName.Source <| Error.noDefaultConstraintToDrop tableName.Value columnName.Value
-        | Some defaultConstraintName ->
-            return! ModelOps.dropConstraint tableName (artificialSource defaultConstraintName)
+        let expr = ASTMapping.Stripper().Expr(expr)
+        return! ModelOps.addColumnDefault tableName columnName expr
     }

@@ -45,6 +45,23 @@ type TypeName =
     | BooleanTypeName
     | DateTimeTypeName
     | DateTimeOffsetTypeName
+    override this.ToString() =
+        match this with
+        | GuidTypeName -> "GUID"
+        | StringTypeName(Some len) -> "STRING(" + string len + ")"
+        | StringTypeName(None) -> "STRING"
+        | BinaryTypeName(Some len) -> "BINARY(" + string len + ")"
+        | BinaryTypeName(None) -> "BINARY"
+        | IntegerTypeName Integer8 -> "INT8"
+        | IntegerTypeName Integer16 -> "INT16"
+        | IntegerTypeName Integer32 -> "INT"
+        | IntegerTypeName Integer64 -> "INT64"
+        | FloatTypeName Float32 -> "FLOAT32"
+        | FloatTypeName Float64 -> "FLOAT64"
+        | DecimalTypeName -> "DECIMAL"
+        | BooleanTypeName -> "BOOL"
+        | DateTimeTypeName -> "DATETIME"
+        | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
 
 [<NoComparison>]
 [<CustomEquality>]
@@ -582,6 +599,13 @@ type AlterTableChangeNullability<'e> =
         NewNullable : bool
     }
 
+type AlterTableChangeCollation<'e> =
+    {   ExistingInfo : 'e
+        Column : Name
+        // currently we don't support *removing* collations. if you want the default, you must name it.
+        NewCollation : Name 
+    }
+
 type AlterTableAlteration<'t, 'e> =
     | RenameTo of Name
     | AddColumn of ColumnDef<'t, 'e> WithSource
@@ -592,6 +616,7 @@ type AlterTableAlteration<'t, 'e> =
     | DropDefault of column : Name
     | ChangeType of AlterTableChangeType<'e>
     | ChangeNullability of AlterTableChangeNullability<'e>
+    | ChangeCollation of AlterTableChangeCollation<'e>
 
 type AlterTableStmt<'t, 'e> =
     {   Table : ObjectName<'t>

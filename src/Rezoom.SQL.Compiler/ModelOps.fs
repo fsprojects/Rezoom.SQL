@@ -108,30 +108,34 @@ let createEmptyTable (tableName : QualifiedObjectName WithSource) =
             return! putObject tableName (SchemaTable table)
     }
 
+type AddingColumn =
+    {   Name : Name WithSource
+        TypeName : TypeName
+        Nullable : bool
+        DefaultValue : Expr option
+        Collation : Name option
+    }
+
 /// Add a column to an existing table.
-let addTableColumn
-    (tableName : QualifiedObjectName WithSource)
-    (columnName : Name WithSource)
-    (columnTypeName : TypeName)
-    (columnNullable : bool) =
+let addTableColumn (tableName : QualifiedObjectName WithSource) (column : AddingColumn) =
     stateful {
         let! table = getRequiredTable tableName
-        match table.Columns |> Map.tryFind columnName.Value with
+        match table.Columns |> Map.tryFind column.Name.Value with
         | None ->
-            let column =
+            let schemaColumn =
                 {   TableName = tableName.Value
-                    ColumnName = columnName.Value
-                    ColumnType = ColumnType.OfTypeName(columnTypeName, columnNullable)
-                    ColumnTypeName = columnTypeName
+                    ColumnName = column.Name.Value
+                    ColumnType = ColumnType.OfTypeName(column.TypeName, column.Nullable)
+                    ColumnTypeName = column.TypeName
                     PrimaryKey = false
-                    DefaultConstraintName = None
-                    Collation = None
+                    DefaultValue = column.DefaultValue
+                    Collation = column.Collation
                 }
             let table =
-                { table with Columns = table.Columns |> Map.add columnName.Value column }
+                { table with Columns = table.Columns |> Map.add schemaColumn.ColumnName schemaColumn }
             return! putObject tableName (SchemaTable table)
         | Some _ ->
-            failAt columnName.Source <| Error.columnAlreadyExists columnName.Value
+            failAt column.Name.Source <| Error.columnAlreadyExists column.Name.Value
     }
 
 let private mapValues f map =
@@ -159,15 +163,8 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                 | PrimaryKeyConstraintType _ ->
                     let columns = cols |> Seq.map (fun c -> { Map.find c table.Columns with PrimaryKey = true })
                     { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
-                | DefaultConstraintType ->
-                    let name = Some constraintName.Value
-                    let columns =
-                        cols
-                        |> Seq.map (fun c -> { Map.find c table.Columns with DefaultConstraintName = name })
-                    { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
                 | ForeignKeyConstraintType _
                 | CheckConstraintType
-                | CollateConstraintType
                 | UniqueConstraintType -> table
             do! putObject tableName (SchemaTable table)
             match constraintType with
@@ -356,14 +353,37 @@ let dropConstraint (tableName : QualifiedObjectName WithSource) (constraintName 
                 let unPKed = constr.Columns |> Seq.map (fun c -> { Map.find c table.Columns with PrimaryKey = false })
                 let table = { table with Columns = table.Columns |> replaceMany unPKed (fun c -> c.ColumnName) }
                 return! putObject tableName (SchemaTable table)
-            | DefaultConstraintType ->
-                // make columns not have a default anymore
-                let unDefaulted =
-                    constr.Columns
-                    |> Seq.map (fun c -> { Map.find c table.Columns with DefaultConstraintName = None })
-                let table = { table with Columns = table.Columns |> replaceMany unDefaulted (fun c -> c.ColumnName) }
+            | CheckConstraintType _
+            | UniqueConstraintType -> ()
+    }
+
+let addColumnDefault (tableName : QualifiedObjectName WithSource) (columnName : Name WithSource) (defaultVal : Expr) =
+    stateful {
+        let! table = getRequiredTable tableName
+        match table.Columns |> Map.tryFind columnName.Value with
+        | None -> failAt columnName.Source <| Error.noSuchColumn columnName.Value
+        | Some col ->
+            match col.DefaultValue with
+            | Some _ -> failAt columnName.Source <| Error.columnAlreadyHasDefault columnName.Value
+            | None ->
+                let col = { col with DefaultValue = Some defaultVal }
+                let table = { table with Columns = table.Columns |> Map.add columnName.Value col }
                 return! putObject tableName (SchemaTable table)
-            | _ -> ()
+    }
+
+/// Remove the default value from a column.
+let dropColumnDefault (tableName : QualifiedObjectName WithSource) (columnName : Name WithSource) =
+    stateful {
+        let! table = getRequiredTable tableName
+        match table.Columns |> Map.tryFind columnName.Value with
+        | None -> failAt columnName.Source <| Error.noSuchColumn columnName.Value
+        | Some col ->
+            match col.DefaultValue with
+            | None -> failAt columnName.Source <| Error.noDefaultConstraintToDrop tableName.Value columnName.Value
+            | Some _ ->
+                let col = { col with DefaultValue = None }
+                let table = { table with Columns = table.Columns |> Map.add columnName.Value col }
+                return! putObject tableName (SchemaTable table)
     }
 
 /// Change a column's type.
@@ -399,6 +419,22 @@ let changeColumnNullability tableName (columnName : Name WithSource) newNullable
             else
                 let newColumn =
                     { col with ColumnType = { col.ColumnType with Nullable = newNullable } }
+                let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
+                return! putObject tableName (SchemaTable table)
+    }
+
+let changeColumnCollation tableName (columnName : Name WithSource) newCollation =
+    stateful {
+        let! table = getRequiredTable tableName
+        match table.Columns |> Map.tryFind columnName.Value with
+        | None ->
+            failAt columnName.Source <| Error.noSuchColumn columnName.Value
+        | Some col ->
+            if col.Collation = Some newCollation then
+                failAt columnName.Source <| Error.columnCollationIsAlready columnName.Value newCollation
+            else
+                let newColumn =
+                    { col with Collation = Some newCollation }
                 let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
                 return! putObject tableName (SchemaTable table)
     }

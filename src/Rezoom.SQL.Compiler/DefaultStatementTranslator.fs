@@ -421,6 +421,12 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield this.Expr.Name(change.Column)
                 yield ws
                 yield text (if change.NewNullable then "NULL" else "NOT NULL")
+            | ChangeCollation change ->
+                yield text "ALTER COLUMN"
+                yield ws
+                yield this.Expr.Name(change.Column)
+                yield ws
+                yield this.Expr.Name(change.NewCollation)
         }
     override this.CreateView(create) =
         seq {

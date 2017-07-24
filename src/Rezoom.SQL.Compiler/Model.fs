@@ -51,9 +51,7 @@ and SchemaForeignKey =
 and SchemaConstraintType =
     | PrimaryKeyConstraintType of auto : bool
     | ForeignKeyConstraintType of SchemaForeignKey
-    | CollateConstraintType
     | CheckConstraintType
-    | DefaultConstraintType
     | UniqueConstraintType
 
 and SchemaConstraint =
@@ -83,8 +81,7 @@ and SchemaColumn =
         ColumnName : Name
         /// True if this column is part of the table's primary key.
         PrimaryKey : bool
-        /// Only present if this column has a default(...) constraint.
-        DefaultConstraintName : Name option
+        DefaultValue : Expr option
         ColumnType : ColumnType
         ColumnTypeName : TypeName
         Collation : Name option

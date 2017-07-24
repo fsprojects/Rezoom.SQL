@@ -543,6 +543,26 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 | Restrict -> fail "RESTRICT is not supported in TSQL"
                 | NoAction -> text "NO ACTION"
         }
+    member private this.AlterColumn(columnName : Name, typeName : TypeName, nullable, collation : Name option) =
+        seq {
+            yield text "ALTER COLUMN"
+            yield ws
+            yield this.Expr.Name(columnName)
+            yield ws
+            yield! this.Expr.TypeName(typeName)
+            yield ws
+            if nullable then
+                yield text "NULL"
+            else
+                yield text "NOT NULL"
+            match collation with
+            | None -> ()
+            | Some collation ->
+                yield ws
+                yield text "COLLATE"
+                yield ws
+                yield this.Expr.Name(collation)
+        }
     override this.AlterTable(alter) =
         seq {
             yield text "ALTER TABLE"
@@ -583,32 +603,24 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield this.Expr.Name(constraintName)
             | ChangeType change ->
-                let existingType = change.ExistingInfo.Type
-                yield text "ALTER COLUMN"
-                yield ws
-                yield this.Expr.Name(change.Column)
-                yield ws
-                yield! this.Expr.TypeName(change.NewType)
-                yield ws
-                // preserve existing nullability
-                if existingType.Nullable then
-                    yield text "NULL"
-                else
-                    yield text "NOT NULL"
+                let schemaColumn = change.ExistingInfo.Column |> Option.get
+                yield!
+                    this.AlterColumn
+                        (change.Column, change.NewType, schemaColumn.ColumnType.Nullable, schemaColumn.Collation)
             | ChangeNullability change ->
-                match change.ExistingInfo.Column with
-                | None -> bug "Column schema info was not set by typechecker"
-                | Some schemaColumn ->
-                    yield text "ALTER COLUMN"
-                    yield ws
-                    yield this.Expr.Name(change.Column)
-                    yield ws
-                    yield! this.Expr.TypeName(schemaColumn.ColumnTypeName)
-                    yield ws
-                    if change.NewNullable then
-                        yield text "NULL"
-                    else
-                        yield text "NOT NULL"
+                let schemaColumn = change.ExistingInfo.Column |> Option.get
+                yield!
+                    this.AlterColumn
+                        (change.Column, schemaColumn.ColumnTypeName, change.NewNullable, schemaColumn.Collation)
+            | ChangeCollation change ->
+                let schemaColumn = change.ExistingInfo.Column |> Option.get
+                yield!
+                    this.AlterColumn
+                        ( change.Column
+                        , schemaColumn.ColumnTypeName
+                        , schemaColumn.ColumnType.Nullable
+                        , Some change.NewCollation
+                        )
         }
 
 type TSQLMigrationBackend(settings : ConnectionStringSettings) =

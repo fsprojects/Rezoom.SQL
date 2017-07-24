@@ -131,3 +131,7 @@ let columnTypeIsAlready columnName columnType =
 let columnNullabilityIsAlready columnName nullability =
     let msg = if nullability then "nullable" else "not nullable"
     sprintf "SQ056: Column ``%O`` is already %s" columnName msg
+let columnCollationIsAlready columnName collation =
+    sprintf "SQ057: Column ``%O`` already has collation %O``" columnName collation
+let columnAlreadyHasDefault columnName =
+    sprintf "SQ058: Column ``%O`` already has a default value" columnName

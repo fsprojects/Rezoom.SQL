@@ -29,20 +29,23 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 return! ComplexModelOps.addColumnDef tableName column
             | AddConstraint constr ->
                 return! ComplexModelOps.addTableConstraint tableName constr
-            | AddDefault (column, _) ->
-                return! ComplexModelOps.addColumnDefault tableName column
+            | AddDefault (column, expr) ->
+                return! ComplexModelOps.addColumnDefault tableName (nearSourceOf tableName column) expr
             | DropColumn name ->
                 return! ModelOps.dropColumn tableName name
             | DropConstraint name ->
                 return! ModelOps.dropConstraint tableName (nearSourceOf tableName name)
             | DropDefault column ->
-                return! ComplexModelOps.dropColumnDefault tableName (nearSourceOf tableName column)
+                return! ModelOps.dropColumnDefault tableName (nearSourceOf tableName column)
             | ChangeType change ->
                 let column = nearSourceOf tableName change.Column
                 return! ModelOps.changeColumnType tableName column change.NewType
             | ChangeNullability change ->
                 let column = nearSourceOf tableName change.Column
                 return! ModelOps.changeColumnNullability tableName column change.NewNullable
+            | ChangeCollation change ->
+                let column = nearSourceOf tableName change.Column
+                return! ModelOps.changeColumnCollation tableName column change.NewCollation
         } |> State.runForOutputState model |> Some
     member this.CreateView(create : InfCreateViewStmt) =
         stateful {

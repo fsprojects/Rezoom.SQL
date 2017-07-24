@@ -245,6 +245,9 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | ChangeNullability change ->
             ChangeNullability
                 { ExistingInfo = mapE change.ExistingInfo; Column = change.Column; NewNullable = change.NewNullable }
+        | ChangeCollation change ->
+            ChangeCollation
+                { ExistingInfo = mapE change.ExistingInfo; Column = change.Column; NewCollation = change.NewCollation }
     member this.CreateIndex(createIndex : CreateIndexStmt<'t1, 'e1>) =
         {   Unique = createIndex.Unique
             IndexName = this.ObjectName(createIndex.IndexName)

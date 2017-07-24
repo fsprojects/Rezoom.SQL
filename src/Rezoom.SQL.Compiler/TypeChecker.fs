@@ -519,6 +519,12 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 Column = change.Column
                 NewNullable = change.NewNullable
             } |> ChangeNullability
+        | ChangeCollation change ->
+            let schemaColumn = resolveColumn change.Column
+            {   ExistingInfo = exprInfoOfColumn schemaColumn
+                Column = change.Column
+                NewCollation = change.NewCollation
+            } |> ChangeCollation
 
     member this.CreateIndex(createIndex : CreateIndexStmt) =
         let tableName = this.SchemaTableName(createIndex.TableName)
@@ -650,7 +656,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
             let optionalColumns =
                 let colsWithDefaults =
                     tbl.Columns
-                    |> Seq.filter (fun c -> c.Value.ColumnType.Nullable || c.Value.DefaultConstraintName.IsSome)
+                    |> Seq.filter (fun c -> c.Value.ColumnType.Nullable || Option.isSome c.Value.DefaultValue)
                     |> Seq.map (fun c -> c.Value.ColumnName)
                     |> Set.ofSeq
                 tbl.Constraints

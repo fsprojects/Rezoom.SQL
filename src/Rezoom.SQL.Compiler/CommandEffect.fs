@@ -76,7 +76,8 @@ and private CommandEffectBuilder(model : Model) =
                 | DropConstraint _
                 | DropDefault _
                 | ChangeType _
-                | ChangeNullability _ }
+                | ChangeNullability _
+                | ChangeCollation _ }
         | DeleteStmt _
         | DropObjectStmt _
         | InsertStmt _
