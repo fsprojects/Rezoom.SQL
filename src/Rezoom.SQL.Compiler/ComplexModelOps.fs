@@ -14,8 +14,6 @@ let columnConstraintType (colConstraint : ColumnConstraint<'t, 'e>) =
                     ToColumns = fk.ReferencesColumns |> Seq.map (fun c -> c.Value) |> Set.ofSeq
                     OnDelete = fk.OnDelete
                 } |> ForeignKeyConstraintType
-            | CollateConstraint _ -> CollateConstraintType
-            | DefaultConstraint _ -> DefaultConstraintType
             | UniqueConstraint -> UniqueConstraintType
     }
 

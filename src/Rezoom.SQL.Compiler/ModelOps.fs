@@ -125,6 +125,7 @@ let addTableColumn
                     ColumnTypeName = columnTypeName
                     PrimaryKey = false
                     DefaultConstraintName = None
+                    Collation = None
                 }
             let table =
                 { table with Columns = table.Columns |> Map.add columnName.Value column }

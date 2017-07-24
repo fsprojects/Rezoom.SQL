@@ -87,6 +87,7 @@ and SchemaColumn =
         DefaultConstraintName : Name option
         ColumnType : ColumnType
         ColumnTypeName : TypeName
+        Collation : Name option
     }
 
 and SchemaView =

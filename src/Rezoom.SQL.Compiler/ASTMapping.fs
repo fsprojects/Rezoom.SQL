@@ -216,17 +216,18 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                 match constr.ColumnConstraintType with
                 | PrimaryKeyConstraint clause -> PrimaryKeyConstraint clause
                 | UniqueConstraint -> UniqueConstraint
-                | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
-                | CollateConstraint name -> CollateConstraint name
                 | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey)
         }
     member this.ColumnDef(cdef : ColumnDef<'t1, 'e1> WithSource) =
         {   Source = cdef.Source
             Value =
-                {   Name = cdef.Value.Name
-                    Type = cdef.Value.Type
-                    Nullable = cdef.Value.Nullable
-                    Constraints = rmap this.ColumnConstraint cdef.Value.Constraints
+                let cdef = cdef.Value
+                {   Name = cdef.Name
+                    Type = cdef.Type
+                    Nullable = cdef.Nullable
+                    Collation = cdef.Collation
+                    DefaultValue = Option.map this.Expr cdef.DefaultValue
+                    Constraints = rmap this.ColumnConstraint cdef.Constraints
                 }
         }
     member this.Alteration(alteration : AlterTableAlteration<'t1, 'e1>) =

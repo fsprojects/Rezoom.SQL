@@ -285,14 +285,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield! this.PrimaryKeyClause(pk)
             | UniqueConstraint ->
                 yield text "UNIQUE"
-            | DefaultConstraint expr ->
-                yield text "DEFAULT("
-                yield! this.FirstClassValue(expr)
-                yield text ")"
-            | CollateConstraint name ->
-                yield text "COLLATE"
-                yield ws
-                yield this.Expr.Name(name)
             | ForeignKeyConstraint fk ->
                 yield! this.ForeignKeyClause(fk)
         }
@@ -335,6 +327,20 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             elif not this.ColumnsNullableByDefault && col.Nullable then
                 yield ws
                 yield text "NULL"
+            match col.Collation with
+            | None -> ()
+            | Some collation ->
+                yield ws
+                yield text "COLLATE"
+                yield ws
+                yield this.Expr.Name(collation)
+            match col.DefaultValue with
+            | None -> ()
+            | Some defaultValue ->
+                yield ws
+                yield text "DEFAULT"
+                yield ws
+                yield! this.Expr.Expr(defaultValue, FirstClassValue)
             yield!
                 col.Constraints
                 |> Seq.collect (fun constr -> seq { yield linebreak; yield! this.ColumnConstraint(table, constr) })

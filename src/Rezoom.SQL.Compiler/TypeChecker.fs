@@ -441,8 +441,6 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 match constr.ColumnConstraintType with
                 | PrimaryKeyConstraint clause -> PrimaryKeyConstraint clause
                 | UniqueConstraint -> UniqueConstraint
-                | DefaultConstraint def -> DefaultConstraint <| this.Expr(def)
-                | CollateConstraint name -> CollateConstraint name
                 | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey, creating)
         }
 
@@ -453,6 +451,8 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 {   Name = cdef.Name
                     Type = cdef.Type
                     Nullable = cdef.Nullable
+                    Collation = cdef.Collation
+                    DefaultValue = Option.map this.Expr cdef.DefaultValue
                     Constraints = cdef.Constraints |> rmap (fun con -> this.ColumnConstraint(con, creating))
                 }
         }

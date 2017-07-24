@@ -486,16 +486,12 @@ type PrimaryKeyClause =
 type ColumnConstraintType<'t, 'e> =
     | PrimaryKeyConstraint of PrimaryKeyClause
     | UniqueConstraint
-    | DefaultConstraint of Expr<'t, 'e>
-    | CollateConstraint of Name
     | ForeignKeyConstraint of ForeignKeyClause<'t>
     static member DefaultConstraintName(columnName : Name) = columnName + "_DEFAULT"
     member this.DefaultName(columnName : Name) =
         match this with
         | PrimaryKeyConstraint _ -> columnName + "_PK"
         | UniqueConstraint -> columnName + "_UNIQUE"
-        | DefaultConstraint _ -> ColumnConstraintType<unit, unit>.DefaultConstraintName(columnName)
-        | CollateConstraint _ -> columnName + "_COLLATION"
         | ForeignKeyConstraint fk ->
             columnName
             + "_FK_"
@@ -512,6 +508,8 @@ type ColumnDef<'t, 'e> =
     {   Name : Name
         Type : TypeName
         Nullable : bool
+        Collation : Name option
+        DefaultValue : Expr<'t, 'e> option
         Constraints : ColumnConstraint<'t, 'e> array
     }
 

@@ -561,12 +561,9 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield! this.TableConstraint(alter.Table, constr.Value) // includes CONSTRAINT keyword
             | AddDefault (name, defaultValue) ->
-                let dummyConstraintType = DefaultConstraint defaultValue
-                let dummyConstraint =
-                    { Name = dummyConstraintType.DefaultName(name); ColumnConstraintType = dummyConstraintType }
-                yield text "ADD"
+                yield text "ADD DEFAULT"
                 yield ws
-                yield! this.ColumnConstraint(alter.Table, dummyConstraint)
+                yield! this.Expr.Expr(defaultValue, FirstClassValue)
                 yield ws
                 yield text "FOR"
                 yield ws

@@ -72,7 +72,7 @@ type StatementTranslator() =
     abstract member TotalStatement : TTotalStmt -> Fragments
     abstract member TotalStatements : TTotalStmt seq -> Fragments
 
-and [<AbstractClass>] ExprTranslator(statement : StatementTranslator, indexer : IParameterIndexer) =
+and [<AbstractClass>] ExprTranslator() =
     abstract member Literal : LiteralTranslator
     abstract member Name : name : Name -> Fragment
     abstract member BinaryOperator : op : BinaryOperator -> Fragment

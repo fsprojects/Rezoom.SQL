@@ -4,7 +4,7 @@ open Rezoom.SQL.Compiler.BackendUtilities
 open Rezoom.SQL.Mapping
 
 type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameterIndexer) =
-    inherit ExprTranslator(statement, indexer)
+    inherit ExprTranslator()
     override __.Literal = upcast DefaultLiteralTranslator()
     override __.Name(name) =
         "\"" + name.Value.Replace("\"", "\"\"") + "\""

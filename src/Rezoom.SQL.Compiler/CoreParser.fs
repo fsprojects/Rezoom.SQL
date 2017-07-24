@@ -857,23 +857,9 @@ let private primaryKeyClause =
         }
 
 let private constraintType =
-    let signedToExpr (signed : SignedNumericLiteral WithSource) =
-        let expr = signed.Value.Value |> NumericLiteral |> LiteralExpr
-        let expr = { Expr.Source = signed.Source; Value = expr; Info = () }
-        if signed.Value.Sign < 0 then
-            { Expr.Source = expr.Source; Value = UnaryExpr { Operator = Negative; Operand = expr }; Info = () } 
-        else expr
-    let defaultValue =
-        %[
-            %% +.withSource signedNumericLiteral -|> signedToExpr
-            %% +.withSource literal -|> fun lit -> { Source = lit.Source; Value = LiteralExpr lit.Value; Info = () }
-            %% '(' -- ws -- +.expr -- ')' -|> id
-        ]
     %[
         %% +.primaryKeyClause -|> PrimaryKeyConstraint
         %% kw "UNIQUE" -|> UniqueConstraint
-        %% kw "DEFAULT" -- +.defaultValue -|> DefaultConstraint
-        %% kw "COLLATE" -- +.name -|> CollateConstraint
         %% +.foreignKeyClause -|> ForeignKeyConstraint
     ]
 
@@ -887,15 +873,21 @@ let private columnConstraint =
         }
 
 let private columnDef =
+    let collation = %% kw "COLLATE" -- +.name -- ws -|> id
+    let defaultValue = %% kw "DEFAULT" -- +.expr -|> id
     %% +.nameOrKeyword
     -- ws
     -- +.typeName
     -- +.(zeroOrOne * kw "NULL")
+    -- +.(zeroOrOne * collation)
+    -- +.(zeroOrOne * defaultValue)
     -- +.(columnConstraint * qty.[0..])
-    -|> fun name typeName nullable constraints ->
+    -|> fun name typeName nullable collation defaultVal constraints ->
         {   Name = name
             Type = typeName
             Nullable = Option.isSome nullable
+            Collation = collation
+            DefaultValue = defaultVal
             Constraints = constraints |> Seq.map ((|>) name) |> Seq.toArray
         }
 
