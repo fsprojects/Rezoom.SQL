@@ -48,6 +48,9 @@ def column_def():
 def literal():
     return NonTerminal('literal', language('Literal', 'literal'))
 
+def table_constraint():
+    return NonTerminal('table-constraint', language('CreateTableStmt', 'table-constraint'))
+
 def primary_key_clause():
     return Sequence(
         'PRIMARY',
@@ -167,19 +170,34 @@ export('CreateTable.svg', Diagram(Sequence(
                 ZeroOrMore(
                     Choice(0,
                         column_def(),
-                        NonTerminal('table-constraint')),
+                        table_constraint()),
                     ','),
                 ')'))))))
 
-export('AlterTable.svg', Diagram(Sequence(
-    'ALTER',
-    'TABLE',
-    object_name(),
+export('AlterTable.svg', Diagram(Stack(
+    Sequence('ALTER', 'TABLE', object_name()),
     Choice(0,
         Sequence(
             'ADD',
+            Choice(0,
+                Sequence('COLUMN', column_def()),
+                Sequence('DEFAULT', 'FOR', name(), expr()),
+                table_constraint())),
+        Sequence(
+            'DROP',
+            Choice(0,
+                Sequence('COLUMN', name()),
+                Sequence('CONSTRAINT', name()),
+                Sequence('DEFAULT', 'FOR', name()))),
+        Sequence(
+            'ALTER',
             'COLUMN',
-            column_def()),
+            name(),
+            Choice(0,
+                'NULL',
+                Sequence('NOT', 'NULL'),
+                Sequence('COLLATE', name()),
+                type_name())),
         Sequence(
             'RENAME',
             'TO',
