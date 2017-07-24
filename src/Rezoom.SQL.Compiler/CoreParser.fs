@@ -974,7 +974,7 @@ let private alterTableStmt =
                 ChangeNullability { ExistingInfo = (); Column = name; NewNullable = false }
         let makeNullable =
             %% kw "NULL" -|> fun name ->
-                ChangeNullability { ExistingInfo = (); Column = name; NewNullable = false }
+                ChangeNullability { ExistingInfo = (); Column = name; NewNullable = true }
         let changeType =
             %% +.typeName
             -|> fun typeName columnName ->
