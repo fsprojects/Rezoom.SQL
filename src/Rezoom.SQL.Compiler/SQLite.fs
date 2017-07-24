@@ -46,6 +46,15 @@ type private SQLiteStatement(indexer : IParameterIndexer) as this =
     let expr = SQLiteExpression(this :> StatementTranslator, indexer)
     override __.Expr = upcast expr
     override __.ColumnsNullableByDefault = true
+    override __.AlterTable(alter) =
+        match alter.Alteration with
+        | RenameTo _
+        | AddColumn _ ->
+            base.AlterTable(alter)
+        | _ ->
+            fail <|
+            Error.backendDoesNotSupportFeature
+                "SQLite" "ALTER TABLE statements other than RENAME TO/ADD COLUMN"
 
 module private SQLiteFunctions =
     open Rezoom.SQL.Compiler.FunctionDeclarations
