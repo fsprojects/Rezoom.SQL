@@ -136,6 +136,7 @@ alter table Foo drop constraint namedpk;
 alter table Foo drop default for y;
 alter table Foo alter column y string(12);
 alter table Foo alter column y null;
+alter table Foo add column z string(80) null collate SQL_Latin1_General_CP1_CI_AS default('zzz');
         """
         // below confirmed to be valid on SQL server 2014
         ("""
@@ -147,6 +148,7 @@ ALTER TABLE [Foo] DROP CONSTRAINT [Foo_namedpk];
 ALTER TABLE [Foo] DROP CONSTRAINT [Foo_y_DEFAULT_CONSTRAINT];
 ALTER TABLE [Foo] ALTER COLUMN [y] NVARCHAR(12) NOT NULL;
 ALTER TABLE [Foo] ALTER COLUMN [y] NVARCHAR(12) NULL;
+ALTER TABLE [Foo] ADD [z] NVARCHAR(80) COLLATE SQL_Latin1_General_CP1_CI_AS CONSTRAINT [Foo_z_DEFAULT_CONSTRAINT] DEFAULT N'zzz';
         """.SmushWhitespace())
 
 [<Test>]

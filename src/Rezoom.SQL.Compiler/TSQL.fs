@@ -514,7 +514,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield text "COLLATE"
                 yield ws
-                yield this.Expr.Name(collation)
+                yield text collation.Value // N.B. not wrapped in .Name -- TSQL doesn't like [collation name]
             match col.DefaultValue with
             | None -> ()
             | Some defaultValue ->
@@ -593,7 +593,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield text "COLLATE"
                 yield ws
-                yield this.Expr.Name(collation)
+                yield text collation.Value // N.B. not wrapped in .Name -- TSQL doesn't like [collation name]
         }
     override this.AlterTable(alter) =
         seq {
