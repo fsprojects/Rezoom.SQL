@@ -51,6 +51,9 @@ def literal():
 def table_constraint():
     return NonTerminal('table-constraint', language('CreateTableStmt', 'table-constraint'))
 
+def foreign_key_clause():
+    return NonTerminal('foreign-key-clause', language('CreateTableStmt', 'foreign-key-clause'))
+
 def primary_key_clause():
     return Sequence(
         'PRIMARY',
@@ -68,15 +71,6 @@ def on_delete():
             'CASCADE',
             'RESTRICT',
             Sequence('NO', 'ACTION')))
-
-def foreign_key_clause():
-    return Sequence(
-        'REFERENCES',
-        object_name(),
-        '(',
-        ZeroOrMore(name(), ','),
-        ')',
-        Optional(on_delete(), 'skip'))
 
 def export(filename, diagram):
     with open(filename, 'w') as f:
@@ -128,6 +122,14 @@ export('ObjectName.svg', Diagram(
 export('ColumnName.svg', Diagram(
     Optional(Sequence(object_name(), '.'), 'skip'), name()))
 
+export('ForeignKeyClause.svg', Diagram(
+    'REFERENCES',
+    object_name(),
+    '(',
+    ZeroOrMore(name(), ','),
+    ')',
+    Optional(on_delete(), 'skip')))
+
 export('ColumnConstraint.svg', Diagram(
     Optional(Sequence('CONSTRAINT', name()), 'skip'),
     Choice(0,
@@ -147,8 +149,7 @@ export('TableConstraint.svg', Diagram(
     Stack(
         Optional(Sequence('CONSTRAINT', name()), 'skip'),
         Choice(0,
-            Stack(Sequence('FOREIGN', 'KEY', '(', ZeroOrMore(name(), ','), ')'),
-                foreign_key_clause()),
+            Sequence('FOREIGN', 'KEY', '(', ZeroOrMore(name(), ','), ')', foreign_key_clause()),
             Sequence('CHECK', '(', expr(), ')'),
             Sequence(
                 Choice(0, 'UNIQUE', Sequence('PRIMARY', 'KEY')),

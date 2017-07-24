@@ -1,0 +1,72 @@
+<svg class="railroad-diagram" height="211" viewBox="0 0 890 211" width="890" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(.5 .5)">
+<style type="text/css">
+svg.railroad-diagram path {
+    stroke-width: 3;
+    stroke: black;
+    fill: rgba(0,0,0,0);
+}
+svg.railroad-diagram text {
+    font-family: "Consolas", "Monospace";
+    font-size: 14px;
+    font-weight: bold;
+    text-anchor: middle;
+}
+svg.railroad-diagram text.diagram-text {
+    font-size: 12px;
+}
+svg.railroad-diagram text.diagram-arrow {
+    font-size: 16px;
+}
+svg.railroad-diagram text.label {
+    text-anchor: start;
+}
+svg.railroad-diagram text.comment {
+    font-family: "Consolas", "Monospace";
+    font-size: 12px;
+    font-style: italic;
+}
+svg.railroad-diagram g.non-terminal text {
+    font-style: italic;
+}
+svg.railroad-diagram rect {
+    stroke-width: 3;
+    stroke: black;
+    fill: #ddeeff;
+}
+svg.railroad-diagram path.diagram-text {
+    stroke-width: 3;
+    stroke: black;
+    fill: white;
+    cursor: help;
+}
+svg.railroad-diagram g.diagram-text:hover path.diagram-text {
+    fill: #eee;
+}
+        </style><path d="M 20 30 v 20 m 10 -20 v 20 m -10 -10 h 20.5"></path><path d="M40 40h10"></path><g class="terminal">
+<path d="M50 40h0"></path><path d="M150 40h0"></path><rect height="22" rx="10" ry="10" width="100" x="50" y="29"></rect><text x="100" y="44">REFERENCES</text></g><path d="M150 40h10"></path><path d="M160 40h10"></path><g class="non-terminal">
+<path d="M170 40h0"></path><path d="M278 40h0"></path><rect height="22" width="108" x="170" y="29"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/Name.html#object-name"><text x="224" y="44">object-name</text><text x="224" y="44">object-name</text></a></g><path d="M278 40h10"></path><path d="M288 40h10"></path><g class="terminal">
+<path d="M298 40h0"></path><path d="M326 40h0"></path><rect height="22" rx="10" ry="10" width="28" x="298" y="29"></rect><text x="312" y="44">(</text></g><path d="M326 40h10"></path><g>
+<path d="M336 40h0"></path><path d="M448 40h0"></path><path d="M336 40a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"></path><g>
+<path d="M356 20h72"></path></g><path d="M428 20a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"></path><path d="M336 40h20"></path><g>
+<path d="M356 40h0"></path><path d="M428 40h0"></path><path d="M356 40h10"></path><g class="non-terminal">
+<path d="M366 40h0"></path><path d="M418 40h0"></path><rect height="22" width="52" x="366" y="29"></rect><a href="https://rspeele.gitbooks.io/rezoom-sql/doc/Language/Name.html#name"><text x="392" y="44">name</text><text x="392" y="44">name</text></a></g><path d="M418 40h10"></path><path d="M366 40a10 10 0 0 0 -10 10v10a10 10 0 0 0 10 10"></path><g class="terminal">
+<path d="M366 70h12"></path><path d="M406 70h12"></path><rect height="22" rx="10" ry="10" width="28" x="378" y="59"></rect><text x="392" y="74">,</text></g><path d="M418 70a10 10 0 0 0 10 -10v-10a10 10 0 0 0 -10 -10"></path></g><path d="M428 40h20"></path></g><path d="M448 40h10"></path><g class="terminal">
+<path d="M458 40h0"></path><path d="M486 40h0"></path><rect height="22" rx="10" ry="10" width="28" x="458" y="29"></rect><text x="472" y="44">)</text></g><path d="M486 40h10"></path><g>
+<path d="M496 40h0"></path><path d="M850 40h0"></path><path d="M496 40h20"></path><g>
+<path d="M516 40h314"></path></g><path d="M830 40h20"></path><path d="M496 40a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10"></path><g>
+<path d="M516 60h0"></path><path d="M830 60h0"></path><g class="terminal">
+<path d="M516 60h0"></path><path d="M552 60h0"></path><rect height="22" rx="10" ry="10" width="36" x="516" y="49"></rect><text x="534" y="64">ON</text></g><path d="M552 60h10"></path><path d="M562 60h10"></path><g class="terminal">
+<path d="M572 60h0"></path><path d="M640 60h0"></path><rect height="22" rx="10" ry="10" width="68" x="572" y="49"></rect><text x="606" y="64">DELETE</text></g><path d="M640 60h10"></path><g>
+<path d="M650 60h0"></path><path d="M830 60h0"></path><path d="M650 60h20"></path><g>
+<path d="M670 60h12"></path><path d="M798 60h12"></path><g class="terminal">
+<path d="M682 60h0"></path><path d="M726 60h0"></path><rect height="22" rx="10" ry="10" width="44" x="682" y="49"></rect><text x="704" y="64">SET</text></g><path d="M726 60h10"></path><path d="M736 60h10"></path><g class="terminal">
+<path d="M746 60h0"></path><path d="M798 60h0"></path><rect height="22" rx="10" ry="10" width="52" x="746" y="49"></rect><text x="772" y="64">NULL</text></g></g><path d="M810 60h20"></path><path d="M650 60a10 10 0 0 1 10 10v10a10 10 0 0 0 10 10"></path><g>
+<path d="M670 90h0"></path><path d="M810 90h0"></path><g class="terminal">
+<path d="M670 90h0"></path><path d="M714 90h0"></path><rect height="22" rx="10" ry="10" width="44" x="670" y="79"></rect><text x="692" y="94">SET</text></g><path d="M714 90h10"></path><path d="M724 90h10"></path><g class="terminal">
+<path d="M734 90h0"></path><path d="M810 90h0"></path><rect height="22" rx="10" ry="10" width="76" x="734" y="79"></rect><text x="772" y="94">DEFAULT</text></g></g><path d="M810 90a10 10 0 0 0 10 -10v-10a10 10 0 0 1 10 -10"></path><path d="M650 60a10 10 0 0 1 10 10v40a10 10 0 0 0 10 10"></path><g class="terminal">
+<path d="M670 120h32"></path><path d="M778 120h32"></path><rect height="22" rx="10" ry="10" width="76" x="702" y="109"></rect><text x="740" y="124">CASCADE</text></g><path d="M810 120a10 10 0 0 0 10 -10v-40a10 10 0 0 1 10 -10"></path><path d="M650 60a10 10 0 0 1 10 10v70a10 10 0 0 0 10 10"></path><g class="terminal">
+<path d="M670 150h28"></path><path d="M782 150h28"></path><rect height="22" rx="10" ry="10" width="84" x="698" y="139"></rect><text x="740" y="154">RESTRICT</text></g><path d="M810 150a10 10 0 0 0 10 -10v-70a10 10 0 0 1 10 -10"></path><path d="M650 60a10 10 0 0 1 10 10v100a10 10 0 0 0 10 10"></path><g>
+<path d="M670 180h8"></path><path d="M802 180h8"></path><g class="terminal">
+<path d="M678 180h0"></path><path d="M714 180h0"></path><rect height="22" rx="10" ry="10" width="36" x="678" y="169"></rect><text x="696" y="184">NO</text></g><path d="M714 180h10"></path><path d="M724 180h10"></path><g class="terminal">
+<path d="M734 180h0"></path><path d="M802 180h0"></path><rect height="22" rx="10" ry="10" width="68" x="734" y="169"></rect><text x="768" y="184">ACTION</text></g></g><path d="M810 180a10 10 0 0 0 10 -10v-100a10 10 0 0 1 10 -10"></path></g></g><path d="M830 60a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10"></path></g><path d="M 850 40 h 20 m -10 -10 v 20 m 10 -20 v 20"></path></g></svg>
