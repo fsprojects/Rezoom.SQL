@@ -395,6 +395,13 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield! createView
             yield text TSQLStatement.BatchSeparator
         }
+    override __.DropObject(drop) =
+        let drop = base.DropObject(drop)
+        seq {
+            yield text TSQLStatement.BatchSeparator
+            yield! drop
+            yield text TSQLStatement.BatchSeparator
+        }
     member this.SelectCoreWithTop(select : TSelectCore, top) =
         seq {
             yield text "SELECT"
