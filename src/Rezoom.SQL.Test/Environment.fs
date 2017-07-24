@@ -6,6 +6,7 @@ open System
 open System.Reflection
 open System.IO
 open System.Collections.Generic
+open System.Text.RegularExpressions
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Compiler
 
@@ -174,4 +175,8 @@ let private assertMatchExpectation (expect : SimpleTestExpectation) (result : Si
 let assertSimple (test : SimpleTest) =
     let ran = runSimple test
     assertMatchExpectation test.Expect ran
+
+type String with
+    member this.SmushWhitespace() =
+        Regex.Replace(this.Trim(), @"[ \r\n]+", " ")
     

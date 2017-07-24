@@ -125,6 +125,31 @@ let ``insert row`` () =
         "INSERT INTO [Users] ([Email],[Name]) VALUES (N'email@example.com',N'name');"
 
 [<Test>]
+let ``alter table scenarios`` () =
+    translate
+        """
+create table Foo(x int primary key, y int);
+alter table Foo add default for y 1;
+alter table Foo drop constraint x_PK;
+alter table Foo add constraint namedpk primary key(x, y);
+alter table Foo drop constraint namedpk;
+alter table Foo drop default for y;
+alter table Foo alter column y string(12);
+alter table Foo alter column y null;
+        """
+        // below confirmed to be valid on SQL server 2014
+        ("""
+CREATE TABLE [Foo] ( [x] INT NOT NULL CONSTRAINT [Foo_x_PK] PRIMARY KEY , [y] INT NOT NULL );
+ALTER TABLE [Foo] ADD CONSTRAINT [Foo_y_DEFAULT] DEFAULT(1) FOR [y];
+ALTER TABLE [Foo] DROP CONSTRAINT [Foo_x_PK];
+ALTER TABLE [Foo] ADD CONSTRAINT [Foo_namedpk] PRIMARY KEY([x] ASC,[y] ASC);
+ALTER TABLE [Foo] DROP CONSTRAINT [Foo_namedpk];
+ALTER TABLE [Foo] DROP CONSTRAINT [Foo_y_DEFAULT];
+ALTER TABLE [Foo] ALTER COLUMN [y] NVARCHAR(12) NOT NULL;
+ALTER TABLE [Foo] ALTER COLUMN [y] NVARCHAR(12) NULL;
+        """.SmushWhitespace())
+
+[<Test>]
 let ``tsql dump function signatures`` () =
     for KeyValue(_, func) in tsqlTest.TestBackend.InitialModel.Builtin.Functions do
         printfn "%s" (dumpSignature func)
