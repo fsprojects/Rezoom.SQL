@@ -504,7 +504,6 @@ type ColumnConstraintType<'t, 'e> =
     | PrimaryKeyConstraint of PrimaryKeyClause
     | UniqueConstraint
     | ForeignKeyConstraint of ForeignKeyClause<'t>
-    static member DefaultConstraintName(columnName : Name) = columnName + "_DEFAULT"
     member this.DefaultName(columnName : Name) =
         match this with
         | PrimaryKeyConstraint _ -> columnName + "_PK"

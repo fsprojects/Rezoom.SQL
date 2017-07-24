@@ -381,6 +381,7 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
 
 type private TSQLStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(Name("TSQL"), indexer)
+    let defaultConstraint (table : Name) (column : Name) = table + "_" + column + "_DEFAULT_CONSTRAINT"
     let expr = TSQLExpression(this :> StatementTranslator, indexer)
     static member BatchSeparator = "RZSQL_DISTINCTIVE_BATCH_SEPARATOR"
     override __.Expr = upcast expr
@@ -499,6 +500,37 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield text "IDENTITY(1,1)"
         }
+    override this.ColumnDefinition(table, col) =
+        seq {
+            yield this.Expr.Name(col.Name)
+            yield ws
+            yield! this.Expr.TypeName(col.Type)
+            if not col.Nullable then
+                yield ws
+                yield text "NOT NULL"
+            match col.Collation with
+            | None -> ()
+            | Some collation ->
+                yield ws
+                yield text "COLLATE"
+                yield ws
+                yield this.Expr.Name(collation)
+            match col.DefaultValue with
+            | None -> ()
+            | Some defaultValue ->
+                yield ws
+                yield text "CONSTRAINT"
+                yield ws
+                yield this.Expr.Name(defaultConstraint table.ObjectName col.Name)
+                yield ws
+                yield text "DEFAULT"
+                yield ws
+                yield! this.Expr.Expr(defaultValue, FirstClassValue)
+            yield!
+                col.Constraints
+                |> Seq.collect (fun constr -> seq { yield linebreak; yield! this.ColumnConstraint(table, constr) })
+                |> indent
+        }
     override this.CreateTable(create) =
         seq {
             match create.As with
@@ -581,7 +613,11 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield! this.TableConstraint(alter.Table, constr.Value) // includes CONSTRAINT keyword
             | AddDefault (name, defaultValue) ->
-                yield text "ADD DEFAULT"
+                yield text "ADD CONSTRAINT"
+                yield ws
+                yield this.Expr.Name(defaultConstraint alter.Table.ObjectName name)
+                yield ws
+                yield text "DEFAULT"
                 yield ws
                 yield! this.Expr.Expr(defaultValue, FirstClassValue)
                 yield ws
@@ -597,11 +633,9 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield this.Expr.Name(this.ConstraintName(alter.Table, constr))
             | DropDefault col ->
-                let unqualifiedConstraintName = ColumnConstraintType<unit, unit>.DefaultConstraintName(col)
-                let constraintName = this.ConstraintName(alter.Table, unqualifiedConstraintName)
                 yield text "DROP CONSTRAINT"
                 yield ws
-                yield this.Expr.Name(constraintName)
+                yield this.Expr.Name(defaultConstraint alter.Table.ObjectName col)
             | ChangeType change ->
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
                 yield!
