@@ -67,13 +67,12 @@ module private PostgresFunctions =
             // func "overlay" ... // wacky syntax! would have to do more work for this like TSQL special funcs
             // func "position" ... // wacky syntax: position('needle' in 'haystack')
             // substring has wacky syntax in documentation, but works fine without it
-            func "substring" [ infect string; infect int32; optional (infect int32) ] string
+            func "substring" [ infect (stringish a'); infect int32; optional (infect int32) ] a'
             // trim has wacky syntax in documentation, but works fine without it
             // (except we can't specify leading/trailing)
             func "trim" [ infect string; optional (infect string) ] string
             func "upper" [ infect string ] string
             func "ascii" [ infect string ] int32
-            func "btrim" [ infect string; optional (infect string) ] string
             func "chr" [ infect int32] string
             func "concat" [ scalar; vararg scalar ] string
             func "convert" [ infect binary; infect string; infect string ] binary
@@ -107,6 +106,13 @@ module private PostgresFunctions =
             func "to_ascii" [ infect string; optional (infect string) ] string
             func "to_hex" [ integral ] string
             func "translate" [ infect string; infect string; infect string ] string
+
+            // binary string functions https://www.postgresql.org/docs/9.6/static/functions-binarystring.html
+            func "btrim" [ infect binary; optional (infect binary) ] binary
+            func "get_bit" [ infect binary; infect int32 ] int32
+            func "get_byte" [ infect binary; infect int32 ] int32
+            func "set_bit" [ infect binary; infect int32; infect int32 ] binary
+            func "set_byte" [ infect binary; infect int32; infect int32 ] binary
 
             // aggregate functions
             aggregate "avg" [ numeric a' ] (nullable a')
