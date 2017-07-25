@@ -126,11 +126,12 @@ type private PostgresLiteral() =
     inherit DefaultLiteralTranslator()
     override __.BlobLiteral(bytes) =
         let hexPairs = bytes |> Array.map (fun b -> b.ToString("X2", CultureInfo.InvariantCulture))
-        @"CAST(E'\\x" + String.Concat(hexPairs) + "' AS BYTEA)" |> text
+        @"BYTEA E'\\x" + String.Concat(hexPairs) + "'" |> text
     override __.DateTimeLiteral(dt) =
-        failwith "not implemented" // TODO
+        "TIMESTAMP " + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff") |> text
     override __.DateTimeOffsetLiteral(dt) =
-        failwith "not implemented" // TODO
+        // TODO: check this
+        "TIMESTAMP WITH TIME ZONE " + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffzzz") |> text
     override __.StringLiteral(str) =
         CommandText <| "'" + str.Replace("'", "''") + "'"
 
