@@ -14,6 +14,7 @@ type CoreColumnType =
     | BinaryType
     | DateTimeType
     | DateTimeOffsetType
+    | DateTimeishTypeClass
     | StringishTypeClass
     | NumericTypeClass
     | IntegralTypeClass
@@ -29,14 +30,15 @@ type CoreColumnType =
         | FloatType Float32 -> FractionalTypeClass
         | FloatType Float64 -> FloatType Float32
         | DecimalType -> FractionalTypeClass
-        | GuidType
         | StringType
         | BinaryType -> StringishTypeClass
         | IntegralTypeClass
         | FractionalTypeClass -> NumericTypeClass
-        | BooleanType
         | DateTimeType
-        | DateTimeOffsetType
+        | DateTimeOffsetType -> DateTimeishTypeClass
+        | BooleanType
+        | GuidType
+        | DateTimeishTypeClass
         | NumericTypeClass
         | StringishTypeClass -> ScalarTypeClass
         | ScalarTypeClass
@@ -71,6 +73,7 @@ type CoreColumnType =
         | BinaryType -> "BINARY"
         | DateTimeType -> "DATETIME"
         | DateTimeOffsetType -> "DATETIMEOFFSET"
+        | DateTimeishTypeClass -> "<datetimeish>"
         | FractionalTypeClass -> "<fractional>"
         | IntegralTypeClass -> "<integral>"
         | NumericTypeClass -> "<numeric>"
@@ -97,6 +100,7 @@ type CoreColumnType =
         | NumericTypeClass
         | DecimalType -> DecimalTypeName
         | BinaryType -> BinaryTypeName(None)
+        | DateTimeishTypeClass
         | DateTimeType -> DateTimeTypeName
         | DateTimeOffsetType -> DateTimeOffsetTypeName
     static member OfTypeName(typeName : TypeName) =
@@ -138,6 +142,7 @@ type ColumnType =
         | FractionalTypeClass
         | NumericTypeClass
         | DecimalType -> DbType.Decimal, nullify typeof<decimal>
+        | DateTimeishTypeClass
         | DateTimeType -> DbType.DateTime, nullify typeof<DateTime>
         | DateTimeOffsetType -> DbType.DateTimeOffset, nullify typeof<DateTimeOffset>
         | GuidType -> DbType.Guid, nullify typeof<Guid>
