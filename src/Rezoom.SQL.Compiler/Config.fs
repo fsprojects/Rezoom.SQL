@@ -6,14 +6,13 @@ type ConfigBackend =
     | Identity // outputs Rezoom.SQL that can be parsed back
     | SQLite
     | TSQL
-    | PostgreSQL
-    | MySQL
+    | Postgres
     member this.ToBackend() =
         match this with
         | Identity -> DefaultBackend() :> IBackend
         | SQLite -> SQLite.SQLiteBackend() :> IBackend
         | TSQL -> TSQL.TSQLBackend() :> IBackend
-        | _ -> failwithf "Unimplemented backend %A" this // TODO
+        | Postgres -> Postgres.PostgresBackend() :> IBackend
 
 type ConfigOptionalStyle =
     | CsStyle // optional value types get wrapped in Nullable, optional reference types untouched
@@ -44,8 +43,7 @@ module private Parser =
         %% '"'
         -- +.[  %% ci "SQLITE" -|> SQLite
                 %% [ ci "TSQL"; ci "MSSQL" ] -|> TSQL
-                %% ci "POSTGRES" -- zeroOrOne * ci "QL" -|> PostgreSQL
-                %% ci "MYSQL" -|> MySQL
+                %% ci "POSTGRES" -- zeroOrOne * ci "QL" -|> Postgres
                 %% ci "RZSQL" -|> Identity
             ]
         -- '"'

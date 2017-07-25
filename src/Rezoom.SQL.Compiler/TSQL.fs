@@ -330,12 +330,12 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         | Negative -> "-"
         | Not -> "NOT"
         | BitNot -> "~"
-    override __.SimilarityOperator(op) =
+    override __.SimilarityOperator(invert, op) =
         CommandText <|
         match op with
-        | Like -> "LIKE"
+        | Like -> if invert then "NOT LIKE" else "LIKE"
         | Match
-        | Regexp -> failwithf "Not supported by TSQL: %A" op
+        | Regexp -> fail <| Error.backendDoesNotSupportFeature "TSQL" "MATCH/REGEXP operators"
     /// Identifies expressions that are set up to use as predicates in T-SQL.
     /// These expressions don't produce actual values.
     /// For example, you can't `SELECT 1=1`, but you can do `SELECT 1 WHERE 1=1`.

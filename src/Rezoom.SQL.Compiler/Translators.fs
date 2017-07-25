@@ -77,7 +77,7 @@ and [<AbstractClass>] ExprTranslator() =
     abstract member Name : name : Name -> Fragment
     abstract member BinaryOperator : op : BinaryOperator -> Fragment
     abstract member UnaryOperator : op : UnaryOperator -> Fragment
-    abstract member SimilarityOperator : op : SimilarityOperator -> Fragment
+    abstract member SimilarityOperator : invert : bool * op : SimilarityOperator -> Fragment
     abstract member BindParameter : par : BindParameter -> Fragment
     abstract member ObjectName : name : TObjectName -> Fragments
     abstract member ColumnName : column : TColumnName -> Fragments

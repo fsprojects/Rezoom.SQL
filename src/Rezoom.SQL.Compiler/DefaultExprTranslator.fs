@@ -55,12 +55,14 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         | Negative -> "-"
         | Not -> "NOT"
         | BitNot -> "~"
-    override __.SimilarityOperator op =
+    override __.SimilarityOperator(invert, op) =
         CommandText <|
-        match op with
-        | Like -> "LIKE"
-        | Match -> "MATCH"
-        | Regexp -> "REGEXP"
+        (if invert then "NOT " else "")
+        +
+            match op with
+            | Like -> "LIKE"
+            | Match -> "MATCH"
+            | Regexp -> "REGEXP"
     override __.BindParameter par = indexer.ParameterIndex(par) |> Parameter
     override this.ObjectName name =
         seq {
@@ -105,7 +107,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             | ArgumentWildcard -> yield text "*"
             | ArgumentList (distinct, args) ->
                 match distinct with
-                | Some distinct ->
+                | Some Distinct ->
                     yield text "DISTINCT"
                     yield ws
                 | None -> ()
@@ -116,10 +118,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         seq {
             yield! this.Expr(sim.Input)
             yield ws
-            if sim.Invert then
-                yield text "NOT"
-                yield ws
-            yield this.SimilarityOperator(sim.Operator)
+            yield this.SimilarityOperator(sim.Invert, sim.Operator)
             yield ws
             yield! this.Expr(sim.Pattern)
             match sim.Escape with

@@ -94,16 +94,109 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
         | IsNot -> "IS DISTINCT FROM"
         | BitShiftLeft -> "<<"
         | BitShiftRight -> ">>"
-    override __.SimilarityOperator op =
+    override __.SimilarityOperator(invert, op) =
         CommandText <|
         match op with
-        | Like -> "LIKE"
-        | Match -> "SIMILAR TO"
-        | Regexp -> "~"
+        | Like -> if invert then "NOT LIKE" else "LIKE"
+        | Match -> if invert then "NOT SIMILAR TO" else "SIMILAR TO"
+        | Regexp -> if invert then "!~" else "~"
 
 type private PostgresStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(Name("POSTGRES"), indexer)
     let expr = PostgresExpression(this :> StatementTranslator, indexer)
     override __.Expr = upcast expr
     override __.ColumnsNullableByDefault = true
+    override this.AlterTable(alter) =
+        let inline alterColumn (col : Name) =
+            [|  text "ALTER COLUMN"
+                ws
+                this.Expr.Name(col)
+                ws
+            |]
+        let inline changeType (col : Name) (ty : TypeName) (collation : Name option) =
+            seq {
+                yield! alterColumn col
+                yield text "TYPE"
+                yield ws
+                yield! this.Expr.TypeName(ty)
+                match collation with
+                | None -> ()
+                | Some collation ->
+                    yield ws
+                    yield text "COLLATE"
+                    yield ws
+                    yield this.Expr.Name(collation)
+            }
+        seq {
+            yield text "ALTER TABLE"
+            yield ws
+            yield! this.Expr.ObjectName(alter.Table)
+            yield ws
+            match alter.Alteration with
+            | RenameTo newName ->
+                yield text "RENAME TO"
+                yield ws
+                yield this.Expr.Name(newName)
+            | AddColumn columnDef ->
+                yield text "ADD COLUMN"
+                yield ws
+                yield! this.ColumnDefinition(alter.Table, columnDef.Value)
+            | AddConstraint constr ->
+                yield text "ADD"
+                yield ws
+                yield! this.TableConstraint(alter.Table, constr.Value) // includes CONSTRAINT keyword
+            | AddDefault (col, defaultValue) ->
+                yield! alterColumn col
+                yield text "SET DEFAULT"
+                yield ws
+                yield! this.FirstClassValue(defaultValue)
+            | DropColumn name ->
+                yield text "DROP COLUMN"
+                yield ws
+                yield this.Expr.Name(name)
+                yield ws
+                yield text "RESTRICT" // this is probably the default but just to be on the safe side
+            | DropConstraint constr ->
+                yield text "DROP CONSTRAINT"
+                yield ws
+                yield this.Expr.Name(this.ConstraintName(alter.Table, constr))
+                yield ws
+                yield text "RESTRICT"
+            | DropDefault col ->
+                yield! alterColumn col
+                yield text "DROP DEFAULT"
+            | ChangeNullability change ->
+                yield! alterColumn change.Column
+                yield text (if change.NewNullable then "DROP NOT NULL" else "SET NOT NULL")
+            | ChangeType change ->
+                let schemaColumn = change.ExistingInfo.Column |> Option.get
+                yield! changeType change.Column change.NewType schemaColumn.Collation
+            | ChangeCollation change ->
+                let schemaColumn = change.ExistingInfo.Column |> Option.get
+                yield! changeType change.Column schemaColumn.ColumnTypeName (Some change.NewCollation)
+        }
     // TODO: figure out PG quirks
+
+type PostgresBackend() =
+    static let initialModel =
+        let main, temp = Name("main"), Name("temp")
+        {   Schemas =
+                [   Schema.Empty(main)
+                    Schema.Empty(temp)
+                ] |> List.map (fun s -> s.SchemaName, s) |> Map.ofList
+            DefaultSchema = main
+            TemporarySchema = temp
+            Builtin =
+                {   Functions = PostgresFunctions.functions
+                }
+        }
+    interface IBackend with
+        member this.MigrationBackend = <@ fun conn -> new DefaultMigrationBackend(conn) :> IMigrationBackend @>
+        member this.InitialModel = initialModel
+        member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
+        member this.ToCommandFragments(indexer, stmts) =
+            let translator = PostgresStatement(indexer)
+            translator.TotalStatements(stmts)
+            |> BackendUtilities.simplifyFragments
+            |> ResizeArray
+            :> _ IReadOnlyList
