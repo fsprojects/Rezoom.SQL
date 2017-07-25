@@ -1,7 +1,6 @@
 ﻿namespace Rezoom.SQL.Compiler
 open System
 open System.Collections.Generic
-open System.Globalization
 
 type NumericLiteral =
     | IntegerLiteral of uint64
@@ -26,7 +25,6 @@ type SavepointName = Name
 type Alias = Name option
 
 type IntegerSize =
-    | Integer8
     | Integer16
     | Integer32
     | Integer64
@@ -52,7 +50,6 @@ type TypeName =
         | StringTypeName(None) -> "STRING"
         | BinaryTypeName(Some len) -> "BINARY(" + string len + ")"
         | BinaryTypeName(None) -> "BINARY"
-        | IntegerTypeName Integer8 -> "INT8"
         | IntegerTypeName Integer16 -> "INT16"
         | IntegerTypeName Integer32 -> "INT"
         | IntegerTypeName Integer64 -> "INT64"

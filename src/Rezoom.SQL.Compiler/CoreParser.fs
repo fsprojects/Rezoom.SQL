@@ -290,7 +290,6 @@ let private typeName =
     %[  %% kw "STRING" -- +.(zeroOrOne * maxBound) -%> StringTypeName
         %% kw "GUID" -%> GuidTypeName
         %% kw "BINARY" -- +.(zeroOrOne * maxBound) -%> BinaryTypeName
-        %% kw "INT8" -%> IntegerTypeName Integer8
         %% kw "INT16" -%> IntegerTypeName Integer16
         %% kw "INT32" -%> IntegerTypeName Integer32
         %% kw "INT64" -%> IntegerTypeName Integer64

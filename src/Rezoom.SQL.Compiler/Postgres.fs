@@ -48,7 +48,6 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
             match name with
             | BooleanTypeName -> "BOOLEAN"
             | GuidTypeName -> "UUID"
-            | IntegerTypeName Integer8 // not really supported, comes out as a smallint
             | IntegerTypeName Integer16 -> "SMALLINT"
             | IntegerTypeName Integer32 -> "INT"
             | IntegerTypeName Integer64 -> "BIGINT"

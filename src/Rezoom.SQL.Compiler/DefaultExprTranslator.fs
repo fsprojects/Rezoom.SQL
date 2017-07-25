@@ -14,7 +14,6 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             match name with
             | BooleanTypeName -> "BOOL"
             | GuidTypeName -> "GUID"
-            | IntegerTypeName Integer8 -> "INT8"
             | IntegerTypeName Integer16 -> "INT16"
             | IntegerTypeName Integer32 -> "INT32"
             | IntegerTypeName Integer64 -> "INT64"

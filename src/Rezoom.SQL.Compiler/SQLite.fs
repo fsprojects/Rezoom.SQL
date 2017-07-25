@@ -28,7 +28,6 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
         (Seq.singleton << text) <|
             match name with
             | BooleanTypeName
-            | IntegerTypeName Integer8
             | IntegerTypeName Integer16
             | IntegerTypeName Integer32
             | IntegerTypeName Integer64 -> "INTEGER"

@@ -45,7 +45,6 @@ let integral = concrete IntegralTypeClass
 let int64 = concrete (IntegerType Integer64)
 let int32 = concrete (IntegerType Integer32)
 let int16 = concrete (IntegerType Integer16)
-let int8 = concrete (IntegerType Integer8)
 let binary = concrete BinaryType
 let datetime = concrete DateTimeType
 let datetimeoffset = concrete DateTimeOffsetType

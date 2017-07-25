@@ -14,7 +14,6 @@ like.
 | bool           | System.Boolean        | integer     | bit             |
 | int, int32     | System.Int32          | integer     | int             |
 | int16          | System.Int16          | integer     | smallint        |
-| int8           | System.SByte          | integer     | tinyint         |
 | int64          | System.Int64          | integer     | bigint          |
 | float32        | System.Single         | float       | float(24)       |
 | float, float64 | System.Double         | float       | float(53)       |

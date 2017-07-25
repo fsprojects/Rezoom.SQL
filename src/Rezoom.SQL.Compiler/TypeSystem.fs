@@ -23,8 +23,7 @@ type CoreColumnType =
     | ListType of CoreColumnType
     member this.ParentType =
         match this with
-        | IntegerType Integer8 -> IntegralTypeClass
-        | IntegerType Integer16 -> IntegerType Integer8
+        | IntegerType Integer16 -> IntegralTypeClass
         | IntegerType Integer32 -> IntegerType Integer16
         | IntegerType Integer64 -> IntegerType Integer32
         | FloatType Float32 -> FractionalTypeClass
@@ -63,7 +62,6 @@ type CoreColumnType =
         | BooleanType -> "BOOL"
         | GuidType -> "GUID"
         | StringType -> "STRING"
-        | IntegerType Integer8 -> "INT8"
         | IntegerType Integer16 -> "INT16"
         | IntegerType Integer32 -> "INT"
         | IntegerType Integer64 -> "INT64"
@@ -89,7 +87,6 @@ type CoreColumnType =
         | AnyTypeClass 
         | ListType _
         | StringType -> StringTypeName(None)
-        | IntegerType Integer8 -> IntegerTypeName Integer8
         | IntegerType Integer16 -> IntegerTypeName Integer16
         | IntegerType Integer32 -> IntegerTypeName Integer32
         | IntegralTypeClass
@@ -131,7 +128,6 @@ type ColumnType =
             else
                 clrType
         match ty.Type with
-        | IntegerType Integer8 -> DbType.SByte, nullify typeof<sbyte>
         | IntegerType Integer16 -> DbType.Int16, nullify typeof<int16>
         | IntegralTypeClass
         | IntegerType Integer32 -> DbType.Int32, nullify typeof<int32>

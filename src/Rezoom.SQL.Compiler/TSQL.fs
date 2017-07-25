@@ -96,7 +96,7 @@ module private TSQLFunctions =
             aggregate "avg" [ numeric a' ] (nullable a')
             aggregateW "count" [ scalar ] int32
             aggregateW "count_big" [ scalar ] int64
-            aggregate "grouping" [ scalar ] int8
+            aggregate "grouping" [ scalar ] boolean
             aggregate "grouping_id" [ vararg scalar ] int32
             aggregate "max" [ a' ] (nullable a')
             aggregate "min" [ a' ] (nullable a')
@@ -107,19 +107,19 @@ module private TSQLFunctions =
             aggregate "varp" [ numeric scalar ] (nullable float64)
             // @@FUNCTIONNAME builtins
             atAtProc "rowcount" int32
-            atAtProc "datefirst" int8
+            atAtProc "datefirst" int16
             atAtProc "dbts" binary
-            atAtProc "langid" int8
+            atAtProc "langid" int16
             atAtProc "language" string
             atAtProc "lock_timeout" int32
             atAtProc "max_connections" int32
-            atAtProc "max_precision" int8
+            atAtProc "max_precision" int16
             atAtProc "nestlevel" int32
             atAtProc "options" int32
             atAtProc "remserver" string
             atAtProc "servername" string
             atAtProc "servicename" string
-            atAtProc "spid" int8
+            atAtProc "spid" int16
             atAtProc "textsize" int32
             atAtProc "version" string
             atAtProc "cursor_rows" int32
@@ -247,7 +247,6 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
             match name with
             | BooleanTypeName -> "BIT"
             | GuidTypeName -> "UNIQUEIDENTIFIER"
-            | IntegerTypeName Integer8 -> "TINYINT"
             | IntegerTypeName Integer16 -> "SMALLINT"
             | IntegerTypeName Integer32 -> "INT"
             | IntegerTypeName Integer64 -> "BIGINT"
