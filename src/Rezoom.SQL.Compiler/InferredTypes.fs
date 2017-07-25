@@ -65,6 +65,7 @@ type InferredType =
     static member Integer = InferredType.Of(IntegralTypeClass)
     static member Number = InferredType.Of(NumericTypeClass)
     static member String = InferredType.Of(StringType)
+    static member Stringish = InferredType.Of(StringishTypeClass)
     static member Boolean = InferredType.Of(BooleanType)
     static member DateTime = InferredType.Of(DateTimeType)
     static member DateTimeOffset = InferredType.Of(DateTimeOffsetType)

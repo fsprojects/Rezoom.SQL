@@ -156,7 +156,7 @@ module private TypeInferenceExtensions =
         member typeInference.Concrete(inferred) = typeInference.Concrete(inferred)
         member typeInference.Binary(source, op, left, right) =
             match op with
-            | Concatenate -> typeInference.Unify(source, [ left; right; InferredType.String ])
+            | Concatenate -> typeInference.Unify(source, [ left; right; InferredType.Stringish ])
             | Multiply
             | Divide
             | Add
