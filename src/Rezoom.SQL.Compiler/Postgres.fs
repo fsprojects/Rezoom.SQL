@@ -59,11 +59,11 @@ module private PostgresFunctions =
             func "tand" [ infect float64 ] float64
 
             // string functions https://www.postgresql.org/docs/9.6/static/functions-string.html
-            func "bit_length" [ infect string ] int32
+            func "bit_length" [ infect (stringish a') ] int32
             func "char_length" [ infect string ] int32
             func "character_length" [ infect string ] int32
             func "lower" [ infect string ] string
-            func "octet_length" [ stringish a' ] int32 // this works on BYTEA too
+            func "octet_length" [ infect (stringish a') ] int32 // this works on BYTEA too
             // func "overlay" ... // wacky syntax! would have to do more work for this like TSQL special funcs
             // func "position" ... // wacky syntax: position('needle' in 'haystack')
             // substring has wacky syntax in documentation, but works fine without it
