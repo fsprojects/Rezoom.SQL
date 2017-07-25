@@ -23,6 +23,8 @@ let constrained ty arg =
             | Error e -> bug e
     }
 
+let fracish ty = ty |> constrained FractionalTypeClass
+let intish ty = ty |> constrained IntegralTypeClass
 let numeric ty = ty |> constrained NumericTypeClass
 let stringish ty = ty |> constrained StringishTypeClass
 

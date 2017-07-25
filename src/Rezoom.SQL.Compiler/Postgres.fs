@@ -16,7 +16,29 @@ open Rezoom.SQL.Migrations
 module private PostgresFunctions =
     open Rezoom.SQL.Compiler.FunctionDeclarations
     let functions =
-        [|  // aggregate functions
+        [|  // math https://www.postgresql.org/docs/9.6/static/functions-math.html
+            func "cbrt" [ infect num ] float64
+            func "sqrt" [ infect num ] float64
+            func "ceil" [ infect (numeric a') ] a'
+            func "ceiling" [ infect (numeric a') ] a'
+            func "degrees" [ infect float64 ] float64
+            func "div" [ infect (numeric a'); infect a' ] a'
+            func "exp" [ infect (numeric a') ] a'
+            func "floor" [ infect (numeric a') ] a'
+            func "ln" [ infect (numeric a') ] a'
+            func "log" [ infect (numeric a') ] a'
+            func "mod" [ infect (intish a'); infect a' ] a'
+            func "pi" [] float64
+            func "power" [ infect (fracish a'); infect a' ] a'
+            func "radians" [ infect float64 ] float64
+            func "round" [ infect (numeric a'); optional (infect int32) ] a'
+            func "scale" [ infect decimal ] decimal
+            func "sign" [ infect (numeric a') ] a'
+            func "sqrt" [ infect (numeric a') ] a'
+            func "trunc" [ infect (numeric a'); optional (infect int32) ] a'
+            func "width_bucket" [ infect num; infect num; infect num; infect int32 ] int32
+
+            // aggregate functions
             aggregate "avg" [ numeric a' ] (nullable a')
             aggregateW "count" [ scalar ] int64
             aggregate "max" [ a' ] (nullable a')
