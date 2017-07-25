@@ -38,6 +38,26 @@ module private PostgresFunctions =
             func "trunc" [ infect (numeric a'); optional (infect int32) ] a'
             func "width_bucket" [ infect num; infect num; infect num; infect int32 ] int32
 
+            proc "random" [] float64
+            // proc "setseed" [ float64 ] void // can't model void results
+
+            func "acos" [ infect float64 ] float64
+            func "acosd" [ infect float64 ] float64
+            func "asin" [ infect float64 ] float64
+            func "asind" [ infect float64 ] float64
+            func "atan" [ infect float64 ] float64
+            func "atand" [ infect float64 ] float64
+            func "atan2" [ infect float64; infect float64 ] float64
+            func "atan2d" [ infect float64; infect float64 ] float64
+            func "cos" [ infect float64 ] float64
+            func "cosd" [ infect float64 ] float64
+            func "cot" [ infect float64 ] float64
+            func "cotd" [ infect float64 ] float64
+            func "sin" [ infect float64 ] float64
+            func "sind" [ infect float64 ] float64
+            func "tan" [ infect float64 ] float64
+            func "tand" [ infect float64 ] float64
+
             // aggregate functions
             aggregate "avg" [ numeric a' ] (nullable a')
             aggregateW "count" [ scalar ] int64
