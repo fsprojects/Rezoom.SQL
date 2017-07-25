@@ -58,6 +58,56 @@ module private PostgresFunctions =
             func "tan" [ infect float64 ] float64
             func "tand" [ infect float64 ] float64
 
+            // string functions https://www.postgresql.org/docs/9.6/static/functions-string.html
+            func "bit_length" [ infect string ] int32
+            func "char_length" [ infect string ] int32
+            func "character_length" [ infect string ] int32
+            func "lower" [ infect string ] string
+            func "octet_length" [ stringish a' ] int32 // this works on BYTEA too
+            // func "overlay" ... // wacky syntax! would have to do more work for this like TSQL special funcs
+            // func "position" ... // wacky syntax: position('needle' in 'haystack')
+            // substring has wacky syntax in documentation, but works fine without it
+            func "substring" [ infect string; infect int32; optional (infect int32) ] string
+            // trim has wacky syntax in documentation, but works fine without it
+            // (except we can't specify leading/trailing)
+            func "trim" [ infect string; optional (infect string) ] string
+            func "upper" [ infect string ] string
+            func "ascii" [ infect string ] int32
+            func "btrim" [ infect string; optional (infect string) ] string
+            func "chr" [ infect int32] string
+            func "concat" [ scalar; vararg scalar ] string
+            func "convert" [ infect binary; infect string; infect string ] binary
+            func "convert_from" [ infect binary; infect string ] string
+            func "convert_to" [ infect string; infect string ] binary
+            func "decode" [ infect string; infect string ] binary
+            func "encode" [ infect binary; infect string ] string
+            func "format" [ infect string; vararg scalar ] string
+            func "initcap" [ infect string ] string
+            func "left" [ infect string; infect int32 ] string
+            func "length" [ infect (stringish a'); optional (infect string) ] int32
+            func "lpad" [ infect string; infect int32; optional (infect string) ] string
+            func "ltrim" [ infect string; optional (infect string) ] string
+            func "md5" [ infect (stringish a') ] string
+            proc "pg_client_encoding" [] string
+            // questionably useful in static SQL
+            func "quote_ident" [ infect string ] string
+            func "quote_literal" [ infect scalar ] string
+            func "quote_nullable" [ scalar ] string
+            // func "regexp_matches" // cannot represent TVF
+            func "regexp_replace" [ infect string; infect string; infect string; optional (infect string) ] string
+            func "repeat" [ infect string; infect int32 ] string
+            func "replace" [ infect string; infect string ] string
+            func "reverse" [ infect string ] string
+            func "right" [ infect string; infect int32 ] string
+            func "rpad" [ infect string; infect int32; optional (infect string) ] string
+            func "rtrim" [ infect string; optional (infect string) ] string
+            func "split_part" [ infect string; infect string; infect int32 ] string
+            func "strpos" [ infect string; infect string ] int32
+            func "substr" [ infect string; infect int32; optional (infect int32) ] string
+            func "to_ascii" [ infect string; optional (infect string) ] string
+            func "to_hex" [ integral ] string
+            func "translate" [ infect string; infect string; infect string ] string
+
             // aggregate functions
             aggregate "avg" [ numeric a' ] (nullable a')
             aggregateW "count" [ scalar ] int64
