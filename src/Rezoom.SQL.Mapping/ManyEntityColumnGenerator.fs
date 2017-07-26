@@ -44,6 +44,8 @@ type FastTuple<'a, 'b>(item1 : 'a, item2 : 'b) =
             member this.CompareTo(other) = this.CompareTo(other)
     end
 
+[<NoComparison>]
+[<NoEquality>]
 type private KeyColumns =
     {
         Type : Type

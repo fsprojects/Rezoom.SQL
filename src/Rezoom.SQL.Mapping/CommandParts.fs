@@ -69,6 +69,8 @@ type ResultSetProcessor<'output>() =
     abstract member GetResult : unit -> 'output
     override this.ObjectGetResult() = this.GetResult() |> box
 
+[<NoComparison>]
+[<NoEquality>]
 type CommandData =
     {   ConnectionName : string
         Identity : string
@@ -81,7 +83,43 @@ type CommandData =
 
 type CommandCategory = CommandCategory of connectionName : string
 
+[<NoComparison>]
+[<CustomEquality>]
 type CommandParameter =
     | ListParameter of DbType * Array
     | ScalarParameter of DbType * obj
+    member this.Equals(other : CommandParameter) =
+        match this, other with
+        | ListParameter (ty1, arr1), ListParameter (ty2, arr2) ->
+            ty1 = ty2 && arr1.Length = arr2.Length && (
+                let mutable all = true
+                let mutable i = 0
+                while all && i < arr1.Length do
+                    let e1 = arr1.GetValue(i)
+                    let e2 = arr2.GetValue(i)
+                    all <- EqualityComparer<obj>.Default.Equals(e1, e2)
+                    i <- i + 1
+                all
+            )
+
+        | ScalarParameter (ty1, obj1), ScalarParameter (ty2, obj2) ->
+            ty1 = ty2 && EqualityComparer<obj>.Default.Equals(obj1, obj2)
+
+        | _ -> false
+    override this.Equals(other : obj) =
+        match other with
+        | :? CommandParameter as p -> this.Equals(p)
+        | _ -> false
+    override this.GetHashCode() =
+        let mutable h = 0
+        match this with
+        | ScalarParameter (ty, o) ->
+            h <- ((h <<< 5) + h) ^^^ hash o
+        | ListParameter (ty, os) ->
+            for o in os do
+                h <- ((h <<< 5) + h) ^^^ hash o
+        h
+    interface IEquatable<CommandParameter> with
+        member this.Equals(other) = this.Equals(other)
+
 

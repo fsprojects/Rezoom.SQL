@@ -8,6 +8,8 @@ open System.Collections.Generic
 open System.Reflection
 open System.Reflection.Emit
 
+[<NoComparison>]
+[<NoEquality>] 
 type private EntityReaderBuilder =
     {
         Ctor : E S * IL
@@ -262,7 +264,8 @@ type ReaderTemplate<'ent>() =
     static let entType = typeof<'ent>
     static let template =
         let moduleBuilder =
-            let assembly = AssemblyName("Readers." + entType.Name + "." + Guid.NewGuid().ToString("N"))
+            let uniqueName = Guid.NewGuid()
+            let assembly = AssemblyName("Readers." + entType.Name + "." + uniqueName.ToString("N"))
             let appDomain = Threading.Thread.GetDomain()
             let assemblyBuilder = appDomain.DefineDynamicAssembly(assembly, AssemblyBuilderAccess.Run)
             assemblyBuilder.DefineDynamicModule(assembly.Name)

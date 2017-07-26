@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 open System.Reflection
 
+[<NoComparison>]
 type Setter =
     /// We initialize this column by passing it to the composite's constructor.
     | SetConstructorParameter of ParameterInfo
@@ -12,6 +13,7 @@ type Setter =
     /// We initialize this column by setting a property post-construction.
     | SetProperty of PropertyInfo
 
+[<NoComparison>]
 type Getter =
     | GetField of FieldInfo
     | GetProperty of PropertyInfo
@@ -20,6 +22,7 @@ type Getter =
         | GetField f -> f :> MemberInfo
         | GetProperty p -> p :> MemberInfo
 
+[<NoComparison>]
 type Column =
     {
         ColumnId : ColumnId
@@ -37,7 +40,7 @@ type Column =
     }
     member this.Output = this.Blueprint.Value.Output
 
-and Composite =
+and [<NoComparison>] Composite =
     {
         Output : Type
         /// The constructor to use when instantiating this composite type.
@@ -59,18 +62,21 @@ and Composite =
         this.Columns.Values
         |> Seq.exists (fun c -> c.ReverseRelationship.Value |> Option.isSome)
 
-and Primitive =
+and [<NoComparison>]
+    [<NoEquality>] Primitive =
     {
         Output : Type
         /// A method converting an object to the output type.
         Converter : RowConversionMethod
     }
 
-and BlueprintShape =
+and [<NoComparison>]
+    [<NoEquality>] BlueprintShape =
     | Primitive of Primitive
     | Composite of Composite
 
-and ElementBlueprint =
+and [<NoComparison>]
+    [<NoEquality>] ElementBlueprint =
     {
         Shape : BlueprintShape
         /// The element type this blueprint specifies how to construct.
@@ -86,7 +92,8 @@ and ElementBlueprint =
                 roots.Contains(blueprint.Output)
                 || roots.Add(blueprint.Output) && blueprint.IsOne(roots))
 
-and Cardinality =
+and [<NoComparison>]
+    [<NoEquality>] Cardinality =
     | One of ElementBlueprint
     /// Carries an element type blueprint and a method converting an ICollection<Builder<ElementType>>
     /// to the target collection type.
@@ -96,7 +103,8 @@ and Cardinality =
         | One elem -> elem
         | Many (elem, _) -> elem
 
-and Blueprint =
+and [<NoComparison>]
+    [<NoEquality>] Blueprint =
     {
         Cardinality : Cardinality
         /// The type (possibly a collectiont ype) this blueprint specifies how to construct.

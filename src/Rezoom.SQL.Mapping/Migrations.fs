@@ -22,6 +22,8 @@ type Migration<'src> =
     }
     member this.MigrationName = "V" + string this.MajorVersion + ", " + this.Name
 
+[<NoComparison>]
+[<NoEquality>]
 type MigrationTree<'src> =
     {   Node : 'src Migration
         Children : 'src MigrationTree IReadOnlyList
@@ -41,6 +43,8 @@ type MigrationTree<'src> =
                 yield! child.Migrations()
         }
 
+[<NoComparison>]
+[<NoEquality>] 
 type private MigrationTreeBuilderNode<'src> =
     {   mutable Source : 'src option
         Name : string
@@ -126,6 +130,8 @@ type IMigrationBackend =
     abstract member GetMigrationsRun : unit -> (int * string) seq
     abstract member RunMigration : string Migration -> unit
 
+[<NoComparison>]
+[<NoEquality>] 
 type MigrationConfig =
     {   /// If true, permit running migrations that have not been run on the database, but are older
         /// than other migrations that *have* been run. Typically this would only make sense in development, after

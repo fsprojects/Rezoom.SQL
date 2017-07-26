@@ -78,12 +78,7 @@ type private CommandErrandArgument(parameters : CommandParameter IReadOnlyList) 
     override __.GetHashCode() =
         let mutable h = 0
         for par in parameters do
-            match par with
-            | ScalarParameter (ty, o) ->
-                h <- ((h <<< 5) + h) ^^^ hash o
-            | ListParameter (ty, os) ->
-                for o in os do
-                    h <- ((h <<< 5) + h) ^^^ hash o
+            h <- ((h <<< 5) + h) ^^^ hash par
         h
     override this.Equals(other : obj) =
         match other with
