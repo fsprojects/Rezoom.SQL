@@ -175,7 +175,7 @@ type private ManyEntityColumnGenerator
     , element : ElementBlueprint
     , conversion : ConversionMethod
     ) =
-    inherit EntityReaderColumnGenerator(builder)
+    inherit EntityReaderColumnGenerator()
     let composite =
         match element.Shape with
         | Composite c -> c
@@ -303,7 +303,6 @@ type private ManyEntityColumnGenerator
     override __.RequiresSelfReferenceToPush = requiresSelf
     override __.DefinePush(self) =
         cil {
-            let! ncase = deflabel
             yield ldarg 0
             yield ldfld entDict
             yield call1 (dictTy.GetProperty("Values").GetGetMethod())

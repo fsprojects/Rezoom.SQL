@@ -8,8 +8,8 @@ open System.Collections.Generic
 open System.Reflection
 open System.Reflection.Emit
 
-type private PrimitiveColumnGenerator(builder, column, primitive : Primitive) =
-    inherit EntityReaderColumnGenerator(builder)
+type private PrimitiveColumnGenerator(builder : TypeBuilder, column, primitive : Primitive) =
+    inherit EntityReaderColumnGenerator()
     let output = column.Blueprint.Value.Output
     let mutable colValue = null
     let mutable colInfo = null

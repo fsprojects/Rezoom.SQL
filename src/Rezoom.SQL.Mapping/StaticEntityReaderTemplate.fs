@@ -200,7 +200,7 @@ type private StaticEntityReaderTemplate =
                     for column in constructorColumns do
                         yield column.DefinePush(self)
                         yield pretend
-                    yield (fun st il ->
+                    yield (fun _ il ->
                         il.Generator.Emit(OpCodes.Call, composite.Constructor)
                         null)
                 else

@@ -114,8 +114,9 @@ type CommandParameter =
         let mutable h = 0
         match this with
         | ScalarParameter (ty, o) ->
-            h <- ((h <<< 5) + h) ^^^ hash o
+            h <- ((h <<< 5) + h) ^^^ (hash o ^^^ hash ty)
         | ListParameter (ty, os) ->
+            h <- ((h <<< 5) + h) ^^^ hash ty
             for o in os do
                 h <- ((h <<< 5) + h) ^^^ hash o
         h

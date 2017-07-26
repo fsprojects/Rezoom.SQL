@@ -9,12 +9,12 @@ open System.Reflection
 open System.Reflection.Emit
 
 type private ManyColumnGenerator
-    ( builder
+    ( builder : TypeBuilder
     , column : Column option
     , element : ElementBlueprint
     , conversion : ConversionMethod
     ) =
-    inherit EntityReaderColumnGenerator(builder)
+    inherit EntityReaderColumnGenerator()
     let elemTy = element.Output
     let staticTemplate = Generation.readerTemplateGeneric.MakeGenericType(elemTy)
     let entTemplate = typedefof<_ EntityReaderTemplate>.MakeGenericType(elemTy)
@@ -92,9 +92,8 @@ type private ManyColumnGenerator
             yield callvirt2'void Generation.readMethod // entReader.Read(row)
         }
     override __.RequiresSelfReferenceToPush = false
-    override __.DefinePush(self) =
+    override __.DefinePush(_) =
         cil {
-            let! ncase = deflabel
             yield ldarg 0
             yield ldfld entList
             yield generalize conversion

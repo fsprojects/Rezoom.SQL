@@ -209,7 +209,7 @@ type AsyncCommandBatch(conn : DbConnection, tran : DbTransaction) =
         builders.Add(CommandBatchBuilder(conn, tran))
     member __.Batch(cmd : #Command<'a>) =
         let inline retrieveResult builderIndex resultsIndex =
-            fun (token : CancellationToken) ->
+            fun (_ : CancellationToken) ->
                 task {
                     let! result = evaluation.Value
                     let boxed = result.[builderIndex].[resultsIndex]

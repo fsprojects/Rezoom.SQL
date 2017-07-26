@@ -8,8 +8,8 @@ open System.Collections.Generic
 open System.Reflection
 open System.Reflection.Emit
 
-type private CompositeColumnGenerator(builder, column, composite : Composite) =
-    inherit EntityReaderColumnGenerator(builder)
+type private CompositeColumnGenerator(builder : TypeBuilder, column, composite : Composite) =
+    inherit EntityReaderColumnGenerator()
     let output = column.Blueprint.Value.Output
     let staticTemplate = Generation.readerTemplateGeneric.MakeGenericType(output)
     let entTemplate = typedefof<_ EntityReaderTemplate>.MakeGenericType(output)
@@ -62,7 +62,7 @@ type private CompositeColumnGenerator(builder, column, composite : Composite) =
             }
             yield mark ncase
         }
-    override __.DefineRead(skipOnes) =
+    override __.DefineRead(_) =
         cil {
             let! ncase = deflabel
             yield dup

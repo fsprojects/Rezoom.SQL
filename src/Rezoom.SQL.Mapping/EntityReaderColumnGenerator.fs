@@ -12,7 +12,7 @@ type 'x THIS = 'x S
 type 'x ENT = 'x S
 
 [<AbstractClass>]
-type private EntityReaderColumnGenerator(builder : TypeBuilder) =
+type private EntityReaderColumnGenerator() =
     abstract member DefineConstructor : unit -> Op<E THIS, E THIS>
     abstract member DefineProcessColumns :  unit -> Op<E THIS, E THIS>
     abstract member DefineImpartKnowledgeToNext : unit -> Op<E THIS, E THIS>

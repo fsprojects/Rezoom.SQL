@@ -72,7 +72,7 @@ type private MigrationTreeBuilder<'src>(majorVersionNumber) =
         match root with
         | None ->
             failwithf "No root migration for V%d" majorVersionNumber
-        | Some (root, rootName) -> toTree root         
+        | Some (root, _) -> toTree root         
     member __.Add(migrationName : MigrationFileName, source : 'src) =
         let succ, self = migrations.TryGetValue(migrationName.Name)
         let self =
@@ -92,7 +92,7 @@ type private MigrationTreeBuilder<'src>(majorVersionNumber) =
         match migrationName.ParentName with
         | None ->
             match root with
-            | Some (node, rootName) ->
+            | Some (_, rootName) ->
                 failwithf "Multiple root migrations given (%O, %O)" rootName migrationName
             | None ->
                 root <- Some (self, migrationName)
