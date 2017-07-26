@@ -182,6 +182,8 @@ let inferredOfTable (table : SchemaTable) =
         StaticRowCount = None
     }
 
+[<NoComparison>]
+[<NoEquality>]
 type InferredFromClause =
     {   /// The tables named in the "from" clause of the query, if any.
         /// These are keyed on the alias of the table, if any, or the table name.
@@ -232,7 +234,8 @@ type InferredFromClause =
             | NotFound err -> NotFound err
             | Ambiguous err -> Ambiguous err
 
-and InferredSelectScope =
+and [<NoComparison>]
+    [<NoEquality>] InferredSelectScope =
     {   /// If this scope is that of a subquery, the parent query's scope can also be used
         /// to resolve column and CTE names.
         ParentScope : InferredSelectScope option

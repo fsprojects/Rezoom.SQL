@@ -84,6 +84,7 @@ type ObjectName<'t> =
     interface IEquatable<ObjectName<'t>> with
         member this.Equals(other) = this.Equals(other)
 
+[<NoComparison>]
 type ColumnName<'t> =
     {   Table : ObjectName<'t> option
         ColumnName : Name
@@ -143,6 +144,7 @@ type SimilarityOperator =
     | Match // MATCH on SQLite, SIMILAR TO on PG
     | Regexp // REGEXP on SQLite, ~ on PG
 
+[<NoComparison>]
 type ExprType<'t, 'e> =
     | LiteralExpr of Literal
     | BindParameterExpr of BindParameter
@@ -176,29 +178,29 @@ and
     interface IEquatable<Expr<'t, 'e>> with
         member this.Equals(other) = this.Equals(other)
 
-and InExpr<'t, 'e> =
+and [<NoComparison>] InExpr<'t, 'e> =
     {   Invert : bool
         Input : Expr<'t, 'e>
         Set : InSet<'t, 'e> WithSource
     }
 
-and CollationExpr<'t, 'e> =
+and [<NoComparison>] CollationExpr<'t, 'e> =
     {   Input : Expr<'t, 'e>
         Collation : Name
     }
 
-and BinaryExpr<'t, 'e> =
+and [<NoComparison>] BinaryExpr<'t, 'e> =
     {   Left : Expr<'t, 'e>
         Operator : BinaryOperator
         Right : Expr<'t, 'e>
     }
 
-and UnaryExpr<'t, 'e> =
+and [<NoComparison>] UnaryExpr<'t, 'e> =
     {   Operator : UnaryOperator
         Operand : Expr<'t, 'e>
     }
 
-and SimilarityExpr<'t, 'e> =
+and [<NoComparison>] SimilarityExpr<'t, 'e> =
     {   Invert : bool
         Operator : SimilarityOperator
         Input : Expr<'t, 'e>
@@ -206,29 +208,29 @@ and SimilarityExpr<'t, 'e> =
         Escape : Expr<'t, 'e> option
     }
 
-and BetweenExpr<'t, 'e> =
+and [<NoComparison>] BetweenExpr<'t, 'e> =
     {   Invert : bool
         Input : Expr<'t, 'e>
         Low : Expr<'t, 'e>
         High : Expr<'t, 'e>
     }
 
-and CastExpr<'t, 'e> =
+and [<NoComparison>] CastExpr<'t, 'e> =
     {   Expression : Expr<'t, 'e>
         AsType : TypeName
     }
  
-and TableInvocation<'t, 'e> =
+and [<NoComparison>] TableInvocation<'t, 'e> =
     {   Table : ObjectName<'t>
         Arguments : Expr<'t, 'e> array option // we use an option to distinguish between schema.table and schema.table()
     }
 
-and FunctionInvocationExpr<'t, 'e> =
+and [<NoComparison>] FunctionInvocationExpr<'t, 'e> =
     {   FunctionName : Name
         Arguments : FunctionArguments<'t, 'e>
     }
 
-and CaseExpr<'t, 'e> =
+and [<NoComparison>] CaseExpr<'t, 'e> =
     {   Input : Expr<'t, 'e> option
         Cases : (Expr<'t, 'e> * Expr<'t, 'e>) array
         Else : Expr<'t, 'e> option WithSource
@@ -236,11 +238,11 @@ and CaseExpr<'t, 'e> =
 
 and Distinct = | Distinct
 
-and FunctionArguments<'t, 'e> =
+and [<NoComparison>] FunctionArguments<'t, 'e> =
     | ArgumentWildcard
     | ArgumentList of (Distinct option * Expr<'t, 'e> array)
 
-and InSet<'t, 'e> =
+and [<NoComparison>] InSet<'t, 'e> =
     | InExpressions of Expr<'t, 'e> array
     | InSelect of SelectStmt<'t, 'e>
     | InTable of TableInvocation<'t, 'e>
@@ -276,7 +278,7 @@ and
 
 and SelectStmt<'t, 'e> = SelectStmtCore<'t, 'e> WithSource
 
-and WithClause<'t, 'e> =
+and [<NoComparison>] WithClause<'t, 'e> =
     {   Recursive : bool
         Tables : CommonTableExpression<'t, 'e> array
     }
@@ -309,17 +311,17 @@ and OrderDirection =
     | Ascending
     | Descending
 
-and OrderingTerm<'t, 'e> =
+and [<NoComparison>] OrderingTerm<'t, 'e> =
     {   By : Expr<'t, 'e>
         Direction : OrderDirection
     }
 
-and Limit<'t, 'e> =
+and [<NoComparison>] Limit<'t, 'e> =
     {   Limit : Expr<'t, 'e>
         Offset : Expr<'t, 'e> option
     }
 
-and CompoundExprCore<'t, 'e> =
+and [<NoComparison>] CompoundExprCore<'t, 'e> =
     | CompoundTerm of CompoundTerm<'t, 'e>
     | Union of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
     | UnionAll of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
@@ -342,7 +344,7 @@ and CompoundExprCore<'t, 'e> =
 
 and CompoundExpr<'t, 'e> = CompoundExprCore<'t, 'e> WithSource
 
-and CompoundTermCore<'t, 'e> =
+and [<NoComparison>] CompoundTermCore<'t, 'e> =
     | Values of Expr<'t, 'e> array WithSource array
     | Select of SelectCore<'t, 'e>
 
@@ -391,12 +393,12 @@ and
         member this.Equals(other) = this.Equals(other)
 
 
-and GroupBy<'t, 'e> =
+and [<NoComparison>] GroupBy<'t, 'e> =
     {   By : Expr<'t, 'e> array
         Having : Expr<'t, 'e> option
     }
 
-and ResultColumns<'t, 'e> =
+and [<NoComparison>] ResultColumns<'t, 'e> =
     {   Distinct : Distinct option
         Columns : ResultColumn<'t, 'e> array
     }
@@ -411,13 +413,13 @@ and ResultColumnNavCardinality =
         | NavOptional -> "?$"
         | NavMany -> "*$"
 
-and ResultColumnNav<'t, 'e> =
+and [<NoComparison>] ResultColumnNav<'t, 'e> =
     {   Cardinality : ResultColumnNavCardinality
         Name : Name
         Columns : ResultColumn<'t, 'e> array
     }
 
-and ResultColumnCase<'t, 'e> =
+and [<NoComparison>] ResultColumnCase<'t, 'e> =
     | ColumnsWildcard
     | TableColumnsWildcard of Name
     | Column of Expr<'t, 'e> * Alias
@@ -427,12 +429,12 @@ and ResultColumnCase<'t, 'e> =
         | Column (expr, alias) -> expr, alias
         | _ -> bug "BUG: wildcard was assumed to be a single column (should've been expanded by now)"
 
-and ResultColumn<'t, 'e> =
+and [<NoComparison>] ResultColumn<'t, 'e> =
     {   Case : ResultColumnCase<'t, 'e>
         Source : SourceInfo
     }
 
-and TableOrSubqueryType<'t, 'e> =
+and [<NoComparison>] TableOrSubqueryType<'t, 'e> =
     | Table of TableInvocation<'t, 'e>
     | Subquery of SelectStmt<'t, 'e>
 
@@ -462,18 +464,18 @@ and JoinType =
     | Natural of JoinType
     member this.IsOuter = this = LeftOuter
 
-and JoinConstraint<'t, 'e> =
+and [<NoComparison>] JoinConstraint<'t, 'e> =
     | JoinOn of Expr<'t, 'e>
     | JoinUnconstrained
 
-and Join<'t, 'e> =
+and [<NoComparison>] Join<'t, 'e> =
     {   JoinType : JoinType
         LeftTable : TableExpr<'t, 'e>
         RightTable : TableExpr<'t, 'e>
         Constraint : JoinConstraint<'t, 'e>
     }
 
-and TableExprCore<'t, 'e> =
+and [<NoComparison>] TableExprCore<'t, 'e> =
     | TableOrSubquery of TableOrSubquery<'t, 'e>
     | Join of Join<'t, 'e>
 
@@ -486,7 +488,7 @@ type OnDeleteAction =
     | Restrict
     | NoAction
 
-type ForeignKeyClause<'t> =
+type [<NoComparison>] ForeignKeyClause<'t> =
     {   ReferencesTable : ObjectName<'t>
         ReferencesColumns : Name WithSource array
         OnDelete : OnDeleteAction option
@@ -497,7 +499,7 @@ type PrimaryKeyClause =
         AutoIncrement : bool
     }
 
-type ColumnConstraintType<'t, 'e> =
+type [<NoComparison>] ColumnConstraintType<'t, 'e> =
     | PrimaryKeyConstraint of PrimaryKeyClause
     | UniqueConstraint
     | ForeignKeyConstraint of ForeignKeyClause<'t>
@@ -512,12 +514,12 @@ type ColumnConstraintType<'t, 'e> =
             + "_"
             + String.concat "_" [ for c in fk.ReferencesColumns -> c.Value.Value ]
 
-type ColumnConstraint<'t, 'e> =
+type [<NoComparison>] ColumnConstraint<'t, 'e> =
     {   Name : Name
         ColumnConstraintType : ColumnConstraintType<'t, 'e>
     }
 
-type ColumnDef<'t, 'e> =
+type [<NoComparison>] ColumnDef<'t, 'e> =
     {   Name : Name
         Type : TypeName
         Nullable : bool
@@ -530,12 +532,12 @@ type TableIndexConstraintType =
     | PrimaryKey
     | Unique
 
-type TableIndexConstraintClause<'t, 'e> =
+type [<NoComparison>] TableIndexConstraintClause<'t, 'e> =
     {   Type : TableIndexConstraintType
         IndexedColumns : (Name * OrderDirection) WithSource array
     }
 
-type TableConstraintType<'t, 'e> =
+type [<NoComparison>] TableConstraintType<'t, 'e> =
     | TableIndexConstraint of TableIndexConstraintClause<'t, 'e>
     | TableForeignKeyConstraint of Name WithSource array * ForeignKeyClause<'t>
     | TableCheckConstraint of Expr<'t, 'e>
@@ -555,27 +557,27 @@ type TableConstraintType<'t, 'e> =
             + String.concat "_" [ for c in fk.ReferencesColumns -> c.Value.Value ]
         | TableCheckConstraint _ -> "CHECK"   
 
-type TableConstraint<'t, 'e> =
+type [<NoComparison>] TableConstraint<'t, 'e> =
     {   Name : Name
         TableConstraintType : TableConstraintType<'t, 'e>
     }
 
-type CreateTableDefinition<'t, 'e> =
+type [<NoComparison>] CreateTableDefinition<'t, 'e> =
     {   Columns : ColumnDef<'t, 'e> WithSource array
         Constraints : TableConstraint<'t, 'e> WithSource array
     }
 
-type CreateTableAs<'t, 'e> =
+type [<NoComparison>] CreateTableAs<'t, 'e> =
     | CreateAsDefinition of CreateTableDefinition<'t, 'e>
     | CreateAsSelect of SelectStmt<'t, 'e>
 
-type CreateTableStmt<'t, 'e> =
+type [<NoComparison>] CreateTableStmt<'t, 'e> =
     {   Temporary : bool
         Name : ObjectName<'t>
         As : CreateTableAs<'t, 'e>
     }
 
-type CreateIndexStmt<'t, 'e> =
+type [<NoComparison>] CreateIndexStmt<'t, 'e> =
     {   Unique : bool
         IndexName : ObjectName<'t>
         TableName : ObjectName<'t>
@@ -602,7 +604,7 @@ type AlterTableChangeCollation<'e> =
         NewCollation : Name 
     }
 
-type AlterTableAlteration<'t, 'e> =
+type [<NoComparison>] AlterTableAlteration<'t, 'e> =
     | RenameTo of Name
     | AddColumn of ColumnDef<'t, 'e> WithSource
     | AddConstraint of TableConstraint<'t, 'e> WithSource
@@ -614,12 +616,12 @@ type AlterTableAlteration<'t, 'e> =
     | ChangeNullability of AlterTableChangeNullability<'e>
     | ChangeCollation of AlterTableChangeCollation<'e>
 
-type AlterTableStmt<'t, 'e> =
+type [<NoComparison>] AlterTableStmt<'t, 'e> =
     {   Table : ObjectName<'t>
         Alteration : AlterTableAlteration<'t, 'e>
     }
 
-type DeleteStmt<'t, 'e> =
+type [<NoComparison>] DeleteStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         DeleteFrom : ObjectName<'t>
         Where : Expr<'t, 'e> option
@@ -634,7 +636,7 @@ type UpdateOr =
     | UpdateOrFail
     | UpdateOrIgnore
 
-type UpdateStmt<'t, 'e> =
+type [<NoComparison>] UpdateStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         UpdateTable : ObjectName<'t>
         Or : UpdateOr option
@@ -651,7 +653,7 @@ type InsertOr =
     | InsertOrFail
     | InsertOrIgnore
 
-type InsertStmt<'t, 'e> =
+type [<NoComparison>] InsertStmt<'t, 'e> =
     {   With : WithClause<'t, 'e> option
         Or : InsertOr option
         InsertInto : ObjectName<'t>
@@ -659,7 +661,7 @@ type InsertStmt<'t, 'e> =
         Data : SelectStmt<'t, 'e>
     }
 
-type CreateViewStmt<'t, 'e> =
+type [<NoComparison>] CreateViewStmt<'t, 'e> =
     {   Temporary : bool
         ViewName : ObjectName<'t>
         ColumnNames : Name WithSource array option
@@ -671,22 +673,22 @@ type DropObjectType =
     | DropTable
     | DropView
 
-type DropObjectStmt<'t> =
+type [<NoComparison>] DropObjectStmt<'t> =
     {   Drop : DropObjectType
         ObjectName : ObjectName<'t>
     }
 
-type VendorStmtFragment<'t, 'e> =
+type [<NoComparison>] VendorStmtFragment<'t, 'e> =
     | VendorEmbeddedExpr of Expr<'t, 'e>
     | VendorRaw of string
 
-type VendorStmt<'t, 'e> =
+type [<NoComparison>] VendorStmt<'t, 'e> =
     {   VendorName : Name WithSource
         Fragments : VendorStmtFragment<'t, 'e> array
         ImaginaryStmts : Stmt<'t, 'e> array option
     }
 
-and Stmt<'t, 'e> =
+and [<NoComparison>] Stmt<'t, 'e> =
     | AlterTableStmt of AlterTableStmt<'t, 'e>
     | CreateIndexStmt of CreateIndexStmt<'t, 'e>
     | CreateTableStmt of CreateTableStmt<'t, 'e>
@@ -697,7 +699,7 @@ and Stmt<'t, 'e> =
     | SelectStmt of SelectStmt<'t, 'e>
     | UpdateStmt of UpdateStmt<'t, 'e>
 
-type TotalStmt<'t, 'e> =
+type [<NoComparison>] TotalStmt<'t, 'e> =
     | CoreStmt of Stmt<'t, 'e>
     | VendorStmt of VendorStmt<'t, 'e>
     member this.CoreStmts() =

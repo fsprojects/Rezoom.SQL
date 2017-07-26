@@ -161,9 +161,10 @@ type SQLiteBackend() =
                 let transform (expr : Quotations.Expr) =
                     let xform (dtExpr : Quotations.Expr<DateTime>) =
                         <@  let utcDt =
-                                if (%dtExpr).Kind = DateTimeKind.Unspecified
-                                then DateTime.SpecifyKind(%dtExpr, DateTimeKind.Utc)
-                                else (%dtExpr).ToUniversalTime()
+                                let dtExpr = %dtExpr
+                                if dtExpr.Kind = DateTimeKind.Unspecified
+                                then DateTime.SpecifyKind(dtExpr, DateTimeKind.Utc)
+                                else dtExpr.ToUniversalTime()
                             utcDt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") |> box
                         @>
                     let xform (dtExpr : Quotations.Expr) =
@@ -181,7 +182,8 @@ type SQLiteBackend() =
             | GuidType ->
                 let transform (expr : Quotations.Expr) =
                     let xform (gExpr : Quotations.Expr<Guid>) =
-                        <@  let bytes = (%gExpr).ToByteArray()
+                        <@  let guid = %gExpr
+                            let bytes = guid.ToByteArray()
                             box bytes
                         @>
                     let xform (gExpr : Quotations.Expr) =

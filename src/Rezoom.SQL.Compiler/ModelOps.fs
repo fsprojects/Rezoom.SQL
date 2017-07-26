@@ -108,6 +108,7 @@ let createEmptyTable (tableName : QualifiedObjectName WithSource) =
             return! putObject tableName (SchemaTable table)
     }
 
+[<NoComparison>]
 type AddingColumn =
     {   Name : Name WithSource
         TypeName : TypeName

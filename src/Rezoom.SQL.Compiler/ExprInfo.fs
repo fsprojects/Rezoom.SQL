@@ -1,6 +1,8 @@
 ﻿namespace Rezoom.SQL.Compiler
 open System.Collections.Generic
 
+[<NoComparison>]
+[<NoEquality>]
 type ExprInfo<'t> =
     {   /// The inferred type of this expression.
         Type : 't
@@ -28,87 +30,95 @@ type ExprInfo<'t> =
             Column = this.Column
         }
 
-and ColumnExprInfo<'t> =
-    {   Expr : Expr<'t ObjectInfo, 't ExprInfo>
-        FromAlias : Name option // table alias this was selected from, if any
-        ColumnName : Name
-    }
-    member this.Map(f : 't -> _) =
-        {   Expr =
-                let mapping = ASTMapping<'t ObjectInfo, 't ExprInfo, _, _>((fun t -> t.Map(f)), fun e -> e.Map(f))
-                mapping.Expr(this.Expr)
-            FromAlias = this.FromAlias
-            ColumnName = this.ColumnName
+and [<NoComparison>]
+    [<NoEquality>]
+    ColumnExprInfo<'t> =
+        {   Expr : Expr<'t ObjectInfo, 't ExprInfo>
+            FromAlias : Name option // table alias this was selected from, if any
+            ColumnName : Name
         }
+        member this.Map(f : 't -> _) =
+            {   Expr =
+                    let mapping = ASTMapping<'t ObjectInfo, 't ExprInfo, _, _>((fun t -> t.Map(f)), fun e -> e.Map(f))
+                    mapping.Expr(this.Expr)
+                FromAlias = this.FromAlias
+                ColumnName = this.ColumnName
+            }
 
-and QueryExprInfo<'t> =
-    {   Columns : 't ColumnExprInfo IReadOnlyList
-        /// If we know ahead of time how many rows will be returned, this is that.
-        StaticRowCount : int option
-    }
-    member this.Idempotent =
-        this.Columns |> Seq.forall (fun e -> e.Expr.Info.Idempotent)
-    member this.ColumnsWithNames(names) =
-        let mine = this.Columns |> toDictionary (fun c -> c.ColumnName)
-        let filtered =
-            seq {
-                for { WithSource.Source = source; Value = name } in names do
-                    let succ, found = mine.TryGetValue(name)
-                    if succ then yield found
-                    else failAt source <| Error.noSuchColumn name
-            } |> toReadOnlyList
-        { this with Columns = filtered }
-    member this.ColumnByName(name) =
-        let matches =
-            this.Columns
-            |> Seq.filter (fun c -> c.ColumnName = name)
-            |> Seq.truncate 2
-            |> Seq.toList
-        match matches with
-        | [] -> NotFound <| Error.noSuchColumn name
-        | [ single ] -> Found single
-        | { FromAlias = Some a1 } :: { FromAlias = Some a2 } :: _ when a1 <> a2 ->
-            Ambiguous <| Error.ambiguousColumnBetween name a1 a2
-        | _ -> Ambiguous <| Error.ambiguousColumn name
-    member this.RenameColumns(names : Name IReadOnlyList) =
-        if names.Count <> this.Columns.Count then
-            Error <| Error.mismatchedColumnNameCount names.Count this.Columns.Count
-        else
-            let newColumns =
-                (this.Columns, names)
-                ||> Seq.map2 (fun col newName -> { col with ColumnName = newName })
-                |> toReadOnlyList
-            Ok { this with Columns = newColumns }
-    member this.Append(right : 't QueryExprInfo) =
-        {   Columns = appendLists this.Columns right.Columns
-            StaticRowCount = None
+and [<NoComparison>]
+    [<NoEquality>]
+    QueryExprInfo<'t> =
+        {   Columns : 't ColumnExprInfo IReadOnlyList
+            /// If we know ahead of time how many rows will be returned, this is that.
+            StaticRowCount : int option
         }
-    member this.Map(f : 't -> _) =
-        {   Columns = this.Columns |> Seq.map (fun c -> c.Map(f)) |> toReadOnlyList
-            StaticRowCount = this.StaticRowCount
-        }
-    member this.MergeInfo(other : QueryExprInfo<'t>, merge : 't -> 't -> 't) =
-        {   Columns =
-                (this.Columns, other.Columns)
-                ||> Seq.map2 (fun c1 c2 ->
-                    { c1 with
-                        Expr =
-                            { c1.Expr with
-                                Info = { c1.Expr.Info with Type = merge c1.Expr.Info.Type c2.Expr.Info.Type } } })
-                |> ResizeArray
-            StaticRowCount = this.StaticRowCount
-        }
+        member this.Idempotent =
+            this.Columns |> Seq.forall (fun e -> e.Expr.Info.Idempotent)
+        member this.ColumnsWithNames(names) =
+            let mine = this.Columns |> toDictionary (fun c -> c.ColumnName)
+            let filtered =
+                seq {
+                    for { WithSource.Source = source; Value = name } in names do
+                        let succ, found = mine.TryGetValue(name)
+                        if succ then yield found
+                        else failAt source <| Error.noSuchColumn name
+                } |> toReadOnlyList
+            { this with Columns = filtered }
+        member this.ColumnByName(name) =
+            let matches =
+                this.Columns
+                |> Seq.filter (fun c -> c.ColumnName = name)
+                |> Seq.truncate 2
+                |> Seq.toList
+            match matches with
+            | [] -> NotFound <| Error.noSuchColumn name
+            | [ single ] -> Found single
+            | { FromAlias = Some a1 } :: { FromAlias = Some a2 } :: _ when a1 <> a2 ->
+                Ambiguous <| Error.ambiguousColumnBetween name a1 a2
+            | _ -> Ambiguous <| Error.ambiguousColumn name
+        member this.RenameColumns(names : Name IReadOnlyList) =
+            if names.Count <> this.Columns.Count then
+                Error <| Error.mismatchedColumnNameCount names.Count this.Columns.Count
+            else
+                let newColumns =
+                    (this.Columns, names)
+                    ||> Seq.map2 (fun col newName -> { col with ColumnName = newName })
+                    |> toReadOnlyList
+                Ok { this with Columns = newColumns }
+        member this.Append(right : 't QueryExprInfo) =
+            {   Columns = appendLists this.Columns right.Columns
+                StaticRowCount = None
+            }
+        member this.Map(f : 't -> _) =
+            {   Columns = this.Columns |> Seq.map (fun c -> c.Map(f)) |> toReadOnlyList
+                StaticRowCount = this.StaticRowCount
+            }
+        member this.MergeInfo(other : QueryExprInfo<'t>, merge : 't -> 't -> 't) =
+            {   Columns =
+                    (this.Columns, other.Columns)
+                    ||> Seq.map2 (fun c1 c2 ->
+                        { c1 with
+                            Expr =
+                                { c1.Expr with
+                                    Info = { c1.Expr.Info with Type = merge c1.Expr.Info.Type c2.Expr.Info.Type } } })
+                    |> ResizeArray
+                StaticRowCount = this.StaticRowCount
+            }
 
-and TableReference =
-    | TableReference of SchemaTable
-    | ViewReference of SchemaView * TCreateViewStmt
-    | CTEReference of Name
-    | FromClauseReference of Name
-    | SelectClauseReference of Name
-    | SelectResults
-    | CompoundTermResults
+and [<NoComparison>]
+    [<NoEquality>]
+    TableReference =
+        | TableReference of SchemaTable
+        | ViewReference of SchemaView * TCreateViewStmt
+        | CTEReference of Name
+        | FromClauseReference of Name
+        | SelectClauseReference of Name
+        | SelectResults
+        | CompoundTermResults
 
-and TableLikeExprInfo<'t> =
+and [<NoComparison>]
+    [<NoEquality>]
+    TableLikeExprInfo<'t> =
     {   Table : TableReference
         Query : QueryExprInfo<'t>
     }
@@ -117,7 +127,9 @@ and TableLikeExprInfo<'t> =
             Query = this.Query.Map(f)
         }
 
-and ObjectInfo<'t> =
+and [<NoComparison>]
+    [<NoEquality>]
+    ObjectInfo<'t> =
     | TableLike of 't TableLikeExprInfo
     | Index of SchemaIndex
     | Missing

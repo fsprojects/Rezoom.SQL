@@ -6,6 +6,8 @@ open System
 open System.Collections.Generic
 open Rezoom.SQL.Compiler.InferredTypes
 
+[<NoComparison>]
+[<NoEquality>]
 type CommandEffectCacheInfo =
     {   Idempotent : bool
         // schema name * table name
@@ -13,6 +15,8 @@ type CommandEffectCacheInfo =
         ReadTables : QualifiedObjectName IReadOnlyList
     }
 
+[<NoComparison>]
+[<NoEquality>]
 type CommandEffect =
     {   Statements : TTotalStmt IReadOnlyList
         Parameters : (BindParameter * ColumnType) IReadOnlyList

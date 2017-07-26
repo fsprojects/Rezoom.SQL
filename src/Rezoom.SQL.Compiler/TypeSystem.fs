@@ -246,3 +246,25 @@ type FunctionType
                     failAt source <| Error.insufficientArguments name i this.MinimumParameters
         if i < argList.Count then
             failAt (argSource argList.[i]) <| Error.excessiveArguments name argList.Count (i - 1)
+    override this.GetHashCode() =
+        let mutable h = hash name
+        for par in parameters do
+            h <- ((h <<< 5) + h) ^^^ hash par
+        h <- ((h <<< 5) + h) ^^^ hash returns
+        h <- ((h <<< 5) + h) ^^^ hash idem
+        h <- ((h <<< 5) + h) ^^^ hash this.Erased
+        h
+    member this.Equals(otherFunc : FunctionType) =
+        otherFunc.FunctionName = name
+        && otherFunc.Returns = returns
+        && otherFunc.Idempotent = idem
+        && otherFunc.Erased = this.Erased
+        && otherFunc.Parameters.Count = parameters.Count
+        && (otherFunc.Parameters, parameters) ||> Seq.forall2 (=)
+    override this.Equals(other : obj) =
+        match other with
+        | :? FunctionType as otherFunc ->
+            this.Equals(otherFunc)
+        | _ -> false
+    interface IEquatable<FunctionType> with
+        member this.Equals(otherFunc) = this.Equals(otherFunc)

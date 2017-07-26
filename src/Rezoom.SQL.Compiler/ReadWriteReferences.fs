@@ -199,6 +199,8 @@ type private ReferenceFinder(model : Model) =
         | CreateViewStmt _
         | DropObjectStmt _ -> ()
 
+[<NoComparison>]
+[<NoEquality>]
 type References =
     {   TablesRead : QualifiedObjectName IReadOnlyList
         TablesWritten : QualifiedObjectName IReadOnlyList

@@ -12,6 +12,8 @@ open FSharp.Quotations
 type IParameterIndexer =
     abstract member ParameterIndex : parameter : BindParameter -> int
 
+[<NoComparison>]
+[<NoEquality>]
 type ParameterTransform =
     {   ParameterType : DbType
         ValueTransform : Quotations.Expr -> Quotations.Expr

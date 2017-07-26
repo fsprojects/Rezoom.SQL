@@ -5,6 +5,7 @@ open System
 open System.Collections.Generic
 open Rezoom.SQL.Compiler.InferredTypes
 
+[<NoComparison>]
 type private AggReference =
     | Aggregate of SourceInfo
     | ColumnOutsideAggregate of InfExpr

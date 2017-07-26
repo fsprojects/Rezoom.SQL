@@ -1,6 +1,7 @@
 ﻿namespace Rezoom.SQL.Compiler
 open System.Collections.Generic
 
+[<NoComparison>]
 type DatabaseBuiltin =
     {   Functions : Map<Name, FunctionType>
     }
@@ -12,6 +13,7 @@ type QualifiedObjectName =
     override this.ToString() =
         this.SchemaName.Value + "." + this.ObjectName.Value
 
+[<NoComparison>]
 type Model =
     {   Schemas : Map<Name, Schema>
         DefaultSchema : Name
@@ -21,7 +23,7 @@ type Model =
     member this.Schema(name : Name option) =
         this.Schemas |> Map.tryFind (name |? this.DefaultSchema)
 
-and Schema =
+and [<NoComparison>] Schema =
     {   SchemaName : Name
         Objects : Map<Name, SchemaObject>
     }
@@ -31,7 +33,7 @@ and Schema =
         }
     member this.ContainsObject(name : Name) = this.Objects.ContainsKey(name)
 
-and SchemaObject =
+and [<NoComparison>] SchemaObject =
     | SchemaTable of SchemaTable
     | SchemaView of SchemaView
     | SchemaIndex of SchemaIndex
@@ -68,7 +70,7 @@ and SchemaReverseForeignKey =
         OnDelete : OnDeleteAction option
     }
 
-and SchemaTable =
+and [<NoComparison>] SchemaTable =
     {   Name : QualifiedObjectName
         Columns : Map<Name, SchemaColumn>
         Indexes : Map<Name, SchemaIndex>
@@ -76,7 +78,7 @@ and SchemaTable =
         ReverseForeignKeys : SchemaReverseForeignKey Set
     }
 
-and SchemaColumn =
+and [<NoComparison>] SchemaColumn =
     {   TableName : QualifiedObjectName
         ColumnName : Name
         /// True if this column is part of the table's primary key.
@@ -87,7 +89,7 @@ and SchemaColumn =
         Collation : Name option
     }
 
-and SchemaView =
+and [<NoComparison>] SchemaView =
     {   SchemaName : Name
         ViewName : Name
         CreateDefinition : CreateViewStmt

@@ -136,6 +136,8 @@ module private UserModelLoader =
 
 open UserModelLoader
 
+[<NoComparison>]
+[<NoEquality>]
 type UserModel =
     {   ConnectionName : string
         ConfigDirectory : string
