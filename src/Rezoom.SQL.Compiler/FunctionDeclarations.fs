@@ -85,7 +85,7 @@ type NonAggregateFunction(name, args, ret, idem) =
 type AggregateFunction(name, args, ret, allowWildcard, allowDistinct) =
     inherit FunctionType(name, args, ret, idem = true)
     override __.Aggregate(_) =
-        Some { AllowWildcard = allowWildcard; AllowDistinct = allowWildcard }
+        Some { AllowWildcard = allowWildcard; AllowDistinct = allowDistinct }
 
 let inline proc name args ret = NonAggregateFunction(Name(name), List.toArray args, ret, idem = false) :> FunctionType
 let inline func name args ret = NonAggregateFunction(Name(name), List.toArray args, ret, idem = true) :> FunctionType

@@ -79,7 +79,7 @@ type private TypeInferenceContext() =
             var.Unify(source, ListType (typeVariables.GetVar(varId)).CurrentType)
         | TypeKnown knownType ->
             var.Unify(source, ListType knownType)
-    member this.ForceNullable(source, nullable : InferredNullable) =
+    member this.ForceNullable(nullable : InferredNullable) =
         match nullable.Simplify() with
         | NullableDueToJoin _
         | NullableUnknown
@@ -123,7 +123,7 @@ type private TypeInferenceContext() =
         member this.Variable(parameter) = this.Variable(parameter) 
         member this.UnifyList(source, elem, list) = this.UnifyList(source, elem, list)
         member this.Unify(source, left, right) = this.Unify(source, left, right)
-        member this.ForceNullable(source, nullable) = this.ForceNullable(source, nullable)
+        member this.ForceNullable(_ : SourceInfo, nullable) = this.ForceNullable(nullable)
         member this.Concrete(inferred) = this.Concrete(inferred)
         member __.Parameters = typeVariables.BoundParameters :> _ seq
  

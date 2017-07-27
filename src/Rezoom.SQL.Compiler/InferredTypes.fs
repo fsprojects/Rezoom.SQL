@@ -197,7 +197,7 @@ type InferredFromClause =
     member this.ResolveTable(tableName : ObjectName) =
         match tableName.SchemaName with
         // We don't currently support referencing columns like "main.users.id". Use table aliases instead!
-        | Some schemaName -> Ambiguous <| Error.schemaNameInColumnReference tableName
+        | Some _ -> Ambiguous <| Error.schemaNameInColumnReference tableName
         | None ->
             let succ, query = this.FromVariables.TryGetValue(tableName.ObjectName)
             if succ then Found query

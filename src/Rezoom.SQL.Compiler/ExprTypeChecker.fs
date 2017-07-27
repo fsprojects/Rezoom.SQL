@@ -229,7 +229,7 @@ type private ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelect
                 } |> InExpr
             Info =
                 {   Type = InferredType.Dependent(input.Info.Type, BooleanType)
-                    Idempotent = input.Info.Idempotent
+                    Idempotent = input.Info.Idempotent && idempotent
                     Function = None
                     Column = None
                 }

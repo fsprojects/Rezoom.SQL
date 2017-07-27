@@ -73,7 +73,6 @@ type SourceInfo =
         then
             "(no known source (possibly generated code))"
         else
-            let context = 20
             let before = SourceInfo.ContextBefore(source.Substring(0, this.StartPosition.Index))
             let after = SourceInfo.ContextAfter(source.Substring(this.EndPosition.Index))
             let middle = source.Substring(this.StartPosition.Index, this.EndPosition.Index - this.StartPosition.Index)

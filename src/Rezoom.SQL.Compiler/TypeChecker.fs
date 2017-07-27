@@ -198,7 +198,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 let source = columns.[columns.Length - 1].Source
                 failAt source <| Error.expectedKnownColumnCount columns.Length shape.Columns.Count
             for i = 0 to columns.Length - 1 do
-                let selected, alias as selectedCol = columns.[i].Case.AssumeColumn()
+                let selected, alias = columns.[i].Case.AssumeColumn()
                 let shape = shape.Columns.[i]
                 cxt.UnifyLeftKnown(selected.Source, shape.Expr.Info.Type, selected.Info.Type)
                 match implicitAlias (selected.Value, alias) with
@@ -312,7 +312,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                     {   Table = CompoundTermResults
                         Query = { Columns = columns; StaticRowCount = Some vals.Length }
                     }, this, Values vals
-            | Values vals, None ->
+            | Values _, None ->
                 failAt term.Source Error.valuesRequiresKnownShape
             | Select select, knownShape ->
                 let checker, select = this.SelectCore(select, knownShape)
@@ -327,7 +327,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
         : TypeChecker * InfCompoundExpr =
         let nested f leftCompound rightTerm =
             match knownShape with
-            | Some _ as shape ->
+            | Some _ ->
                 let fromChecker, left = this.Compound(leftCompound, knownShape)
                 let _, right = this.CompoundTerm(rightTerm, knownShape)
                 fromChecker, f(left, right)
