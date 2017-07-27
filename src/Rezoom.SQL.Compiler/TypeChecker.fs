@@ -430,9 +430,26 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                         // technically we could figure it out if we're dealing w/ constants, but it's not worth it
                         TableLike { table with Query = { query with StaticRowCount = None } }
                     | _, other -> other
+                let orderBy = Option.map (rmap fromChecker.OrderingTerm) select.OrderBy
+                let info =
+                    if not info.Query.ClausesIdempotent then info else
+                    match info with
+                    | TableLike t ->
+                        let limitIdem =
+                            limit
+                            |> Option.forall (fun l ->
+                                l.Limit.Info.Idempotent
+                                && (l.Offset |> Option.forall (fun o -> o.Info.Idempotent)))
+                        let orderByIdem =
+                            orderBy
+                            |> Option.forall (fun o ->
+                                o |> Array.forall (fun e -> e.By.Info.Idempotent))
+                        let idem = limitIdem && orderByIdem
+                        TableLike { t with Query = { t.Query with ClausesIdempotent = idem } }
+                    | other -> other
                 {   With = withClause
                     Compound = compound
-                    OrderBy = Option.map (rmap fromChecker.OrderingTerm) select.OrderBy
+                    OrderBy = orderBy
                     Limit = limit
                     Info = info
                 }
