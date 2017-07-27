@@ -91,6 +91,7 @@
     <Compile Include="TSQL.Statement.fs" />
     <Compile Include="TSQL.fs" />
     <Compile Include="Postgres.Functions.fs" />
+    <Compile Include="Postgres.MigrationBackend.fs" />
     <Compile Include="Postgres.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="UserModel.fs" />

@@ -178,7 +178,7 @@ type PostgresBackend() =
                 }
         }
     interface IBackend with
-        member this.MigrationBackend = <@ fun conn -> new DefaultMigrationBackend(conn) :> IMigrationBackend @>
+        member this.MigrationBackend = <@ fun conn -> new PostgresMigrationBackend(conn) :> IMigrationBackend @>
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
         member this.ToCommandFragments(indexer, stmts) =
