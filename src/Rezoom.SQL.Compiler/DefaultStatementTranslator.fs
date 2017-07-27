@@ -340,7 +340,9 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield text "DEFAULT"
                 yield ws
+                yield text "("
                 yield! this.Expr.Expr(defaultValue, FirstClassValue)
+                yield text ")"
             yield!
                 col.Constraints
                 |> Seq.collect (fun constr -> seq { yield linebreak; yield! this.ColumnConstraint(table, constr) })
@@ -396,7 +398,9 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield this.Expr.Name(name)
                 yield ws
+                yield text "("
                 yield! this.Expr.Expr(defaultValue, FirstClassValue)
+                yield text ")"
             | DropColumn name ->
                 yield text "DROP COLUMN"
                 yield ws

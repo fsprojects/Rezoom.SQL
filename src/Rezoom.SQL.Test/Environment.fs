@@ -149,6 +149,10 @@ let private runSimple (test : SimpleTest) =
     | :? SQLCompilerException as mexn ->
         BadMigration mexn.Message
 
+type String with
+    member this.SmushWhitespace() =
+        Regex.Replace(this.Trim(), @"[ \r\n]+", " ")
+
 let private assertMatchExpectation (expect : SimpleTestExpectation) (result : SimpleTestExpectation) =
     let (?==) l r =
         match l, r with
@@ -160,12 +164,13 @@ let private assertMatchExpectation (expect : SimpleTestExpectation) (result : Si
     | BadCommand e, BadCommand r
     | BadMigration e, BadMigration r when e = r -> ()
     | Good e, Good r ->
+        let smush (s : string option) = s |> Option.map (fun s -> s.SmushWhitespace())
         let matched =
             e.Idempotent ?== r.Idempotent
             && e.ResultSets ?== r.ResultSets
             && e.Parameters ?== r.Parameters
-            && e.OutputCommand ?== r.OutputCommand
-            && e.OutputMigration ?== r.OutputMigration
+            && smush e.OutputCommand ?== smush r.OutputCommand
+            && smush e.OutputMigration ?== smush r.OutputMigration
             && e.WriteTables ?== r.WriteTables
             && e.ReadTables ?== r.ReadTables
         if matched then () else failwithf "Mismatch: %A vs %A" e r
@@ -175,8 +180,4 @@ let private assertMatchExpectation (expect : SimpleTestExpectation) (result : Si
 let assertSimple (test : SimpleTest) =
     let ran = runSimple test
     assertMatchExpectation test.Expect ran
-
-type String with
-    member this.SmushWhitespace() =
-        Regex.Replace(this.Trim(), @"[ \r\n]+", " ")
     

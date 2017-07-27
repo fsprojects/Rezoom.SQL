@@ -62,6 +62,76 @@ let ``sqlite custom table constraint name`` () =
     } |> assertSimple
 
 [<Test>]
+let ``sqlite example migration script`` () =
+    { sqliteTest with
+        Command =
+            """
+create table Pictures
+( SHA256 binary(32) primary key
+, PNGData binary(4096)
+);
+
+create table Users
+( Id int64 primary key autoincrement
+, Name string(80)
+, Email string(254)
+, ProfilePictureSHA256 binary(32) null references Pictures(SHA256)
+, Created datetime
+, RandomId guid default(cast(randomblob(16) as guid))
+);
+
+create table Articles
+( Id int64 primary key autoincrement
+, AuthorId int64 references Users(Id)
+, ArticleTitle string(80)
+, ArticleText string(4096)
+);
+
+create index IX_Articles_AuthorId on Articles(AuthorId);
+
+create table ArticleComments
+( Id int64 primary key autoincrement
+, ArticleId int64 references Articles(Id)
+, AuthorId int64 references Users(Id)
+, CommentText string(512)
+);
+
+create index IX_ArticleComments_AuthorId on ArticleComments(AuthorId);
+            """
+        Expect =
+            { expect with
+                OutputCommand =
+                    """
+CREATE TABLE "Pictures"
+( "SHA256" BLOB NOT NULL CONSTRAINT "SHA256_PK" PRIMARY KEY ASC
+, "PNGData" BLOB NOT NULL
+);
+CREATE TABLE "Users"
+( "Id" INTEGER NOT NULL CONSTRAINT "Id_PK" PRIMARY KEY ASC AUTOINCREMENT
+, "Name" VARCHAR NOT NULL , "Email" VARCHAR NOT NULL
+, "ProfilePictureSHA256" BLOB CONSTRAINT "ProfilePictureSHA256_FK_Pictures_SHA256" REFERENCES "Pictures" ("SHA256")
+, "Created" VARCHAR NOT NULL
+, "RandomId" BLOB NOT NULL DEFAULT (CAST(randomblob(16) AS BLOB))
+);
+CREATE TABLE "Articles"
+( "Id" INTEGER NOT NULL CONSTRAINT "Id_PK" PRIMARY KEY ASC AUTOINCREMENT
+, "AuthorId" INTEGER NOT NULL CONSTRAINT "AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
+, "ArticleTitle" VARCHAR NOT NULL
+, "ArticleText" VARCHAR NOT NULL
+);
+CREATE INDEX "IX_Articles_AuthorId" ON "Articles" ( "AuthorId" ASC );
+CREATE TABLE "ArticleComments"
+( "Id" INTEGER NOT NULL CONSTRAINT "Id_PK" PRIMARY KEY ASC AUTOINCREMENT
+, "ArticleId" INTEGER NOT NULL CONSTRAINT "ArticleId_FK_Articles_Id" REFERENCES "Articles" ("Id")
+, "AuthorId" INTEGER NOT NULL CONSTRAINT "AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
+, "CommentText" VARCHAR NOT NULL
+);
+CREATE INDEX "IX_ArticleComments_AuthorId" ON "ArticleComments" ( "AuthorId" ASC );
+                    """.SmushWhitespace() |> Some
+            } |> Good
+    } |> assertSimple
+
+[<Test>]
 let ``sqlite dump function signatures`` () =
     for KeyValue(_, func) in sqliteTest.TestBackend.InitialModel.Builtin.Functions do
         printfn "%s" (dumpSignature func)
