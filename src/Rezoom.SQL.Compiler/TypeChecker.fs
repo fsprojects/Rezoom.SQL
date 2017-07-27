@@ -242,14 +242,32 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                      // typechecker should've eliminated alternatives
                      | _ -> bug "All wildcards must be expanded -- this is a typechecker bug"
             } |> toReadOnlyList
+        let where, whereIdempotent =
+            match select.Where with
+            | None -> None, true
+            | Some where ->
+                let where = checker.BooleanExpr(where)
+                Some where, where.Info.Idempotent
+        let groupBy, groupByIdempotent =
+            match select.GroupBy with
+            | None -> None, true
+            | Some groupBy ->
+                let groupBy = checker.GroupBy(groupBy)
+                let byIdempotent = groupBy.By |> Array.forall (fun e -> e.Info.Idempotent)
+                let havingIdempotent = groupBy.Having |> Option.forall (fun e -> e.Info.Idempotent)
+                Some groupBy, byIdempotent && havingIdempotent
         checker,
             {   Columns = columns
                 From = from
-                Where = Option.map checker.BooleanExpr select.Where
-                GroupBy = Option.map checker.GroupBy select.GroupBy
+                Where = where
+                GroupBy = groupBy
                 Info =
                     {   Table = SelectResults
-                        Query = { Columns = infoColumns; StaticRowCount = staticCount }
+                        Query =
+                            {   Columns = infoColumns
+                                StaticRowCount = staticCount
+                                ClausesIdempotent = whereIdempotent && groupByIdempotent
+                            }
                     } |> TableLike
             } |> AggregateChecker.check
 
@@ -308,9 +326,10 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                                         ColumnName = colShape.ColumnName
                                     }
                     } |> toReadOnlyList
+                let idempotent = vals |> Array.forall (fun r -> r.Value |> Array.forall (fun v -> v.Info.Idempotent))
                 TableLike
                     {   Table = CompoundTermResults
-                        Query = { Columns = columns; StaticRowCount = Some vals.Length }
+                        Query = { Columns = columns; StaticRowCount = Some vals.Length; ClausesIdempotent = idempotent }
                     }, this, Values vals
             | Values _, None ->
                 failAt term.Source Error.valuesRequiresKnownShape

@@ -72,6 +72,7 @@
     <Compile Include="TestManyPrimitives.fs" />
     <Compile Include="TestQueryParents.fs" />
     <Compile Include="TestAlterTable.fs" />
+    <Compile Include="TestIdempotence.fs" />
     <Compile Include="TestReadWriteReferences.fs" />
     <Compile Include="TestCTEs.fs" />
     <Compile Include="TestSQLite.fs" />

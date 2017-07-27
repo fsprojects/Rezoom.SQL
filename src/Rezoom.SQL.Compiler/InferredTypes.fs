@@ -180,6 +180,7 @@ let inferredOfTable (table : SchemaTable) =
             |> Seq.map (function KeyValue(_, c) -> queryColumnInfoOf (Some table.Name.ObjectName) c)
             |> toReadOnlyList
         StaticRowCount = None
+        ClausesIdempotent = true
     }
 
 [<NoComparison>]

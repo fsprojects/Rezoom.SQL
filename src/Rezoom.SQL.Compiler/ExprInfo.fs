@@ -51,9 +51,10 @@ and [<NoComparison>]
         {   Columns : 't ColumnExprInfo IReadOnlyList
             /// If we know ahead of time how many rows will be returned, this is that.
             StaticRowCount : int option
+            ClausesIdempotent : bool
         }
         member this.Idempotent =
-            this.Columns |> Seq.forall (fun e -> e.Expr.Info.Idempotent)
+            this.ClausesIdempotent && this.Columns |> Seq.forall (fun e -> e.Expr.Info.Idempotent)
         member this.ColumnsWithNames(names) =
             let mine = this.Columns |> toDictionary (fun c -> c.ColumnName)
             let filtered =
@@ -88,10 +89,12 @@ and [<NoComparison>]
         member this.Append(right : 't QueryExprInfo) =
             {   Columns = appendLists this.Columns right.Columns
                 StaticRowCount = None
+                ClausesIdempotent = this.ClausesIdempotent && right.ClausesIdempotent
             }
         member this.Map(f : 't -> _) =
             {   Columns = this.Columns |> Seq.map (fun c -> c.Map(f)) |> toReadOnlyList
                 StaticRowCount = this.StaticRowCount
+                ClausesIdempotent = this.ClausesIdempotent
             }
         member this.MergeInfo(other : QueryExprInfo<'t>, merge : 't -> 't -> 't) =
             {   Columns =
@@ -102,7 +105,8 @@ and [<NoComparison>]
                                 { c1.Expr with
                                     Info = { c1.Expr.Info with Type = merge c1.Expr.Info.Type c2.Expr.Info.Type } } })
                     |> ResizeArray
-                StaticRowCount = this.StaticRowCount
+                StaticRowCount = None
+                ClausesIdempotent = this.ClausesIdempotent && other.ClausesIdempotent
             }
 
 and [<NoComparison>]

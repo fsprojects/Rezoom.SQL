@@ -228,7 +228,7 @@ let ``between expr`` () =
             and 'b' between 'a' and 'c';"""
         Expect =
             {   expect with
-                    Idempotent = Some true
+                    Idempotent = Some false
                     ResultSets = Some [ [ "it", { Type = NumericTypeClass; Nullable = false } ] ];
             } |> Good
     } |> assertSimple
