@@ -83,8 +83,12 @@
     <Compile Include="DefaultStatementTranslator.fs" />
     <Compile Include="DefaultFunctions.fs" />
     <Compile Include="DefaultBackend.fs" />
+    <Compile Include="SQLite.Functions.fs" />
     <Compile Include="SQLite.fs" />
+    <Compile Include="TSQL.Functions.fs" />
+    <Compile Include="TSQL.MigrationBackend.fs" />
     <Compile Include="TSQL.fs" />
+    <Compile Include="Postgres.Functions.fs" />
     <Compile Include="Postgres.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="UserModel.fs" />
