@@ -30,14 +30,16 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
     override __.Name(name) =
         "\"" + name.Value.ToLowerInvariant().Replace("\"", "\"\"") + "\""
         |> text
-    override __.TypeName(name) =
+    override __.TypeName(name, autoIncrement) =
         (Seq.singleton << text) <|
             match name with
             | BooleanTypeName -> "BOOLEAN"
             | GuidTypeName -> "UUID"
             | IntegerTypeName Integer16 -> "SMALLINT"
-            | IntegerTypeName Integer32 -> "INT"
-            | IntegerTypeName Integer64 -> "BIGINT"
+            | IntegerTypeName Integer32 ->
+                if autoIncrement then "SERIAL" else "INT"
+            | IntegerTypeName Integer64 ->
+                if autoIncrement then "BIGSERIAL" else "BIGINT"
             | FloatTypeName Float32 -> "FLOAT4"
             | FloatTypeName Float64 -> "FLOAT8"
             | StringTypeName(Some len) -> "VARCHAR(" + string len + ")"
@@ -162,7 +164,15 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
                 yield! changeType change.Column schemaColumn.ColumnTypeName (Some change.NewCollation)
         }
-    // TODO: figure out PG quirks
+    override this.PrimaryKeyClause(pk) =
+        seq {
+            yield text "PRIMARY KEY"
+            match pk.Order with
+            | Ascending -> ()
+            | Descending ->
+                fail <| Error.backendDoesNotSupportFeature "Postgres" "Descending PK declared with column definition"
+            // no need to look at pk.AutoIncrement, because our TypeName will handle it
+        }
 
 type PostgresBackend() =
     static let initialModel =

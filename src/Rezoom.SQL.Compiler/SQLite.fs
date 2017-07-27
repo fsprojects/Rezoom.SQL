@@ -23,13 +23,13 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
     let literal = SQLiteLiteral()
     override __.Literal = upcast literal
-    override __.TypeName(name) =
+    override __.TypeName(name, autoIncrement) =
         (Seq.singleton << text) <|
             match name with
             | BooleanTypeName
             | IntegerTypeName Integer16
             | IntegerTypeName Integer32
-            | IntegerTypeName Integer64 -> "INTEGER"
+            | IntegerTypeName Integer64 -> if autoIncrement then "INTEGER" else "INT"
             | FloatTypeName Float32
             | FloatTypeName Float64 -> "FLOAT"
             | DateTimeTypeName // store datetimes as UTC ISO8601 strings -- yyyy-MM-ddTHH:mm:ssZ

@@ -81,7 +81,8 @@ and [<AbstractClass>] ExprTranslator() =
     abstract member BindParameter : par : BindParameter -> Fragment
     abstract member ObjectName : name : TObjectName -> Fragments
     abstract member ColumnName : column : TColumnName -> Fragments
-    abstract member TypeName : TypeName -> Fragments
+    abstract member TypeName : ty : TypeName * autoIncrement : bool -> Fragments
+    member this.TypeName(ty) = this.TypeName(ty, autoIncrement = false)
     abstract member Cast : castExpr : TCastExpr -> Fragments
     abstract member Collate : expr : TExpr * collation : Name -> Fragments
     abstract member Invoke : func : TFunctionInvocationExpr -> Fragments

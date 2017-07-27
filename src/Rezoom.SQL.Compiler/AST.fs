@@ -527,6 +527,12 @@ type [<NoComparison>] ColumnDef<'t, 'e> =
         DefaultValue : Expr<'t, 'e> option
         Constraints : ColumnConstraint<'t, 'e> array
     }
+    member this.IsAutoIncrementPrimaryKey =
+        this.Constraints
+        |> Array.exists (fun c ->
+            match c.ColumnConstraintType with
+            | PrimaryKeyConstraint c when c.AutoIncrement -> true
+            | _ -> false)
 
 type TableIndexConstraintType =
     | PrimaryKey

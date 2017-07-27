@@ -9,7 +9,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
     override __.Name(name) =
         "\"" + name.Value.Replace("\"", "\"\"") + "\""
         |> text
-    override __.TypeName(name) =
+    override __.TypeName(name, _) =
         (Seq.singleton << text) <|
             match name with
             | BooleanTypeName -> "BOOL"

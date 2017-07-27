@@ -76,6 +76,7 @@
     <Compile Include="TestReadWriteReferences.fs" />
     <Compile Include="TestCTEs.fs" />
     <Compile Include="TestSQLite.fs" />
+    <Compile Include="TestPostgres.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

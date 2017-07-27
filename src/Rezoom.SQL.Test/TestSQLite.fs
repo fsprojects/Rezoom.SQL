@@ -43,7 +43,7 @@ let ``sqlite custom constraint name`` () =
             { expect with
                 OutputCommand =
                     """
-                    CREATE TABLE "X"  ( "a" INTEGER NOT NULL CONSTRAINT "myname" UNIQUE );
+                    CREATE TABLE "X"  ( "a" INT NOT NULL CONSTRAINT "myname" UNIQUE );
                     """.Trim() |> Some
             } |> Good
     } |> assertSimple
@@ -56,7 +56,7 @@ let ``sqlite custom table constraint name`` () =
             { expect with
                 OutputCommand =
                     """
-                    CREATE TABLE "X"  ( "a" INTEGER NOT NULL , CONSTRAINT "myname" UNIQUE("a" ASC) );
+                    CREATE TABLE "X"  ( "a" INT NOT NULL , CONSTRAINT "myname" UNIQUE("a" ASC) );
                     """.Trim() |> Some
             } |> Good
     } |> assertSimple
@@ -115,15 +115,15 @@ CREATE TABLE "Users"
 );
 CREATE TABLE "Articles"
 ( "Id" INTEGER NOT NULL CONSTRAINT "Id_PK" PRIMARY KEY ASC AUTOINCREMENT
-, "AuthorId" INTEGER NOT NULL CONSTRAINT "AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
+, "AuthorId" INT NOT NULL CONSTRAINT "AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
 , "ArticleTitle" VARCHAR NOT NULL
 , "ArticleText" VARCHAR NOT NULL
 );
 CREATE INDEX "IX_Articles_AuthorId" ON "Articles" ( "AuthorId" ASC );
 CREATE TABLE "ArticleComments"
 ( "Id" INTEGER NOT NULL CONSTRAINT "Id_PK" PRIMARY KEY ASC AUTOINCREMENT
-, "ArticleId" INTEGER NOT NULL CONSTRAINT "ArticleId_FK_Articles_Id" REFERENCES "Articles" ("Id")
-, "AuthorId" INTEGER NOT NULL CONSTRAINT "AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
+, "ArticleId" INT NOT NULL CONSTRAINT "ArticleId_FK_Articles_Id" REFERENCES "Articles" ("Id")
+, "AuthorId" INT NOT NULL CONSTRAINT "AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
 , "CommentText" VARCHAR NOT NULL
 );
 CREATE INDEX "IX_ArticleComments_AuthorId" ON "ArticleComments" ( "AuthorId" ASC );

@@ -103,6 +103,11 @@ let tsqlTest =
         TestBackend = TSQL.TSQLBackend()
     }
 
+let postgresTest =
+    { defaultTest with
+        TestBackend = Postgres.PostgresBackend()
+    }
+
 let private runSimple (test : SimpleTest) =
     let indexer = dispenserParameterIndexer()
     try
