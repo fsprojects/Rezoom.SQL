@@ -35,3 +35,15 @@ let ``can't add same constraint name to different tables`` () =
         Command = ""
         Expect = BadCommand <| Error.objectAlreadyExists "main.nm"
     } |> assertSimple
+
+[<Test>]
+let ``can add same constraint name to different table after dropping`` () =
+    { defaultTest with
+        Migration = """
+            create table Foo(x int constraint nm primary key, y int);
+            alter table Foo drop constraint nm;
+            create table Bar(z int constraint nm primary key);
+        """
+        Command = ""
+        Expect = expect |> Good
+    } |> assertSimple
