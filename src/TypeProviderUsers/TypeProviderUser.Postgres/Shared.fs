@@ -7,6 +7,16 @@ open System.IO
 
 type TestModel = SQLModel<".">
 
+type CleanTestData = SQL<"""
+vendor postgres {
+    drop table __RZSQL_MIGRATIONS;
+    drop table ArticleComments;
+    drop table Articles;
+    drop table Users;
+    drop table Pictures;
+}
+""">
+
 type TestData = SQL<"""
 insert into Pictures(SHA256, PNGData)
 values  ( x'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
@@ -52,10 +62,11 @@ values  ( (select Id from Users where Name = 'Marge')
 
 [<AutoOpen>]
 module Helpers =
-    let dbFileName = "rzsql.db"
     let runOnTestData (cmd : Command<'a>) =
-        if File.Exists(dbFileName) then
-            File.Delete(dbFileName)
+        TestModel.Migrate(MigrationConfig.Default)
+        do
+            use cxt = new ConnectionContext()
+            CleanTestData.Command().Execute(cxt)
         TestModel.Migrate(MigrationConfig.Default)
         use cxt = new ConnectionContext()
         TestData.Command().Execute(cxt)

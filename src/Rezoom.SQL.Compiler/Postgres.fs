@@ -15,11 +15,11 @@ type private PostgresLiteral() =
         let hexPairs = bytes |> Array.map (fun b -> b.ToString("X2", CultureInfo.InvariantCulture))
         @"BYTEA E'\\x" + String.Concat(hexPairs) + "'" |> text
     override __.DateTimeLiteral(dt) =
-        "TIMESTAMPTZ " + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") |> text
+        "TIMESTAMPTZ '" + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") + "'" |> text
     override __.DateTimeOffsetLiteral(dt) =
         // Can't really store a DateTimeOffset, but we should let people use it since it's the only .NET
         // type that unambiguously represents a moment in time.
-        "TIMESTAMPTZ " + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffzzz") |> text
+        "TIMESTAMPTZ '" + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffzzz") + "'" |> text
     override __.StringLiteral(str) =
         CommandText <| "'" + str.Replace("'", "''") + "'"
 
