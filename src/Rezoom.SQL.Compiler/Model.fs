@@ -37,6 +37,7 @@ and [<NoComparison>] SchemaObject =
     | SchemaTable of SchemaTable
     | SchemaView of SchemaView
     | SchemaIndex of SchemaIndex
+    | SchemaConstraint of SchemaConstraint
 
 and SchemaIndex =
     {   TableName : QualifiedObjectName

@@ -24,3 +24,14 @@ let ``removing default denies insert without column value`` () =
         Command = "insert into Foo row y = 2"
         Expect = BadCommand <| Error.insertMissingColumns ["x"]
     } |> assertSimple
+
+[<Test>]
+let ``can't add same constraint name to different tables`` () =
+    { defaultTest with
+        Migration = """
+            create table Foo(x int constraint nm primary key, y int);
+            create table Bar(z int constraint nm primary key);
+        """
+        Command = ""
+        Expect = BadCommand <| Error.objectAlreadyExists "main.nm"
+    } |> assertSimple

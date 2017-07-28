@@ -19,6 +19,14 @@ let getObject (name : QualifiedObjectName) =
             return schema.Objects |> Map.tryFind name.ObjectName
     }
 
+let private requireNoObject (name : QualifiedObjectName WithSource) =
+    stateful {
+        let! obj = getObject name.Value
+        match obj with
+        | Some _ -> failAt name.Source <| Error.objectAlreadyExists name.Value
+        | None -> ()
+    }
+
 let getRequiredObject objectTypeName (name : QualifiedObjectName WithSource) =
     stateful {
         let! schema = getSchema name.Value.SchemaName
@@ -93,19 +101,15 @@ let removeObject (name : QualifiedObjectName WithSource) =
 /// Create a new table with a given name.
 let createEmptyTable (tableName : QualifiedObjectName WithSource) =
     stateful {
-        let! existing = getObject tableName.Value
-        match existing with
-        | Some _ ->
-            failAt tableName.Source <| Error.objectAlreadyExists tableName.Value
-        | None ->
-            let table =
-                {   Name = tableName.Value
-                    Columns = Map.empty
-                    Indexes = Map.empty
-                    Constraints = Map.empty
-                    ReverseForeignKeys = Set.empty
-                }
-            return! putObject tableName (SchemaTable table)
+        do! requireNoObject tableName
+        let table =
+            {   Name = tableName.Value
+                Columns = Map.empty
+                Indexes = Map.empty
+                Constraints = Map.empty
+                ReverseForeignKeys = Set.empty
+            }
+        return! putObject tableName (SchemaTable table)
     }
 
 [<NoComparison>]
@@ -148,6 +152,10 @@ let private replaceMany xs key map =
 /// Add a table constraint.
 let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName : Name WithSource) constraintType cols =
     stateful {
+        let qualifiedConstraintName =
+            { SchemaName = tableName.Value.SchemaName; ObjectName = constraintName.Value }
+            |> atSource constraintName.Source
+        do! requireNoObject qualifiedConstraintName
         let! table = getRequiredTable tableName
         match table.Constraints |> Map.tryFind constraintName.Value with
         | None ->
@@ -168,6 +176,7 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                 | CheckConstraintType
                 | UniqueConstraintType -> table
             do! putObject tableName (SchemaTable table)
+            do! putObject qualifiedConstraintName (SchemaConstraint constr)
             match constraintType with
             | ForeignKeyConstraintType fk ->
                 let targetName = artificialSource fk.ToTable
@@ -189,39 +198,31 @@ let createIndex (tableName : QualifiedObjectName WithSource) (indexName : Qualif
     stateful {
         if indexName.Value.SchemaName <> tableName.Value.SchemaName then
             failAt indexName.Source <| Error.indexSchemasMismatch indexName.Value tableName.Value
-        let! existing = getObject indexName.Value
-        match existing with
-        | Some _ ->
-            failAt indexName.Source <| Error.objectAlreadyExists indexName.Value
+        do! requireNoObject indexName
+        let! table = getRequiredTable tableName
+        match table.Indexes |> Map.tryFind indexName.Value.ObjectName with
         | None ->
-            let! table = getRequiredTable tableName
-            match table.Indexes |> Map.tryFind indexName.Value.ObjectName with
-            | None ->
-                let index =
-                    {   TableName = tableName.Value
-                        IndexName = indexName.Value.ObjectName
-                        Columns = cols
-                    }
-                let table = { table with Indexes = table.Indexes |> Map.add indexName.Value.ObjectName index }
-                do! putObject indexName (SchemaIndex index)
-                return! putObject tableName (SchemaTable table)
-            | Some _ -> failAt indexName.Source <| Error.indexAlreadyExists indexName.Value
+            let index =
+                {   TableName = tableName.Value
+                    IndexName = indexName.Value.ObjectName
+                    Columns = cols
+                }
+            let table = { table with Indexes = table.Indexes |> Map.add indexName.Value.ObjectName index }
+            do! putObject indexName (SchemaIndex index)
+            return! putObject tableName (SchemaTable table)
+        | Some _ -> failAt indexName.Source <| Error.indexAlreadyExists indexName.Value
     }
 
 /// Create a view.
 let createView (viewName : QualifiedObjectName WithSource) (createDefinition : CreateViewStmt) =
     stateful {
-        let! existing = getObject viewName.Value
-        match existing with
-        | Some _ ->
-            failAt viewName.Source <| Error.objectAlreadyExists viewName.Value
-        | None ->
-            let view =
-                {   SchemaName = viewName.Value.SchemaName
-                    ViewName = viewName.Value.ObjectName
-                    CreateDefinition = createDefinition
-                }
-            return! putObject viewName (SchemaView view)
+        do! requireNoObject viewName
+        let view =
+            {   SchemaName = viewName.Value.SchemaName
+                ViewName = viewName.Value.ObjectName
+                CreateDefinition = createDefinition
+            }
+        return! putObject viewName (SchemaView view)
     }
 
 /// Rename an existing table *and* update other references in the schema that point to it (child objects of the table
@@ -229,35 +230,31 @@ let createView (viewName : QualifiedObjectName WithSource) (createDefinition : C
 let renameTable (oldName : QualifiedObjectName WithSource) (newName : QualifiedObjectName WithSource) =
     stateful {
         let! oldTable = getRequiredTable oldName
-        let! existing = getObject newName.Value
-        match existing with
-        | Some _ ->
-            failAt newName.Source <| Error.objectAlreadyExists newName.Value
-        | None ->
-            let tn = newName.Value
-            let newTable =
-                {   Name = tn
-                    Columns = oldTable.Columns |> mapValues (fun c -> { c with TableName = tn })
-                    Indexes = oldTable.Indexes |> mapValues (fun i -> { i with TableName = tn })
-                    Constraints = oldTable.Constraints |> mapValues (fun c -> { c with TableName = tn })
-                    ReverseForeignKeys = oldTable.ReverseForeignKeys
+        do! requireNoObject newName
+        let tn = newName.Value
+        let newTable =
+            {   Name = tn
+                Columns = oldTable.Columns |> mapValues (fun c -> { c with TableName = tn })
+                Indexes = oldTable.Indexes |> mapValues (fun i -> { i with TableName = tn })
+                Constraints = oldTable.Constraints |> mapValues (fun c -> { c with TableName = tn })
+                ReverseForeignKeys = oldTable.ReverseForeignKeys
+            }
+        do! removeObject oldName
+        do! putObject newName (SchemaTable newTable)
+        for reverseFk in newTable.ReverseForeignKeys do
+            let fromTableName = artificialSource reverseFk.FromTable
+            let! fromTable = getRequiredTable fromTableName
+            let fromTable =
+                let updateConstraint (constr : SchemaConstraint) =
+                    match constr.ConstraintType with
+                    | ForeignKeyConstraintType fk ->
+                        { constr with
+                            ConstraintType = ForeignKeyConstraintType { fk with ToTable = newName.Value } }
+                    | _ -> constr
+                { fromTable with
+                    Constraints = fromTable.Constraints |> mapValues updateConstraint
                 }
-            do! removeObject oldName
-            do! putObject newName (SchemaTable newTable)
-            for reverseFk in newTable.ReverseForeignKeys do
-                let fromTableName = artificialSource reverseFk.FromTable
-                let! fromTable = getRequiredTable fromTableName
-                let fromTable =
-                    let updateConstraint (constr : SchemaConstraint) =
-                        match constr.ConstraintType with
-                        | ForeignKeyConstraintType fk ->
-                            { constr with
-                                ConstraintType = ForeignKeyConstraintType { fk with ToTable = newName.Value } }
-                        | _ -> constr
-                    { fromTable with
-                        Constraints = fromTable.Constraints |> mapValues updateConstraint
-                    }
-                do! putObject fromTableName (SchemaTable fromTable)
+            do! putObject fromTableName (SchemaTable fromTable)
     }
 
 let dropColumn tableName (column : Name) =
@@ -339,6 +336,10 @@ let dropConstraint (tableName : QualifiedObjectName WithSource) (constraintName 
         | Some constr ->
             let table = { table with Constraints = table.Constraints |> Map.remove constraintName.Value }
             do! putObject tableName (SchemaTable table)
+            let qualifiedConstraintName =
+                { SchemaName = tableName.Value.SchemaName; ObjectName = constraintName.Value }
+                |> atSource constraintName.Source
+            do! removeObject qualifiedConstraintName
             match constr.ConstraintType with
             | ForeignKeyConstraintType fk ->
                 // go remove reverse FK from targeted table
