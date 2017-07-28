@@ -152,6 +152,30 @@ ALTER TABLE [Foo] ADD [z] NVARCHAR(80) COLLATE SQL_Latin1_General_CP1_CI_AS CONS
         """.SmushWhitespace())
 
 [<Test>]
+let ``tsql dropping column with default yells`` () =
+    { tsqlTest with
+        Migration =
+            """
+create table foo(x int default 0, y int);
+alter table foo drop column x;
+            """
+        Expect =
+            BadMigration <| Error.cannotDropColumnWithDefault "x"
+    } |> assertSimple
+
+[<Test>]
+let ``tsql dropping column after dropping default is ok`` () =
+    { tsqlTest with
+        Migration =
+            """
+create table foo(x int default 0, y int);
+alter table foo drop default for x;
+alter table foo drop column x;
+            """
+        Expect = expect |> Good
+    } |> assertSimple
+
+[<Test>]
 let ``tsql dump function signatures`` () =
     for KeyValue(_, func) in tsqlTest.TestBackend.InitialModel.Builtin.Functions do
         printfn "%s" (dumpSignature func)

@@ -33,7 +33,7 @@ let ``can't add same constraint name to different tables`` () =
             create table Bar(z int constraint nm primary key);
         """
         Command = ""
-        Expect = BadCommand <| Error.objectAlreadyExists "main.nm"
+        Expect = BadMigration <| Error.objectAlreadyExists "main.nm"
     } |> assertSimple
 
 [<Test>]

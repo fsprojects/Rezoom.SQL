@@ -17,6 +17,9 @@ type TSQLBackend() =
             Builtin =
                 {   Functions = TSQLFunctions.functions
                 }
+            BackendCharacteristics =
+                {   CanDropColumnWithDefaultValue = false
+                }
         }
     interface IBackend with
         member this.MigrationBackend = <@ fun conn -> new TSQLMigrationBackend(conn) :> IMigrationBackend @>

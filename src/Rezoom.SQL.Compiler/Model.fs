@@ -13,12 +13,17 @@ type QualifiedObjectName =
     override this.ToString() =
         this.SchemaName.Value + "." + this.ObjectName.Value
 
+type BackendCharacteristics =
+    {   CanDropColumnWithDefaultValue : bool
+    }
+
 [<NoComparison>]
 type Model =
     {   Schemas : Map<Name, Schema>
         DefaultSchema : Name
         TemporarySchema : Name
         Builtin : DatabaseBuiltin
+        BackendCharacteristics : BackendCharacteristics
     }
     member this.Schema(name : Name option) =
         this.Schemas |> Map.tryFind (name |? this.DefaultSchema)

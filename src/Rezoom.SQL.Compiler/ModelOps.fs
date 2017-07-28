@@ -264,7 +264,11 @@ let dropColumn tableName (column : Name) =
         | None ->
             // IMPROVEMENT oughta have better source location
             failAt tableName.Source <| Error.noSuchColumn column
-        | Some _ ->
+        | Some existing ->
+            if existing.DefaultValue |> Option.isSome then
+                let! model = State.get
+                if not model.BackendCharacteristics.CanDropColumnWithDefaultValue then
+                    failAt tableName.Source <| Error.cannotDropColumnWithDefault column
             let coveredByConstraints =
                 table.Constraints
                 |> Seq.filter (function KeyValue(_, constr) -> constr.Columns |> Set.contains column)

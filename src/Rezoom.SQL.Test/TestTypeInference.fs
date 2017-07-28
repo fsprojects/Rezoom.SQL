@@ -11,6 +11,9 @@ let zeroModel =
         DefaultSchema = Name("main")
         TemporarySchema = Name("temp")
         Builtin = { Functions = Map.empty }
+        BackendCharacteristics =
+            {   CanDropColumnWithDefaultValue = true
+            }
     }
 
 [<Test>]

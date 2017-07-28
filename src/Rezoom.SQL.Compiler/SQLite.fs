@@ -79,6 +79,9 @@ type SQLiteBackend() =
             Builtin =
                 {   Functions = SQLiteFunctions.functions
                 }
+            BackendCharacteristics =
+                {   CanDropColumnWithDefaultValue = true
+                }
         }
     interface IBackend with
         member this.MigrationBackend = <@ fun settings -> new SQLiteMigrationBackend(settings) :> IMigrationBackend @>

@@ -21,6 +21,9 @@ type DefaultBackend() =
             Builtin =
                 {   Functions = DefaultFunctions.extendedBy [||]
                 }
+            BackendCharacteristics =
+                {   CanDropColumnWithDefaultValue = true
+                }
         }
 
     interface IBackend with

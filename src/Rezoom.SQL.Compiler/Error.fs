@@ -135,3 +135,7 @@ let columnCollationIsAlready columnName collation =
     sprintf "SQ057: Column ``%O`` already has collation %O``" columnName collation
 let columnAlreadyHasDefault columnName =
     sprintf "SQ058: Column ``%O`` already has a default value" columnName
+let cannotDropColumnWithDefault columnName =
+    sprintf
+        "SQ059: Cannot drop the column ``%O`` while it has a default value (use ALTER TABLE DROP DEFAULT FOR %O)"
+        columnName columnName

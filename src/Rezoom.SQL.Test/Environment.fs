@@ -150,7 +150,7 @@ let private runSimple (test : SimpleTest) =
             BadCommand cexn.Message
     with
     | :? SourceException as sexn ->
-            BadCommand sexn.Reason
+        BadMigration sexn.Reason
     | :? SQLCompilerException as mexn ->
         BadMigration mexn.Message
 

@@ -186,6 +186,9 @@ type PostgresBackend() =
             Builtin =
                 {   Functions = PostgresFunctions.functions
                 }
+            BackendCharacteristics =
+                {   CanDropColumnWithDefaultValue = true
+                }
         }
     interface IBackend with
         member this.MigrationBackend = <@ fun conn -> new PostgresMigrationBackend(conn) :> IMigrationBackend @>
