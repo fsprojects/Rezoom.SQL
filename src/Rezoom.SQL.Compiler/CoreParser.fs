@@ -866,8 +866,8 @@ let private columnConstraint =
     %% +.(zeroOrOne * constraintName)
     -- +.constraintType
     -- ws
-    -|> fun name cty columnName ->
-        {   Name = name |? cty.DefaultName(columnName)
+    -|> fun name cty columnName tblName ->
+        {   Name = name |? cty.DefaultName(tblName, columnName)
             ColumnConstraintType = cty
         }
 
@@ -881,13 +881,13 @@ let private columnDef =
     -- +.(zeroOrOne * collation)
     -- +.(zeroOrOne * defaultValue)
     -- +.(columnConstraint * qty.[0..])
-    -|> fun name typeName nullable collation defaultVal constraints ->
+    -|> fun name typeName nullable collation defaultVal constraints tblName ->
         {   Name = name
             Type = typeName
             Nullable = Option.isSome nullable
             Collation = collation
             DefaultValue = defaultVal
-            Constraints = constraints |> Seq.map ((|>) name) |> Seq.toArray
+            Constraints = constraints |> Seq.map (fun f -> f name tblName) |> Seq.toArray
         }
 
 let private tableIndexConstraintType =
@@ -927,8 +927,8 @@ let private tableConstraint =
     %% +.(zeroOrOne * constraintName)
     -- +.tableConstraintType
     -- ws
-    -|> fun name cty ->
-        {   Name = match name with | Some name -> name | None -> Name(cty.DefaultName())
+    -|> fun name cty tblName ->
+        {   Name = match name with | Some name -> name | None -> cty.DefaultName(tblName)
             TableConstraintType = cty
         }
 
@@ -939,10 +939,13 @@ let private alterTableStmt =
         -- +.name
         -|> RenameTo
     let add =
-        let addColumn = %% kw "COLUMN" -- +.withSource columnDef -|> AddColumn
+        let addColumn =
+            %% kw "COLUMN" -- +.withSource columnDef
+            -|> fun cdef tblName -> AddColumn (applySource cdef tblName)
         let addDefault =
-            %% kw "DEFAULT" -- kw "FOR" -- +.name -- ws -- +.expr -|> fun name expr -> AddDefault (name, expr)
-        let addConstraint = withSource tableConstraint |>> AddConstraint
+            %% kw "DEFAULT" -- kw "FOR" -- +.name -- ws -- +.expr
+            -|> fun name expr _ -> AddDefault (name, expr)
+        let addConstraint = withSource tableConstraint |>> fun cstr tblName -> AddConstraint (applySource cstr tblName)
         %% kw "ADD"
         -- +.[  addColumn
                 addDefault
@@ -986,15 +989,16 @@ let private alterTableStmt =
                 changeType
             ]
         -|> (|>)
+    let ignoreTblName parser = parser |>> fun x _ -> x
     %% kw "ALTER"
     -- kw "TABLE"
     -- +.objectName
-    -- +.[  renameTo
+    -- +.[  ignoreTblName renameTo
             add
-            drop
-            alterColumn
+            ignoreTblName drop
+            ignoreTblName alterColumn
         ]
-    -|> fun table alteration -> { Table = table; Alteration = alteration }
+    -|> fun table alteration -> { Table = table; Alteration = alteration table.ObjectName }
 
 let private createTableDefinition =
     let part =
@@ -1007,16 +1011,20 @@ let private createTableDefinition =
     -- +.(qty.[0..] /. tws ',' * part)
     -- ')'
     -- ws
-    -|> fun parts ->
+    -|> fun parts tblName ->
         {   Columns =
-                parts |> Seq.choose (function | Choice2Of2 cdef -> Some cdef | Choice1Of2 _ -> None) |> Seq.toArray
+                parts
+                |> Seq.choose (function | Choice2Of2 cdef -> Some (applySource cdef tblName) | Choice1Of2 _ -> None)
+                |> Seq.toArray
             Constraints =
-                parts |> Seq.choose (function | Choice1Of2 ct -> Some ct | Choice2Of2 _ -> None) |> Seq.toArray
+                parts
+                |> Seq.choose (function | Choice1Of2 ct -> Some (applySource ct tblName) | Choice2Of2 _ -> None)
+                |> Seq.toArray
         }
 
 let private createTableAs =
-    %[  %% kw "AS" -- +.selectStmt -|> CreateAsSelect
-        %% +.createTableDefinition -|> CreateAsDefinition
+    %[  %% kw "AS" -- +.selectStmt -|> fun select _ -> CreateAsSelect select
+        %% +.createTableDefinition -|> fun def tblName -> CreateAsDefinition (def tblName)
     ]
 
 let private temporary = %(zeroOrOne * [kw "TEMPORARY"; kw "TEMP"])
@@ -1030,7 +1038,7 @@ let private createTableStmt =
     -|> fun temp name createAs ->
         {   Temporary = Option.isSome temp
             Name = name
-            As = createAs
+            As = createAs name.ObjectName
         }
 
 let private createIndexStmt =

@@ -503,7 +503,8 @@ type [<NoComparison>] ColumnConstraintType<'t, 'e> =
     | PrimaryKeyConstraint of PrimaryKeyClause
     | UniqueConstraint
     | ForeignKeyConstraint of ForeignKeyClause<'t>
-    member this.DefaultName(columnName : Name) =
+    member this.DefaultName(tableName : Name, columnName : Name) =
+        tableName + "_" +
         match this with
         | PrimaryKeyConstraint _ -> columnName + "_PK"
         | UniqueConstraint -> columnName + "_UNIQUE"
@@ -547,7 +548,8 @@ type [<NoComparison>] TableConstraintType<'t, 'e> =
     | TableIndexConstraint of TableIndexConstraintClause<'t, 'e>
     | TableForeignKeyConstraint of Name WithSource array * ForeignKeyClause<'t>
     | TableCheckConstraint of Expr<'t, 'e>
-    member this.DefaultName() =
+    member this.DefaultName(tableName : Name) =
+        tableName + "_" +
         match this with
         | TableIndexConstraint con ->
             String.concat "_" [ for { Value = name, _ } in con.IndexedColumns -> name.Value ]

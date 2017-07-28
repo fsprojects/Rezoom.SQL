@@ -103,27 +103,27 @@ create index IX_ArticleComments_AuthorId on ArticleComments(AuthorId);
                 OutputCommand =
                     """
 CREATE TABLE "Pictures"
-( "SHA256" BLOB NOT NULL CONSTRAINT "SHA256_PK" PRIMARY KEY ASC
+( "SHA256" BLOB NOT NULL CONSTRAINT "Pictures_SHA256_PK" PRIMARY KEY ASC
 , "PNGData" BLOB NOT NULL
 );
 CREATE TABLE "Users"
-( "Id" INTEGER NOT NULL CONSTRAINT "Id_PK" PRIMARY KEY ASC AUTOINCREMENT
+( "Id" INTEGER NOT NULL CONSTRAINT "Users_Id_PK" PRIMARY KEY ASC AUTOINCREMENT
 , "Name" VARCHAR NOT NULL , "Email" VARCHAR NOT NULL
-, "ProfilePictureSHA256" BLOB CONSTRAINT "ProfilePictureSHA256_FK_Pictures_SHA256" REFERENCES "Pictures" ("SHA256")
+, "ProfilePictureSHA256" BLOB CONSTRAINT "Users_ProfilePictureSHA256_FK_Pictures_SHA256" REFERENCES "Pictures" ("SHA256")
 , "Created" VARCHAR NOT NULL
 , "RandomId" BLOB NOT NULL DEFAULT (CAST(randomblob(16) AS BLOB))
 );
 CREATE TABLE "Articles"
-( "Id" INTEGER NOT NULL CONSTRAINT "Id_PK" PRIMARY KEY ASC AUTOINCREMENT
-, "AuthorId" INT NOT NULL CONSTRAINT "AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
+( "Id" INTEGER NOT NULL CONSTRAINT "Articles_Id_PK" PRIMARY KEY ASC AUTOINCREMENT
+, "AuthorId" INT NOT NULL CONSTRAINT "Articles_AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
 , "ArticleTitle" VARCHAR NOT NULL
 , "ArticleText" VARCHAR NOT NULL
 );
 CREATE INDEX "IX_Articles_AuthorId" ON "Articles" ( "AuthorId" ASC );
 CREATE TABLE "ArticleComments"
-( "Id" INTEGER NOT NULL CONSTRAINT "Id_PK" PRIMARY KEY ASC AUTOINCREMENT
-, "ArticleId" INT NOT NULL CONSTRAINT "ArticleId_FK_Articles_Id" REFERENCES "Articles" ("Id")
-, "AuthorId" INT NOT NULL CONSTRAINT "AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
+( "Id" INTEGER NOT NULL CONSTRAINT "ArticleComments_Id_PK" PRIMARY KEY ASC AUTOINCREMENT
+, "ArticleId" INT NOT NULL CONSTRAINT "ArticleComments_ArticleId_FK_Articles_Id" REFERENCES "Articles" ("Id")
+, "AuthorId" INT NOT NULL CONSTRAINT "ArticleComments_AuthorId_FK_Users_Id" REFERENCES "Users" ("Id")
 , "CommentText" VARCHAR NOT NULL
 );
 CREATE INDEX "IX_ArticleComments_AuthorId" ON "ArticleComments" ( "AuthorId" ASC );

@@ -130,7 +130,7 @@ let ``alter table scenarios`` () =
         """
 create table Foo(x int primary key, y int);
 alter table Foo add default for y 1;
-alter table Foo drop constraint x_PK;
+alter table Foo drop constraint Foo_x_PK;
 alter table Foo add constraint namedpk primary key(x, y);
 alter table Foo drop constraint namedpk;
 alter table Foo drop default for y;
@@ -143,8 +143,8 @@ alter table Foo add column z string(80) null collate SQL_Latin1_General_CP1_CI_A
 CREATE TABLE [Foo] ( [x] INT NOT NULL CONSTRAINT [Foo_x_PK] PRIMARY KEY , [y] INT NOT NULL );
 ALTER TABLE [Foo] ADD CONSTRAINT [Foo_y_DEFAULT_CONSTRAINT] DEFAULT 1 FOR [y];
 ALTER TABLE [Foo] DROP CONSTRAINT [Foo_x_PK];
-ALTER TABLE [Foo] ADD CONSTRAINT [Foo_namedpk] PRIMARY KEY([x] ASC,[y] ASC);
-ALTER TABLE [Foo] DROP CONSTRAINT [Foo_namedpk];
+ALTER TABLE [Foo] ADD CONSTRAINT [namedpk] PRIMARY KEY([x] ASC,[y] ASC);
+ALTER TABLE [Foo] DROP CONSTRAINT [namedpk];
 ALTER TABLE [Foo] DROP CONSTRAINT [Foo_y_DEFAULT_CONSTRAINT];
 ALTER TABLE [Foo] ALTER COLUMN [y] NVARCHAR(12) NOT NULL;
 ALTER TABLE [Foo] ALTER COLUMN [y] NVARCHAR(12) NULL;

@@ -44,29 +44,29 @@ create index IX_ArticleComments_AuthorId on ArticleComments(AuthorId);
                 OutputCommand =
                     """
 CREATE TABLE "pictures"
-( "sha256" BYTEA NOT NULL CONSTRAINT "sha256_pk" PRIMARY KEY
+( "sha256" BYTEA NOT NULL CONSTRAINT "pictures_sha256_pk" PRIMARY KEY
 , "pngdata" BYTEA NOT NULL
 );
 CREATE TABLE "users"
-( "id" BIGSERIAL NOT NULL CONSTRAINT "id_pk" PRIMARY KEY
+( "id" BIGSERIAL NOT NULL CONSTRAINT "users_id_pk" PRIMARY KEY
 , "name" VARCHAR(80) NOT NULL
 , "email" VARCHAR(254) NOT NULL
-, "profilepicturesha256" BYTEA CONSTRAINT "profilepicturesha256_fk_pictures_sha256"
+, "profilepicturesha256" BYTEA CONSTRAINT "users_profilepicturesha256_fk_pictures_sha256"
     REFERENCES "pictures" ("sha256")
 , "created" TIMESTAMPTZ NOT NULL
 , "randomid" UUID NOT NULL DEFAULT (CAST('a8078caeae944136ade0f2bf06792a92' AS UUID))
 );
 CREATE TABLE "articles"
-( "id" BIGSERIAL NOT NULL CONSTRAINT "id_pk" PRIMARY KEY
-, "authorid" BIGINT NOT NULL CONSTRAINT "authorid_fk_users_id" REFERENCES "users" ("id")
+( "id" BIGSERIAL NOT NULL CONSTRAINT "articles_id_pk" PRIMARY KEY
+, "authorid" BIGINT NOT NULL CONSTRAINT "articles_authorid_fk_users_id" REFERENCES "users" ("id")
 , "articletitle" VARCHAR(80) NOT NULL
 , "articletext" VARCHAR(4096) NOT NULL
 );
 CREATE INDEX "ix_articles_authorid" ON "articles" ( "authorid" ASC );
 CREATE TABLE "articlecomments"
-( "id" BIGSERIAL NOT NULL CONSTRAINT "id_pk" PRIMARY KEY
-, "articleid" BIGINT NOT NULL CONSTRAINT "articleid_fk_articles_id" REFERENCES "articles" ("id")
-, "authorid" BIGINT NOT NULL CONSTRAINT "authorid_fk_users_id" REFERENCES "users" ("id")
+( "id" BIGSERIAL NOT NULL CONSTRAINT "articlecomments_id_pk" PRIMARY KEY
+, "articleid" BIGINT NOT NULL CONSTRAINT "articlecomments_articleid_fk_articles_id" REFERENCES "articles" ("id")
+, "authorid" BIGINT NOT NULL CONSTRAINT "articlecomments_authorid_fk_users_id" REFERENCES "users" ("id")
 , "commenttext" VARCHAR(512) NOT NULL
 );
 CREATE INDEX "ix_articlecomments_authorid" ON "articlecomments" ( "authorid" ASC );

@@ -282,7 +282,7 @@ let ``alter add constraint with CONSTRAINT keyword`` () =
 let ``alter add/drop check constraint with expected default name`` () =
     roundtrip """
         alter table Users add check(Name <> '');
-        alter table Users drop constraint check;
+        alter table Users drop constraint Users_check;
     """
 
 [<Test>]

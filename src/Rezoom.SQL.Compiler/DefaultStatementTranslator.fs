@@ -255,8 +255,6 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield! this.ForeignKeyOnDelete(onDelete)
         }
-    abstract member ConstraintName : TObjectName * Name -> Name
-    default __.ConstraintName(_, name) = name
     abstract member IndexedColumn : name : Name * dir : OrderDirection -> Fragments
     default this.IndexedColumn(name, dir) =
         seq {
@@ -274,11 +272,11 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield text "AUTOINCREMENT"
         }
-    override this.ColumnConstraint(table, constr) =
+    override this.ColumnConstraint(_, constr) =
         seq {
             yield text "CONSTRAINT"
             yield ws
-            yield this.Expr.Name(this.ConstraintName(table, constr.Name))
+            yield this.Expr.Name(constr.Name)
             yield ws
             match constr.ColumnConstraintType with
             | PrimaryKeyConstraint pk ->
@@ -288,11 +286,11 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
             | ForeignKeyConstraint fk ->
                 yield! this.ForeignKeyClause(fk)
         }
-    override this.TableConstraint(table, constr) =
+    override this.TableConstraint(_, constr) =
         seq {
             yield text "CONSTRAINT"
             yield ws
-            yield this.Expr.Name(this.ConstraintName(table, constr.Name))
+            yield this.Expr.Name(constr.Name)
             yield ws
             match constr.TableConstraintType with
             | TableIndexConstraint indexClause ->

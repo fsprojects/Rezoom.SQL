@@ -120,9 +120,6 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield ws
             yield text "ROWS ONLY"
         }
-    override this.ConstraintName(table, constr) =
-        // constraint names must be unique across the db, so qualify w/ table name
-        table.ObjectName + "_" + constr
     override this.PrimaryKeyClause(pk) =
         seq {
             yield text "PRIMARY KEY"
@@ -261,7 +258,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             | DropConstraint constr ->
                 yield text "DROP CONSTRAINT"
                 yield ws
-                yield this.Expr.Name(this.ConstraintName(alter.Table, constr))
+                yield this.Expr.Name(constr)
             | DropDefault col ->
                 yield text "DROP CONSTRAINT"
                 yield ws

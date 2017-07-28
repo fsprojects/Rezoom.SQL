@@ -148,7 +148,7 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
             | DropConstraint constr ->
                 yield text "DROP CONSTRAINT"
                 yield ws
-                yield this.Expr.Name(this.ConstraintName(alter.Table, constr))
+                yield this.Expr.Name(constr)
                 yield ws
                 yield text "RESTRICT"
             | DropDefault col ->

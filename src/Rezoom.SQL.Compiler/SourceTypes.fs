@@ -133,6 +133,7 @@ type SourceException(msg : string, pos : SourceInfo, source, fileName) =
 
 [<AutoOpen>]
 module SourceInfoModule =
+    let applySource src x = { Source = src.Source; Value = src.Value x }
     let atSource src x = { Source = src; Value = x }
     let nearSourceOf (ws : _ WithSource) x = x |> atSource ws.Source
     let artificialSource x = atSource SourceInfo.Invalid x
