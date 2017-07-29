@@ -166,10 +166,17 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                     Columns = cols
                 }
             let table =
-                { table with Constraints = table.Constraints |> Map.add constraintName.Value constr }
-            let table =
                 match constraintType with
                 | PrimaryKeyConstraintType autoIncrement ->
+                    let existingPk =
+                        table.Constraints |> Map.tryPick (fun _ constr ->
+                            match constr.ConstraintType with
+                            | PrimaryKeyConstraintType _ -> Some constr.ConstraintName
+                            | _ -> None)
+                    match existingPk with
+                    | Some existingPk ->
+                        failAt constraintName.Source <| Error.tableAlreadyHasPrimaryKey table.Name existingPk
+                    | None -> ()
                     let columns =
                         cols
                         |> Seq.map (fun c ->
@@ -183,6 +190,8 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                 | ForeignKeyConstraintType _
                 | CheckConstraintType
                 | UniqueConstraintType -> table
+            let table =
+                { table with Constraints = table.Constraints |> Map.add constraintName.Value constr }
             do! putObject tableName (SchemaTable table)
             do! putObject qualifiedConstraintName (SchemaConstraint constr)
             match constraintType with

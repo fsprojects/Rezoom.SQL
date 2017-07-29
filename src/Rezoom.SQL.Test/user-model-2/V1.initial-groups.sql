@@ -4,7 +4,8 @@ create table Groups
    );
 
 create table UserGroupMaps
-   ( UserId int primary key references Users(Id)
-   , GroupId int primary key references Groups(Id)
+   ( UserId int references Users(Id)
+   , GroupId int references Groups(Id)
+   , primary key (UserId, GroupId)
    );
 

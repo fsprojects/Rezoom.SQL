@@ -142,7 +142,7 @@ let cannotDropColumnWithDefault columnName =
 let onlyIntPrimaryKeyAutoincrement =
     "SQ060: AUTOINCREMENT can only be specified for an INT or INT64 column"
 let tableAlreadyHasPrimaryKey table =
-    sprintf "SQ061: The table ``%O`` already has a primary key defined." table
+    sprintf "SQ061: ``%O`` already has ``%O`` as its primary key constraint" table
 
 
 let tableNameNotSuitableForPG =
