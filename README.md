@@ -4,7 +4,7 @@
 
 [Query playground -- try out the SQL dialect live!](http://rzsql.net/#3AB1F9635DF0C97D31462380EEBE88B460AE73FC)
 
-# Statically typed SQL for F#
+# Statically typed SQL for F# #
 
 Rezoom.SQL is an F# ORM for SQL databases.
 
