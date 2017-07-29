@@ -84,3 +84,17 @@ let ``can't drop last column`` () =
         Migration = "create table Foo(x int); alter table Foo drop column x"
         Expect = BadMigration <| Error.cannotDropLastColumn "main.Foo" "x"
     } |> assertSimple
+
+[<Test>]
+let ``can't alter pk column`` () =
+    { defaultTest with
+        Migration = "create table Foo(x int primary key); alter table Foo alter column x int64"
+        Expect = BadMigration <| Error.cannotAlterPrimaryKeyColumn "x"
+    } |> assertSimple
+
+[<Test>]
+let ``can't collate guid`` () =
+    { defaultTest with
+        Migration = "create table Foo(x guid collate foo);"
+        Expect = BadMigration <| Error.cannotCollateType "GUID"
+    } |> assertSimple

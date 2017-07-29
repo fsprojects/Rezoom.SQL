@@ -127,6 +127,11 @@ let addTableColumn (tableName : QualifiedObjectName WithSource) (column : Adding
         let! table = getRequiredTable tableName
         match table.Columns |> Map.tryFind column.Name.Value with
         | None ->
+            match column.Collation with
+            | None -> ()
+            | Some _ ->
+                if not column.TypeName.SupportsCollation then
+                    failAt column.Name.Source <| Error.cannotCollateType column.TypeName
             let schemaColumn =
                 {   TableName = tableName.Value
                     ColumnName = column.Name.Value
@@ -423,17 +428,19 @@ let changeColumnType tableName (columnName : Name WithSource) newType =
         | None ->
             failAt columnName.Source <| Error.noSuchColumn columnName.Value
         | Some col ->
+            if col.PrimaryKey then
+                failAt columnName.Source <| Error.cannotAlterPrimaryKeyColumn columnName.Value
             if col.ColumnTypeName = newType then
                 failAt columnName.Source <| Error.columnTypeIsAlready columnName.Value newType
-            else
-                // FUTURE validate that referencing FKs have compatible type? default value has compatible type?
-                let newColumn =
-                    { col with
-                        ColumnType = ColumnType.OfTypeName(newType, col.ColumnType.Nullable)
-                        ColumnTypeName = newType
-                    }
-                let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
-                return! putObject tableName (SchemaTable table)
+            // FUTURE validate that referencing FKs have compatible type? default value has compatible type?
+            let newColumn =
+                { col with
+                    ColumnType = ColumnType.OfTypeName(newType, col.ColumnType.Nullable)
+                    ColumnTypeName = newType
+                    Collation = if newType.SupportsCollation then col.Collation else None
+                }
+            let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
+            return! putObject tableName (SchemaTable table)
     }
 
 let changeColumnNullability tableName (columnName : Name WithSource) newNullable =
@@ -443,13 +450,14 @@ let changeColumnNullability tableName (columnName : Name WithSource) newNullable
         | None ->
             failAt columnName.Source <| Error.noSuchColumn columnName.Value
         | Some col ->
+            if col.PrimaryKey then
+                failAt columnName.Source <| Error.cannotAlterPrimaryKeyColumn columnName.Value
             if col.ColumnType.Nullable = newNullable then
                 failAt columnName.Source <| Error.columnNullabilityIsAlready columnName.Value newNullable
-            else
-                let newColumn =
-                    { col with ColumnType = { col.ColumnType with Nullable = newNullable } }
-                let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
-                return! putObject tableName (SchemaTable table)
+            let newColumn =
+                { col with ColumnType = { col.ColumnType with Nullable = newNullable } }
+            let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
+            return! putObject tableName (SchemaTable table)
     }
 
 let changeColumnCollation tableName (columnName : Name WithSource) newCollation =
@@ -459,11 +467,14 @@ let changeColumnCollation tableName (columnName : Name WithSource) newCollation 
         | None ->
             failAt columnName.Source <| Error.noSuchColumn columnName.Value
         | Some col ->
+            if col.PrimaryKey then
+                failAt columnName.Source <| Error.cannotAlterPrimaryKeyColumn columnName.Value
             if col.Collation = Some newCollation then
                 failAt columnName.Source <| Error.columnCollationIsAlready columnName.Value newCollation
-            else
-                let newColumn =
-                    { col with Collation = Some newCollation }
-                let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
-                return! putObject tableName (SchemaTable table)
+            if not col.ColumnTypeName.SupportsCollation then
+                failAt columnName.Source <| Error.cannotCollateType col.ColumnTypeName
+            let newColumn =
+                { col with Collation = Some newCollation }
+            let table = { table with Columns = table.Columns |> Map.add columnName.Value newColumn }
+            return! putObject tableName (SchemaTable table)
     }

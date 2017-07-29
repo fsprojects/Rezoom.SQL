@@ -145,7 +145,10 @@ let tableAlreadyHasPrimaryKey table =
     sprintf "SQ061: ``%O`` already has ``%O`` as its primary key constraint" table
 let cannotDropLastColumn table columnName =
     sprintf "SQ062: ``%O`` can't be dropped because it is the last column remaining in table ``%O``" columnName table
-
+let cannotCollateType typeName =
+    sprintf "SQ063: A column of type ``%O`` cannot have a collation applied" typeName
+let cannotAlterPrimaryKeyColumn columnName =
+    sprintf "SQ064: Cannot alter the column ``%O`` because it is part of the table's primary key" columnName
 
 let tableNameNotSuitableForPG =
     "SQ069: Table name is not suitable for PG (maybe you thought you were writing R?)"
