@@ -125,7 +125,7 @@ ALTER TABLE "public"."smoketable1" ALTER COLUMN "float64column" DROP DEFAULT;
 ALTER TABLE "smoketable1" ALTER COLUMN "stringncolumn" TYPE VARCHAR(80) COLLATE "C";
 ALTER TABLE "smoketable1" ALTER COLUMN "float64column" DROP NOT NULL;
 ALTER TABLE "smoketable1" ALTER COLUMN "float64column" SET NOT NULL;
-ALTER TABLE "smoketable1" ALTER COLUMN "int16column" TYPE INT;
+ALTER TABLE "smoketable1" ALTER COLUMN "int16column" TYPE INT USING CAST("int16column" AS INT);
 DROP INDEX "ix_smoketable2_parentid";
 ALTER TABLE "smoketable2" DROP CONSTRAINT "smoketable2_friendid_fk_smoketablefriend_autocolumn" RESTRICT;
 ALTER TABLE "smoketable2" DROP COLUMN "friendid" RESTRICT;

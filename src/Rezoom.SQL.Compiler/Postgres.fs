@@ -108,19 +108,30 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
                 this.Expr.Name(col)
                 ws
             |]
-        let inline changeType (col : Name) (ty : TypeName) (collation : Name option) =
+        let inline changeType (col : Name) (ty : TypeName) (collation : Name option) changingType =
             seq {
                 yield! alterColumn col
                 yield text "TYPE"
                 yield ws
                 yield! this.Expr.TypeName(ty)
                 match collation with
-                | None -> ()
-                | Some collation ->
+                | Some collation when ty.SupportsCollation ->
                     yield ws
                     yield text "COLLATE"
                     yield ws
                     yield this.Expr.CollationName(collation)
+                | _ -> ()
+                if changingType then
+                    yield ws
+                    yield text "USING"
+                    yield ws
+                    yield text "CAST("
+                    yield this.Expr.Name(col)
+                    yield ws
+                    yield text "AS"
+                    yield ws
+                    yield! this.Expr.TypeName(ty)
+                    yield text ")"
             }
         seq {
             yield text "ALTER TABLE"
@@ -165,10 +176,10 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
                 yield text (if change.NewNullable then "DROP NOT NULL" else "SET NOT NULL")
             | ChangeType change ->
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
-                yield! changeType change.Column change.NewType schemaColumn.Collation
+                yield! changeType change.Column change.NewType schemaColumn.Collation true
             | ChangeCollation change ->
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
-                yield! changeType change.Column schemaColumn.ColumnTypeName (Some change.NewCollation)
+                yield! changeType change.Column schemaColumn.ColumnTypeName (Some change.NewCollation) false
         }
     override this.PrimaryKeyClause(pk) =
         seq {

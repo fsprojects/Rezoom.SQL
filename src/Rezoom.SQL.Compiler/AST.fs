@@ -43,6 +43,10 @@ type TypeName =
     | BooleanTypeName
     | DateTimeTypeName
     | DateTimeOffsetTypeName
+    member this.SupportsCollation =
+        match this with
+        | StringTypeName _ -> true
+        | _ -> false
     override this.ToString() =
         match this with
         | GuidTypeName -> "GUID"
