@@ -308,6 +308,8 @@ let dropTable (tableName : QualifiedObjectName WithSource) =
                         |> Set.filter (fun r -> r.FromTable <> tableName.Value)
                     do! putObject targetTableName (SchemaTable { targetTable with ReverseForeignKeys = reverseKeys })
                 | _ -> ()
+            for constr in tbl.Constraints do
+                do! removeObject (artificialSource { tbl.Name with ObjectName = constr.Key })
             return! removeObject tableName
         else
             failAt tableName.Source <| Error.tableIsReferencedByFKs tableName.Value referencingTables

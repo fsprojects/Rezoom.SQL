@@ -265,17 +265,6 @@ let private numericLiteral =
         else 
             lit.String |> float |> FloatLiteral |> preturn
 
-let private signedNumericLiteral =
-    let sign =
-        %[  %% '+' -|> 1
-            %% '-' -|> -1
-            preturn 0
-        ]
-    %% +.sign
-    -- ws
-    -- +.numericLiteral
-    -|> fun sign value -> { Sign = sign; Value = value }
-
 let private literal =
     %[  booleanLiteral
         nullLiteral

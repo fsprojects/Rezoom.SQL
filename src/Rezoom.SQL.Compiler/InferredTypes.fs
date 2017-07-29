@@ -273,9 +273,9 @@ and [<NoComparison>]
             let def = inferView view.CreateDefinition
             let query = def.AsSelect.Value.Info.Query.Map(InferredType.Of)
             { Table = ViewReference(view, def); Query = query } |> TableLike |> Found
-        | Some (SchemaIndex _)
+        | Some (SchemaIndex index) -> index |> Index |> Found
         | Some (SchemaConstraint _)
-        | None -> NotFound <| Error.noSuchTable name
+        | None -> NotFound <| Error.noSuchObject "object" name
 
     /// Resolve a reference to a table which may occur as part of a TableExpr.
     /// This will resolve against the database model and CTEs, but not table aliases defined in the FROM clause.
