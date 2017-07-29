@@ -8,7 +8,7 @@ situations.
 
 ### _common-table-expression_
 
-{% include "Diagrams/CommonTableExpressions.svg" %}
+{% include "Diagrams/CommonTableExpression.svg" %}
 
 Here's a trivial example:
 
