@@ -28,6 +28,7 @@
     * [Functions](doc/Language/Functions/README.md)
         * [SQLite](doc/Language/Functions/SQLiteFunctions.md)
         * [TSQL](doc/Language/Functions/TSQLFunctions.md)
+        * [Postgres](doc/Language/Functions/PostgresFunctions.md)
     * [What's missing?](doc/Language/MissingFeatures.md)
 * [API](doc/API/README.md)
     * [Rezoom.SQL](doc/API/RezoomSQL.md)

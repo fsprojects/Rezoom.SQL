@@ -73,3 +73,9 @@ CREATE INDEX "ix_articlecomments_authorid" ON "articlecomments" ( "authorid" ASC
                     """ |> Some
             } |> Good
     } |> assertSimple
+
+[<Test>]
+let ``postgres dump function signatures`` () =
+    for KeyValue(_, func) in postgresTest.TestBackend.InitialModel.Builtin.Functions do
+        printfn "%s" (dumpSignature func)
+        printfn ""
