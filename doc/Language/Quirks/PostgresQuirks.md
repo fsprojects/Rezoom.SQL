@@ -2,7 +2,7 @@
 
 Here are some surprises you may encounter when using RZSQL with Postgres.
 
-## Postgres does not truly support `DateTimeOffset`
+## `DateTimeOffset` is half-supported
 
 There is no data type in Postgres that stores a date, time, and timezone offset.
 
