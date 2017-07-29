@@ -114,3 +114,10 @@ let ``where clause must be bool`` ()=
         """
             select 1 as it from ViewUsers where 'a'
         """
+
+[<Test>]
+let ``cte is not in scope for update`` () =
+    expectError (Error.objectNotATable "cte")
+        """
+            with cte(x) as (select 1) update cte set x = 1;
+        """
