@@ -102,7 +102,7 @@
       <HintPath>..\packages\FParsec.1.0.2\lib\net40-client\FParsec.dll</HintPath>
     </Reference>
     <Reference Include="FParsec-Pipes">
-      <HintPath>..\packages\FParsec-Pipes.0.3.1.0\lib\net45\FParsec-Pipes.dll</HintPath>
+      <HintPath>..\packages\FParsec-Pipes.0.4.0\lib\net45\FParsec-Pipes.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS">
       <HintPath>..\packages\FParsec.1.0.2\lib\net40-client\FParsecCS.dll</HintPath>
