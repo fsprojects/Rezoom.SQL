@@ -19,10 +19,33 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield text TSQLMigrationBackend.BatchSeparator
         }
     override __.DropObject(drop) =
-        let drop = base.DropObject(drop)
         seq {
             yield text TSQLMigrationBackend.BatchSeparator
-            yield! drop
+            yield text "DROP"
+            yield ws
+            yield
+                match drop.Drop with
+                | DropIndex -> text "INDEX"
+                | DropTable -> text "TABLE"
+                | DropView -> text "VIEW"
+            yield ws
+            yield! this.Expr.ObjectName(drop.ObjectName)
+            match drop.Drop with
+            | DropIndex ->
+                match drop.ObjectName.Info with
+                | Index idx ->
+                    yield ws
+                    yield text "ON"
+                    yield ws
+                    if idx.TableName.SchemaName = Name("temp") then
+                        yield text "#"
+                        yield this.Expr.Name(idx.TableName.ObjectName)
+                    else
+                        yield this.Expr.Name(idx.TableName.SchemaName)
+                        yield text "."
+                        yield this.Expr.Name(idx.TableName.ObjectName)
+                | _ -> bug "Typechecker should've validated this object name as an index"
+            | _ -> ()
             yield text TSQLMigrationBackend.BatchSeparator
         }
     member this.SelectCoreWithTop(select : TSelectCore, top) =
@@ -132,16 +155,16 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield this.Expr.Name(col.Name)
             yield ws
             yield! this.Expr.TypeName(col.Type)
-            if not col.Nullable then
-                yield ws
-                yield text "NOT NULL"
             match col.Collation with
             | None -> ()
-            | Some collation ->
+            | Some collation -> // collation first on TSQL
                 yield ws
                 yield text "COLLATE"
                 yield ws
                 yield text collation.Value // N.B. not wrapped in .Name -- TSQL doesn't like [collation name]
+            if not col.Nullable then
+                yield ws
+                yield text "NOT NULL"
             match col.DefaultValue with
             | None -> ()
             | Some defaultValue ->
@@ -209,11 +232,6 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield this.Expr.Name(columnName)
             yield ws
             yield! this.Expr.TypeName(typeName)
-            yield ws
-            if nullable then
-                yield text "NULL"
-            else
-                yield text "NOT NULL"
             match collation with
             | None -> ()
             | Some collation ->
@@ -221,6 +239,11 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield text "COLLATE"
                 yield ws
                 yield text collation.Value // N.B. not wrapped in .Name -- TSQL doesn't like [collation name]
+            yield ws
+            if nullable then
+                yield text "NULL"
+            else
+                yield text "NOT NULL"
         }
     override this.AlterTable(alter) =
         seq {
