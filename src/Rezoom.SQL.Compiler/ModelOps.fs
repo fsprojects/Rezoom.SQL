@@ -303,6 +303,8 @@ let dropColumn tableName (column : Name) =
                             failAt tableName.Source <| Error.columnIsReferencedByConstraints column [refName]
                     | _ -> ()
                 let table = { table with Columns = table.Columns |> Map.remove column }
+                if table.Columns |> Map.isEmpty then
+                    failAt tableName.Source <| Error.cannotDropLastColumn tableName.Value column
                 return! putObject tableName (SchemaTable table)
             else
                 failAt tableName.Source <| Error.columnIsReferencedByConstraints column coveredByConstraints

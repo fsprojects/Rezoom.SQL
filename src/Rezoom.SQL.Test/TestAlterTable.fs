@@ -77,3 +77,10 @@ let ``string can't be autoincrement`` () =
         Migration = "create table Foo(x string(10) primary key autoincrement)"
         Expect = BadMigration <| Error.onlyIntPrimaryKeyAutoincrement
     } |> assertSimple
+
+[<Test>]
+let ``can't drop last column`` () =
+    { defaultTest with
+        Migration = "create table Foo(x int); alter table Foo drop column x"
+        Expect = BadMigration <| Error.cannotDropLastColumn "main.Foo" "x"
+    } |> assertSimple

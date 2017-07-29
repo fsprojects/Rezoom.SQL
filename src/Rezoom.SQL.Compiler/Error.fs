@@ -143,6 +143,8 @@ let onlyIntPrimaryKeyAutoincrement =
     "SQ060: AUTOINCREMENT can only be specified for an INT or INT64 column"
 let tableAlreadyHasPrimaryKey table =
     sprintf "SQ061: ``%O`` already has ``%O`` as its primary key constraint" table
+let cannotDropLastColumn table columnName =
+    sprintf "SQ062: ``%O`` can't be dropped because it is the last column remaining in table ``%O``" columnName table
 
 
 let tableNameNotSuitableForPG =
