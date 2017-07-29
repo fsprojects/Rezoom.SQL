@@ -169,8 +169,16 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                 { table with Constraints = table.Constraints |> Map.add constraintName.Value constr }
             let table =
                 match constraintType with
-                | PrimaryKeyConstraintType _ ->
-                    let columns = cols |> Seq.map (fun c -> { Map.find c table.Columns with PrimaryKey = true })
+                | PrimaryKeyConstraintType autoIncrement ->
+                    let columns =
+                        cols
+                        |> Seq.map (fun c ->
+                            let found = Map.find c table.Columns
+                            if autoIncrement then
+                                match found.ColumnType.Type with
+                                | IntegerType _ -> ()
+                                | _ -> failAt constraintName.Source <| Error.onlyIntPrimaryKeyAutoincrement
+                            { found with PrimaryKey = true })
                     { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
                 | ForeignKeyConstraintType _
                 | CheckConstraintType

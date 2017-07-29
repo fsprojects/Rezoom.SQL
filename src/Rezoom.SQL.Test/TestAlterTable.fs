@@ -70,3 +70,10 @@ let ``can create same index name after dropping first table`` () =
         """
         Expect = expect |> Good
     } |> assertSimple
+
+[<Test>]
+let ``string can't be autoincrement`` () =
+    { defaultTest with
+        Migration = "create table Foo(x string(10) primary key autoincrement)"
+        Expect = BadMigration <| Error.onlyIntPrimaryKeyAutoincrement
+    } |> assertSimple

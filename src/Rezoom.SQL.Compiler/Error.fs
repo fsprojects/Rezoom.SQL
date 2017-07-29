@@ -139,8 +139,10 @@ let cannotDropColumnWithDefault columnName =
     sprintf
         "SQ059: Cannot drop the column ``%O`` while it has a default value (use ALTER TABLE DROP DEFAULT FOR %O)"
         columnName columnName
-
-
+let onlyIntPrimaryKeyAutoincrement =
+    "SQ060: AUTOINCREMENT can only be specified for an INT or INT64 column"
+let tableAlreadyHasPrimaryKey table =
+    sprintf "SQ061: The table ``%O`` already has a primary key defined." table
 
 
 let tableNameNotSuitableForPG =
