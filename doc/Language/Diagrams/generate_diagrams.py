@@ -12,6 +12,15 @@ def select_core():
 def select_stmt():
     return NonTerminal('select-stmt', language('SelectStmt', 'select-stmt'))
 
+def insert_stmt():
+    return NonTerminal('insert-stmt', language('InsertStmt', 'insert-stmt'))
+
+def delete_stmt():
+    return NonTerminal('delete-stmt', language('DeleteStmt', 'delete-stmt'))
+
+def update_stmt():
+    return NonTerminal('update-stmt', language('UpdateStmt', 'update-stmt'))
+
 def name():
     return NonTerminal('name', language('Name', 'name'))
 
@@ -75,6 +84,29 @@ def on_delete():
 def export(filename, diagram):
     with open(filename, 'w') as f:
         diagram.writeSvg(f.write)
+
+export('CommonTableExpression.svg', Diagram(
+    'WITH',
+    Optional('RECURSIVE', 'skip'),
+    OneOrMore(
+        Sequence(
+            name(),
+            Optional(
+                Sequence(
+                    '(',
+                    OneOrMore(name(), ','),
+                    ')'),
+                'skip'),
+            'AS',
+            '(',
+            select_stmt(),
+            ')'),
+        ','),
+    Choice(0,
+        select_stmt(),
+        insert_stmt(),
+        update_stmt(),
+        delete_stmt())))
 
 export('RailroadDemo.svg', Diagram(
     Stack(

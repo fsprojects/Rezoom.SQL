@@ -19,6 +19,7 @@
     * [Insert statements](doc/Language/InsertStmt.md)
     * [Update statements](doc/Language/UpdateStmt.md)
     * [Delete statements](doc/Language/DeleteStmt.md)
+    * [Common table expressions](doc/Language/CommonTableExpression.md)
     * [Create table statements](doc/Language/CreateTableStmt.md)
     * [Create view statements](doc/Language/CreateViewStmt.md)
     * [Alter table statements](doc/Language/AlterTableStmt.md)
