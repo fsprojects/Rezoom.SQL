@@ -174,4 +174,47 @@ let functions =
         aggregate "var_pop" [ numeric a' ] (nullable a')
         aggregate "var_samp" [ numeric a' ] (nullable a')
         aggregate "grouping" [ scalar; vararg scalar ] int32
+
+        // system functions https://www.postgresql.org/docs/current/static/functions-info.html
+        proc "current_database" [] string
+        proc "current_query" [] string
+        proc "current_schema" [] string
+        proc "pg_conf_load_time" [] datetimey
+        // can't do inet_client_addr because it returns inet
+        proc "inet_client_port" [] int32
+        // can't do inet_server_addr because it returns inet
+        proc "inet_server_port" [] int32
+        proc "pg_backend_pid" [] int32
+        proc "pg_notification_queue_usage" [] float64
+        proc "pg_postmaster_start_time" [] datetimey
+        proc "pg_trigger_depth" [] int32
+        proc "version" [] string
+
+        proc "has_any_column_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_any_column_privilege" [ infect string; infect string ] boolean
+        proc "has_column_privilege"  [ infect string; infect string; infect string; infect string ] boolean
+        proc "has_column_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_database_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_database_privilege" [ infect string; infect string ] boolean
+        proc "has_foreign_data_wrapper_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_foreign_data_wrapper_privilege" [ infect string; infect string ] boolean
+        proc "has_function_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_function_privilege" [ infect string; infect string ] boolean
+        proc "has_language_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_language_privilege" [ infect string; infect string ] boolean
+        proc "has_schema_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_schema_privilege" [ infect string; infect string ] boolean
+        proc "has_sequence_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_sequence_privilege" [ infect string; infect string ] boolean
+        proc "has_server_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_server_privilege" [ infect string; infect string ] boolean
+        proc "has_table_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_table_privilege" [ infect string; infect string ] boolean
+        proc "has_tablespace_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_tablespace_privilege" [ infect string; infect string ] boolean
+        proc "has_type_privilege" [ infect string; infect string; infect string ] boolean
+        proc "has_type_privilege" [ infect string; infect string ] boolean
+        proc "pg_has_role" [ infect string; infect string; infect string ] boolean
+        proc "pg_has_role" [ infect string; infect string ] boolean
+        proc "row_security_active" [ infect string ] boolean
     |] |> DefaultFunctions.extendedBy
