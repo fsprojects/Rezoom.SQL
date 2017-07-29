@@ -217,4 +217,16 @@ let functions =
         proc "pg_has_role" [ infect string; infect string; infect string ] boolean
         proc "pg_has_role" [ infect string; infect string ] boolean
         proc "row_security_active" [ infect string ] boolean
+
+        // uuid-ossp https://www.postgresql.org/docs/current/static/uuid-ossp.html
+        proc "uuid_generate_v1" [] guid
+        proc "uuid_generate_v1mc" [] guid
+        func "uuid_generate_v3" [ infect guid; infect string ] guid
+        proc "uuid_generate_v4" [] guid
+        func "uuid_generate_v5" [ infect guid; infect string ] guid
+        func "uuid_nil" [] guid
+        func "uuid_ns_dns" [] guid
+        func "uuid_ns_url" [] guid
+        func "uuid_ns_oid" [] guid
+        func "uuid_ns_x500" [] guid
     |] |> DefaultFunctions.extendedBy
