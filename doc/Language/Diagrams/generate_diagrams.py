@@ -86,27 +86,29 @@ def export(filename, diagram):
         diagram.writeSvg(f.write)
 
 export('CommonTableExpression.svg', Diagram(
-    'WITH',
-    Optional('RECURSIVE', 'skip'),
-    OneOrMore(
+    Stack(
         Sequence(
-            name(),
-            Optional(
-                Sequence(
-                    '(',
-                    OneOrMore(name(), ','),
-                    ')'),
-                'skip'),
-            'AS',
-            '(',
+            'WITH',
+            Optional('RECURSIVE', 'skip')),
+        OneOrMore(
+            Sequence(
+                name(),
+                Optional(
+                    Sequence(
+                        '(',
+                        OneOrMore(name(), ','),
+                        ')'),
+                    'skip'),
+                'AS',
+                '(',
+                select_stmt(),
+                ')'),
+            ','),
+        Choice(0,
             select_stmt(),
-            ')'),
-        ','),
-    Choice(0,
-        select_stmt(),
-        insert_stmt(),
-        update_stmt(),
-        delete_stmt())))
+            insert_stmt(),
+            update_stmt(),
+            delete_stmt()))))
 
 export('RailroadDemo.svg', Diagram(
     Stack(
