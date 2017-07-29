@@ -34,13 +34,14 @@ determines:
 * The [data types](../Language/DataTypes.md) supported
 * The logic used for setting up the migration history table and running migrations
 
-Currently there are only three possible values for the `"backend"` setting:
+Currently there are four possible values for the `"backend"` setting:
 
-| "backend" | RDBMS                               |
-|-----------|-------------------------------------|
-| "sqlite"  | [SQLite](https://www.sqlite.org/)   |
-| "tsql"    | Microsoft SQL Server                |
-| "rzsql"   | None (no translation)               |
+| "backend"  | RDBMS                                     |
+|------------|-------------------------------------------|
+| "sqlite"   | [SQLite](https://www.sqlite.org/)         |
+| "tsql"     | Microsoft SQL Server                      |
+| "postgres" | [PostgreSQL](https://www.postgresql.org/) |
+| "rzsql"    | None (no translation)                     |
 
 The default "rzsql" backend is never what you want for a real application. It
 outputs RZSQL's own syntax, although not necessarily exactly what was written
