@@ -31,6 +31,9 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
     override __.Name(name) =
         "\"" + name.Value.ToLowerInvariant().Replace("\"", "\"\"") + "\""
         |> text
+    override __.CollationName(name) = // no ToLower, use as-is
+        "\"" + name.Value.Replace("\"", "\"\"") + "\""
+        |> text
     override __.TypeName(name, autoIncrement) =
         (Seq.singleton << text) <|
             match name with
@@ -117,7 +120,7 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
                     yield ws
                     yield text "COLLATE"
                     yield ws
-                    yield this.Expr.Name(collation)
+                    yield this.Expr.CollationName(collation)
             }
         seq {
             yield text "ALTER TABLE"
@@ -179,7 +182,7 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
 
 type PostgresBackend() =
     static let initialModel =
-        let main, temp = Name("main"), Name("temp")
+        let main, temp = Name("public"), Name("temp")
         {   Schemas =
                 [   Schema.Empty(main)
                     Schema.Empty(temp)

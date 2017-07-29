@@ -161,7 +161,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield text "COLLATE"
                 yield ws
-                yield text collation.Value // N.B. not wrapped in .Name -- TSQL doesn't like [collation name]
+                yield this.Expr.CollationName(collation)
             if not col.Nullable then
                 yield ws
                 yield text "NOT NULL"
@@ -238,7 +238,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield text "COLLATE"
                 yield ws
-                yield text collation.Value // N.B. not wrapped in .Name -- TSQL doesn't like [collation name]
+                yield this.Expr.CollationName(collation)
             yield ws
             if nullable then
                 yield text "NULL"

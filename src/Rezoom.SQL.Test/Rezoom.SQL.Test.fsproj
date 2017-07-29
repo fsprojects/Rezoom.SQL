@@ -77,7 +77,8 @@
     <Compile Include="TestCTEs.fs" />
     <Compile Include="TestSQLite.fs" />
     <Compile Include="TestPostgres.fs" />
-    <Compile Include="TestSmoke.fs" />
+    <Compile Include="TestTQLSmoke.fs" />
+    <Compile Include="TestPostgresSmoke.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

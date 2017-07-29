@@ -26,6 +26,7 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
     override __.Name(name) =
         "[" + name.Value.Replace("]", "]]") + "]"
         |> text
+    override __.CollationName(name) = text name.Value
     override __.TypeName(name, _) =
         (Seq.singleton << text) <|
             match name with

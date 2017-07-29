@@ -9,6 +9,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
     override __.Name(name) =
         "\"" + name.Value.Replace("\"", "\"\"") + "\""
         |> text
+    override this.CollationName(name) = this.Name(name)
     override __.TypeName(name, _) =
         (Seq.singleton << text) <|
             match name with
@@ -97,7 +98,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             yield ws
             yield text "COLLATE"
             yield ws
-            yield this.Name(collation)
+            yield this.CollationName(collation)
         }
     override this.Invoke(func) =
         seq {

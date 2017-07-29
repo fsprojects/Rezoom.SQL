@@ -75,6 +75,7 @@ type StatementTranslator() =
 and [<AbstractClass>] ExprTranslator() =
     abstract member Literal : LiteralTranslator
     abstract member Name : name : Name -> Fragment
+    abstract member CollationName : name : Name -> CommandFragment
     abstract member BinaryOperator : op : BinaryOperator -> Fragment
     abstract member UnaryOperator : op : UnaryOperator -> Fragment
     abstract member SimilarityOperator : invert : bool * op : SimilarityOperator -> Fragment

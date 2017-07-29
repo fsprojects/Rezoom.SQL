@@ -1,6 +1,5 @@
-﻿module Rezoom.SQL.Test.TestSmoke
+﻿module Rezoom.SQL.Test.TestTSQLSmoke
 open NUnit.Framework
-open Rezoom.SQL.Compiler
 
 [<Test>]
 let ``smoke test tsql`` () =

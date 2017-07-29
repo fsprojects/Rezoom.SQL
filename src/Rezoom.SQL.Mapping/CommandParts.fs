@@ -52,7 +52,7 @@ type CommandFragment =
                     yield text
         } |> String.concat ""
     static member Stringize(fragments : CommandFragment seq) =
-        CommandFragment.Stringize(" ", "", fragments)
+        CommandFragment.Stringize("\n", "", fragments)
 
 [<AbstractClass>]
 type ResultSetProcessor() =

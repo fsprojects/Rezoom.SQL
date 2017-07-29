@@ -331,7 +331,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield text "COLLATE"
                 yield ws
-                yield this.Expr.Name(collation)
+                yield this.Expr.CollationName(collation)
             match col.DefaultValue with
             | None -> ()
             | Some defaultValue ->
@@ -430,7 +430,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield text "COLLATE"
                 yield ws
-                yield this.Expr.Name(change.NewCollation)
+                yield this.Expr.CollationName(change.NewCollation)
         }
     override this.CreateView(create) =
         seq {

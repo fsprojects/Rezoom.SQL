@@ -18,7 +18,7 @@ let translate (sql : string) (expectedTSQL : string) =
     let fragments = userModel.Backend.ToCommandFragments(indexer, parsed.Statements)
     let str = CommandFragment.Stringize(fragments)
     Console.WriteLine(str)
-    Assert.AreEqual(expectedTSQL, str)
+    Assert.AreEqual(expectedTSQL.SmushWhitespace(), str.SmushWhitespace())
 
 [<Test>]
 let ``at at proc translation`` () =
