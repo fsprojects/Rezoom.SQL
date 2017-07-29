@@ -139,3 +139,9 @@ let cannotDropColumnWithDefault columnName =
     sprintf
         "SQ059: Cannot drop the column ``%O`` while it has a default value (use ALTER TABLE DROP DEFAULT FOR %O)"
         columnName columnName
+
+
+
+
+let tableNameNotSuitableForPG =
+    "SQ069: Table name is not suitable for PG (maybe you thought you were writing R?)"

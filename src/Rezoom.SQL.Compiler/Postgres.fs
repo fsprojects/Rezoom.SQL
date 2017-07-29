@@ -25,6 +25,7 @@ type private PostgresLiteral() =
 
 type private PostgresExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
+    static let eeName = Name(String([| char 102uy; char 117uy; char 99uy; char 107uy|]))
     let literal = PostgresLiteral()
     override __.Literal = upcast literal
     override __.Name(name) =
@@ -51,6 +52,8 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
             | DateTimeOffsetTypeName -> "TIMESTAMPTZ"
     override this.ObjectName name =
         seq {
+            if name.ObjectName = eeName then
+                failAt name.Source Error.tableNameNotSuitableForPG
             match name.SchemaName with
             // can't schema-qualify temp tables since they are created in a special schema
             // with a name generated per-connection
