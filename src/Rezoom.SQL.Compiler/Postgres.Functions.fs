@@ -3,7 +3,12 @@ open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.FunctionDeclarations
 
 let functions =
-    [|  // math https://www.postgresql.org/docs/9.6/static/functions-math.html
+    [|  proc "lastval" [] integral
+        func "nullif" [ a'; a' ] (nullable a')
+        func "greatest" [ infect a'; infect (vararg a') ] a'
+        func "least" [ infect a'; infect (vararg a') ] a'
+
+        // math https://www.postgresql.org/docs/9.6/static/functions-math.html
         func "cbrt" [ infect num ] float64
         func "sqrt" [ infect num ] float64
         func "ceil" [ infect (numeric a') ] a'
@@ -101,10 +106,72 @@ let functions =
         func "set_bit" [ infect binary; infect int32; infect int32 ] binary
         func "set_byte" [ infect binary; infect int32; infect int32 ] binary
 
+        // formatting functions https://www.postgresql.org/docs/current/static/functions-formatting.html
+        func "to_char" [ infect scalar ] string
+        // func "to_date" [ infect string; infect string ] date // we don't have a date type
+        func "to_number" [ infect string; infect string ] num
+        func "to_timestamp" [ infect scalar; optional (infect string) ] datetimey
+
+        // date/time functions https://www.postgresql.org/docs/current/static/functions-datetime.html
+        // func "age" [ infect datetimey; infect datetimey ] interval // we don't have interval types
+        proc "clock_timestamp" [] datetimey
+        // TODO: translate without parens
+        // proc "current_timestamp" [] datetimey
+        func "date_part" [ infect string; infect datetimey ] float64
+        func "date_trunc" [ infect string; infect datetimey ] datetimey
+        // TODO: handle funky syntax extract(hour from timestamp '...')
+        // func "extract" [ string; datetimey ] float64
+        func "isfinite" [ infect datetimey ] boolean
+        // no justify_whatever since we don't have intervals
+        func "make_timestamp"
+            (List.map infect [ int32; int32; int32; int32; int32; float64 ]) datetimey
+        func "make_timestamptz"
+            (List.map infect [ int32; int32; int32; int32; int32; float64; optional string ]) datetimey
+        proc "now" [] datetimey
+        proc "statement_timestamp" [] datetimey
+        proc "timeofday" [] string
+        proc "transaction_timestamp" [] datetimey
+        func "to_timestamp" [ infect float64 ] datetimey
+
+        // no enum, array, range, or geometric functions because we can't handle those types
+
+        // no full text search or xml functions yet -- might want to handle these later
+        // https://www.postgresql.org/docs/current/static/functions-textsearch.html
+        // https://www.postgresql.org/docs/current/static/functions-xml.html
+        // https://www.postgresql.org/docs/current/static/functions-json.html
+
         // aggregate functions
         aggregate "avg" [ numeric a' ] (nullable a')
         aggregateW "count" [ scalar ] int64
         aggregate "max" [ a' ] (nullable a')
         aggregate "min" [ a' ] (nullable a')
         aggregate "sum" [ numeric a' ] a'
+        aggregate "bit_and" [ intish a' ] (nullable a')
+        aggregate "bit_or" [ intish a' ] (nullable a')
+        aggregate "bool_and" [ boolean ] boolean
+        aggregate "bool_or" [ boolean ] boolean
+        aggregate "every" [ boolean ] boolean
+        aggregate "json_agg" [ scalar ] string // pretend json is a string... 
+        aggregate "json_object_agg" [ string; scalar ] string
+        aggregate "string_agg" [ stringish a'; stringish a' ] a'
+        // statistical aggregate functions
+        aggregate "corr" [ float64; float64 ] (nullable float64)
+        aggregate "covar_pop" [ float64; float64 ] (nullable float64)
+        aggregate "covar_samp" [ float64; float64 ] (nullable float64)
+        aggregate "regr_avgx" [ float64; float64 ] (nullable float64)
+        aggregate "regr_avgy" [ float64; float64 ] (nullable float64)
+        aggregate "regr_count" [ float64; float64 ] int64
+        aggregate "regr_intercept" [ float64; float64 ] (nullable float64)
+        aggregate "regr_r2" [ float64; float64 ] (nullable float64)
+        aggregate "regr_slope" [ float64; float64 ] (nullable float64)
+        aggregate "regr_sxx" [ float64; float64 ] float64
+        aggregate "regr_sxy" [ float64; float64 ] float64
+        aggregate "regr_syy" [ float64; float64 ] float64
+        aggregate "stddev" [ numeric a' ] (nullable a')
+        aggregate "stddev_pop" [ numeric a' ] (nullable a')
+        aggregate "stddev_samp" [ numeric a' ] (nullable a')
+        aggregate "variance" [ numeric a' ] (nullable a')
+        aggregate "var_pop" [ numeric a' ] (nullable a')
+        aggregate "var_samp" [ numeric a' ] (nullable a')
+        aggregate "grouping" [ scalar; vararg scalar ] int32
     |] |> DefaultFunctions.extendedBy

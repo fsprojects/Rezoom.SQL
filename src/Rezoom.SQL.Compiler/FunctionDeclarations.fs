@@ -50,6 +50,7 @@ let int16 = concrete (IntegerType Integer16)
 let binary = concrete BinaryType
 let datetime = concrete DateTimeType
 let datetimeoffset = concrete DateTimeOffsetType
+let datetimey = concrete DateTimeishTypeClass
 let decimal = concrete DecimalType
 let guid = concrete GuidType
 

@@ -142,8 +142,8 @@ type ColumnType =
         | FractionalTypeClass
         | NumericTypeClass
         | DecimalType -> DbType.Decimal, nullify typeof<decimal>
-        | DateTimeishTypeClass
         | DateTimeType -> DbType.DateTime, nullify typeof<DateTime>
+        | DateTimeishTypeClass
         | DateTimeOffsetType -> DbType.DateTimeOffset, nullify typeof<DateTimeOffset>
         | GuidType -> DbType.Guid, nullify typeof<Guid>
         | StringType -> DbType.String, nullify typeof<string>
