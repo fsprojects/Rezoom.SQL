@@ -32,7 +32,6 @@ let ``can't add same constraint name to different tables`` () =
             create table Foo(x int constraint nm primary key, y int);
             create table Bar(z int constraint nm primary key);
         """
-        Command = ""
         Expect = BadMigration <| Error.objectAlreadyExists "main.nm"
     } |> assertSimple
 
@@ -44,6 +43,30 @@ let ``can add same constraint name to different table after dropping`` () =
             alter table Foo drop constraint nm;
             create table Bar(z int constraint nm primary key);
         """
-        Command = ""
+        Expect = expect |> Good
+    } |> assertSimple
+
+[<Test>]
+let ``can't create same index name on two tables`` () =
+    { defaultTest with
+        Migration = """
+            create table Foo(x int);
+            create index IX_Example on Foo(x);
+            create table Bar(y int);
+            create index IX_Example on Bar(y);
+        """
+        Expect = BadMigration <| Error.objectAlreadyExists "main.IX_Example"
+    } |> assertSimple
+
+[<Test>]
+let ``can create same index name after dropping first table`` () =
+    { defaultTest with
+        Migration = """
+            create table Foo(x int);
+            create index IX_Example on Foo(x);
+            create table Bar(y int);
+            drop table Foo;
+            create index IX_Example on Bar(y);
+        """
         Expect = expect |> Good
     } |> assertSimple

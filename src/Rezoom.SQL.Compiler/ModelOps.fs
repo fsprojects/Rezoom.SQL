@@ -310,6 +310,8 @@ let dropTable (tableName : QualifiedObjectName WithSource) =
                 | _ -> ()
             for constr in tbl.Constraints do
                 do! removeObject (artificialSource { tbl.Name with ObjectName = constr.Key })
+            for idx in tbl.Indexes do
+                do! removeObject (artificialSource { tbl.Name with ObjectName = idx.Key })
             return! removeObject tableName
         else
             failAt tableName.Source <| Error.tableIsReferencedByFKs tableName.Value referencingTables
