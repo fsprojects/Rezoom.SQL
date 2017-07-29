@@ -233,12 +233,12 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
             yield ws
             yield! this.Expr.TypeName(typeName)
             match collation with
-            | None -> ()
-            | Some collation ->
+            | Some collation when typeName.SupportsCollation ->
                 yield ws
                 yield text "COLLATE"
                 yield ws
                 yield this.Expr.CollationName(collation)
+            | _ -> ()
             yield ws
             if nullable then
                 yield text "NULL"
