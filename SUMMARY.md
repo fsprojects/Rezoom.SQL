@@ -3,7 +3,7 @@
 * [About](README.md)
 * [Tutorial](doc/Tutorial/README.md)
     * [Adding migrations](doc/Tutorial/AddingMigrations.md)
-    * [Switching to SQL Server](doc/Tutorial/SwitchToTSQL.md)
+    * [Using TSQL or Postgres](doc/Tutorial/SwitchBackends.md)
     * [Loading nested objects](doc/Tutorial/LoadingNestedObjects.md)
     * [Asynchronous programming](doc/Tutorial/Async.md)
 * [Using Rezoom](doc/Rezoom/README.md)
