@@ -7,11 +7,13 @@ let saveFiddle fiddleData = Persistence.saveFiddle fiddleData
 
 let private sqliteBackend = SQLite.SQLiteBackend() :> IBackend
 let private tsqlBackend = TSQL.TSQLBackend() :> IBackend
+let private postgresBackend = Postgres.PostgresBackend() :> IBackend
 
 let private backendOf fiddleBackend =
     match fiddleBackend with
     | SQLiteFiddle -> sqliteBackend
     | TSQLFiddle -> tsqlBackend
+    | PostgresFiddle -> postgresBackend
 
 let private errorFrom ty (exn : SQLCompilerException) =
     let src, reason, message =

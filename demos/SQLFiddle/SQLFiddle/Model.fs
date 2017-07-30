@@ -7,14 +7,17 @@ type FiddleModel = SQLModel<".">
 type FiddleBackend =
     | SQLiteFiddle
     | TSQLFiddle
+    | PostgresFiddle
     override this.ToString() =
         match this with
         | SQLiteFiddle -> "sqlite"
         | TSQLFiddle -> "tsql"
+        | PostgresFiddle -> "postgres"
     static member Parse(str : string) =
         match str with
         | "sqlite" -> Some SQLiteFiddle
         | "tsql" -> Some TSQLFiddle
+        | "postgres" -> Some PostgresFiddle
         | _ -> None
 
 type FiddleId =
