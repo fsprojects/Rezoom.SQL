@@ -48,8 +48,8 @@
     <Reference Include="FParsec, Version=1.0.0.0, Culture=neutral, PublicKeyToken=40ccfc0a09edbb5d, processorArchitecture=MSIL">
       <HintPath>..\packages\FParsec.1.0.2\lib\net40-client\FParsec.dll</HintPath>
     </Reference>
-    <Reference Include="FParsec-Pipes, Version=0.3.1.0, Culture=neutral, PublicKeyToken=a7813e45d445015c, processorArchitecture=MSIL">
-      <HintPath>..\packages\FParsec-Pipes.0.3.1.0\lib\net45\FParsec-Pipes.dll</HintPath>
+    <Reference Include="FParsec-Pipes, Version=0.4.0.0, Culture=neutral, PublicKeyToken=a7813e45d445015c, processorArchitecture=MSIL">
+      <HintPath>..\packages\FParsec-Pipes.0.4.0\lib\net45\FParsec-Pipes.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS, Version=1.0.0.0, Culture=neutral, PublicKeyToken=40ccfc0a09edbb5d, processorArchitecture=MSIL">
       <HintPath>..\packages\FParsec.1.0.2\lib\net40-client\FParsecCS.dll</HintPath>
@@ -74,14 +74,14 @@
     <Reference Include="Rezoom, Version=0.4.2.0, Culture=neutral, PublicKeyToken=a7813e45d445015c, processorArchitecture=MSIL">
       <HintPath>..\packages\Rezoom.0.4.2\lib\net45\Rezoom.dll</HintPath>
     </Reference>
-    <Reference Include="Rezoom.SQL.Compiler, Version=0.1.0.2682, Culture=neutral, PublicKeyToken=a7813e45d445015c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.5.2.2716\lib\net45\Rezoom.SQL.Compiler.dll</HintPath>
+    <Reference Include="Rezoom.SQL.Compiler, Version=0.1.0.35233, Culture=neutral, PublicKeyToken=a7813e45d445015c, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.6.0.35237\lib\net45\Rezoom.SQL.Compiler.dll</HintPath>
     </Reference>
-    <Reference Include="Rezoom.SQL.Mapping, Version=0.1.0.2679, Culture=neutral, PublicKeyToken=a7813e45d445015c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.5.2.2716\lib\net45\Rezoom.SQL.Mapping.dll</HintPath>
+    <Reference Include="Rezoom.SQL.Mapping, Version=0.1.0.35230, Culture=neutral, PublicKeyToken=a7813e45d445015c, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.6.0.35237\lib\net45\Rezoom.SQL.Mapping.dll</HintPath>
     </Reference>
-    <Reference Include="Rezoom.SQL.Provider, Version=0.5.2.2716, Culture=neutral, PublicKeyToken=a7813e45d445015c, processorArchitecture=MSIL">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.5.2.2716\lib\net45\Rezoom.SQL.Provider.dll</HintPath>
+    <Reference Include="Rezoom.SQL.Provider, Version=0.6.0.35237, Culture=neutral, PublicKeyToken=a7813e45d445015c, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.6.0.35237\lib\net45\Rezoom.SQL.Provider.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />

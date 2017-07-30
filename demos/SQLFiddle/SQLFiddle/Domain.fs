@@ -74,11 +74,11 @@ let private typeInfoFrom (backend : IBackend) (model : CommandEffect) (effect : 
         ReadTables =
             match effect.CacheInfo.Value with
             | None -> ["(unknown)"]
-            | Some c -> [ for _, tbl in c.ReadTables -> tbl.Value ]
+            | Some c -> [ for name in c.ReadTables -> name.ObjectName.Value ]
         WriteTables =
             match effect.CacheInfo.Value with
             | None -> ["(unknown)"]
-            | Some c -> [ for _, tbl in c.WriteTables -> tbl.Value ]
+            | Some c -> [ for name in c.WriteTables -> name.ObjectName.Value ]
         BackendModel = stringize model.Statements
         BackendCommand = stringize effect.Statements      
     }

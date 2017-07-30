@@ -68,7 +68,7 @@
       <HintPath>..\packages\FParsec.1.0.2\lib\net40-client\FParsec.dll</HintPath>
     </Reference>
     <Reference Include="FParsec-Pipes">
-      <HintPath>..\packages\FParsec-Pipes.0.3.1.0\lib\net45\FParsec-Pipes.dll</HintPath>
+      <HintPath>..\packages\FParsec-Pipes.0.4.0\lib\net45\FParsec-Pipes.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS">
       <HintPath>..\packages\FParsec.1.0.2\lib\net40-client\FParsecCS.dll</HintPath>
@@ -86,13 +86,13 @@
       <HintPath>..\packages\Rezoom.0.4.2\lib\net45\Rezoom.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Compiler">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.5.2.2716\lib\net45\Rezoom.SQL.Compiler.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.6.0.35237\lib\net45\Rezoom.SQL.Compiler.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Mapping">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.5.2.2716\lib\net45\Rezoom.SQL.Mapping.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.6.0.35237\lib\net45\Rezoom.SQL.Mapping.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Provider">
-      <HintPath>..\packages\Rezoom.SQL.Provider.0.5.2.2716\lib\net45\Rezoom.SQL.Provider.dll</HintPath>
+      <HintPath>..\packages\Rezoom.SQL.Provider.0.6.0.35237\lib\net45\Rezoom.SQL.Provider.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -101,6 +101,9 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Security" />
     <Reference Include="System.Transactions" />
+    <Reference Include="System.ValueTuple">
+      <HintPath>..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
