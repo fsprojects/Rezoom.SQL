@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/rspeele/Rezoom.SQL.svg?branch=master)](https://travis-ci.org/rspeele/Rezoom.SQL)
 
-[Documentation](https://rspeele.gitbooks.io/rezoom-sql/doc/Tutorial/) (work-in-progress)
+[Tutorial & full documentation](https://rspeele.gitbooks.io/rezoom-sql/doc/Tutorial/)
 
 [Query playground -- try out the SQL dialect live!](http://rzsql.net/#52632EC5A298CFFFD652D53C03DD1318A9DACA3C)
 
@@ -143,3 +143,10 @@ permissions re-queried next time they are requested.
 This lets you safely check all the invariants you need for each method in your
 domain layer, without fear of causing mountains of redundant queries, and
 without any of the effort of writing your own caching layer.
+
+## Get started
+
+To get started using RZSQL, read the
+[tutorial](https://rspeele.gitbooks.io/rezoom-sql/doc/Tutorial/). It'll get you
+up and running in 5 minutes or your money back.
+
