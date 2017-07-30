@@ -11,7 +11,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
     <releaseNotes>
-        Full ALTER TABLE support, initial Postgres support.
+        Use PRAGMA foreign_keys=ON for all SQLite connections.
     </releaseNotes>
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data sqlite tsql sqlserver fsharp typeprovider</tags>
