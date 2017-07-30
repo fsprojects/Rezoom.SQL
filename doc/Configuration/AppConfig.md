@@ -25,10 +25,10 @@ There are two things you need to accomplish in your App.config:
 
 ## Samples
 
-In practice, maybe you can remember the connection string parameters, but
-**nobody** can write a correct `DbProviderFactory` entry from scratch. The
-originals were found via brute force search in a Microsoft Research project, and
-have been copied from StackOverflow ever since.
+In practice, nobody can remember how to write a connection string, let alone a
+`DbProviderFactory` entry from scratch. The originals were found via brute force
+search in a Microsoft Research project, and have been copied from StackOverflow
+ever since.
 
 An easy way to get a working App.config as a starting point is to use the helper
 NuGet package for your backend, which will also install the appropriate ADO.NET
