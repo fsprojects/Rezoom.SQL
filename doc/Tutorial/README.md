@@ -89,7 +89,9 @@ If you'd like to take a look around it and see the tables, I recommend using
 
 ## Adding some data
 
-You add data to your tables using plain old SQL `INSERT` statements. Try adding this code to your program:
+You add data to your tables using plain old SQL `INSERT` statements. Try adding
+this code to your program (if you're lazy, just delete your `main` function and
+paste this in its place):
 
 ```fsharp
 open Rezoom.SQL.Synchronous // extension methods for running commands synchronously
@@ -130,6 +132,7 @@ in the program, you can run it again. Try editing it to get an email address at 
 
 So far you've already run a query once: the `select last_insert_rowid() as id` following inserting a user.
 But you can use the `SQL<...>` provided type to run all sorts of SQL queries. Let's try getting the list of users.
+Again, you can add this code onto your program by removing your `main` function and putting this code in its place.
 
 ```fsharp
 type ListUsers = SQL<"""
