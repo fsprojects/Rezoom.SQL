@@ -1,6 +1,6 @@
 (this page is part of [the Rezoom.SQL tutorial](README.md))
 
-# Switching from SQLite to SQL Server or PostgreSQL
+# Switching to SQL Server or PostgreSQL
 
 Rezoom.SQL translates its own dialect of SQL to different "backends". Currently
 [SQLite](https://www.sqlite.org/), MS SQL Server (T-SQL), and
