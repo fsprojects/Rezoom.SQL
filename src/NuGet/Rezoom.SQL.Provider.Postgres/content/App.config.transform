@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <connectionStrings>
+    <add name="rzsql" providerName="Npgsql" connectionString="Host=localhost;Database=rzsql;Username=your_user_here;Password=your_password_here" />
+  </connectionStrings>
+  <system.data>
+    <DbProviderFactories>
+      <remove invariant="Npgsql" />
+      <add name="Npgsql Data Provider" invariant="Npgsql" support="FF" description=".Net Framework Data Provider for Postgresql" type="Npgsql.NpgsqlFactory, Npgsql" />
+    </DbProviderFactories>
+  </system.data>
+</configuration>
