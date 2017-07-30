@@ -25,6 +25,11 @@ type DefaultConnectionProvider() =
         let conn = provider.CreateConnection()
         conn.ConnectionString <- connectionString.ConnectionString
         conn.Open()
+        if conn.GetType().Name = "SQLiteConnection" then
+            // Encourage SQLite to put the R in RDBMS
+            use cmd = conn.CreateCommand()
+            cmd.CommandText <- "PRAGMA foreign_keys=ON;"
+            cmd.ExecuteNonQuery() |> ignore
         conn
     override __.Open(name) = DefaultConnectionProvider.Open(name)
 
