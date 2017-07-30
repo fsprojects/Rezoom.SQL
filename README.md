@@ -2,7 +2,7 @@
 
 [Documentation](https://rspeele.gitbooks.io/rezoom-sql/doc/Tutorial/) (work-in-progress)
 
-[Query playground -- try out the SQL dialect live!](http://rzsql.net/#3AB1F9635DF0C97D31462380EEBE88B460AE73FC)
+[Query playground -- try out the SQL dialect live!](http://rzsql.net/#52632EC5A298CFFFD652D53C03DD1318A9DACA3C)
 
 # Statically typed SQL for F# #
 
@@ -37,7 +37,7 @@ beginning.
 ![animated example usage to write queries](doc/ReadmeResources/ModelChange.gif)
 
 Check out the [query
-playground](http://rzsql.net/#3AB1F9635DF0C97D31462380EEBE88B460AE73FC) to see
+playground](http://rzsql.net/#52632EC5A298CFFFD652D53C03DD1318A9DACA3C) to see
 what kinds of SQL you can write.
 
 ## The productivity of static typing
