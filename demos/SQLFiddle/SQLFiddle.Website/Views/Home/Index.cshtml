@@ -109,6 +109,18 @@
                     }
                 }
 
+                $div.append('<h4>Cacheable: ' + (info.idempotent ? 'yes' : 'no') + '</h4>');
+                (function () {
+                    var reads = info.readTables;
+                    var writes = info.writeTables;
+                    if (reads.length > 0) {
+                        $div.append('<span class="cacheinfo">Depends on: ' + reads.join(', ') + '.</span>');
+                    }
+                    if (writes.length > 0) {
+                        $div.append('<span class="cacheinfo invalidation">Invalidates: ' + writes.join(', ') + '.</span>');
+                    }
+                })();
+
                 $output.html($div);
             };
 

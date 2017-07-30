@@ -111,3 +111,12 @@
 #navbar a:hover {
     font-weight: bold;
 }
+
+.cacheinfo {
+    margin-left: 10px;
+}
+
+.cacheinfo.invalidation {
+    font-weight: bold;
+    margin-left: 20px;
+}
