@@ -8,9 +8,9 @@
 
 Rezoom.SQL is an F# ORM for SQL databases.
 
-It integrates with the F# compiler via a type provider to statically typecheck
-its own dialect of SQL. It knows how to translate this SQL dialect to various
-backends. Currently it supports SQLite, SQL Server, and PostgreSQL.
+It integrates with the F# compiler via a generative type provider to statically
+typecheck its own dialect of SQL. It knows how to translate this SQL dialect to
+various backends. Currently it supports SQLite, SQL Server, and PostgreSQL.
 
 The type provider makes it fast and easy to write SQL statements, run them, and
 consume their results from your F# code with full type safety. You don't need to
@@ -35,6 +35,14 @@ Here's an example. You might want to refresh the page to start the GIF from the
 beginning.
 
 ![animated example usage to write queries](doc/ReadmeResources/ModelChange.gif)
+
+Because this is a generative type provider, it makes plain old .NET types you
+can use from other languages. That is, you can write an F# project that uses
+Rezoom.SQL and defines your migrations and queries, then reference that from C#
+or VB.NET projects and use the generated query types with no problem in those
+langages. There is even an option to represent nullable types with C#-style
+`System.Nullable<T>` instead of `FSharpOption<T>` to make this scenario work
+extra smoothly.
 
 Check out the [query
 playground](http://rzsql.net/#52632EC5A298CFFFD652D53C03DD1318A9DACA3C) to see
