@@ -38,6 +38,9 @@ let private toFragmentExpr (fragment : CommandFragment) =
     | LocalName n -> <@@ LocalName (%%Quotations.Expr.Value(n)) @@>
     | CommandText t -> <@@ CommandText (%%Quotations.Expr.Value(t)) @@>
     | Parameter i -> <@@ Parameter (%%Quotations.Expr.Value(i)) @@>
+    | InlineParameter (dbType, o) ->
+        // won't work with complex types so watch out
+        <@@ InlineParameter (%%Quotations.Expr.Value(dbType), %%Quotations.Expr.Value(o)) @@>
     | Whitespace -> <@@ Whitespace @@>
     | LineBreak -> <@@ LineBreak @@>
     | Indent -> <@@ Indent @@>
