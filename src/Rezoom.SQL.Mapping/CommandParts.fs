@@ -91,6 +91,7 @@ type CommandCategory = CommandCategory of connectionName : string
 type CommandParameter =
     | ListParameter of DbType * Array
     | ScalarParameter of DbType * obj
+    | RawSQLParameter of CommandFragment list
     member this.Equals(other : CommandParameter) =
         match this, other with
         | ListParameter (ty1, arr1), ListParameter (ty2, arr2) ->
@@ -108,6 +109,8 @@ type CommandParameter =
         | ScalarParameter (ty1, obj1), ScalarParameter (ty2, obj2) ->
             ty1 = ty2 && EqualityComparer<obj>.Default.Equals(obj1, obj2)
 
+        | RawSQLParameter frags1, RawSQLParameter frags2 -> frags1 = frags2
+
         | _ -> false
     override this.Equals(other : obj) =
         match other with
@@ -122,6 +125,9 @@ type CommandParameter =
             h <- ((h <<< 5) + h) ^^^ hash ty
             for o in os do
                 h <- ((h <<< 5) + h) ^^^ hash o
+        | RawSQLParameter frags ->
+            for frag in frags do
+                h <- ((h <<< 5) + h) ^^^ hash frag
         h
     interface IEquatable<CommandParameter> with
         member this.Equals(other) = this.Equals(other)

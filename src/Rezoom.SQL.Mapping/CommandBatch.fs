@@ -43,7 +43,8 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
                     j <- j + 1
             | ScalarParameter(parameterType, o) ->
                 addParam (parameterName (parameterOffset + i)) parameterType o
-        for fragment in command.Fragments do
+            | RawSQLParameter _ -> ()
+        let rec addFragment fragment =
             let fragmentString =
                 match fragment with
                 | LocalName name -> localName commandIndex name
@@ -57,6 +58,10 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
                             }
                         "(" + String.concat "," parNames + ")"
                     | ScalarParameter _ -> parameterName (parameterOffset + i)
+                    | RawSQLParameter frags ->
+                        for frag in frags do
+                            addFragment frag
+                        ""
                 | InlineParameter (dbType, value) ->
                     let name = dynamicParameterName dbCommand.Parameters.Count
                     addParam name dbType value
@@ -65,6 +70,8 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
                 | Whitespace -> " "
                 | LineBreak -> "\n"
             ignore <| builder.Append(fragmentString)
+        for fragment in command.Fragments do
+            addFragment fragment
         match command.ResultSetCount with
         | Some _ -> () // no need to add terminator statement
         | None when commandIndex + 1 >= commands.Count -> ()
@@ -78,12 +85,22 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
         dbCommand.CommandText <- builder.ToString()
 
     member __.BatchCommand(cmd : Command) =
-        let mutable count = 0
+        let countInlineParameters fragments =
+            let mutable i = 0
+            for fragment in fragments do
+                match fragment with
+                | InlineParameter _ -> i <- i + 1
+                | _ -> ()
+            i
+
+        let mutable count = countInlineParameters cmd.Fragments
         for par in cmd.Parameters do
             count <- count +
                 match par with
                 | ListParameter (_, os) -> os.Length
                 | ScalarParameter _ -> 1
+                | RawSQLParameter frags -> countInlineParameters frags
+
         if parameterCount + count > maxParameters then
             Nullable()
         else
