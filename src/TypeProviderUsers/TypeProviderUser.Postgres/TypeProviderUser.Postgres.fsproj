@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -65,13 +65,13 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FParsec">
-      <HintPath>..\..\Rezoom.SQL.Provider\bin\Release\FParsec.dll</HintPath>
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\FParsec.dll</HintPath>
     </Reference>
     <Reference Include="FParsec-Pipes">
-      <HintPath>..\..\Rezoom.SQL.Provider\bin\Release\FParsec-Pipes.dll</HintPath>
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\FParsec-Pipes.dll</HintPath>
     </Reference>
     <Reference Include="FParsecCS">
-      <HintPath>..\..\Rezoom.SQL.Provider\bin\Release\FParsecCS.dll</HintPath>
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\FParsecCS.dll</HintPath>
     </Reference>
     <Reference Include="FSharp.Core">
       <HintPath>..\packages\FSharp.Core.4.2.1\lib\net45\FSharp.Core.dll</HintPath>
@@ -80,7 +80,7 @@
       <HintPath>..\packages\FsUnit.3.0.0\lib\net45\FsUnit.NUnit.dll</HintPath>
     </Reference>
     <Reference Include="LicenseToCIL">
-      <HintPath>..\..\Rezoom.SQL.Provider\bin\Release\LicenseToCIL.dll</HintPath>
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\LicenseToCIL.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="Npgsql">
@@ -90,16 +90,16 @@
       <HintPath>..\packages\NUnit.3.6.0\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom">
-      <HintPath>..\..\Rezoom.SQL.Provider\bin\Release\Rezoom.dll</HintPath>
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Compiler">
-      <HintPath>..\..\Rezoom.SQL.Provider\bin\Release\Rezoom.SQL.Compiler.dll</HintPath>
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.SQL.Compiler.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Mapping">
-      <HintPath>..\..\Rezoom.SQL.Provider\bin\Release\Rezoom.SQL.Mapping.dll</HintPath>
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.SQL.Mapping.dll</HintPath>
     </Reference>
     <Reference Include="Rezoom.SQL.Provider">
-      <HintPath>..\..\Rezoom.SQL.Provider\bin\Release\Rezoom.SQL.Provider.dll</HintPath>
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.SQL.Provider.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
