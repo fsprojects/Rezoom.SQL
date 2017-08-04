@@ -27,11 +27,11 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
 
     let addCommand (builder : StringBuilder) (dbCommand : DbCommand) (commandIndex : int) (command : Command) =
         let parameterOffset = dbCommand.Parameters.Count
-        let addParam name dbType value =
+        let addParam name dbType (value : obj) =
             let dbParam = dbCommand.CreateParameter()
             dbParam.ParameterName <- name
             dbParam.DbType <- dbType
-            dbParam.Value <- value
+            dbParam.Value <- if isNull value then box DBNull.Value else value
             ignore <| dbCommand.Parameters.Add(dbParam)
         for i, parameter in command.Parameters |> Seq.indexed do
             match parameter with
