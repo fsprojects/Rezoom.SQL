@@ -6,7 +6,9 @@ install:
   - nuget restore src/Rezoom.SQL.sln
   - nuget install NUnit.Runners -Version 3.2.0 -OutputDirectory testrunner
 script:
-  - xbuild /p:Configuration=Debug src/Rezoom.SQL.sln
+  - xbuild /p:Configuration=Release src/Rezoom.SQL.sln
   - mono ./testrunner/NUnit.ConsoleRunner.3.2.0/tools/nunit3-console.exe ./src/Rezoom.SQL.Test/bin/Debug/Rezoom.SQL.Test.dll
+  - xbuild /p:Configuration=Debug src/TypeProviderUsers/TypeProviderUsers.sln
+
 
 
