@@ -1,8 +1,8 @@
 ﻿namespace Rezoom.SQL.Compiler
 open System
 open System.Data
-open System.Data.Common
 open System.Collections.Generic
+open Rezoom.SQL.Mapping
 
 type CoreColumnType =
     | BooleanType
@@ -22,6 +22,7 @@ type CoreColumnType =
     | ScalarTypeClass
     | AnyTypeClass
     | ListType of CoreColumnType
+    | RawSQLType
     member this.ParentType =
         match this with
         | IntegerType Integer16 -> IntegralTypeClass
@@ -42,6 +43,7 @@ type CoreColumnType =
         | NumericTypeClass
         | StringishTypeClass -> ScalarTypeClass
         | ScalarTypeClass
+        | RawSQLType
         | AnyTypeClass -> AnyTypeClass
         | ListType element ->
             let elementParent = element.ParentType
@@ -80,6 +82,7 @@ type CoreColumnType =
         | StringishTypeClass -> "<stringish>"
         | ScalarTypeClass -> "<scalar>"
         | AnyTypeClass -> "<any>"
+        | RawSQLType -> "<rawsql>"
         | ListType t -> "[" + string t + "]"
     member this.ApproximateTypeName() =
         match this with
@@ -89,6 +92,7 @@ type CoreColumnType =
         | ScalarTypeClass
         | AnyTypeClass 
         | ListType _
+        | RawSQLType
         | StringType -> StringTypeName(None)
         | IntegerType Integer16 -> IntegerTypeName Integer16
         | IntegerType Integer32 -> IntegerTypeName Integer32
@@ -154,6 +158,9 @@ type ColumnType =
         | ListType t ->
             let dbType, clrType = { Type = t; Nullable = ty.Nullable }.TypeInfo(useOptional)
             dbType, clrType.MakeArrayType()
+        | RawSQLType ->
+            // DbType part is not really used here
+            Unchecked.defaultof<DbType>, typeof<CommandFragment array>
     member ty.CLRType(useOptional) = snd <| ty.TypeInfo(useOptional)
     member ty.DbType = fst <| ty.TypeInfo(false)
     override ty.ToString() =

@@ -91,7 +91,7 @@ type CommandCategory = CommandCategory of connectionName : string
 type CommandParameter =
     | ListParameter of DbType * Array
     | ScalarParameter of DbType * obj
-    | RawSQLParameter of CommandFragment list
+    | RawSQLParameter of CommandFragment array
     member this.Equals(other : CommandParameter) =
         match this, other with
         | ListParameter (ty1, arr1), ListParameter (ty2, arr2) ->

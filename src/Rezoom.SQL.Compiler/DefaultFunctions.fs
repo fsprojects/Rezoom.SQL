@@ -1,12 +1,4 @@
 ﻿module Rezoom.SQL.Compiler.DefaultFunctions
-open System
-open System.Data
-open System.Collections.Generic
-open System.Globalization
-open Rezoom.SQL
-open Rezoom.SQL.Mapping
-open Rezoom.SQL.Compiler.BackendUtilities
-open Rezoom.SQL.Compiler.Translators
 open Rezoom.SQL.Compiler.FunctionDeclarations
 
 /// Functions that are supported by EVERY database. Surprisingly there aren't many of these.
@@ -27,6 +19,7 @@ let builtins =
         // Ignore the inferred type (but not inferred nullability) of its argument.
         // Lets you override the typechecker and treat values like whatever you feel they should be.
         erased "unsafe_coerce" (infect scalar) scalar
+        erased "unsafe_inject_raw" rawsql any
     |]
 
 let extendedBy backendFunctions =

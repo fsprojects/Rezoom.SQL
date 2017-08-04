@@ -36,6 +36,7 @@ let inline private concrete ty =
         VarArg = None
     }
 
+let any = concrete AnyTypeClass
 let scalar = concrete ScalarTypeClass
 let boolean = concrete BooleanType
 let string = concrete StringType
@@ -53,6 +54,7 @@ let datetimeoffset = concrete DateTimeOffsetType
 let datetimey = concrete DateTimeishTypeClass
 let decimal = concrete DecimalType
 let guid = concrete GuidType
+let rawsql = concrete RawSQLType
 
 let nullable arg =
     { arg with

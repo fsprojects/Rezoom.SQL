@@ -50,7 +50,7 @@ select * from Users where Created > @created
 
 [<Test>]
 let ``test datetime parameter`` () =
-    let results = TestDateTimeParameter.Command(DateTime.UtcNow)
+    let results = TestDateTimeParameter.Command(DateTime.UtcNow) |> runOnTestData
     printfn "%A" results
 
 type TestOptionalDateTimeParameter = SQL<"""
@@ -59,7 +59,7 @@ select * from Users where Created > @created or @created is null
 
 [<Test>]
 let ``test optional datetime parameter`` () =
-    let results = TestOptionalDateTimeParameter.Command(Some DateTime.UtcNow)
+    let results = TestOptionalDateTimeParameter.Command(Some DateTime.UtcNow) |> runOnTestData
     printfn "%A" results
 
 type TestGuidParameter = SQL<"""
@@ -70,7 +70,7 @@ drop table temp.bar;
 
 [<Test>]
 let ``test guid parameter`` () =
-    let results = TestGuidParameter.Command(Guid.NewGuid())
+    let results = TestGuidParameter.Command(Guid.NewGuid()) |> runOnTestData
     printfn "%A" results
 
 type TestOptionalGuidParameter = SQL<"""
@@ -79,7 +79,7 @@ select * from Users where RandomId = @id or @id is null
 
 [<Test>]
 let ``test optional guid parameter`` () =
-    let results = TestOptionalGuidParameter.Command(Some (Guid.NewGuid()))
+    let results = TestOptionalGuidParameter.Command(Some (Guid.NewGuid())) |> runOnTestData
     printfn "%A" results
 
 

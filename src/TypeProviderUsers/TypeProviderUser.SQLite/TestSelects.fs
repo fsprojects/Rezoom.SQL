@@ -51,7 +51,7 @@ select * from Users where Created > @created
 
 [<Test>]
 let ``test datetime parameter`` () =
-    let results = TestDateTimeParameter.Command(DateTime.UtcNow)
+    let results = TestDateTimeParameter.Command(DateTime.UtcNow) |> runOnTestData
     printfn "%A" results
 
 type TestOptionalDateTimeParameter = SQL<"""
@@ -60,7 +60,7 @@ select * from Users where Created > @created or @created is null
 
 [<Test>]
 let ``test optional datetime parameter`` () =
-    let results = TestOptionalDateTimeParameter.Command(Some DateTime.UtcNow)
+    let results = TestOptionalDateTimeParameter.Command(Some DateTime.UtcNow) |> runOnTestData
     printfn "%A" results
 
 type TestGuidParameter = SQL<"""
@@ -71,7 +71,7 @@ drop table temp.bar;
 
 [<Test>]
 let ``test guid parameter`` () =
-    let results = TestGuidParameter.Command(Guid.NewGuid())
+    let results = TestGuidParameter.Command(Guid.NewGuid()) |> runOnTestData
     printfn "%A" results
 
 type TestOptionalGuidParameter = SQL<"""
@@ -80,7 +80,7 @@ select * from Users where RandomId = @id or @id is null
 
 [<Test>]
 let ``test optional guid parameter`` () =
-    let results = TestOptionalGuidParameter.Command(Some (Guid.NewGuid()))
+    let results = TestOptionalGuidParameter.Command(Some (Guid.NewGuid())) |> runOnTestData
     printfn "%A" results
 
 [<Test>]
@@ -115,4 +115,18 @@ let ``replay works`` () =
         if played = unbox replayed then
             ()
         else failwith "not equal"
+
+open Rezoom.SQL.Mapping
+open System.Data
+
+type RawSQLQuery = SQL<"""
+    select * from Users where unsafe_inject_raw(@whereClause)
+""">
+
+[<Test>]
+let ``test raw sql parameter`` () =
+    let results =
+        RawSQLQuery.Command(whereClause = [| CommandText "1="; InlineParameter(DbType.Int32, 1) |]) |> runOnTestData
+    for result in results do
+        printfn "%A" result.Email
 

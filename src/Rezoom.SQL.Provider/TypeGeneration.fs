@@ -225,6 +225,8 @@ let private generateCommandMethod
                             let arr =
                                 <@@ [| for ex in ((%%inputArr) : Array) -> ((%%lambda) : obj -> obj) ex |] @@>
                             <@@ ListParameter(%%dbType, %%Expr.Coerce(arr, typeof<Array>)) @@>
+                        | RawSQLType ->
+                            <@@ RawSQLParameter %%ex @@>
                         | _ ->
                             let tx = backend.ParameterTransform(ty)
                             let dbType = Quotations.Expr.Value(tx.ParameterType)
