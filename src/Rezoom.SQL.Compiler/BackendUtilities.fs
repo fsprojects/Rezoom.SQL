@@ -4,8 +4,6 @@ open System.Configuration
 open System.Data
 open System.Data.Common
 open System.Text
-open System.Globalization
-open System.Collections.Generic
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 open Rezoom.SQL.Compiler
@@ -29,6 +27,7 @@ let simplifyFragments (fragments : Fragments) =
             | Indent
             | Outdent
             | Parameter _
+            | InlineParameter _
             | LocalName _ ->
                 if builder.Length > 0 then
                     yield CommandText <| builder.ToString()

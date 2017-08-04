@@ -20,6 +20,7 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
     static let terminator i = ";--'*/;SELECT NULL AS " + terminatorColumn i
     static let parameterName i = "@RZSQL_" + string i
     static let parameterNameArray i j = "@RZSQL_" + string i + "_" + string j
+    static let dynamicParameterName i = "@RZSQL_INLINE_" + string i
     static let localName i name = "RZSQL_" + name + "_" + string i
     let commands = ResizeArray<Command>()
     let mutable parameterCount = 0
@@ -56,6 +57,10 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
                             }
                         "(" + String.concat "," parNames + ")"
                     | ScalarParameter _ -> parameterName (parameterOffset + i)
+                | InlineParameter (dbType, value) ->
+                    let name = dynamicParameterName dbCommand.Parameters.Count
+                    addParam name dbType value
+                    name
                 | Indent | Outdent -> ""
                 | Whitespace -> " "
                 | LineBreak -> "\n"

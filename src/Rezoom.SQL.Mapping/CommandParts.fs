@@ -13,6 +13,8 @@ type CommandFragment =
     | CommandText of string
     /// References parameter by index.
     | Parameter of int
+    /// Directly specifies parameter value.
+    | InlineParameter of DbType * obj
     /// At least one unit of whitespace.
     | Whitespace
     /// Whitespace, preferably a line break.
@@ -33,6 +35,7 @@ type CommandFragment =
                     | CommandText text -> Some text
                     | Whitespace -> Some " "
                     | Parameter i -> Some ("@P" + string i)
+                    | InlineParameter (_, p) -> Some ("@{" + string p + "}")
                     | LineBreak ->
                         pendingLine <- true
                         None
