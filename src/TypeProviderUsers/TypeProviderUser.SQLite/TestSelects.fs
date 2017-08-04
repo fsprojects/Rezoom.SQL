@@ -116,7 +116,7 @@ let ``replay works`` () =
             ()
         else failwith "not equal"
 
-open Rezoom.SQL.Mapping
+open Rezoom.SQL.Raw
 open System.Data
 
 type RawSQLQuery = SQL<"""
@@ -126,7 +126,7 @@ type RawSQLQuery = SQL<"""
 [<Test>]
 let ``test raw sql parameter`` () =
     let results =
-        RawSQLQuery.Command(whereClause = [| CommandText "1="; InlineParameter(DbType.Int32, 1) |]) |> runOnTestData
+        RawSQLQuery.Command(whereClause = [| sql "1="; arg 1 |]) |> runOnTestData
     for result in results do
         printfn "%A" result.Email
 
