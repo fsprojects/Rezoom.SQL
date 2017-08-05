@@ -8,6 +8,7 @@ install:
 script:
   - xbuild /p:Configuration=Debug src/Rezoom.SQL.sln
   - mono ./testrunner/NUnit.ConsoleRunner.3.2.0/tools/nunit3-console.exe ./src/Rezoom.SQL.Test/bin/Debug/Rezoom.SQL.Test.dll
+  - nuget restore src/TypeProviderUsers/TypeProviderUsers.sln
   - xbuild /p:Configuration=Debug src/TypeProviderUsers/TypeProviderUsers.sln
 
 
