@@ -4,6 +4,7 @@ open System.Data
 open System.Collections.Generic
 open Rezoom
 
+[<NoComparison>]
 type CommandFragment =
     /// A name which should be localized to this command for batching.
     /// For example, if the command creates a temp table, the real name should be chosen dynamically
