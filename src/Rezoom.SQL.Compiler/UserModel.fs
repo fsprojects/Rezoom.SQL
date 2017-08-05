@@ -46,7 +46,7 @@ module private UserModelLoader =
 
     let loadMigrations migrationsFolder =
         let builder = MigrationTreeListBuilder()
-        for path in Directory.GetFiles(migrationsFolder, "*.sql", SearchOption.AllDirectories) do
+        for path in Directory.GetFiles(migrationsFolder, "*.sql") do
             let fileName = Path.GetFileName(path)
             match parseMigrationInfo fileName with
             | None ->
