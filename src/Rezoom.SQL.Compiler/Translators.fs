@@ -96,7 +96,7 @@ and [<AbstractClass>] ExprTranslator() =
     abstract member Case : case : TCaseExpr -> Fragments
     abstract member Exists : subquery : TSelectStmt -> Fragments
     abstract member ScalarSubquery : subquery : TSelectStmt -> Fragments
-    abstract member NeedsParens : TExprType -> bool
+    abstract member NeedsParens : TExpr -> bool
     abstract member Expr : expr : TExpr * context : ExprTranslationContext -> Fragments
 
 

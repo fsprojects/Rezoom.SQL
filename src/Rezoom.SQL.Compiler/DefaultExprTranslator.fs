@@ -244,16 +244,16 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             yield text ")"
         }
     override __.NeedsParens(expr) =
-        match expr with
+        match expr.Value with
         | LiteralExpr _
-        | BindParameterExpr _
         | ColumnNameExpr _ 
         | CastExpr _
         | FunctionInvocationExpr _
         | ScalarSubqueryExpr _ -> false
+        | BindParameterExpr _ when expr.Info.Type.Type <> RawSQLType -> false
         | _ -> true
     override this.Expr(expr, _) =
-        let needsParens = this.NeedsParens(expr.Value)
+        let needsParens = this.NeedsParens(expr)
         seq {
             if needsParens then yield text "("
             yield!
