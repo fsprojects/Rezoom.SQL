@@ -35,6 +35,7 @@
         * [SQLite](doc/Language/Quirks/SQLiteQuirks.md)
         * [TSQL](doc/Language/Quirks/TSQLQuirks.md)
         * [Postgres](doc/Language/Quirks/PostgresQuirks.md)
+    * [Dynamic SQL](doc/Language/DynamicSQL.md)
     * [What's missing?](doc/Language/MissingFeatures.md)
 * [API](doc/API/README.md)
     * [Rezoom.SQL](doc/API/RezoomSQL.md)
