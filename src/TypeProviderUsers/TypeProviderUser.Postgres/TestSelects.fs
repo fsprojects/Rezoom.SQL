@@ -83,4 +83,14 @@ let ``test optional guid parameter`` () =
     printfn "%A" results
 
 
+type TestInEmptySet = SQL<"""
+select * from Users where RandomId in @ids
+""">
+
+[<Test>]
+let ``test in empty set`` () =
+    let results = TestInEmptySet.Command([||]) |> runOnTestData
+    Assert.AreEqual(0, results.Count)
+    printfn "%A" results
+
 

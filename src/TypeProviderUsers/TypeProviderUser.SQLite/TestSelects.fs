@@ -78,6 +78,17 @@ type TestOptionalGuidParameter = SQL<"""
 select * from Users where RandomId = @id or @id is null
 """>
 
+
+type TestInEmptySet = SQL<"""
+select * from Users where RandomId in @ids
+""">
+
+[<Test>]
+let ``test in empty set`` () =
+    let results = TestInEmptySet.Command([||]) |> runOnTestData
+    Assert.AreEqual(0, results.Count)
+    printfn "%A" results
+
 [<Test>]
 let ``test optional guid parameter`` () =
     let results = TestOptionalGuidParameter.Command(Some (Guid.NewGuid())) |> runOnTestData
@@ -129,4 +140,5 @@ let ``test raw sql parameter`` () =
         RawSQLQuery.Command(whereClause = [| sql "1="; arg 1 |]) |> runOnTestData
     for result in results do
         printfn "%A" result.Email
+
 
