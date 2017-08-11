@@ -30,6 +30,9 @@ Install-Package Rezoom.SQL.Provider.SQLite
 
 This will add Rezoom.SQL and its dependencies to your project, along with a few files to help you get started.
 
+If you are using [Paket](http://fsprojects.github.io/Paket) instead of NuGet,
+see the **important** note for Paket users [at the bottom of this page](#note-for-paket-users).
+
 ## Setting up your database model
 
 One of the files automatically added to your project is `V1.model.sql`. Take a look inside and you'll see
@@ -196,6 +199,23 @@ let main argv =
     0
 ```
 
+## Note for Paket users
 
+The package `Rezoom.SQL.Provider.SQLite` includes sample configuration files to
+help you get started. These include V1.model.sql and rzsql.json.
 
+When you update using NuGet, if you changed these files, it'll ask you before
+overwriting them. You will probably want to answer "no" to this question.
+
+If you are using [Paket](https://fsprojects.github.io/Paket/), watch out. It
+will _not_ ask and will overwrite these files every time you update or restore
+packages. This is definitely not what you want! So if you are using Paket,
+either:
+
+* Just use Rezoom.SQL.Provider and create the configuration files yourself by
+  referring to the [configuration](../Configuration/README.md) section of this
+  manual. Once you've seen the examples it's not difficult.
+
+* Or use `nuget Rezoom.SQL.Provider.SQLite content: once` so the configuration
+  files get installed the first time, but never overwritten.
 
