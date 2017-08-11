@@ -1,5 +1,6 @@
 ﻿namespace Rezoom.SQL.Mapping
 open System
+open System.Data
 open System.Data.Common
 open System.Collections.Generic
 open System.Text
@@ -7,15 +8,71 @@ open System.Threading
 open FSharp.Control.Tasks.ContextInsensitive
 open Rezoom.SQL
 
-type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
-    let maxParameters =
-        match conn.GetType().Namespace with
-        | "System.Data.SqlClient" -> 2100 // SQL server
+type private CommandBatchRuntimeBackend =
+    private
+    | SQLServer
+    | Oracle
+    | Postgres
+    | MySQL
+    | SQLite
+    | Other
+    static member OfNamespace(ns : string) =
+        match ns with
+        | "System.Data.SqlClient" -> SQLServer
         | "System.Data.OracleClient"
-        | "Oracle.DataAccess.Client" -> 2000 // Oracle
-        | "Npgsql" -> 10000 // Postgres -- can support more but it's probably a bad idea
-        | "MySql.Data.MySqlClient" -> 10000 // MySQL -- can support more but it's probably a bad idea
-        | _ -> 999 // SQLite default, and probably the lowest of any DB
+        | "Oracle.DataAccess.Client" -> Oracle
+        | "Npgsql" -> Postgres
+        | "MySql.Data.MySqlClient" -> MySQL
+        | "System.Data.SQLite"
+        | "Devart.Data.SQLite" -> SQLite
+        | _ -> Other
+    member this.MaxParameters() =
+        match this with
+        | SQLServer -> 2100
+        | Oracle -> 2000
+        | Postgres
+        | MySQL -> 10_000
+        | SQLite 
+        | Other -> 999
+    static member private PgType(ty : DbType) =
+        match ty with
+        | DbType.String
+        | DbType.StringFixedLength
+        | DbType.AnsiString
+        | DbType.AnsiStringFixedLength -> "text"
+        | DbType.Byte
+        | DbType.SByte
+        | DbType.UInt16
+        | DbType.UInt32
+        | DbType.UInt64
+        | DbType.Int16
+        | DbType.Int32
+        | DbType.Int64
+        | DbType.VarNumeric
+        | DbType.Decimal
+        | DbType.Single
+        | DbType.Double -> "numeric"
+        | DbType.Binary -> "bytea"
+        | DbType.Guid -> "uuid"
+        | DbType.DateTime
+        | DbType.DateTime2
+        | DbType.DateTimeOffset -> "timestamptz"
+        | _ -> "unknown"
+    member this.EmptyInList(ty : DbType) =
+        match this with
+        | Postgres ->
+            // PG has to be difficult and demand a type specifier matching the input
+            "(SELECT NULL::" + CommandBatchRuntimeBackend.PgType(ty) + " WHERE FALSE)"
+        | SQLite ->
+            // SQLite is cool and accepts the simple approach. This might be faster than the empty subquery.
+            "()"
+        | _ ->
+            "(SELECT NULL WHERE 1=0)"
+
+type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
+    let runtimeBackend = CommandBatchRuntimeBackend.OfNamespace(conn.GetType().Namespace)
+    let maxParameters = runtimeBackend.MaxParameters()
+
     static let terminatorColumn i = "RZSQL_TERMINATOR_" + string i
     static let terminator i = ";--'*/;SELECT NULL AS " + terminatorColumn i
     static let parameterName i = "@RZSQL_" + string i
@@ -51,12 +108,15 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
                 | CommandText str -> str
                 | Parameter i ->
                     match command.Parameters.[i] with
-                    | ListParameter(_, os) ->
-                        let parNames =
-                            seq {
-                                for j = 0 to os.Length - 1 do yield parameterNameArray (parameterOffset + i) j
-                            }
-                        "(" + String.concat "," parNames + ")"
+                    | ListParameter(dbTy, os) ->
+                        if os.Length = 0 then
+                            runtimeBackend.EmptyInList(dbTy)
+                        else
+                            let parNames =
+                                seq {
+                                    for j = 0 to os.Length - 1 do yield parameterNameArray (parameterOffset + i) j
+                                }
+                            "(" + String.concat "," parNames + ")"
                     | ScalarParameter _ -> parameterName (parameterOffset + i)
                     | RawSQLParameter frags ->
                         for frag in frags do
