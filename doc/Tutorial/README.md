@@ -217,5 +217,6 @@ either:
   manual. Once you've seen the examples it's not difficult.
 
 * Or use `nuget Rezoom.SQL.Provider.SQLite content: once` so the configuration
-  files get installed the first time, but never overwritten.
+  files get installed the first time, but never overwritten. [See Paket
+  docs](http://fsprojects.github.io/Paket/nuget-dependencies.html#Controlling-whether-content-files-should-be-copied-to-the-output-directory-during-build).
 
