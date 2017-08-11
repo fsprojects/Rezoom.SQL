@@ -11,7 +11,9 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
     <releaseNotes>
-        Use PRAGMA foreign_keys=ON for all SQLite connections.
+Fix `IN @param` with empty array as runtime argument failing on T-SQL and Postgres.
+Add `unsafe_inject_raw(@param)` function to let you stick raw SQL into a query at runtime.
+Add module for building dynamic SQL commands (materialized to user-specified record types, dapper-esque).        
     </releaseNotes>
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data sqlite tsql sqlserver fsharp typeprovider</tags>
