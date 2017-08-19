@@ -6,16 +6,17 @@ open Rezoom.SQL.Mapping
 open Rezoom.SQL.Mapping.CodeGeneration
 
 [<AbstractClass>]
-type Command(data : CommandData, parameters : CommandParameter IReadOnlyList) =
+type Command(data : CommandData, parameters : CommandParameter IReadOnlyList, wrap : DynamicExpr.DynQueryWrapper) =
     let category = CommandCategory data.ConnectionName
     let cacheInfo =
         { new CacheInfo() with
             override __.Category = upcast category
-            override __.Identity = upcast data.Identity
+            override __.Identity = upcast (data.Identity, wrap)
             override __.DependencyMask = data.DependencyMask
             override __.InvalidationMask = data.InvalidationMask
             override __.Cacheable = data.Cacheable
         }
+    new (data, parameters) = Command(data, parameters, DynamicExpr.DynQueryWrapper.Empty)
     member __.ConnectionName = data.ConnectionName
     member __.CacheInfo = cacheInfo
     member __.Fragments = data.Fragments
@@ -61,6 +62,10 @@ type Command<'output>(data, parameters) =
     abstract member WithConnectionName : connectionName : string -> Command<'output>
     abstract member ResultSetProcessor : unit -> ResultSetProcessor<'output>
     override this.ObjectResultSetProcessor() = upcast this.ResultSetProcessor()
+
+type IWrappableCommand<'a> =
+    abstract Wrap : DynamicExpr.DynQueryWrapper -> CommandFragment list
+
 
 type private ResultSetProcessor0<'a>() =
     inherit ResultSetProcessor<'a>()

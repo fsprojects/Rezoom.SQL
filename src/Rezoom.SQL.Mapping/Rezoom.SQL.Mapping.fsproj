@@ -75,6 +75,8 @@
     <Compile Include="Migrations.fs" />
     <Compile Include="IScalar.fs" />
     <Compile Include="CommandParts.fs" />
+    <Compile Include="DynamicExpr.fs" />
+    <Compile Include="DynamicOperators.fs" />
     <Compile Include="Command.fs" />
     <Compile Include="Raw.fs" />
     <Compile Include="CommandBatch.fs" />
