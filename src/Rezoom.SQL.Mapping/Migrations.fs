@@ -146,6 +146,9 @@ type MigrationConfig =
             LogMigrationRan = fun _ -> ()
         }
 
+type MigrationRuntimeException(migrationName : string, inner : Exception) =
+    inherit Exception("Error running migration " + migrationName + ": " + inner.Message, inner)
+
 module MigrationUtilities =
     let private quotationizeMigration (migration : string Migration) =
         <@@ {   MajorVersion = %%Expr.Value(migration.MajorVersion)
@@ -187,7 +190,10 @@ module MigrationUtilities =
                                 migration.MajorVersion migration.Name
                                 currentMajorVersion
                     else
-                        backend.RunMigration(migration)
+                        try
+                            backend.RunMigration(migration)
+                        with
+                        | exn -> raise (MigrationRuntimeException(migration.MigrationName, exn))
                         config.LogMigrationRan migration
                         ignore <| already.Add(pair) // actually we don't need this but ok
 
