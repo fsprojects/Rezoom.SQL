@@ -227,6 +227,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 checker, Some texpr, None
         let columns = checker.ResultColumns(select.Columns, knownShape)
         let infoColumns =
+            let used = HashSet()
             seq {
                 for column in columns.Columns do
                     match column.Case with
@@ -237,7 +238,9 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                                 ColumnName =
                                     match implicitAlias (expr.Value, alias) with
                                     | None -> failAt column.Source Error.expressionRequiresAlias
-                                    | Some alias -> alias
+                                    | Some alias ->
+                                        if used.Add(alias) then alias
+                                        else failAt column.Source (Error.ambiguousColumn alias)
                             }
                      // typechecker should've eliminated alternatives
                      | _ -> bug "All wildcards must be expanded -- this is a typechecker bug"

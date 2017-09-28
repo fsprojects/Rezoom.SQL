@@ -28,7 +28,7 @@ let ``select`` () =
 [<Test>]
 let ``fancy select`` () =
     roundtrip """
-        select g.*, u.*
+        select g.Id as GroupId, g.Name as GroupName, u.Id as UserId, u.Name as UserName
         from Users u
         left join UserGroupMaps gm on gm.UserId = u.Id
         left join Groups g on g.Id = gm.GroupId
@@ -38,7 +38,7 @@ let ``fancy select`` () =
 [<Test>]
 let ``fancy select with order by`` () =
     roundtrip """
-        select g.*, u.*
+        select g.Id as GroupId, g.Name as GroupName, u.Id as UserId, u.Name as UserName
         from Users u
         left join UserGroupMaps gm on gm.UserId = u.Id
         left join Groups g on g.Id = gm.GroupId
@@ -187,7 +187,7 @@ let ``date literals`` () =
 [<Test>]
 let ``join subqueries`` () =
     roundtrip """
-        select * from
+        select us.Id as UID, gs.Id as GID from
             (select u.Id from Users u) us
             join
             (select g.Id from Groups g) gs

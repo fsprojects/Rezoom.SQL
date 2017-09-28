@@ -121,3 +121,13 @@ let ``cte is not in scope for update`` () =
         """
             with cte(x) as (select 1) update cte set x = 1;
         """
+
+[<Test>]
+let ``ambiguous columns`` () =
+    expectError (Error.ambiguousColumn "Id")
+        """
+            select *
+            from users u
+            join usergroupmaps ugm on ugm.userid = u.id
+            join groups g on g.id = ugm.groupid
+        """
