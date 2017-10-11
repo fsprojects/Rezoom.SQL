@@ -24,7 +24,8 @@ type private CommandBatchRuntimeBackend =
         | "Npgsql" -> Postgres
         | "MySql.Data.MySqlClient" -> MySQL
         | "System.Data.SQLite"
-        | "Devart.Data.SQLite" -> SQLite
+        | "Devart.Data.SQLite"
+        | "Microsoft.Data.Sqlite"-> SQLite
         | _ -> Other
     member this.MaxParameters() =
         match this with
