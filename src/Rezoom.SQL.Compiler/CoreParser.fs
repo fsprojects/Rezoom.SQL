@@ -636,39 +636,34 @@ let private joinType =
         %% ws -|> Inner
     ]
 
-let private joinConstraint =
-    %[
-        %% kw "ON" -- +.expr -- ws -|> JoinOn
-        preturn JoinUnconstrained
-    ]
+let private joinConstraint = %% kw "ON" -- +.expr -- ws -|> JoinOn
 
 let private tableExpr = // parses table expr (with left-associative joins)
     let term = tableOrSubquery |> withSource
     let natural = %% kw "NATURAL" -|> ()   
     let join =
-        %% +.(
-                %[
-                    %% ','
-                        -|> fun left right constr ->
-                            {   JoinType = Inner
-                                LeftTable = left
-                                RightTable = right
-                                Constraint = constr
-                            } |> Join
-                    %% +.(natural * zeroOrOne) -- +.joinType -- kw "JOIN"
-                        -|> fun natural join left right constr ->
-                            let joinType = if Option.isSome natural then Natural join else join
-                            {   JoinType = joinType
-                                LeftTable = left
-                                RightTable = right
-                                Constraint = constr
-                            } |> Join
-                ] |> withSource)
-        -- ws
-        -- +.term
-        -- ws
-        -- +.joinConstraint
-        -|> fun f joinTo joinOn left -> { TableExpr.Source = f.Source; Value = f.Value left joinTo joinOn }
+        %[  %% ',' -- ws -- +.withSource term
+            -|> fun right left ->
+                {   TableExpr.Source = right.Source
+                    Value =
+                        {   JoinType = Inner
+                            LeftTable = left
+                            RightTable = right.Value
+                            Constraint = JoinUnconstrained
+                        } |> Join
+                }
+            %% +.(natural * zeroOrOne) -- +.withSource joinType -- kw "JOIN" -- +.term -- ws -- +.joinConstraint
+            -|> fun natural join right constr left ->
+                let joinType = if Option.isSome natural then Natural join.Value else join.Value
+                {   TableExpr.Source = join.Source
+                    Value =
+                        {   JoinType = joinType
+                            LeftTable = left
+                            RightTable = right
+                            Constraint = constr
+                        } |> Join
+                }
+        ]
     %% +.term
     -- ws
     -- +.(join * qty.[0..])
