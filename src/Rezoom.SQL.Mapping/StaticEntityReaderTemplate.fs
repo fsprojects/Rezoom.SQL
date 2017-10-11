@@ -261,10 +261,11 @@ type private StaticEntityReaderTemplate =
         builder.CreateType()
 
 type ReaderTemplate<'ent>() =
+    static let badNamePartRegex = System.Text.RegularExpressions.Regex(@"[^a-zA-Z0-9_.]+")
     static let entType = typeof<'ent>
     static let template =
         let moduleBuilder =
-            let assembly = AssemblyName("RuntimeReaders." + entType.Name)
+            let assembly = AssemblyName("RuntimeReaders." + badNamePartRegex.Replace(entType.FullName, "_"))
             let appDomain = Threading.Thread.GetDomain()
             let assemblyBuilder = appDomain.DefineDynamicAssembly(assembly, AssemblyBuilderAccess.Run)
             assemblyBuilder.DefineDynamicModule(assembly.Name)
