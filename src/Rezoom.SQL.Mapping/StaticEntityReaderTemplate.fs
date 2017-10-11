@@ -264,8 +264,7 @@ type ReaderTemplate<'ent>() =
     static let entType = typeof<'ent>
     static let template =
         let moduleBuilder =
-            let uniqueName = Guid.NewGuid()
-            let assembly = AssemblyName("Readers." + entType.Name + "." + uniqueName.ToString("N"))
+            let assembly = AssemblyName("RuntimeReaders." + entType.Name)
             let appDomain = Threading.Thread.GetDomain()
             let assemblyBuilder = appDomain.DefineDynamicAssembly(assembly, AssemblyBuilderAccess.Run)
             assemblyBuilder.DefineDynamicModule(assembly.Name)
