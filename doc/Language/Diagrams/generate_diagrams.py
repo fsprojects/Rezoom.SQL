@@ -388,11 +388,13 @@ export('TableExpr.svg', Diagram(
                         Skip(),
                         Sequence('LEFT', Optional('OUTER')),
                         'INNER'),
-                    'JOIN'),
-                ','),
-            table_expr(),
-            Optional(
-                Sequence('ON', expr()))))))
+                    'JOIN',
+                    table_expr(),
+                    'ON',
+                    expr()),
+                Sequence(
+                    ',',
+                    table_expr()))))))
 
 export('SelectCore.svg', Diagram(
     Stack(
