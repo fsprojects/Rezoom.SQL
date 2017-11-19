@@ -94,6 +94,20 @@ let ``test optional guid parameter`` () =
     let results = TestOptionalGuidParameter.Command(Some (Guid.NewGuid())) |> runOnTestData
     printfn "%A" results
 
+type TestEmptyMany = SQL<"""
+select p.*, many Children(c.*)
+from Users p
+left join Users c on false
+""">
+
+[<Test>]
+let ``test empty many`` () =
+    let results = TestEmptyMany.Command() |> runOnTestData
+    Assert.AreEqual(2, results.Count)
+    for result in results do
+        Assert.AreEqual(0, result.Children.Count)
+    printfn "%A" results
+
 [<Test>]
 let ``replay works`` () =
     let plan =

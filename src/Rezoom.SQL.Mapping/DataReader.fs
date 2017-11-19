@@ -36,7 +36,9 @@ let columnMap (reader : IDataReader) =
 type DataReaderRow(reader : IDataReader) =
     inherit Row()
     override __.IsNull(i) = reader.IsDBNull(int i)
-    override __.GetObject(i) = reader.GetValue(int i)
+    override __.GetObject(i) =
+        let o = reader.GetValue(int i)
+        if obj.ReferenceEquals(o, DBNull.Value) then null else o
     override __.GetString(i) = reader.GetString(int i)
     override __.GetByte(i) = reader.GetByte(int i)
     override __.GetInt16(i) = reader.GetInt16(int i)

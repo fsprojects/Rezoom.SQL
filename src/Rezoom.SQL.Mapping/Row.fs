@@ -24,7 +24,7 @@ type Row() =
 
 type ObjectRow([<ParamArray>] row : obj array) =
     inherit Row()
-    override __.IsNull(i) = isNull (row.[int i])
+    override __.IsNull(i) = isNull (row.[int i]) || obj.ReferenceEquals(DBNull.Value, row.[int i])
     override __.GetObject(i) = row.[int i]
     override __.GetString(i) = row.[int i] |> Unchecked.unbox
     override __.GetByte(i) = row.[int i] |> Unchecked.unbox

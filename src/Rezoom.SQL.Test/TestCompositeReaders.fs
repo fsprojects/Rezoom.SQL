@@ -4,6 +4,7 @@ open FsUnit
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Mapping.CodeGeneration
 open System
+open System.Globalization
 open System.ComponentModel.DataAnnotations
 
 type User = 
@@ -16,6 +17,20 @@ type Folder =
     {
         FolderId : int
         Children : Folder array
+    }
+
+type ManyWithStuffChild =
+    {
+        [<BlueprintKey>]
+        ChildId : int
+        ChildTime : DateTime
+    }
+type ManyWithStuff =
+    {
+        [<BlueprintKey>]
+        ThingId : int
+        ThingTime : DateTime
+        Children : ManyWithStuffChild array
     }
 
 type Person =
@@ -144,6 +159,26 @@ let ``read folder 2 levels deep`` () =
     Assert.AreEqual(3, folder.Children.[1].FolderId)
     Assert.AreEqual(0, folder.Children.[0].Children.Length)
     Assert.AreEqual(0, folder.Children.[1].Children.Length)
+
+[<Test>]
+let ``read manywithstuff children null`` () =
+    let colMap =
+        [|
+            "ThingId", ColumnType.Int32
+            "ThingTime", ColumnType.String
+            "Children.ChildId", ColumnType.Int32
+            "Children.ChildTime", ColumnType.String
+        |] |> ColumnMap.Parse
+    let reader = ReaderTemplate<ManyWithStuff array>.Template().CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(ObjectRow(1, DateTime.MinValue.ToString(CultureInfo.InvariantCulture), DBNull.Value, DBNull.Value))
+    reader.Read(ObjectRow(2, DateTime.MaxValue.ToString(CultureInfo.InvariantCulture), DBNull.Value, DBNull.Value))
+    reader.Read(ObjectRow(3, DateTime.MaxValue.ToString(CultureInfo.InvariantCulture), DBNull.Value, DBNull.Value))
+    let things = reader.ToEntity()
+    Assert.IsNotNull(things)
+    Assert.AreEqual(3, things.Length)
+    for thing in things do
+        Assert.AreEqual(0, thing.Children.Length)
 
 [<Test>]
 let ``read person 1 level deep`` () =

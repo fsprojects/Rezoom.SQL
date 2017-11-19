@@ -102,7 +102,7 @@ let private addScalarInterface (ty : ProvidedTypeDefinition) (field : ProvidedFi
     ty.DefineMethodOverride(getterMethod, getScalarValue)
     ty.AddMember(getterMethod)
 
-let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap : CompileTimeColumnMap) =
+let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (columnMap : CompileTimeColumnMap) =
     let ty =
         ProvidedTypeDefinition
             ( name
@@ -111,7 +111,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
             , HideObjectMethods = true
             )
     ty.AddCustomAttribute(SerializableAttributeData())
-    if not columnMap.HasSubMaps then
+    if isRoot && not columnMap.HasSubMaps then
         ty.AddCustomAttribute(BlueprintNoKeyAttributeData())
     let fields = ResizeArray()
     let addField pk (name : string) (fieldTy : Type) =
@@ -139,7 +139,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
         let info = column.Expr.Info
         addField info.PrimaryKey name <| info.Type.CLRType(useOptional = (model.Config.Optionals = Config.FsStyle))
     for KeyValue(name, subMap) in columnMap.SubMaps do
-        let subTy = generateRowTypeFromColumns model (toRowTypeName name) subMap
+        let subTy = generateRowTypeFromColumns false model (toRowTypeName name) subMap
         ty.AddMember(subTy)
         addField false name subTy
     let ctorParams = [ for camel, field in fields -> ProvidedParameter(camel, field.FieldType) ]
@@ -159,7 +159,7 @@ let rec private generateRowTypeFromColumns (model : UserModel) name (columnMap :
 
 let private generateRowType (model : UserModel) (name : string) (query : ColumnType QueryExprInfo) =
     CompileTimeColumnMap.Parse(query.Columns)
-    |> generateRowTypeFromColumns model name
+    |> generateRowTypeFromColumns true model name
 
 let private maskOfTables (model : UserModel) (tables : QualifiedObjectName seq) =
     let mutable mask = BitMask.Zero
