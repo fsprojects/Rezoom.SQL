@@ -29,8 +29,8 @@ type private CommandBatchRuntimeBackend =
         | _ -> Other
     member this.MaxParameters() =
         match this with
-        | SQLServer -> 2100
-        | Oracle -> 2000
+        | SQLServer -> 2098 // actual is 2100 but SqlCommand implementation takes 2 for itself
+        | Oracle -> 1900 // actual is 2000 but leave plenty of breathing room since it's untested
         | Postgres
         | MySQL -> 10_000
         | SQLite 

@@ -8,6 +8,7 @@ open Rezoom
 open Rezoom.SQL
 open Rezoom.SQL.Plans
 open MBrace.FsPickler
+open Rezoom
 
 type TestEqualInteger = SQL<"""
 select * from Users where Id = @userId
@@ -140,6 +141,18 @@ let ``replay works`` () =
         if played = unbox replayed then
             ()
         else failwith "not equal"
+
+type InsertPicture = SQL<"insert into Pictures row SHA256 = @sha, PNGData = @png">
+
+[<Test>]
+let ``lotsa parameters`` () =
+    let task =
+        plan {
+            let g() = Guid.NewGuid().ToByteArray()
+            for i in batch [0..2000] do
+                do! InsertPicture.Command(g(), g()).Plan()
+        } |> Execution.execute Execution.ExecutionConfig.Default
+    task.Wait()
 
 open Rezoom.SQL.Raw
 open System.Data
