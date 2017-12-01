@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Rezoom.SQL.Provider.Postgres</id>
-    <version>0.6.1</version>
+    <version>0.7.0</version>
     <title>Rezoom.SQL.Provider.Postgres</title>
     <authors>Robert Peele</authors>
     <owners>humbobst</owners>
@@ -10,11 +10,11 @@
     <projectUrl>https://github.com/rspeele/Rezoom.SQL</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Adds config for using Rezoom.SQL.Provider with PostgreSQL.</description>
-    <releaseNotes>Initial Postgres release. Use provider 0.6.1.</releaseNotes>
+    <releaseNotes>Use provider 0.7.0.</releaseNotes>
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data postgres postgresql pgsql fsharp typeprovider</tags>
     <dependencies>
-      <dependency id="Rezoom.SQL.Provider" version="0.6.1.22661" />
+      <dependency id="Rezoom.SQL.Provider" version="0.7.0.36923" />
       <dependency id="Npgsql" version="3.2.5" />
     </dependencies>
   </metadata>

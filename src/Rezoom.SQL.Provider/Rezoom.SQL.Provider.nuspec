@@ -11,9 +11,11 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
     <releaseNotes>
-Fix `IN @param` with empty array as runtime argument failing on T-SQL and Postgres.
-Add `unsafe_inject_raw(@param)` function to let you stick raw SQL into a query at runtime.
-Add module for building dynamic SQL commands (materialized to user-specified record types, dapper-esque).        
+Fix MANY(...) navigation properties failing on left joins with no children.
+Fix missing warning for ambiguous column names created by wildcard expansion (select *).
+Fix typechecker errors encountered in migration files not including the filename in the exception message.
+Fix batching commands running over the 2100 parameter limit on SQL server.
+Disallow joins without explicit ON clauses (can still use ON TRUE).
     </releaseNotes>
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data sqlite tsql sqlserver fsharp typeprovider</tags>
