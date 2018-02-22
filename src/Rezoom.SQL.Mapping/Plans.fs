@@ -7,6 +7,8 @@ open System.Data.Common
 open Rezoom
 open Rezoom.SQL
 open Rezoom.SQL.Mapping
+open FSharp.Control.Tasks.ContextInsensitive
+open System.Threading
 
 type private ExecutionLocalConnections(provider : ConnectionProvider) =
     let connections = Dictionary()
@@ -98,6 +100,73 @@ type private CommandErrand<'a>(command : Command<'a>) =
         let all = CommandFragment.Stringize(command.Fragments)
         let truncate = 80
         if all.Length < truncate then all else all.Substring(0, truncate - 3) + "..."
+
+type private SharedCommandStepState<'id, 'a when 'id : equality>(factory : SharedCommandFactory<'id, 'a>, batch : AsyncCommandBatch) =
+    let ids = ResizeArray<'id>()
+    // defer the command-building till the last possible moment before the batch executes
+    let bulkTask = batch.Batch(fun () -> factory.BuildCommand(ids))
+    let lazyResults =
+        lazy
+            task {
+                let! resultSet = bulkTask CancellationToken.None
+                let dict = Dictionary()
+                for resultRow in resultSet do
+                    let id = factory.Selector(resultRow)
+                    let succ, found = dict.TryGetValue(id)
+                    let found =
+                        if succ then found else
+                        let it = ResizeArray()
+                        dict.[id] <- it
+                        it
+                    found.Add(resultRow)
+                return dict
+            }
+    member this.PrepareId(id : 'id) =
+        ids.Add(id)
+        fun (_ : CancellationToken) ->
+            task {
+                let! results = lazyResults.Value
+                let succ, found = results.TryGetValue(id)
+                return
+                    if succ then found :> 'a IReadOnlyList
+                    else [||] :> 'a IReadOnlyList
+            }
+
+and private SharedCommandStepStateLookup<'id, 'a when 'id : equality>() =
+    let idsByFactory = Dictionary<obj, SharedCommandStepState<'id, 'a>>()
+    member this.ByFactory(factory : SharedCommandFactory<'id, 'a>, batch : AsyncCommandBatch) =
+        let succ, found = idsByFactory.TryGetValue(factory)
+        if succ then found else
+        let state = SharedCommandStepState<'id, 'a>(factory, batch)
+        idsByFactory.[factory] <- state
+        state
+
+and private SharedCommandStepStateLookupFactory<'id, 'a when 'id : equality>() =
+    inherit ServiceFactory<SharedCommandStepStateLookup<'id, 'a>>()
+    override __.ServiceLifetime = ServiceLifetime.StepLocal
+    override __.CreateService(_) = SharedCommandStepStateLookup<'id, 'a>()
+    override __.DisposeService(_, _) = ()
+
+and SharedCommandFactory<'id, 'a when 'id : equality>(buildCommand : 'id seq -> Command<'a IReadOnlyList>, selector : 'a -> 'id) =
+    let templateCommand = buildCommand Seq.empty
+    let connectionName = templateCommand.ConnectionName
+    let cacheArgument = CommandErrandArgument(templateCommand.Parameters)
+    member internal __.BuildCommand = buildCommand
+    member internal __.Selector = selector
+    member factory.ErrandForKey(id : 'id) =
+        let cacheArg = box (id, cacheArgument)
+        { new AsynchronousErrand<'a IReadOnlyList>() with
+            override __.CacheInfo = templateCommand.CacheInfo
+            override __.CacheArgument = cacheArg
+            override __.SequenceGroup = null
+            override __.ToString() =
+                templateCommand.ToString() + " (Arg = " + string (box id) + ")"
+            override __.Prepare(cxt) =
+                let batches = cxt.GetService<StepLocalBatchesFactory, _>()
+                let batch = batches.GetBatch(connectionName)
+                let subErrands = cxt.GetService<SharedCommandStepStateLookupFactory<'id, 'a>, _>().ByFactory(factory, batch)
+                subErrands.PrepareId(id)
+        } :> Errand<'a IReadOnlyList>
 
 // Have to use a C#-style extension method to support the scalar constraint.
 

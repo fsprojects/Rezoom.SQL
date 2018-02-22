@@ -5,6 +5,7 @@ open System.Data.Common
 open System.Collections.Generic
 open System.Text
 open System.Threading
+open System.Threading.Tasks
 open FSharp.Control.Tasks.ContextInsensitive
 open Rezoom.SQL
 
@@ -278,9 +279,12 @@ module private CommandBatchUtilities =
 open CommandBatchUtilities
 
 type AsyncCommandBatch(conn : DbConnection, tran : DbTransaction) =
+    let deferred = Queue<unit -> unit>()
     let builders = ResizeArray<CommandBatchBuilder>()
     let evaluation =
         lazy
+            while deferred.Count > 0 do
+                deferred.Dequeue()()
             task {
                 let arr = Array.zeroCreate builders.Count
                 for i = 0 to builders.Count - 1 do
@@ -290,7 +294,21 @@ type AsyncCommandBatch(conn : DbConnection, tran : DbTransaction) =
             }
     do
         builders.Add(CommandBatchBuilder(conn, tran))
-    member __.Batch(cmd : #Command<'a>) =
+    member this.Batch(f : unit -> #Command<'a>) : (CancellationToken -> 'a Task) =
+        let mutable eventuallyBatched = None
+        deferred.Enqueue(fun () ->
+            let cmd = f()
+            let batched = this.Batch(cmd)
+            eventuallyBatched <- Some batched)
+        fun (token : CancellationToken) ->
+            task {
+                let! _ = evaluation.Value
+                match eventuallyBatched with
+                | None -> return failwith "BUG: deferred batch didn't work"
+                | Some batched ->
+                    return! batched token
+            }
+    member __.Batch(cmd : #Command<'a>) : (CancellationToken -> 'a Task) =
         let inline retrieveResult builderIndex resultsIndex =
             fun (_ : CancellationToken) ->
                 task {

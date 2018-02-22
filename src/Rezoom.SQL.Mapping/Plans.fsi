@@ -27,3 +27,7 @@ type ScalarCommandExtensions = class
     static member Scalar : cmd : Command<#IScalar<'a>> -> Plan<'a>
 end
 
+type SharedCommandFactory<'id, 'a when 'id : equality> = class
+    new : buildCommand : ('id seq -> Command<'a IReadOnlyList>) * selector : ('a -> 'id) -> SharedCommandFactory<'id, 'a>
+    member ErrandForKey : key : 'id -> Errand<'a IReadOnlyList>
+end
