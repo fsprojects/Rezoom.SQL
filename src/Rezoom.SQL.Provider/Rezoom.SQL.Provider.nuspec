@@ -11,11 +11,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
     <releaseNotes>
-Fix MANY(...) navigation properties failing on left joins with no children.
-Fix missing warning for ambiguous column names created by wildcard expansion (select *).
-Fix typechecker errors encountered in migration files not including the filename in the exception message.
-Fix batching commands running over the 2100 parameter limit on SQL server.
-Disallow joins without explicit ON clauses (can still use ON TRUE).
+Fix "SELECT ... LIMIT x" not wrapping the TOP expression in parentheses in T-SQL backend.
     </releaseNotes>
     <copyright>Copyright Robert Peele 2017</copyright>
     <tags>rezoom sql data sqlite tsql sqlserver fsharp typeprovider</tags>
