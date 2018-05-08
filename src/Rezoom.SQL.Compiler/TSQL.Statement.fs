@@ -57,7 +57,9 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 yield ws
                 yield text "TOP"
                 yield ws
+                yield text "("
                 yield! this.FirstClassValue(top)
+                yield text ")"
             yield linebreak
             yield! this.ResultColumns(select.Columns) |> indent
             match select.From with

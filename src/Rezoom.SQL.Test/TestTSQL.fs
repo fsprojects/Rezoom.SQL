@@ -109,7 +109,7 @@ create table XUsers
 let ``select top`` () =
     translate
         "select 1 as x from Users limit 5"
-        "SELECT TOP 5 1 AS [x] FROM [Users];"
+        "SELECT TOP (5) 1 AS [x] FROM [Users];"
 
 [<Test>]
 let ``select offset`` () =
