@@ -216,3 +216,13 @@ type StatefulBuilder() =
     member inline this.Using(disposable, body) : State<_, _> = State.using disposable body
 
 let stateful = StatefulBuilder()
+
+let tryFindFirstDuplicateBy (selector : _ -> _) (xs : _ seq) =
+    let set = HashSet()
+    use enumer = xs.GetEnumerator()
+    let mutable dup = None
+    while enumer.MoveNext() && dup.IsNone do
+        let x = enumer.Current
+        if not (set.Add(selector x)) then
+            dup <- Some x
+    dup

@@ -149,6 +149,10 @@ let cannotCollateType typeName =
     sprintf "SQ063: A column of type ``%O`` cannot have a collation applied" typeName
 let cannotAlterPrimaryKeyColumn columnName =
     sprintf "SQ064: Cannot alter the column ``%O`` because it is part of the table's primary key" columnName
+let insertDuplicateColumn columnName =
+    sprintf "SQ065: The column ``%O`` is specified multiple times in the insert statement" columnName
+let updateDuplicateColumn columnName =
+    sprintf "SQ066: The column ``%O`` is specified multiple times in the update statement" columnName
 
 let tableNameNotSuitableForPG =
     "SQ069: Table name is not suitable for PG (maybe you thought you were writing R?)"

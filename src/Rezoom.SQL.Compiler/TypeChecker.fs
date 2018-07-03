@@ -721,12 +721,16 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 failAt insert.Columns.[0].Source (Error.insertMissingColumns missingColumns)
         | _ ->
             failAt insert.InsertInto.Source Error.insertIntoNonTable
-        {   With = withClause
-            Or = insert.Or
-            InsertInto = table
-            Columns = columns // we *must* specify these because our order might not match DB's
-            Data = checker.Select(insert.Data, SelfQueryShape.Known(knownShape))
-        }
+        match columns |> tryFindFirstDuplicateBy (fun c -> c.Value) with
+        | None ->
+            {   With = withClause
+                Or = insert.Or
+                InsertInto = table
+                Columns = columns // we *must* specify these because our order might not match DB's
+                Data = checker.Select(insert.Data, SelfQueryShape.Known(knownShape))
+            }
+        | Some duplicate ->
+            failAt duplicate.Source (Error.insertDuplicateColumn duplicate.Value)
 
     member this.Update(update : UpdateStmt) =
         let checker, withClause =
@@ -750,14 +754,18 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                     | _ ->
                         failAt name.Source <| Error.noSuchColumnToSet updateTable name.Value
             |]
-        {   With = withClause
-            UpdateTable = updateTable
-            Or = update.Or
-            Set = setColumns
-            Where = Option.map checker.Expr update.Where
-            OrderBy = Option.map (rmap checker.OrderingTerm) update.OrderBy
-            Limit = Option.map checker.Limit update.Limit
-        }
+        match setColumns |> tryFindFirstDuplicateBy (fun (name, _) -> name.Value) with
+        | None ->
+            {   With = withClause
+                UpdateTable = updateTable
+                Or = update.Or
+                Set = setColumns
+                Where = Option.map checker.Expr update.Where
+                OrderBy = Option.map (rmap checker.OrderingTerm) update.OrderBy
+                Limit = Option.map checker.Limit update.Limit
+            }
+        | Some (name, _) ->
+            failAt name.Source (Error.updateDuplicateColumn name.Value)
 
     member this.Stmt(stmt : Stmt) =
         match stmt with

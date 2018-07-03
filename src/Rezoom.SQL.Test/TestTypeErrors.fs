@@ -131,3 +131,18 @@ let ``ambiguous columns`` () =
             join usergroupmaps ugm on ugm.userid = u.id
             join groups g on g.id = ugm.groupid
         """
+
+[<Test>]
+let ``duplicate column insert`` () =
+    expectError (Error.insertDuplicateColumn "Email")
+        """
+            insert into Users(Name, Email, Email) values ('', '', '');
+        """
+
+[<Test>]
+let ``duplicate column update`` () =
+    expectError (Error.updateDuplicateColumn "Name")
+        """
+            update Users set Name = 'foo', Email = 'bar', Name = 'car'
+            where Id = 1
+        """
