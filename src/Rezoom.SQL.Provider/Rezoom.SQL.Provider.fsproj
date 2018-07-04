@@ -2,6 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Robert Peele</Authors>
+    <Description>Implements an F# type provider for SQL statements.</Description>
+    <Copyright>Copyright Robert Peele 2017</Copyright>
+    <PackageTags>rezoom sql data sqlite tsql sqlserver fsharp typeprovider</PackageTags>
+    <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/rspeele/Rezoom.SQL/master/LICENSE.txt</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
+    <PackageReleaseNotes>Target .NET Standard</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

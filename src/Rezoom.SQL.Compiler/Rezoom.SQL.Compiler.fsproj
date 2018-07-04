@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Robert Peele</Authors>
+    <Company>Robert Peele</Company>
+    <Description>Used by Rezoom.SQL.Provider.</Description>
+    <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>

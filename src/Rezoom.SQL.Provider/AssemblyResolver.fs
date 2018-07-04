@@ -58,6 +58,8 @@ let private nameWhitelist =
         "FParsec-Pipes"
         "LicenseToCIL"
         "Rezoom"
+        "Rezoom.SQL.Mapping"
+        "Rezoom.SQL.Compiler"
     |] |> Set.ofArray
 
 let resolve (name : string) =
