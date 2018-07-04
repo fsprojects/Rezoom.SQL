@@ -10,7 +10,7 @@ type ConnectionProvider() =
     abstract member BeginTransaction : DbConnection -> DbTransaction
     default __.BeginTransaction(conn) = conn.BeginTransaction()
 
-module private AreYouFuckingKiddingMeNetStandard =
+module NetStandardHacks =
     let loadInstance (assemblyName : string) (typeName : string) =
         let asm = Assembly.Load(assemblyName)
         if isNull asm then failwithf "Couldn't load assembly %s" assemblyName
@@ -38,7 +38,7 @@ module private AreYouFuckingKiddingMeNetStandard =
                 loadInstance "Microsoft.Data.Sqlite" "Microsoft.Data.Sqlite.SqliteFactory"
             | other ->
                 failwithf "Tragically unsupported provider name ``%s``" providerName
-open AreYouFuckingKiddingMeNetStandard
+open NetStandardHacks
 
 type DefaultConnectionProvider() =
     inherit ConnectionProvider()

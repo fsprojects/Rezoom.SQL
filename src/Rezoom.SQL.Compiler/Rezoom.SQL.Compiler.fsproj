@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Error.fs" />
+    <Compile Include="SourceTypes.fs" />
+    <Compile Include="Name.fs" />
+    <Compile Include="Utilities.fs" />
+    <Compile Include="AST.fs" />
+    <Compile Include="ASTMapping.fs" />
+    <Compile Include="CoreParser.fs" />
+    <Compile Include="Parser.fs" />
+    <Compile Include="TypeSystem.fs" />
+    <Compile Include="Model.fs" />
+    <Compile Include="ModelOps.fs" />
+    <Compile Include="ExprInfo.fs" />
+    <Compile Include="ComplexModelOps.fs" />
+    <Compile Include="ReadWriteReferences.fs" />
+    <Compile Include="InferredTypes.fs" />
+    <Compile Include="TypeInferenceContext.fs" />
+    <Compile Include="ExprTypeChecker.fs" />
+    <Compile Include="AggregateChecker.fs" />
+    <Compile Include="TypeChecker.fs" />
+    <Compile Include="ModelChange.fs" />
+    <Compile Include="CommandEffect.fs" />
+    <Compile Include="Backend.fs" />
+    <Compile Include="BackendUtilities.fs" />
+    <Compile Include="FunctionDeclarations.fs" />
+    <Compile Include="Translators.fs" />
+    <Compile Include="DefaultLiteralTranslator.fs" />
+    <Compile Include="DefaultExprTranslator.fs" />
+    <Compile Include="DefaultStatementTranslator.fs" />
+    <Compile Include="DefaultFunctions.fs" />
+    <Compile Include="DefaultBackend.fs" />
+    <Compile Include="Postgres.Functions.fs" />
+    <Compile Include="Postgres.MigrationBackend.fs" />
+    <Compile Include="Postgres.fs" />
+    <Compile Include="SQLite.Functions.fs" />
+    <Compile Include="SQLite.fs" />
+    <Compile Include="TSQL.Functions.fs" />
+    <Compile Include="TSQL.Expression.fs" />
+    <Compile Include="TSQL.MigrationBackend.fs" />
+    <Compile Include="TSQL.Statement.fs" />
+    <Compile Include="TSQL.fs" />
+    <Compile Include="Config.fs" />
+    <Compile Include="UserModel.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FParsec-Pipes" Version="1.0.0" />
+    <PackageReference Include="Rezoom" Version="1.0.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj" />
+  </ItemGroup>
+
+</Project>
