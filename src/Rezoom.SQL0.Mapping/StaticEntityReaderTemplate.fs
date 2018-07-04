@@ -20,11 +20,6 @@ type private EntityReaderBuilder =
         ToEntity : E S * IL
     }
 
-module private UtilityInstr =
-    let (|-->) (emptyStack, il) (op : Op<_, _>) =
-        op emptyStack null il
-open UtilityInstr
-
 type private StaticEntityReaderTemplate =
     static member ColumnGenerator(builder, column) =
         match column.Blueprint.Value.Cardinality with
@@ -42,16 +37,16 @@ type private StaticEntityReaderTemplate =
     static member ImplementPrimitive(builder : TypeBuilder, ty : Type, primitive : Primitive, readerBuilder) =
         let info = builder.DefineField("_i", typeof<ColumnInfo>, FieldAttributes.Private)
         let value = builder.DefineField("_v", ty, FieldAttributes.Private)
-        readerBuilder.Ctor |--> ret'void
-        readerBuilder.ProcessColumns |-->
+        readerBuilder.Ctor ||> ret'void |> ignore
+        readerBuilder.ProcessColumns ||>
             cil {
                 yield ldarg 0
                 yield ldarg 1
                 yield call1 ColumnMap.PrimaryColumnMethod
                 yield stfld info
                 yield ret'void
-            }
-        readerBuilder.ImpartKnowledge |-->
+            } |> ignore
+        readerBuilder.ImpartKnowledge ||>
             cil {
                 yield ldarg 1
                 yield castclass builder
@@ -59,8 +54,8 @@ type private StaticEntityReaderTemplate =
                 yield ldfld info
                 yield stfld info
                 yield ret'void
-            }
-        readerBuilder.Read |-->
+            } |> ignore
+        readerBuilder.Read ||>
             cil {
                 yield ldarg 0
                 yield ldarg 1
@@ -69,14 +64,14 @@ type private StaticEntityReaderTemplate =
                 yield generalize2 primitive.Converter
                 yield stfld value
                 yield ret'void
-            }
-        readerBuilder.SetReverse |--> ret'void
-        readerBuilder.ToEntity |-->
+            } |> ignore
+        readerBuilder.SetReverse ||> ret'void |> ignore
+        readerBuilder.ToEntity ||>
             cil {
                 yield ldarg 0
                 yield ldfld value
                 yield ret
-            }
+            } |> ignore
 
     static member ImplementMany(builder : TypeBuilder, element : ElementBlueprint, conversion, readerBuilder) =
         let generator =
@@ -85,28 +80,28 @@ type private StaticEntityReaderTemplate =
                 ManyEntityColumnGenerator(builder, None, element, conversion) :> EntityReaderColumnGenerator
             | _ ->
                 ManyColumnGenerator(builder, None, element, conversion) :> EntityReaderColumnGenerator
-        readerBuilder.Ctor |--> 
+        readerBuilder.Ctor ||> 
             cil {
                 yield ldarg 0
                 yield generator.DefineConstructor()
                 yield pop
                 yield ret'void
-            }
-        readerBuilder.ProcessColumns |-->
+            } |> ignore
+        readerBuilder.ProcessColumns ||>
             cil {
                 yield ldarg 0
                 yield generator.DefineProcessColumns()
                 yield pop
                 yield ret'void
-            }
-        readerBuilder.ImpartKnowledge |-->
+            } |> ignore
+        readerBuilder.ImpartKnowledge ||>
             cil {
                 yield ldarg 0
                 yield generator.DefineImpartKnowledgeToNext()
                 yield pop
                 yield ret'void
-            }
-        readerBuilder.Read |-->
+            } |> ignore
+        readerBuilder.Read ||>
             cil {
                 let! lbl = deflabel
                 yield ldarg 0
@@ -114,51 +109,51 @@ type private StaticEntityReaderTemplate =
                 yield mark lbl
                 yield pop
                 yield ret'void
-            }
-        readerBuilder.SetReverse |--> 
+            } |> ignore
+        readerBuilder.SetReverse ||> 
             cil {
                 yield ldarg 0
                 yield generator.DefineSetReverse()
                 yield pop
                 yield ret'void
-            }
-        readerBuilder.ToEntity |-->
+            } |> ignore
+        readerBuilder.ToEntity ||>
             cil {
                 let! self = deflocal builder
                 yield generator.DefinePush(self)
                 yield ret
-            }
+            } |> ignore
             
     static member ImplementComposite(builder, composite : Composite, readerBuilder) =
         let columns =
                 [| for column in composite.Columns.Values ->
                     column, StaticEntityReaderTemplate.ColumnGenerator(builder, column)
                 |]
-        readerBuilder.Ctor |-->
+        readerBuilder.Ctor ||>
             cil {
                 yield ldarg 0
                 for _, column in columns do
                     yield column.DefineConstructor()
                 yield pop
                 yield ret'void
-            }
-        readerBuilder.ProcessColumns |-->
+            } |> ignore
+        readerBuilder.ProcessColumns ||>
             cil {
                 yield ldarg 0
                 for _, column in columns do
                     yield column.DefineProcessColumns()
                 yield pop
                 yield ret'void
-            }
-        readerBuilder.ImpartKnowledge |-->
+            } |> ignore
+        readerBuilder.ImpartKnowledge ||>
             cil {
                 yield ldarg 0
                 for _, column in columns do
                     yield column.DefineImpartKnowledgeToNext()
                 yield pop
                 yield ret'void
-            }
-        readerBuilder.Read |-->
+            } |> ignore
+        readerBuilder.Read ||>
             cil {
                 let! skipOnes = deflabel
                 let! skipAll = deflabel
@@ -172,15 +167,15 @@ type private StaticEntityReaderTemplate =
                 yield mark skipAll
                 yield pop
                 yield ret'void
-            }
-        readerBuilder.SetReverse |-->
+            } |> ignore
+        readerBuilder.SetReverse ||>
             cil {
                 yield ldarg 0
                 for _, column in columns do
                     yield column.DefineSetReverse()
                 yield pop
                 yield ret'void
-            }
+            } |> ignore
         let constructorColumns =
             seq {
                 for blue, column in columns do
@@ -189,7 +184,7 @@ type private StaticEntityReaderTemplate =
                         yield paramInfo.Position, column
                     | _ -> ()
             } |> Seq.sortBy fst |> Seq.map snd |> Seq.toArray
-        readerBuilder.ToEntity |-->
+        readerBuilder.ToEntity ||>
             cil {
                 let! self = deflocal builder
                 if constructorColumns |> Array.exists (fun c -> c.RequiresSelfReferenceToPush) then
@@ -205,9 +200,9 @@ type private StaticEntityReaderTemplate =
                     for column in constructorColumns do
                         yield column.DefinePush(self)
                         yield pretend
-                    yield (fun _ _ il ->
-                        il.EmitCtor(OpCodes.Call, composite.Constructor)
-                        ())
+                    yield (fun _ il ->
+                        il.Generator.Emit(OpCodes.Call, composite.Constructor)
+                        null)
                 else
                     for column in constructorColumns do
                         yield column.DefinePush(self)
@@ -263,7 +258,7 @@ type private StaticEntityReaderTemplate =
             StaticEntityReaderTemplate.ImplementComposite(builder, composite, readerBuilder)
         | Many (element, conversion) ->
             StaticEntityReaderTemplate.ImplementMany(builder, element, conversion, readerBuilder)
-        builder.CreateTypeInfo().AsType()
+        builder.CreateType()
 
 type ReaderTemplate<'ent>() =
     static let badNamePartRegex = System.Text.RegularExpressions.Regex(@"[^a-zA-Z0-9_.]+")
@@ -271,7 +266,8 @@ type ReaderTemplate<'ent>() =
     static let template =
         let moduleBuilder =
             let assembly = AssemblyName("RuntimeReaders." + badNamePartRegex.Replace(entType.FullName, "_"))
-            let assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assembly, AssemblyBuilderAccess.Run)
+            let appDomain = Threading.Thread.GetDomain()
+            let assemblyBuilder = appDomain.DefineDynamicAssembly(assembly, AssemblyBuilderAccess.Run)
             assemblyBuilder.DefineDynamicModule(assembly.Name)
         let readerBaseType = typedefof<_ EntityReader>.MakeGenericType(entType)
         let readerType =
@@ -297,12 +293,12 @@ type ReaderTemplate<'ent>() =
                     , readerBaseType
                     , Type.EmptyTypes
                     )
-            (Stack.empty, IL(meth.GetILGenerator())) |-->
+            (Stack.empty, IL(meth.GetILGenerator())) ||>
                 cil {
                     yield newobj0 (readerType.GetConstructor(Type.EmptyTypes))
                     yield ret
                 } |> ignore
-            builder.CreateTypeInfo().AsType()
+            builder.CreateType()
         Activator.CreateInstance(templateType)
         |> Unchecked.unbox : 'ent EntityReaderTemplate
     static member Template() = template

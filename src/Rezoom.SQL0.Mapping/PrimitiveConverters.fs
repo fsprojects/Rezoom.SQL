@@ -245,7 +245,7 @@ let private enumTryParser (delTy) (enumTy : Type) =
             |] zero
         yield ldc'i4 0
         yield ret
-    }) null null (IL(dynamicMethod.GetILGenerator()))
+    }) null (IL(dynamicMethod.GetILGenerator())) |> ignore
     dynamicMethod.CreateDelegate(delTy)
 
 type EnumTryParserDelegate<'enum> = delegate of string * 'enum byref -> bool

@@ -5,13 +5,15 @@ VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3CFAC282-AFAA-4B7A-879F-D2BDF9EC631B}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Mapping", "Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj", "{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL0.Mapping", "Rezoom.SQL0.Mapping\Rezoom.SQL0.Mapping.fsproj", "{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Test", "Rezoom.SQL.Test\Rezoom.SQL.Test.fsproj", "{AA699897-F692-4ED0-9865-98B6B4C713DB}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL0.Test", "Rezoom.SQL0.Test\Rezoom.SQL0.Test.fsproj", "{AA699897-F692-4ED0-9865-98B6B4C713DB}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Provider", "Rezoom.SQL.Provider\Rezoom.SQL.Provider.fsproj", "{7B1765CB-23F8-419A-9CC6-3DA319ED066F}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL0.Provider", "Rezoom.SQL0.Provider\Rezoom.SQL0.Provider.fsproj", "{7B1765CB-23F8-419A-9CC6-3DA319ED066F}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Compiler", "Rezoom.SQL.Compiler\Rezoom.SQL.Compiler.fsproj", "{87FCD04A-1F90-4D53-A428-CF5F5C532A22}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL0.Compiler", "Rezoom.SQL0.Compiler\Rezoom.SQL0.Compiler.fsproj", "{87FCD04A-1F90-4D53-A428-CF5F5C532A22}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Mapping", "Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj", "{B6BEC3A3-3BD8-410E-8D14-801196836B46}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -35,11 +37,18 @@ Global
 		{87FCD04A-1F90-4D53-A428-CF5F5C532A22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87FCD04A-1F90-4D53-A428-CF5F5C532A22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{87FCD04A-1F90-4D53-A428-CF5F5C532A22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6BEC3A3-3BD8-410E-8D14-801196836B46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6BEC3A3-3BD8-410E-8D14-801196836B46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6BEC3A3-3BD8-410E-8D14-801196836B46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6BEC3A3-3BD8-410E-8D14-801196836B46}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AA699897-F692-4ED0-9865-98B6B4C713DB} = {3CFAC282-AFAA-4B7A-879F-D2BDF9EC631B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3984727B-D7F5-4A1D-B438-1A4A1EB6A711}
 	EndGlobalSection
 EndGlobal
