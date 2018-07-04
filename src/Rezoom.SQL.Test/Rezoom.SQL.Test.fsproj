@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Environment.fs" />
+    <Compile Include="TestAggregateErrors.fs" />
+    <Compile Include="TestAlterTable.fs" />
+    <Compile Include="TestBlueprints.fs" />
+    <Compile Include="TestCompositeReaders.fs" />
+    <Compile Include="TestCTEs.fs" />
+    <Compile Include="TestIdempotence.fs" />
+    <Compile Include="TestManyPrimitives.fs" />
+    <Compile Include="TestMigrations.fs" />
+    <Compile Include="TestModel.fs" />
+    <Compile Include="TestModelErrors.fs" />
+    <Compile Include="TestNavProperties.fs" />
+    <Compile Include="TestNullInference.fs" />
+    <Compile Include="TestParserErrors.fs" />
+    <Compile Include="TestPostgres.fs" />
+    <Compile Include="TestPostgresSmoke.fs" />
+    <Compile Include="TestPrimitiveReaders.fs" />
+    <Compile Include="TestQueryParents.fs" />
+    <Compile Include="TestReadWriteReferences.fs" />
+    <Compile Include="TestRoundTrip.fs" />
+    <Compile Include="TestSQLite.fs" />
+    <Compile Include="TestStaticRowCount.fs" />
+    <Compile Include="TestTQLSmoke.fs" />
+    <Compile Include="TestTSQL.fs" />
+    <Compile Include="TestTypeErrors.fs" />
+    <Compile Include="TestTypeInference.fs" />
+    <Compile Include="TestVendorStatements.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FsUnit" Version="3.1.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rezoom.SQL.Compiler\Rezoom.SQL.Compiler.fsproj" />
+    <ProjectReference Include="..\Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj" />
+  </ItemGroup>
+
+</Project>

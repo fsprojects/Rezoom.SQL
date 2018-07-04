@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Watcher.fs" />
+    <Compile Include="UserModelCache.fs" />
+    <Compile Include="CompileTimeColumnMap.fs" />
+    <None Include="ProvidedTypes-LICENSE.md" />
+    <Compile Include="ProvidedTypes.fsi" />
+    <Compile Include="ProvidedTypes.fs" />
+    <Compile Include="DocStrings.fs" />
+    <Compile Include="TypeGeneration.fs" />
+    <Compile Include="AssemblyResolver.fs" />
+    <Compile Include="Provider.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rezoom.SQL.Compiler\Rezoom.SQL.Compiler.fsproj" />
+    <ProjectReference Include="..\Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj" />
+  </ItemGroup>
+
+</Project>

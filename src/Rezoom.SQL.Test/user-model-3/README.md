@@ -1,0 +1,1 @@
+This model is a test case. It's supposed to fail, because it's got migration trees containing destructive migrations.
