@@ -10,8 +10,8 @@ type public Provider(cfg : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(cfg)
 
     // Get the assembly and namespace used to house the provided types.
-    let thisAssembly = Assembly.LoadFrom(cfg.RuntimeAssembly)
-    let tmpAssembly = ProvidedAssembly()
+    let thisAssembly = Assembly.GetExecutingAssembly () // Assembly.LoadFrom(cfg.RuntimeAssembly)
+    //let tmpAssembly = ProvidedAssembly()
     let rootNamespace = "Rezoom.SQL"
 
     let modelCache = new UserModelCache()
@@ -19,7 +19,7 @@ type public Provider(cfg : TypeProviderConfig) as this =
         let tmpAssembly = ProvidedAssembly()
         let model = modelCache.Load(cfg.ResolutionFolder, model)
         let ty =
-            {   Assembly = thisAssembly
+            {   Assembly = tmpAssembly
                 Namespace = rootNamespace
                 TypeName = typeName
                 UserModel = model
@@ -53,16 +53,37 @@ type public Provider(cfg : TypeProviderConfig) as this =
         modelTy.DefineStaticParameters(staticParams, buildModelFromStaticParams)
         modelTy
 
+    let assemblies =
+      cfg.ReferencedAssemblies
+      |> Seq.choose (fun asm ->
+        try asm |> (File.ReadAllBytes >> Assembly.Load >> Some)
+        with | _ -> None)
+      |> Array.ofSeq
+
     do
         let tys = [ sqlTy; modelTy ]
-        tmpAssembly.AddTypes(tys)
+        //tmpAssembly.AddTypes(tys)
         this.AddNamespace(rootNamespace, tys)
         modelCache.Invalidated.Add(fun _ -> this.Invalidate())
         this.Disposing.Add(fun _ -> modelCache.Dispose())
 
-    static do
-        System.AppDomain.CurrentDomain.add_AssemblyResolve(fun _ args ->
-            AssemblyResolver.resolve args.Name |> Option.toObj)
+    override __.ResolveAssembly args =        
+        let name = AssemblyName args.Name
+        let existingAssembly =
+            System.AppDomain.CurrentDomain.GetAssemblies ()
+            |> Seq.append assemblies
+            |> Seq.tryFind (fun x -> AssemblyName.ReferenceMatchesDefinition (name, x.GetName()))
+        match existingAssembly with
+        | Some x -> x
+        | None ->
+          match AssemblyResolver.tryLoadFromLibFolder args.Name with
+          | Some x -> x
+          | _ ->
+              match AssemblyResolver.resolve args.Name with
+              | Some x -> x
+              | _ -> 
+                  AssemblyResolver.log (sprintf "%s> Not found" args.Name)
+                  base.ResolveAssembly args
 
 [<TypeProviderAssembly>]
 do ()

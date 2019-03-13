@@ -3,7 +3,8 @@ open System
 open System.IO
 open System.Reflection
 
-let private log msg =
+let log msg =
+    File.AppendAllLines (@"c:\temp\rezoom.txt", [msg]) //todo: remove
 #if DEBUG
     let home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
     let log = Path.Combine(home, "rzsqlproviderassembly_log.txt")
@@ -31,7 +32,7 @@ let private directoriesToSearch =
         // we expect our own assembly to be in a NuGet packages folder, with nuget packages under
         // the solution folder / packages.
         let dllPath = Path.GetFullPath(Assembly.GetExecutingAssembly().Location)
-        log (sprintf "dll path = %s" dllPath)
+        //log (sprintf "dll path = %s" dllPath)
         match dllPath |> walkUp [Some "net45"; Some "lib"; None; Some "packages"] with
         | None -> ()
         | Some packages ->
@@ -59,12 +60,27 @@ let private nameWhitelist =
         "LicenseToCIL"
         "Rezoom"
     |] |> Set.ofArray
-
+let tryLoadFromLibFolder name = //hack
+  let searchingName = AssemblyName name
+  let dir = @"C:\temp"
+  let file =
+    ["lib"]
+    |> List.map (fun x -> Path.Combine(dir, x, sprintf "%s.dll" searchingName.Name))
+    |> List.tryFind (fun x -> File.Exists x)
+  match file with
+  | None -> log (sprintf "%s not found in %s" searchingName.Name dir); None
+  | Some assemblyPath ->    
+    let foundName = AssemblyName.GetAssemblyName(assemblyPath)
+    if foundName |> compatibleWith searchingName then
+      Some <| Assembly.LoadFile assemblyPath
+    else 
+      log (sprintf "%s found but not compatible" assemblyPath)
+      None
 let resolve (name : string) =
-    log (sprintf "resolving %s" name)
-    log (sprintf "in %s" Environment.CurrentDirectory)
+    //log (sprintf "resolving %s" name)
+    //log (sprintf "in %s" Environment.CurrentDirectory)
     if name.IndexOf(".resources", StringComparison.OrdinalIgnoreCase) >= 0 then
-        log (sprintf "ignoring %s because resources" name)
+        //log (sprintf "ignoring %s because resources" name)
         None
     else
     let searchingName = AssemblyName(name)
@@ -77,7 +93,7 @@ let resolve (name : string) =
         |> Seq.tryFind (fun a -> a.GetName() |> compatibleWith searchingName)
     match alreadyLoaded with
     | Some alreadyLoaded ->
-        log (sprintf "already seem to have %s as %O" name alreadyLoaded)
+        //log (sprintf "already seem to have %s as %O" name alreadyLoaded)
         Some alreadyLoaded
     | None ->
         let dllName = searchingName.Name + ".dll"
@@ -93,5 +109,9 @@ let resolve (name : string) =
                             log (sprintf "found %s" assemblyPath)
                             yield assemblyPath
             } |> Seq.tryHead
-        matched |> Option.map Assembly.LoadFile
+        matched 
+        |> Option.map Assembly.LoadFile
+        //|> function
+        //  | None -> tryLoadFromLibFolder name
+        //  | x -> x
 

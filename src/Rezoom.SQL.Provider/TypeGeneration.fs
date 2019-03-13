@@ -322,7 +322,7 @@ let generateMigrationMembers
                         (%backend.MigrationBackend)
                             (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
                     @>
-                <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
+                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationsField)
                     migrations.Run(%%config, %%(upcast backend))
                 @@>
             | _ -> bug "Invalid migrate argument list")
@@ -339,7 +339,7 @@ let generateMigrationMembers
                         (%backend.MigrationBackend)
                             (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
                     @>
-                <@@ let migrations : string MigrationTree array = %%Expr.FieldGet(migrationsField)
+                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationsField)
                     migrations.Run(%%config, %%(upcast backend))
                 @@>
             | _ -> bug "Invalid migrate argument list")
@@ -356,25 +356,15 @@ let generateModelType (generate : GenerateType) =
             , isErased = false
             , hideObjectMethods = true
             )
-    let migrationsField =
-        ProvidedField
-            ( "_migrations"
-            , typeof<string MigrationTree array>
-            )
-    migrationsField.SetFieldAttributes(FieldAttributes.Static ||| FieldAttributes.Private)
-    provided.AddMember <| migrationsField
-    let staticCtor =
-        ProvidedConstructor([], IsTypeInitializer = true, invokeCode = fun _ ->
-        Expr.FieldSet
-            ( migrationsField
-            , Expr.NewArray
-                ( typeof<string MigrationTree>
-                , generate.UserModel.Migrations
-                    |> Seq.map MigrationUtilities.quotationizeMigrationTree
-                    |> Seq.toList
-                )))
-    provided.AddMember <| staticCtor
-    generateMigrationMembers generate.UserModel.Config backend provided migrationsField
+    let migrationsProperty = ProvidedProperty("migrations", typeof<string MigrationTree array>, (fun _ ->
+      Expr.NewArray
+        ( typeof<string MigrationTree>
+        , generate.UserModel.Migrations
+            |> Seq.map MigrationUtilities.quotationizeMigrationTree
+            |> Seq.toList
+        )), isStatic = true)
+    provided.AddMember <| migrationsProperty
+    generateMigrationMembers generate.UserModel.Config backend provided migrationsProperty
     provided
 
 let generateType (generate : GenerateType) =
