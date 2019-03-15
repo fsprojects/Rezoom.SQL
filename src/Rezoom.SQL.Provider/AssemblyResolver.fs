@@ -59,22 +59,6 @@ let private nameWhitelist =
         "LicenseToCIL"
         "Rezoom"
     |] |> Set.ofArray
-let tryLoadFromLibFolder name = //hack
-  let searchingName = AssemblyName name
-  let dir = @"C:\temp"
-  let file =
-    ["lib"]
-    |> List.map (fun x -> Path.Combine(dir, x, sprintf "%s.dll" searchingName.Name))
-    |> List.tryFind (fun x -> File.Exists x)
-  match file with
-  | None -> None
-  | Some assemblyPath ->    
-    let foundName = AssemblyName.GetAssemblyName(assemblyPath)
-    if foundName |> compatibleWith searchingName then
-      Some <| Assembly.LoadFile assemblyPath
-    else 
-      log (sprintf "%s found but not compatible" assemblyPath)
-      None
 let resolve (name : string) =
     //log (sprintf "resolving %s" name)
     //log (sprintf "in %s" Environment.CurrentDirectory)
