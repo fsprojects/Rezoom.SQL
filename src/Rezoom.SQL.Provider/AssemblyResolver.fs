@@ -68,7 +68,7 @@ let tryLoadFromLibFolder name = //hack
     |> List.map (fun x -> Path.Combine(dir, x, sprintf "%s.dll" searchingName.Name))
     |> List.tryFind (fun x -> File.Exists x)
   match file with
-  | None -> log (sprintf "%s not found in %s" searchingName.Name dir); None
+  | None -> None
   | Some assemblyPath ->    
     let foundName = AssemblyName.GetAssemblyName(assemblyPath)
     if foundName |> compatibleWith searchingName then
@@ -93,7 +93,6 @@ let resolve (name : string) =
         |> Seq.tryFind (fun a -> a.GetName() |> compatibleWith searchingName)
     match alreadyLoaded with
     | Some alreadyLoaded ->
-        //log (sprintf "already seem to have %s as %O" name alreadyLoaded)
         Some alreadyLoaded
     | None ->
         let dllName = searchingName.Name + ".dll"
@@ -111,7 +110,4 @@ let resolve (name : string) =
             } |> Seq.tryHead
         matched 
         |> Option.map Assembly.LoadFile
-        //|> function
-        //  | None -> tryLoadFromLibFolder name
-        //  | x -> x
 
