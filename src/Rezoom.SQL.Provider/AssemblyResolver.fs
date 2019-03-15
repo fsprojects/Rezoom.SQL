@@ -3,8 +3,7 @@ open System
 open System.IO
 open System.Reflection
 
-let log msg =
-    File.AppendAllLines (@"c:\temp\rezoom.txt", [msg]) //todo: remove
+let private log msg =
 #if DEBUG
     let home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
     let log = Path.Combine(home, "rzsqlproviderassembly_log.txt")

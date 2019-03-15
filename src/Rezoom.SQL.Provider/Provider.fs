@@ -11,7 +11,7 @@ type public Provider(cfg : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(cfg)
 
     // Get the assembly and namespace used to house the provided types.
-    let thisAssembly = Assembly.GetExecutingAssembly () // Assembly.LoadFrom(cfg.RuntimeAssembly)
+    let thisAssembly = Assembly.GetExecutingAssembly ()
     let rootNamespace = "Rezoom.SQL"
 
     let modelCache = new UserModelCache()
@@ -60,7 +60,6 @@ type public Provider(cfg : TypeProviderConfig) as this =
         |> List.map (fun x -> sprintf "%cref%c" x x, sprintf "%clib%c" x x)
       cfg.ReferencedAssemblies
       |> Seq.choose (fun asm ->
-        AssemblyResolver.log asm
         try asm |> (File.ReadAllBytes >> Assembly.Load >> Some)
         with 
         | :? BadImageFormatException as e ->
@@ -72,15 +71,12 @@ type public Provider(cfg : TypeProviderConfig) as this =
             |> Option.filter System.IO.File.Exists
           match file with
           | None ->
-            //File.AppendAllLines (@"c:\temp\rezoom.txt", [sprintf "Alt not found: %s" asm])
             None
           | Some file ->
             try file |> (File.ReadAllBytes >> Assembly.Load >> Some)
             with | e ->
-              //File.AppendAllLines (@"c:\temp\rezoom.txt", [sprintf "Alt found. Load failed: %s > %A" file e])
               None
         | _ -> 
-          //File.AppendAllLines (@"c:\temp\rezoom.txt", [sprintf "Load failed: %s" asm]) 
           None)
       |> Array.ofSeq
 
@@ -89,11 +85,8 @@ type public Provider(cfg : TypeProviderConfig) as this =
         this.AddNamespace(rootNamespace, tys)
         modelCache.Invalidated.Add(fun _ -> this.Invalidate())
         this.Disposing.Add(fun _ -> modelCache.Dispose())
-        //File.AppendAllLines (@"c:\temp\rezoom.txt", ["ready"]) 
-        //for x in cfg.ReferencedAssemblies do File.AppendAllLines (@"c:\temp\rezoom.txt", [x]) 
 
     override __.ResolveAssembly args =   
-        //File.AppendAllLines (@"c:\temp\rezoom.txt", [sprintf "in resolve assembly: %s" args.Name]) 
         let name = AssemblyName args.Name
         let existingAssembly =
             System.AppDomain.CurrentDomain.GetAssemblies ()
@@ -106,43 +99,9 @@ type public Provider(cfg : TypeProviderConfig) as this =
         match existingAssembly with
         | Some x -> x
         | None ->
-          //match AssemblyResolver.tryLoadFromLibFolder args.Name with
-          //| Some x -> x
-          //| _ ->
-              //File.AppendAllLines (@"c:\temp\rezoom.txt", ["Not found. Using Resolver"])
               match AssemblyResolver.resolve args.Name with
               | Some x -> x
-              | _ -> 
-                  
-                  //AssemblyResolver.log (sprintf "Still not found. Checking %s" args.Name)
-                  //let n = AssemblyName args.Name
-                  //if (args.Name.Contains "ConfigurationManager") then
-                  //  File.AppendAllLines (@"c:\temp\rezoom.txt", ["----start----"])
-                  //  File.AppendAllLines (@"c:\temp\rezoom.txt", [sprintf "checking: %s" args.Name])
-                  //  //search all: 
-                  //  let fromCurrentDomain = System.AppDomain.CurrentDomain.GetAssemblies () |> Seq.tryFind (fun x -> x.GetName().Name = n.Name)
-                  //  let fromAssemblies = assemblies |> Seq.tryFind (fun x -> x.GetName().Name = n.Name)
-                  //  let fromFile =
-                  //    cfg.ReferencedAssemblies
-                  //    |> Array.tryFind (fun x -> x.Contains n.Name)
-                  //    |> Option.bind (fun x ->
-                  //      File.AppendAllLines (@"c:\temp\rezoom.txt", [sprintf "Got: %s" x])
-                  //      try Some <| Assembly.LoadFile x
-                  //      with | e ->
-                  //        File.AppendAllLines (@"c:\temp\rezoom.txt", [sprintf "Error: %s > %A" x e])
-                  //        None)
-                  //  let gotIt = function
-                  //    | None -> sprintf "%s Nope"
-                  //    | Some x -> sprintf "%s Yep"
-                  //  [ "Domain", fromCurrentDomain
-                  //    "Assemblies", fromAssemblies
-                  //    "File", fromFile ]
-                  //  |> List.map (fun (name, value) -> gotIt value name)
-                  //  |> List.iter (fun x -> File.AppendAllLines (@"c:\temp\rezoom.txt", [x]))
-                  //  File.AppendAllLines (@"c:\temp\rezoom.txt", ["----end----"])
-                  //else 
-                  //  File.AppendAllLines (@"c:\temp\rezoom.txt", [sprintf "Not found: %s" n.Name])
-                  base.ResolveAssembly args
+              | _ -> base.ResolveAssembly args
 
 [<TypeProviderAssembly>]
 do ()
