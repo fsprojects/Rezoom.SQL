@@ -4,14 +4,14 @@ open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
 open ProviderImplementation.ProvidedTypes
 open Rezoom.SQL.Provider.TypeGeneration
+open System
 
 [<TypeProvider>]
 type public Provider(cfg : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(cfg)
 
     // Get the assembly and namespace used to house the provided types.
-    let thisAssembly = Assembly.LoadFrom(cfg.RuntimeAssembly)
-    let tmpAssembly = ProvidedAssembly()
+    let thisAssembly = Assembly.GetExecutingAssembly ()
     let rootNamespace = "Rezoom.SQL"
 
     let modelCache = new UserModelCache()
@@ -19,7 +19,7 @@ type public Provider(cfg : TypeProviderConfig) as this =
         let tmpAssembly = ProvidedAssembly()
         let model = modelCache.Load(cfg.ResolutionFolder, model)
         let ty =
-            {   Assembly = thisAssembly
+            {   Assembly = tmpAssembly
                 Namespace = rootNamespace
                 TypeName = typeName
                 UserModel = model
@@ -53,16 +53,55 @@ type public Provider(cfg : TypeProviderConfig) as this =
         modelTy.DefineStaticParameters(staticParams, buildModelFromStaticParams)
         modelTy
 
+    let assemblies =
+      let alts = 
+        [ Path.DirectorySeparatorChar
+          Path.AltDirectorySeparatorChar ]
+        |> List.map (fun x -> sprintf "%cref%c" x x, sprintf "%clib%c" x x)
+      cfg.ReferencedAssemblies
+      |> Seq.choose (fun asm ->
+        try asm |> (File.ReadAllBytes >> Assembly.Load >> Some)
+        with 
+        | :? BadImageFormatException as e ->
+          //hack to point to the lib dir if it is using ref
+          let file =
+            alts
+            |> List.tryFind (fun (l, _) -> asm.IndexOf(l, StringComparison.OrdinalIgnoreCase) > -1) //? this case sensitivity should should not affect non-windows oses, right?
+            |> Option.map (fun (l, r) -> asm.Replace(l, r))
+            |> Option.filter System.IO.File.Exists
+          match file with
+          | None ->
+            None
+          | Some file ->
+            try file |> (File.ReadAllBytes >> Assembly.Load >> Some)
+            with | e ->
+              None
+        | _ -> 
+          None)
+      |> Array.ofSeq
+
     do
         let tys = [ sqlTy; modelTy ]
-        tmpAssembly.AddTypes(tys)
         this.AddNamespace(rootNamespace, tys)
         modelCache.Invalidated.Add(fun _ -> this.Invalidate())
         this.Disposing.Add(fun _ -> modelCache.Dispose())
 
-    static do
-        System.AppDomain.CurrentDomain.add_AssemblyResolve(fun _ args ->
-            AssemblyResolver.resolve args.Name |> Option.toObj)
+    override __.ResolveAssembly args =   
+        let name = AssemblyName args.Name
+        let existingAssembly =
+            System.AppDomain.CurrentDomain.GetAssemblies ()
+            |> Seq.tryFind (fun x -> AssemblyName.ReferenceMatchesDefinition (name, x.GetName()))
+            |> function
+              | None -> 
+                assemblies
+                |> Seq.tryFind (fun x -> AssemblyName.ReferenceMatchesDefinition (name, x.GetName()))
+              | x -> x
+        match existingAssembly with
+        | Some x -> x
+        | None ->
+              match AssemblyResolver.resolve args.Name with
+              | Some x -> x
+              | _ -> base.ResolveAssembly args
 
 [<TypeProviderAssembly>]
 do ()
