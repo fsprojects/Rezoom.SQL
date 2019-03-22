@@ -253,3 +253,4 @@ paket-files/
 
 # Compiled python bytecode
 *.pyc
+/src/Rezoom.SQL.Provider/Properties/launchSettings.json
