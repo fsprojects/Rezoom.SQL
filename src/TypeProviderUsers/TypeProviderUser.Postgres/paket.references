@@ -1,0 +1,6 @@
+FSharp.Core
+FsUnit
+Npgsql
+NUnit
+System.Threading.Tasks.Extensions
+System.ValueTuple

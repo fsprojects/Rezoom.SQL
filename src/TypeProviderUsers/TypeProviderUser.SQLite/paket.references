@@ -1,0 +1,6 @@
+FSharp.Core
+FsPickler
+FsUnit
+NUnit
+System.Data.SQLite.Core
+System.ValueTuple
