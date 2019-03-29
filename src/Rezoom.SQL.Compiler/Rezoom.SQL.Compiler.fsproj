@@ -67,4 +67,5 @@
     <Reference Include="System.Transactions" />
     <ProjectReference Include="..\Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj" />
   </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

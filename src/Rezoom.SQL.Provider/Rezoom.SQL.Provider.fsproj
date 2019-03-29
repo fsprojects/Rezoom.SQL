@@ -28,7 +28,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Rezoom.SQL.Compiler\Rezoom.SQL.Compiler.fsproj" />
-     
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -37,5 +36,5 @@
     <Reference Include="System.Numerics" />
     <ProjectReference Include="..\Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj" />
   </ItemGroup>
-  <Import Project="..\..\.paket\paket.targets" />
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
