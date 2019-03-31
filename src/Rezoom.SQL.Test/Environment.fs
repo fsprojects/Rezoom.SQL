@@ -11,8 +11,8 @@ open Rezoom.SQL.Mapping
 open Rezoom.SQL.Compiler
 
 let userModelByName name =
-    let assemblyFolder = Path.GetDirectoryName(Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath)
-    let resolutionFolder = Path.Combine(assemblyFolder, "../../" + name)
+    let assemblyFolder = __SOURCE_DIRECTORY__
+    let resolutionFolder = Path.Combine(assemblyFolder, name)
     UserModel.Load(resolutionFolder, ".")
 
 let userModel1() = userModelByName "user-model-1"
