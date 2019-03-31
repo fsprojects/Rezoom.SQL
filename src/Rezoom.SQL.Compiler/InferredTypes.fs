@@ -291,8 +291,15 @@ and [<NoComparison>]
                     let schema = this.Model.Schemas.[this.Model.DefaultSchema]
                     this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
         | Some schema ->
-            let schema = this.Model.Schemas.[schema]
-            this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
+            this.Model.Schemas
+            |> Map.tryFind schema
+            |> function
+               | Some schema -> this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
+               | None -> let quote input = "'" + input + "'" in 
+                            failwithf "Schema '%s' doesn't exist. Existing schemas: %s."
+                              (schema |> string |> quote)
+                              (this.Model.Schemas |> Map.toArray |> Array.map (fst >> string >> quote) |> String.concat ", ")
+                
 
     /// Resolve a column reference, which may be qualified with a table alias.
     /// This resolves against the tables referenced in the FROM clause, and the columns explicitly named
