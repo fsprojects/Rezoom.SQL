@@ -55,7 +55,7 @@
     <Compile Include="Postgres.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="UserModel.fs" />
-    <Content Include="packages.config" />
+    <Content Include="paket.references" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
