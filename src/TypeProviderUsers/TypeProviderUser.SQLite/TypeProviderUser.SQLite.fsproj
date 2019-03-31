@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
     <IsTestProject>true</IsTestProject>
-    <RezoomReferencesPath>..\..\Rezoom.SQL.Provider\bin\$(Configuration)\net462\</RezoomReferencesPath>
+    <RezoomReferencesPath>..\..\Rezoom.SQL.Provider\bin\$(Configuration)\net45\</RezoomReferencesPath>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
