@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28721.148
+# Visual Studio 15
+VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{EF6B3A49-8E78-4B54-9086-B794213C7D95}"
 	ProjectSection(SolutionItems) = preProject
@@ -17,13 +17,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{EF6B3A49-8
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3CFAC282-AFAA-4B7A-879F-D2BDF9EC631B}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Rezoom.SQL.Mapping", "Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj", "{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Mapping", "Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj", "{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Test", "Rezoom.SQL.Test\Rezoom.SQL.Test.fsproj", "{AA699897-F692-4ED0-9865-98B6B4C713DB}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Rezoom.SQL.Provider", "Rezoom.SQL.Provider\Rezoom.SQL.Provider.fsproj", "{7B1765CB-23F8-419A-9CC6-3DA319ED066F}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Provider", "Rezoom.SQL.Provider\Rezoom.SQL.Provider.fsproj", "{7B1765CB-23F8-419A-9CC6-3DA319ED066F}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Rezoom.SQL.Compiler", "Rezoom.SQL.Compiler\Rezoom.SQL.Compiler.fsproj", "{87FCD04A-1F90-4D53-A428-CF5F5C532A22}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Compiler", "Rezoom.SQL.Compiler\Rezoom.SQL.Compiler.fsproj", "{87FCD04A-1F90-4D53-A428-CF5F5C532A22}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,8 +53,5 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AA699897-F692-4ED0-9865-98B6B4C713DB} = {3CFAC282-AFAA-4B7A-879F-D2BDF9EC631B}
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {F398DF91-80CD-49F4-AB10-5AD3C1D3688D}
 	EndGlobalSection
 EndGlobal
