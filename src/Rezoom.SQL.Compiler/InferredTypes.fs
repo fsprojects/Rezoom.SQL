@@ -290,15 +290,9 @@ and [<NoComparison>]
                 | None ->
                     let schema = this.Model.Schemas.[this.Model.DefaultSchema]
                     this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
-        | Some schema ->
-            this.Model.Schemas
-            |> Map.tryFind schema
-            |> function
-               | Some schema -> this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
-               | None ->
-                   schema
-                   |> Error.noSuchSchema this.Model.Schemas
-                   |> failAt name.Source                  
+        | Some schemaName ->
+            let schema = { Source = name.Source; Value = Some schemaName } |> ModelOps.getRequiredSchema |> State.runForOuputValue this.Model
+            this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
 
     /// Resolve a column reference, which may be qualified with a table alias.
     /// This resolves against the tables referenced in the FROM clause, and the columns explicitly named
