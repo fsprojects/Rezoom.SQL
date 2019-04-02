@@ -28,7 +28,7 @@ let private requireNoObject (name : QualifiedObjectName WithSource) =
     }
 
 let getRequiredSchema (schemaName: Name option WithSource) =
-        stateful {
+    stateful {
         let! model = State.get
         let source = schemaName.Source
         let schemaName =
