@@ -32,9 +32,9 @@ let getRequiredSchema (schemaName: Name option WithSource) =
         let! model = State.get
         let source = schemaName.Source
         let schemaName =
-          match schemaName.Value with
-          | None -> model.DefaultSchema
-          | Some name -> name
+            match schemaName.Value with
+            | None -> model.DefaultSchema
+            | Some name -> name
         let! schema = getSchema schemaName
         return
             match schema with
