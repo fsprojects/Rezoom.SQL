@@ -87,7 +87,7 @@ let private addScalarInterface (ty : ProvidedTypeDefinition) (field : ProvidedFi
     let getterMethod =
         ProvidedMethod("get_ScalarValue", [], field.FieldType, invokeCode =
             function
-            | [ this ] -> Expr.FieldGet(this, field)
+            | [ this ] -> Expr.FieldGetUnchecked(this, field)
             | _ -> bug "Invalid getter argument list")
     let flags =
         MethodAttributes.Virtual
