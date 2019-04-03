@@ -43,8 +43,11 @@ let columnAlreadyExists name =
     sprintf "SQ018: Column ``%O`` already exists" name
 let noSuchColumnToSet tbl col =
     sprintf "SQ019: No such column in table ``%O`` to set: ``%O``" tbl col
-let noSuchSchema schema =
-    sprintf "SQ020: No such schema: ``%O``" schema
+let noSuchSchema existingSchemas schema =
+    sprintf 
+      "SQ020: No such schema: ``%O``, existing schemas: %s." 
+        schema
+        (existingSchemas |> Map.toArray |> Array.map (fst >> sprintf "``%O``") |> String.concat ", ")
 let ambiguousColumn name =
     sprintf "SQ021: Ambiguous column: ``%O``" name
 let ambiguousColumnBetween name tbl1 tbl2 =
