@@ -73,14 +73,6 @@ module Helpers =
       TestModel.Migrate(MigrationConfig.Default)
       do
         use cxt = new ConnectionContext()
-        do 
-(*          use cnx = cxt.GetConnection("rzsql")
-          cnx.CreateCommand(CommandText = """
-delete from dbo.articlecomments
-delete from dbo.articles   
-delete from dbo.users
-delete from dbo.pictures
-          """).ExecuteNonQuery() |> ignore*)
         TestData.Command().Execute(cxt)
       TestModel.Migrate(MigrationConfig.Default)
       use cxt = new ConnectionContext()
