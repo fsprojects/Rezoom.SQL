@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net45</TargetFramework>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="app.config" />
+    <Content Include="rzsql.json" />
+    <None Include="packages.config" />
+    <None Include="V1.model.sql" />
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Shared.fs" />
+    <Compile Include="TestSelects.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Rezoom">
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.dll</HintPath>
+    </Reference>
+    <Reference Include="Rezoom.SQL.Mapping">
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.SQL.Mapping.dll</HintPath>
+    </Reference>
+    <Reference Include="Rezoom.SQL.Provider">
+      <HintPath>..\..\Rezoom.SQL.Provider\bin\Debug\Rezoom.SQL.Provider.dll</HintPath>
+    </Reference>
+    <PackageReference Include="FSharp.Core" Version="4.2.1" />
+    <PackageReference Include="FsPickler" Version="3.2.0" />
+    <PackageReference Include="FsUnit" Version="3.0.0" />
+    <PackageReference Include="NUnit" Version="3.6.0" />
+  </ItemGroup>
+
+</Project>
