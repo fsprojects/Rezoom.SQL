@@ -3,7 +3,7 @@ open System
 open System.Collections.Generic
 open Rezoom.SQL.Compiler.InferredTypes
 
-type IQueryTypeChecker =
+type private IQueryTypeChecker =
     abstract member Select : SelectStmt -> InfSelectStmt
     abstract member CreateView : CreateViewStmt -> InfCreateViewStmt
 
