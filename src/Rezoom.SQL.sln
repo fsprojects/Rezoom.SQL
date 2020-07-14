@@ -3,6 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{EF6B3A49-8E78-4B54-9086-B794213C7D95}"
+	ProjectSection(SolutionItems) = preProject
+		..\.deployment = ..\.deployment
+		..\.gitignore = ..\.gitignore
+		..\.travis.yml = ..\.travis.yml
+		..\LICENSE.txt = ..\LICENSE.txt
+		..\paket.dependencies = ..\paket.dependencies
+		..\paket.lock = ..\paket.lock
+		..\README.md = ..\README.md
+		..\SUMMARY.md = ..\SUMMARY.md
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3CFAC282-AFAA-4B7A-879F-D2BDF9EC631B}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Rezoom.SQL.Mapping", "Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj", "{6B6A06C5-157A-4FE3-8B4C-2A1AE6A15333}"

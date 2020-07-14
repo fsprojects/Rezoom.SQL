@@ -1,0 +1,21 @@
+source "C:\Program Files (x86)\Microsoft SDKs\NuGetPackages\"
+source https://www.myget.org/F/eto/
+source https://api.nuget.org/v3/index.json
+
+framework: >= net45, >= netstandard20
+storage: none
+strategy: min
+redirects: force
+
+
+nuget FParsec-Pipes                             0.4.0
+nuget FSharp.Core                               4.2.1
+nuget FsPickler                                 3.2.0
+nuget FsUnit strategy: max
+
+nuget LicenseToCIL                              = 0.3.0       # issue with more recent releases : https://github.com/rspeele/Rezoom.SQL/issues/38
+nuget Npgsql                                    3.2.5
+nuget Rezoom                                    0.4.2
+nuget System.Data.SQLite.Core                   1.0.104
+nuget System.Configuration.ConfigurationManager               # will be needed for netstandard support (https://apisof.net/catalog/System.Configuration.ConnectionStringSettings)
+nuget System.Runtime                            4.3.0
