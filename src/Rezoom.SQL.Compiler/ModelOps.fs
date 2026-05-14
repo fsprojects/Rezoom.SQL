@@ -27,16 +27,32 @@ let private requireNoObject (name : QualifiedObjectName WithSource) =
         | None -> ()
     }
 
+let getRequiredSchema (schemaName: Name option WithSource) =
+    stateful {
+        let! model = State.get
+        let source = schemaName.Source
+        let schemaName =
+            match schemaName.Value with
+            | None -> model.DefaultSchema
+            | Some name -> name
+        let! schema = getSchema schemaName
+        return
+            match schema with
+            | Some obj -> obj
+            | None ->
+                schemaName
+                |> Error.noSuchSchema model.Schemas
+                |> failAt source
+    }
+
 let getRequiredObject objectTypeName (name : QualifiedObjectName WithSource) =
     stateful {
-        let! schema = getSchema name.Value.SchemaName
-        match schema with
-        | None -> return failAt name.Source <| Error.noSuchSchema name.Value.SchemaName
-        | Some schema ->
-            return
-                match schema.Objects |> Map.tryFind name.Value.ObjectName with
-                | None -> failAt name.Source <| Error.noSuchObject objectTypeName name.Value.ObjectName
-                | Some obj -> obj
+        let! model = State.get
+        let! schema = name.Map(fun n -> Some n.SchemaName) |> getRequiredSchema
+        return
+            match schema.Objects |> Map.tryFind name.Value.ObjectName with
+            | None -> failAt name.Source <| Error.noSuchObject objectTypeName name.Value.ObjectName
+            | Some obj -> obj
     }
 
 let getRequiredTable name =
@@ -75,27 +91,19 @@ let putSchema (schema : Schema) =
 /// Create or update an object within an existing schema in the model.
 let putObject (name : QualifiedObjectName WithSource) (obj : SchemaObject) =
     stateful {
-        let! schema = getSchema name.Value.SchemaName
-        match schema with
-        // shouldn't have called this with a bogus schema
-        | None ->
-            failAt name.Source <| Error.noSuchSchema name.Value.SchemaName
-        | Some schema ->
-            let newSchema = { schema with Objects = schema.Objects |> Map.add name.Value.ObjectName obj }
-            return! putSchema newSchema
+        let! model = State.get
+        let! schema = name.Map(fun n -> Some n.SchemaName) |> getRequiredSchema
+        let newSchema = { schema with Objects = schema.Objects |> Map.add name.Value.ObjectName obj }
+        return! putSchema newSchema
     }
 
 /// Remove an existing object from the model.
 let removeObject (name : QualifiedObjectName WithSource) =
     stateful {
-        let! schema = getSchema name.Value.SchemaName
-        match schema with
-        // shouldn't have called this with a bogus schema
-        | None ->
-            failAt name.Source <| Error.noSuchSchema name.Value.SchemaName
-        | Some schema ->
-            let newSchema = { schema with Objects = schema.Objects |> Map.remove name.Value.ObjectName }
-            return! putSchema newSchema
+        let! model = State.get
+        let! schema = name.Map(fun n -> Some n.SchemaName) |> getRequiredSchema
+        let newSchema = { schema with Objects = schema.Objects |> Map.remove name.Value.ObjectName }
+        return! putSchema newSchema
     }
 
 /// Create a new table with a given name.

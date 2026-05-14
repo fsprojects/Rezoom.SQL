@@ -46,3 +46,8 @@ let ``no such column to index on creation`` () =
 let ``can't drop table referenced by others`` () =
     expectError (Error.tableIsReferencedByFKs "main.Users" ["main.UserGroupMaps"])
         "drop table Users"
+
+[<Test>]
+let ``non existing schema name`` () =
+    expectErrorWithModel (fun model -> Error.noSuchSchema model.Schemas "a")
+        "select * from a.b"

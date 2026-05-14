@@ -290,8 +290,8 @@ and [<NoComparison>]
                 | None ->
                     let schema = this.Model.Schemas.[this.Model.DefaultSchema]
                     this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
-        | Some schema ->
-            let schema = this.Model.Schemas.[schema]
+        | Some schemaName ->
+            let schema = { Source = name.Source; Value = Some schemaName } |> ModelOps.getRequiredSchema |> State.runForOuputValue this.Model
             this.ResolveObjectReferenceBySchema(schema, name.ObjectName, inferView)
 
     /// Resolve a column reference, which may be qualified with a table alias.

@@ -11,15 +11,15 @@ open Rezoom.SQL.Mapping
 open Rezoom.SQL.Compiler
 
 let userModelByName name =
-    let assemblyFolder = Path.GetDirectoryName(Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath)
-    let resolutionFolder = Path.Combine(assemblyFolder, "../../../" + name)
+    let assemblyFolder = __SOURCE_DIRECTORY__
+    let resolutionFolder = Path.Combine(assemblyFolder, name)
     UserModel.Load(resolutionFolder, ".")
 
 let userModel1() = userModelByName "user-model-1"
 
 let userModel2() = userModelByName "user-model-2"
 
-let expectError (msg : string) (sql : string) =
+let expectErrorWithModel (mkMsg : Model -> string) (sql : string) =
     let userModel = userModel1()
     try
         ignore <| CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
@@ -27,7 +27,9 @@ let expectError (msg : string) (sql : string) =
     with
     | :? SourceException as exn ->
         printfn "\"%s\"" exn.Message
-        Assert.AreEqual(msg, exn.Reason.Trim())
+        Assert.AreEqual(mkMsg userModel.Model, exn.Reason.Trim())
+
+let expectError (msg : string) (sql : string) = expectErrorWithModel (fun _ -> msg) sql
 
 let dispenserParameterIndexer() =
     let dict = Dictionary()
