@@ -1,7 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <Version>0.5.0</Version>
+    <Authors>Robert Peele</Authors>
+    <Description>Compiler and dialect translators for Rezoom.SQL.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
+    <PackageReleaseNotes>Modernize: multi-target netstandard2.0 / net8.0; swap System.Data.SqlClient for Microsoft.Data.SqlClient.</PackageReleaseNotes>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup>
@@ -51,9 +59,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FParsec-Pipes" Version="1.1.0" />
-    <PackageReference Include="Rezoom" Version="1.0.0" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.5.1" />
+    <PackageReference Include="FSharp.Core" Version="8.0.401" />
+    <PackageReference Include="FParsec-Pipes" Version="1.2.0" />
+    <PackageReference Include="Rezoom" Version="1.1.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
 
   <ItemGroup>

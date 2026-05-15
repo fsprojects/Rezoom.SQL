@@ -273,7 +273,7 @@ and [<NoComparison>]
             let def = inferView view.CreateDefinition
             let query = def.AsSelect.Value.Info.Query.Map(InferredType.Of)
             { Table = ViewReference(view, def); Query = query } |> TableLike |> Found
-        | Some (SchemaIndex index) -> index |> Index |> Found
+        | Some (SchemaIndex index) -> index |> ObjectInfo.Index |> Found
         | Some (SchemaConstraint _)
         | None -> NotFound <| Error.noSuchObject "object" name
 

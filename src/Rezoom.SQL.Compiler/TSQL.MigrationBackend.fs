@@ -1,7 +1,7 @@
 ﻿namespace Rezoom.SQL.Compiler.TSQL
 open System
 open System.Configuration
-open System.Data.SqlClient
+open Microsoft.Data.SqlClient
 open System.Data.Common
 open System.Text.RegularExpressions
 open Rezoom.SQL.Compiler

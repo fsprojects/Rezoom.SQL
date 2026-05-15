@@ -3,7 +3,6 @@ open System.Runtime.CompilerServices
 open System.Threading
 open System.Collections.Generic
 open System.Data.Common
-open FSharp.Control.Tasks.ContextInsensitive
 open Rezoom.SQL
 open Rezoom.SQL.Mapping
 

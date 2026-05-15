@@ -1,7 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <Version>0.5.0</Version>
+    <Authors>Robert Peele</Authors>
+    <Description>Mapping / data reader infrastructure for Rezoom.SQL.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
+    <PackageReleaseNotes>Modernize: multi-target netstandard2.0 / net8.0; drop TaskBuilder.fs.</PackageReleaseNotes>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup>
@@ -40,10 +48,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LicenseToCIL" Version="1.0.0" />
-    <PackageReference Include="Rezoom" Version="1.0.0" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="FSharp.Core" Version="8.0.401" />
+    <PackageReference Include="LicenseToCIL" Version="1.1.0" />
+    <PackageReference Include="Rezoom" Version="1.1.0" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+  </ItemGroup>
+
+  <!-- TypeBuilder / DynamicMethod / LocalBuilder are not in the netstandard2.0 BCL surface,
+       so the reference packages are still needed for that target. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
   </ItemGroup>
 
 </Project>

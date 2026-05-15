@@ -7,7 +7,6 @@ open System.Data.Common
 open Rezoom
 open Rezoom.SQL
 open Rezoom.SQL.Mapping
-open FSharp.Control.Tasks.ContextInsensitive
 open System.Threading
 
 type private ExecutionLocalConnections(provider : ConnectionProvider) =

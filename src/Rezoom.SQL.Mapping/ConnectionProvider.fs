@@ -29,7 +29,9 @@ module NetStandardHacks =
         static member GetFactory(providerName : string) : DbProviderFactory =
             match providerName.ToLowerInvariant() with
             | "system.data.sqlclient" ->
-                loadInstance "System.Data" "System.Data.SqlClient.SqlClientFactory"
+                loadInstance "System.Data.SqlClient" "System.Data.SqlClient.SqlClientFactory"
+            | "microsoft.data.sqlclient" ->
+                loadInstance "Microsoft.Data.SqlClient" "Microsoft.Data.SqlClient.SqlClientFactory"
             | "system.data.sqlite" ->
                 loadInstance "System.Data.SQLite" "System.Data.SQLite.SQLiteFactory"
             | "npgsql" ->
