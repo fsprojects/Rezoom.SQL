@@ -27,7 +27,7 @@
     <PackageReference Include="Rezoom" Version="1.1.0" />
     <PackageReference Include="Rezoom.SQL.Compiler" Version="0.5.0" />
     <PackageReference Include="Rezoom.SQL.Mapping" Version="0.5.0" />
-    <PackageReference Include="Rezoom.SQL.Provider" Version="0.5.4" />
+    <PackageReference Include="Rezoom.SQL.Provider" Version="0.7.2" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
 

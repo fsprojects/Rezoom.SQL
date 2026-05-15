@@ -312,14 +312,24 @@ let generateMigrationMembers
                 ProvidedParameter("connectionName", typeof<string>)
             ]
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
-            | [ config; connectionName ] -> 
-                let backend =
-                    <@ fun () ->
+            | [ config; connectionName ] ->
+                // ProvidedTypes' IL translator emits a `void` local for the try-block's
+                // result when that result is unit-typed, producing JIT-invalid IL. Make
+                // the try block return a dummy int. Discard the int with `let _ = ...`
+                // (NOT `ignore <| ...` — the pipe operator pushes its function arg onto
+                // the stack BEFORE evaluating the try block, then loses it across the
+                // leave instruction, producing a different brand of invalid IL).
+                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
+                    let backendInstance =
                         (%backend.MigrationBackend)
                             (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
-                    @>
-                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
-                    migrations.Run(%%config, %%(upcast backend))
+                    let _ =
+                        try
+                            MigrationUtilities.runMigrations (%%config) backendInstance migrations
+                            0
+                        finally
+                            backendInstance.Dispose()
+                    ()
                 @@>
             | _ -> bug "Invalid migrate argument list")
         provided.AddMember meth
@@ -330,13 +340,17 @@ let generateMigrationMembers
             ]
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
             | [ config ] ->
-                let backend =
-                    <@ fun () ->
+                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
+                    let backendInstance =
                         (%backend.MigrationBackend)
                             (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
-                    @>
-                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
-                    migrations.Run(%%config, %%(upcast backend))
+                    let _ =
+                        try
+                            MigrationUtilities.runMigrations (%%config) backendInstance migrations
+                            0
+                        finally
+                            backendInstance.Dispose()
+                    ()
                 @@>
             | _ -> bug "Invalid migrate argument list")
         provided.AddMember meth
