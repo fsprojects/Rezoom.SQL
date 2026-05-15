@@ -3,7 +3,6 @@ open System
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
-open FSharp.Control.Tasks.ContextInsensitive
 open Rezoom
 open Rezoom.Execution
 
@@ -29,7 +28,7 @@ let executeSmart (plan : 'a Plan) =
         let log = DemoExecutionLog()
         let config =
             { ExecutionConfig.Default with
-                Log = log
+                Instance = fun () -> ExecutionInstance(log)
             }
         let! result = execute config plan
         return result, log.BatchCount

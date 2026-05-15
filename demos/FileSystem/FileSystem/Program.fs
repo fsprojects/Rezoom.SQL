@@ -75,7 +75,7 @@ let testCache userId doubleUp =
             for h in folders do printfn "%O" h
     }
 
-let parseFolderId idStr =
+let parseFolderId (idStr : string) =
     let succ, id = Int32.TryParse(idStr)
     if not succ then
         eprintfn "Misformatted id %s" idStr
