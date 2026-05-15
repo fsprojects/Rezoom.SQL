@@ -101,7 +101,7 @@ let rec private setUpFolders parentId (entries : FolderStructureEntry list) =
                 let! id = InsertFolderSQL.Command(entry.Name, parentId).Scalar()
                 do! setUpFolders (Some id) entry.Children
             else
-                let content = "This is the content of " + entry.Name
+                let content = System.Text.Encoding.UTF8.GetBytes("This is the content of " + entry.Name)
                 do! InsertFileSQL.Command(content, entry.Name, Option.get parentId).Plan()
     }
 

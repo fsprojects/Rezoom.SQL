@@ -12,27 +12,7 @@
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
     <PackageReleaseNotes>Modernize: bump FSharp.Core; track modernized Rezoom.SQL.Compiler / Mapping.</PackageReleaseNotes>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <!-- Type provider packaging: the design-time assembly and ALL its transitive
-         dependencies must live together under typeproviders/fsharp41/{tfm}/ so that the
-         F# compiler can load them as a self-contained set. Nothing belongs in lib/. -->
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-    <DevelopmentDependency>true</DevelopmentDependency>
-    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackTypeProviderDesignTimeAssemblies</TargetsForTfmSpecificContentInPackage>
-    <!-- NU5128: no lib/ folder for the target framework — intentional for a TP. -->
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
-
-  <Target Name="PackTypeProviderDesignTimeAssemblies">
-    <ItemGroup>
-      <!-- The provider itself, plus everything copied next to it at build time
-           (Compiler, Mapping, FParsec*, FParsec-Pipes, LicenseToCIL, Rezoom, FSharp.Core, ...). -->
-      <TfmSpecificPackageFile Include="$(OutputPath)$(AssemblyName).dll"
-                              PackagePath="typeproviders/fsharp41/netstandard2.0/$(AssemblyName).dll" />
-      <TfmSpecificPackageFile Include="@(ReferenceCopyLocalPaths->'%(FullPath)')"
-                              PackagePath="typeproviders/fsharp41/netstandard2.0/%(ReferenceCopyLocalPaths.DestinationSubPath)" />
-    </ItemGroup>
-  </Target>
 
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
