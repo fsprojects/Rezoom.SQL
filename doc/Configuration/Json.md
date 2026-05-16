@@ -58,8 +58,9 @@ is not tested.
 _default: `"rzsql"`_
 
 This setting determines the connection string name RZSQL will use at runtime.
-This should match the name used in the `<add name="..." .../>` element in the
-`<connectionStrings>` section of your program's App.config or Web.config file.
+By default this is resolved as `ConnectionStrings:{name}` in the host's
+`IConfiguration` (e.g. your `appsettings.json`). See [Runtime
+configuration](Configuration.md) for details.
 
 There is usually no reason to change the default.
 

@@ -14,7 +14,7 @@ open Rezoom.SQL.Synchronous
 type MyQuery = SQL<"select * from MyTable">
 
 let runMyQuery () : IReadOnlyList<MyQuery.Row> =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let command = ListCommentsByUser.Command(name)
     command.Execute(context)
 ```
@@ -46,7 +46,7 @@ type MyQuery = SQL<"select * from MyTable">
 
                   // v-- notice the type difference
 let runMyQuery () : Task<IReadOnlyList<MyQuery.Row>> =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let command = ListCommentsByUser.Command(name)
     command.Execute(context)
 ```
@@ -69,7 +69,7 @@ type MyQuery = SQL<"select * from MyTable">
 
 let runMyQuery () : Task<int> =
     task {
-        use context = new ConnectionContext()
+        use context = new ConnectionContext(connectionProvider)
         let command = ListCommentsByUser.Command(name)
         // notice that this variable is bound with `let!`
         let! results = command.Execute(context)

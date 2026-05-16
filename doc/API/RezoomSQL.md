@@ -138,26 +138,30 @@ type ExampleModel = SQLModel
 
 The main reason to use the `SQLModel` provider is to run migrations. The
 provided type (`ExampleModel` here) has a static `Migrate` method which takes a
-[MigrationConfig](RezoomSQLMigrations.md). For most applications using
-`MigrationConfig.Default` from the [Rezoom.SQL.Migrations
-namespace](RezoomSQLMigrations.md) is fine.
+[MigrationConfig](RezoomSQLMigrations.md) and an `IServiceProvider`. For most
+applications using `MigrationConfig.Default` from the [Rezoom.SQL.Migrations
+namespace](RezoomSQLMigrations.md) is fine. The `IServiceProvider` supplies the
+host's `IConfiguration` (or a custom `ConnectionProvider`); see [Runtime
+configuration](../Configuration/Configuration.md) for the setup.
 
 ```fsharp
 open Rezoom.SQL.Migrations
 
 [<EntryPoint>]
 let main argv =
-    ExampleModel.Migrate(MigrationConfig.Default)
+    ExampleModel.Migrate(MigrationConfig.Default, services)
+    0
 ```
 
 The exact details of the `Migrate` method vary depending on your database
 backend. However, basically it will go through the following steps:
 
-1. Open a database using the using the connection string in your App.config or
-   Web.config named matching the `"connectionName"` configuration setting from
-   [rzsql.json](../Configuration/Json.md).
+1. Resolve the connection string for the `"connectionName"` configured in
+   [rzsql.json](../Configuration/Json.md). By default this comes from the
+   `ConnectionStrings:{name}` section of the host's `IConfiguration` (e.g.
+   `appsettings.json`); register a custom `ConnectionProvider` to override.
 
-2. If it is unable to connect because the database does not exists, attempt to
+2. If it is unable to connect because the database does not exist, attempt to
    create it, then reconnect.
 
 3. Check for a table storing migration history (`__RZSQL_MIGRATIONS`).
@@ -167,9 +171,4 @@ backend. However, basically it will go through the following steps:
 5. For each migration script that has not been recorded in the migration history
    table, run the script in a transaction and insert a row into the migration
    history table for it.
-
-There is an optional `connectionName` parameter to the `Migrate` method. If
-provided, this parameter will be used instead of the "connectionName" from
-[rzsql.json](../Configuration/Json.md) to look up the connection string in your
-App.config.
 

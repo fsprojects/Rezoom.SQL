@@ -105,12 +105,15 @@ Notice that these functions do not take a connection context. This is because a
 Here's an example of how to actually run such a `Plan`:
 
 ```fsharp
-open Rezoom.Execution
+open Rezoom
 open System.Threading.Tasks
 
-let example() =
+// `services` here is the host's IServiceProvider — see
+// [Runtime configuration](../../doc/Configuration/Configuration.md). In an
+// ASP.NET Core app it's typically obtained from DI as `PlanExecutor`.
+let example (services : System.IServiceProvider) =
     let plan : Plan<unit> = deleteManyDocuments 1 [1..500]
-    let task : Task<unit> = execute ExecutionConfig.Default plan
+    let task : Task<unit> = PlanExecutor(services).Execute(plan)
     // Note: only use .Wait() if you want to wait synchronously for the task to finish
     task.Wait()
 ```

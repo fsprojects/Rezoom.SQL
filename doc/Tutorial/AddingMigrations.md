@@ -41,7 +41,7 @@ type GetArticles = SQL<"""
 """>
 
 let getArticles() =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let articles = GetArticles.Command().Execute(context)
     for article in articles do
         printfn "%s (by %s)" article.Title article.Author.Email

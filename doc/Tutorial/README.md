@@ -65,10 +65,29 @@ Now open up `Program.fs`, the main module of your program. The first thing you'l
 and run that migration script to create your tables. Fortunately, this doesn't take much code.
 
 ```fsharp
+open System
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
 open Rezoom.SQL
+open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 
 type MyModel = SQLModel<"."> // find migrations in the project folder, "."
+
+// One-time setup: build an IConfiguration from appsettings.json and register it
+// in a service provider. Rezoom.SQL's ConnectionProvider falls back to a
+// ConfigurationConnectionProvider built from the registered IConfiguration, so
+// nothing Rezoom-specific needs to be registered.
+let services : IServiceProvider =
+    let configuration =
+        ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional = false)
+            .Build() :> IConfiguration
+    let collection = ServiceCollection()
+    collection.AddSingleton<IConfiguration>(configuration) |> ignore
+    collection.BuildServiceProvider() :> IServiceProvider
+
+let connectionProvider = ConnectionProvider.ResolveFrom(services)
 
 let migrate() =
     // customize the default migration config so that it outputs a message after running a migration
@@ -77,7 +96,7 @@ let migrate() =
             LogMigrationRan = fun m -> printfn "Ran migration: %s" m.MigrationName
         }
     // run the migrations, creating the database if it doesn't exist
-    MyModel.Migrate(config)
+    MyModel.Migrate(config, services)
 
 [<EntryPoint>]
 let main argv =
@@ -85,6 +104,22 @@ let main argv =
     // return 0 status code
     0
 ```
+
+You'll also need an `appsettings.json` next to your project. For SQLite that's just:
+
+```json
+{
+  "ConnectionStrings": {
+    "rzsql": "Data Source=rzsql.db"
+  },
+  "RezoomSQL": {
+    "Providers": { "rzsql": "Microsoft.Data.Sqlite" }
+  }
+}
+```
+
+See [Runtime configuration](../Configuration/Configuration.md) for the full
+story and sample strings for the other backends.
 
 Go ahead and run this program with ctrl+F5. You should see that it outputs that
 it ran the migration. If you run it again, it won't output anything, since the
@@ -114,7 +149,7 @@ type InsertComment = SQL<"insert into Comments(AuthorId, Comment) values (@autho
 
 let addExampleUser name email =
     // open a context in which to run queries
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     // insert a user and get their ID
     let userId : int64 =
         InsertUser.Command(email = email, name = Some name).ExecuteScalar(context)
@@ -147,7 +182,7 @@ type ListUsers = SQL<"""
 """>
 
 let showUsers() =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let users = ListUsers.Command().Execute(context)
     printfn "There are %d users." users.Count
     for user in users do
@@ -185,7 +220,7 @@ type ListCommentsByUser = SQL<"""
 """>
 
 let showComments name =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let comments = ListCommentsByUser.Command(name).Execute(context)
     printfn "There are %d comments by users matching the name `%s`." comments.Count name
     for comment in comments do

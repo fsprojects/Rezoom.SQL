@@ -43,7 +43,7 @@ let arg (o : obj) =
 
 let connectionDynamicCommand<'row> connectionName (sql : CommandFragment array) =
     let cmdData =
-        {   ConnectionName = connectionName // should match the one in rzsql.json/App.config
+        {   ConnectionName = connectionName // should match the one in rzsql.json / appsettings.json
             Fragments = sql
             Identity = ""
             DependencyMask = Rezoom.BitMask.Full

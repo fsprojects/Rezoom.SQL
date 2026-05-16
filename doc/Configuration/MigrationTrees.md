@@ -112,14 +112,14 @@ type ExampleModel = SQLModel<".">
 
 [<EntryPoint>]
 let main argv =
-    ExampleModel.Migrate(MigrationConfig.Default)
+    ExampleModel.Migrate(MigrationConfig.Default, services)
 ```
 
 In development, you may want to specify `AllowRetroactiveMigrations = true`:
 
 ```fsharp
 let main argv =
-    ExampleModel.Migrate({ MigrationConfig.Default with AllowRetroactiveMigrations = true })
+    ExampleModel.Migrate({ MigrationConfig.Default with AllowRetroactiveMigrations = true }, services)
 ```
 
 This allows you to run sub-migrations from older version numbers. Normally the

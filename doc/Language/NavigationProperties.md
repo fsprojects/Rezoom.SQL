@@ -125,7 +125,7 @@ type GetClasses = SQL<"""
 """>
 
 let showClasses() =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let classes = GetClasses.Command().Execute(context)
     printfn "There are %d classes." classes.Count
     for c in classes do

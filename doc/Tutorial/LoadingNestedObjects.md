@@ -35,7 +35,7 @@ type GetUsersWithComments = SQL<"""
 """>
 
 let showUsersWithComments() =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let users = GetUsersWithComments.Command().Execute(context)
     printfn "There are %d users." users.Count
     for user in users do

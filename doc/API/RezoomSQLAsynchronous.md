@@ -9,10 +9,13 @@ case you want to be able to stop execution of the query partway through.
 You can use these methods on a `DbConnection` obtained however you like.
 However, it is more idiomatic to use the `ConnectionContext` type in Rezoom.SQL.
 
-This will open a connection when needed using the connection strings section
-from your `app.config`. If you have multiple connection strings with differnt
-names, you can work with all of them using the same `ConnectionContext`, and all
-the database connections will be disposed when the context is disposed.
+This will open a connection when needed using the `ConnectionProvider` you pass
+to its constructor (typically resolved from your host's `IServiceProvider` via
+`ConnectionProvider.ResolveFrom(services)` — see [Runtime
+configuration](../Configuration/Configuration.md)). If you have multiple
+connection names, you can work with all of them using the same
+`ConnectionContext`, and all the database connections will be disposed when the
+context is disposed.
 
 Example usage:
 
@@ -24,7 +27,7 @@ type QueryType = SQL<"select Name, Email from Users where Id = @id">
 
 let example() =
     task {
-        use context = new ConnectionContext()
+        use context = new ConnectionContext(connectionProvider)
         let! results = QueryType.Command(id = 1).Execute(context)
         for result in results do
             printfn "%s %s" result.Name result.Email

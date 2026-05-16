@@ -16,7 +16,6 @@
     <Compile Include="Persistence.fs" />
     <Compile Include="Domain.fsi" />
     <Compile Include="Domain.fs" />
-    <None Include="App.config" />
     <EmbeddedResource Include="V1.model.sql" />
     <EmbeddedResource Include="rzsql.json" />
   </ItemGroup>
