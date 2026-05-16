@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26228.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SQLFiddle", "SQLFiddle\SQLFiddle.fsproj", "{61A0BB11-E7E9-4E4E-8D01-BF3C74953AE2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SQLFiddle.Website", "SQLFiddle.Website\SQLFiddle.Website.csproj", "{15857B58-B4EB-4726-8519-C50EF61EFE60}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SQLFiddle.Website", "SQLFiddle.Website\SQLFiddle.Website.csproj", "{15857B58-B4EB-4726-8519-C50EF61EFE60}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

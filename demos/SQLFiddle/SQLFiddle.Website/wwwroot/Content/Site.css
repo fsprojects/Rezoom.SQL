@@ -1,0 +1,122 @@
+﻿h4 {
+    margin: 5px;
+    font-size: 14px;
+}
+
+#navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+}
+
+#model-editor, #command-editor, #model-output, #command-output {
+    position: fixed;
+    border: 1px solid black;
+    box-sizing: border-box;
+}
+
+#model-editor {
+    top: 30px;
+    left: 0;
+    right: 50%;
+    bottom: 320px;
+}
+
+#model-output {
+    left: 0;
+    height: 300px;
+    right: 50%;
+    bottom: 20px;
+}
+
+#command-editor {
+    top: 30px;
+    right: 0;
+    left: 50%;
+    bottom: 460px;
+}
+
+#command-output {
+    right: 0;
+    height: 240px;
+    left: 50%;
+    bottom: 220px;
+}
+
+#typechecker-output {
+    position: fixed;
+    right: 0;
+    left: 50%;
+    bottom: 20px;
+    height: 200px;
+    border: 1px solid black;
+    padding: 0;
+    background: #ffdddd;
+    font-family: monospace;
+    overflow: auto;
+}
+
+#typechecker-output.valid {
+    background: #ddffdd;
+}
+
+#typechecker-output table {
+    border-collapse: collapse;
+    margin: 2px;
+}
+
+#typechecker-output td, #typechecker-output th {
+    border: 1px solid black;
+    padding: 1px 5px;
+}
+
+#footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    line-height: 20px;
+    height: 20px;
+}
+
+#navbar {
+    height: 30px;
+}
+
+#navbar, #footer {
+    background: #aaeeaa;
+    padding: 5px 5px 0 5px;
+    font-family: monospace;
+}
+
+.error-marker {
+    position: absolute;
+    background: #ffdddd;
+}
+
+#save {
+    width: 350px;
+    margin-right: 20px;
+}
+
+#navbar a {
+    color: black;
+}
+
+#navbar a:visited {
+    color: #666;
+}
+
+#navbar a:hover {
+    font-weight: bold;
+}
+
+.cacheinfo {
+    margin-left: 10px;
+}
+
+.cacheinfo.invalidation {
+    font-weight: bold;
+    margin-left: 20px;
+}

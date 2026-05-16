@@ -1,61 +1,63 @@
-﻿using System.Threading.Tasks;
-using System.Web.Http;
-using System.Net.Http;
-using System.Text;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using SQLFiddle;
 
-namespace SQLFiddle.Website.Controllers
+namespace SQLFiddle.Website.Controllers;
+
+[ApiController]
+[Route("api")]
+public class FiddleApiController : ControllerBase
 {
-    public class FiddleApiController : ApiController
+    // Newtonsoft.Json — not System.Text.Json — because the front-end JS reads F#
+    // discriminated unions in the {case, fields} shape that Newtonsoft serializes
+    // natively. Switching JSON libraries would require shipping a custom DU
+    // converter and updating the JS at the same time.
+    private static readonly JsonSerializerSettings Settings = new()
     {
-        private static readonly JsonSerializerSettings _settings = new JsonSerializerSettings
-        {
-            ContractResolver = new CamelCasePropertyNamesContractResolver(),
-        };
-        private static HttpResponseMessage Json(object o)
-        {
-            return new HttpResponseMessage
-            {
-                Content = new StringContent
-                    (JsonConvert.SerializeObject(o, _settings), Encoding.UTF8, "application/json"),
-            };
-        }
+        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+    };
 
-        [HttpPost]
-        [Route("api/check")]
-        public async Task<HttpResponseMessage> CheckFiddle()
-        {
-            var rawInput = await Request.Content.ReadAsStringAsync();
-            var fiddleInput = JsonConvert.DeserializeObject<FiddleInput>(rawInput, _settings);
-            var fiddleOutput = await Execution.Execute(Domain.checkFiddle(fiddleInput));
-            return Json(fiddleOutput.Output);
-        }
+    private ContentResult JsonResponse(object o) =>
+        Content(JsonConvert.SerializeObject(o, Settings), "application/json");
 
-        [HttpGet]
-        [Route("api/get/{id}")]
-        public async Task<HttpResponseMessage> GetFiddle(string id)
-        {
-            var fiddleId = FiddleId.Parse(id);
-            var fiddleOutput = await Execution.Execute(Domain.getFiddle(fiddleId));
-            return Json(fiddleOutput);
-        }
+    private static async Task<T?> ReadBody<T>(HttpRequest req)
+    {
+        using var reader = new StreamReader(req.Body);
+        var body = await reader.ReadToEndAsync();
+        return JsonConvert.DeserializeObject<T>(body, Settings);
+    }
 
-        [HttpPost]
-        [Route("api/save")]
-        public async Task<HttpResponseMessage> SaveFiddle()
-        {
-            var rawInput = await Request.Content.ReadAsStringAsync();
-            var fiddleInput = JsonConvert.DeserializeObject<FiddleInput>(rawInput, _settings);
-            var fiddleId = await Execution.Execute(Domain.saveFiddle(fiddleInput));
-            return Json(new { id = fiddleId.ToString() });
-        }
+    [HttpPost("check")]
+    public async Task<ContentResult> CheckFiddle()
+    {
+        var input = await ReadBody<FiddleInput>(Request)
+            ?? throw new ArgumentException("Missing fiddle input");
+        var checkedFiddle = await Execution.Execute(Domain.checkFiddle(input));
+        return JsonResponse(checkedFiddle.Output);
+    }
 
-        [HttpGet]
-        [Route("api/migrate")]
-        public void Migrate()
-        {
-            Execution.Migrate();
-        }
+    [HttpGet("get/{id}")]
+    public async Task<ContentResult> GetFiddle(string id)
+    {
+        var fiddleId = FiddleId.Parse(id);
+        var checkedFiddle = await Execution.Execute(Domain.getFiddle(fiddleId));
+        return JsonResponse(checkedFiddle);
+    }
+
+    [HttpPost("save")]
+    public async Task<ContentResult> SaveFiddle()
+    {
+        var input = await ReadBody<FiddleInput>(Request)
+            ?? throw new ArgumentException("Missing fiddle input");
+        var fiddleId = await Execution.Execute(Domain.saveFiddle(input));
+        return JsonResponse(new { id = fiddleId.ToString() });
+    }
+
+    [HttpGet("migrate")]
+    public IActionResult Migrate()
+    {
+        Execution.Migrate();
+        return NoContent();
     }
 }
