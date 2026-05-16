@@ -83,22 +83,25 @@ module Helpers =
 
     let connectionProvider = ConnectionProvider.ResolveFrom(services)
 
-    let private postgresReachable =
+    let private postgresProbe =
         lazy
             try
                 use conn = connectionProvider.Open("rzsql")
                 conn.Dispose()
-                true
-            with _ -> false
+                Ok ()
+            with exn -> Error (sprintf "%s: %s" (exn.GetType().Name) exn.Message)
 
     /// Skips the calling test (NUnit Inconclusive) if Postgres isn't reachable
-    /// with the configured connection string. Call from each test or from a
-    /// fixture's SetUp.
+    /// with the configured connection string. Surfaces the underlying error so
+    /// configuration mistakes don't look like silent skips.
     let requirePostgres () =
-        if not postgresReachable.Value then
+        match postgresProbe.Value with
+        | Ok () -> ()
+        | Error msg ->
             Assert.Ignore
-                ( "Skipping Postgres TP test: no reachable server at the configured "
-                + "connection string. Set REZOOM_TPU_POSTGRES to override." )
+                ( "Skipping Postgres TP test: connection probe failed -- "
+                + msg
+                + " (override the connection string via REZOOM_TPU_POSTGRES)" )
 
     let runOnTestData (cmd : Command<'a>) =
         requirePostgres ()
