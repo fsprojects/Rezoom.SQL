@@ -34,7 +34,7 @@
     <div id="typechecker-output"></div>
 </div>
 
-<script src="/Scripts/jquery-1.10.2.js"></script>
+<script src="/Scripts/jquery-3.7.1.min.js"></script>
 <script src="/Scripts/ace.js"></script>
 <script src="/Scripts/mode-sql.js"></script>
 <script src="/Scripts/theme-katzenmilch.js"></script>
@@ -211,10 +211,10 @@
             if (fiddleId) {
                 fiddleId = '#' + fiddleId;
                 $save.text(fiddleId);
-                $save.attr('disabled', true);
+                $save.prop('disabled', true);
             } else {
                 $save.text('Save');
-                $save.attr('disabled', false);
+                $save.prop('disabled', false);
             }
             currentHash = fiddleId;
             window.location.hash = currentHash;
