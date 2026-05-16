@@ -39,7 +39,9 @@ let deleteManyDocuments userId documentIds conn =
 
 This function is very bad! If we pass in 500 document IDs, we'll run 1000 SQL
 batches in total -- half of them pointlessly re-querying for the user's
-permissions.
+permissions. Every one of them bounces back and forth to the server. If you have
+a mere 5ms latency on each of thouse round-trips you are already at 5 seconds
+even assuming the queries themselves are executed instantly by the server.
 
 One solution would be to move the _real_ implementation into
 `deleteManyDocuments`, and make `deleteDocument` the wrapper, instead of the
@@ -195,6 +197,16 @@ This means that Rezoom's automatic caching is intended to **simulate you
 explicitly passing already-loaded data** around between your functions,
 **without cluttering your interfaces with brittle implementation details**.
 
-In fact, at large scale, you might still want to use another layer of caching
-for heavily-hit resources so that multiple web requests _can_ share some
-caching. It's up to you!
+### More concretely
+
+A typical use case would be a web API, where in each endpoint you build a `Plan`
+from your domain layer and execute it. The execution of the `Plan` is the unit-of-work
+and runs in a transaction. Its cache is private, not shared with other `Plans` being
+executed to serve other API endpoints that are executing at the same time.
+
+The cache is only there so that within that single unit-of-work
+you don't requery the same things more than needed. We would often do this manually when
+working with Entity Framework or other ORMs, passing already-loaded stuff explicitly down
+into domain methods so they didn't have to hit the DB again in a loop. Rezoom just
+makes those annoying, error prone, explicit "here's what I already loaded" parameters unnecessary.
+
