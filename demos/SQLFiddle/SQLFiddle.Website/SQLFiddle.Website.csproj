@@ -14,26 +14,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
-  <!-- Legacy ASP.NET 4.5 files preserved on disk for reference but excluded from
-       compilation/content. Safe to delete once the port is validated. -->
-  <ItemGroup>
-    <Compile Remove="App_Start\**" />
-    <Compile Remove="Global.asax.cs" />
-    <Compile Remove="Controllers\HomeController.cs" />
-    <Compile Remove="Properties\AssemblyInfo.cs" />
-    <None Remove="Global.asax" />
-    <None Remove="Web.config" />
-    <None Remove="Web.Debug.config" />
-    <None Remove="Web.Release.config" />
-    <None Remove="packages.config" />
-    <Content Remove="Scripts\**" />
-    <Content Remove="Content\**" />
-    <Content Remove="Views\**" />
-    <None Remove="Scripts\**" />
-    <None Remove="Content\**" />
-    <None Remove="Views\**" />
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\SQLFiddle\SQLFiddle.fsproj" />
   </ItemGroup>
