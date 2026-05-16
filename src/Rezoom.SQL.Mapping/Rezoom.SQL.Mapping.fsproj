@@ -7,7 +7,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>Modernize: multi-target netstandard2.0 / net8.0 / net10.0. Drop TaskBuilder.fs which is no longer needed. Modernize configuration to IConfiguration instead of old ConfigurationManager, simplify config.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.0.0: multi-target netstandard2.0 / net8.0 / net10.0. Drop TaskBuilder.fs. Modernize configuration to IConfiguration instead of the old ConfigurationManager. See the Rezoom.SQL CHANGELOG.md for the full 1.0.0 story.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
@@ -55,8 +55,8 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />
-    <PackageReference Include="LicenseToCIL" Version="1.1.0" />
-    <PackageReference Include="Rezoom" Version="1.4.0" />
+    <PackageReference Include="LicenseToCIL" Version="1.2.0" />
+    <PackageReference Include="Rezoom" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
   </ItemGroup>
 

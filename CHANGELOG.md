@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-## [0.13.0] - 2026-XX-XX
+## [1.0.0] - 2026-XX-XX
 
 The Rip Van Winkle release.
 
-Rezoom.SQL was dormant from 2020 until this work; 0.13.0 brings it to the 2026 .NET ecosystem. There are breaking changes for anyone upgrading from 0.6.x, which is unlikely due to the
+Rezoom.SQL was dormant from 2020 until this work; 1.0.0 brings it to the 2026 .NET ecosystem. There are breaking changes for anyone upgrading from 0.6.x, which is unlikely due to the
 long dead time and small userbase in the first place. However, on the unlikely chance somebody *does* have a legacy project on an old disk somewhere, the changes should be straightforward to make:
 
 - Change your app.config to an AppSettings.json
@@ -53,5 +53,5 @@ Updating the type provider to work on .NET Standard was based off work originall
 
 Last release before the NET 10 revamp. See git history for changes prior to this.
 
-[Unreleased]: https://github.com/rspeele/Rezoom.SQL/compare/v0.13.0...HEAD
-[0.13.0]: https://github.com/rspeele/Rezoom.SQL/compare/v0.6.2...v0.13.0
+[Unreleased]: https://github.com/rspeele/Rezoom.SQL/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/rspeele/Rezoom.SQL/compare/v0.6.2...v1.0.0

@@ -1,6 +1,6 @@
 [Tutorial & full documentation](https://humbobst.gitbook.io/rezoom-sql/doc/Tutorial/)
 
-[Query playground -- try out the SQL dialect live!](http://rzsql.com/#52632EC5A298CFFFD652D53C03DD1318A9DACA3C)
+[Query playground -- try out the SQL dialect live!](https://rzsql.com/#1F854F9945C2061389778AE5DB98238E21D3A62B)
 
 # Statically typed SQL for F# #
 
@@ -43,7 +43,7 @@ langages. There is even an option to represent nullable types with C#-style
 extra smoothly.
 
 Check out the [query
-playground](http://rzsql.com/#52632EC5A298CFFFD652D53C03DD1318A9DACA3C) to see
+playground](https://rzsql.com/#1F854F9945C2061389778AE5DB98238E21D3A62B) to see
 what kinds of SQL you can write.
 
 ## The productivity of static typing
