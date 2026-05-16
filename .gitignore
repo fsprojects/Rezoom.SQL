@@ -258,3 +258,6 @@ paket-files/
 *.pyc
 /src/Rezoom.SQL.Provider/Properties/launchSettings.json
 
+
+# Local dev prerelease suffix (set by build/pack-dev.ps1)
+version.local.props

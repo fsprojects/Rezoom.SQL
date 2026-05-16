@@ -29,7 +29,7 @@
     <PackageReference Include="Rezoom" Version="1.4.0" />
     <!-- Wrapper meta-package: brings in Rezoom.SQL.Provider, Compiler, Mapping, and
          Microsoft.Data.SqlClient as the TSQL runtime driver. -->
-    <PackageReference Include="Rezoom.SQL.Provider.TSQL" Version="0.13.0" />
+    <PackageReference Include="Rezoom.SQL.Provider.TSQL" Version="$(RezoomSqlPkgVersion)" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />

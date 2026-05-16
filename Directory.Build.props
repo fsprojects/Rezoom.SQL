@@ -1,0 +1,26 @@
+<Project>
+  <!--
+    Centralized versioning for every Rezoom.SQL package and consumer.
+
+    Inputs:
+      version.props        committed; base release version (e.g. 0.13.0)
+      version.local.props  gitignored; dev prerelease suffix (e.g. dev.5)
+
+    Outputs (consumed by package projects and consumer PackageReferences):
+      VersionPrefix         feeds into NuGet pack
+      VersionSuffix         feeds into NuGet pack
+      RezoomSqlPkgVersion   used by every <PackageReference> referencing one
+                            of our packages, so wrappers / demos / TPUs pull
+                            whatever the current dev or release version is
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)version.props" />
+  <Import Project="$(MSBuildThisFileDirectory)version.local.props" Condition="Exists('$(MSBuildThisFileDirectory)version.local.props')" />
+
+  <PropertyGroup>
+    <VersionPrefix>$(RezoomSqlVersion)</VersionPrefix>
+    <VersionSuffix Condition="'$(RezoomSqlVersionSuffix)' != ''">$(RezoomSqlVersionSuffix)</VersionSuffix>
+
+    <RezoomSqlPkgVersion Condition="'$(RezoomSqlVersionSuffix)' == ''">$(RezoomSqlVersion)</RezoomSqlPkgVersion>
+    <RezoomSqlPkgVersion Condition="'$(RezoomSqlVersionSuffix)' != ''">$(RezoomSqlVersion)-$(RezoomSqlVersionSuffix)</RezoomSqlPkgVersion>
+  </PropertyGroup>
+</Project>
