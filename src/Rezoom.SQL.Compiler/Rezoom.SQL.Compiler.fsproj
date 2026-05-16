@@ -8,8 +8,13 @@
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
     <PackageReleaseNotes>0.13.0: ConnectionProvider returns to its minimal abstract shape (Open / BeginTransaction). ConnectionInfo and configuration concerns move to ConfigurationConnectionProvider. Commands now carry their compile-time dialect as a typed Backend DU (RzSQL / SQLite / TSQL / Postgres) rather than a string, parsed at the rzsql.json boundary and threaded through everywhere else. Breaking change for custom ConnectionProvider subclasses: Open now takes (connectionName : string, backend : Backend).</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />

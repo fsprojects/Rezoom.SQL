@@ -7,9 +7,14 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>Modernize: multi-target netstandard2.0 / net8.0; drop TaskBuilder.fs.</PackageReleaseNotes>
+    <PackageReleaseNotes>Modernize: multi-target netstandard2.0 / net8.0 / net10.0. Drop TaskBuilder.fs which is no longer needed. Modernize configuration to IConfiguration instead of old ConfigurationManager, simplify config.</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />

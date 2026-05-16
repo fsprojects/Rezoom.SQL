@@ -9,9 +9,14 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>Modernize: bump FSharp.Core; track modernized Rezoom.SQL.Compiler / Mapping.</PackageReleaseNotes>
+    <PackageReleaseNotes>Modernize: bump FSharp.Core; track modernized Rezoom.SQL.Compiler / Mapping. ALC-aware assembly resolution for .NET 8+ TP loading. See the Rezoom.SQL 0.13.0 release notes for the full story.</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
