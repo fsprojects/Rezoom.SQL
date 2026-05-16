@@ -1,19 +1,19 @@
 ﻿module FileSystem.DemoSetup
+open System
 open Rezoom
 open Rezoom.SQL
-open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 open Rezoom.SQL.Plans
 
 /// Model inferred from V1.model.sql.
 type private FileSystemModel = SQLModel
 
-let migrate (connections : ConnectionProvider) =
+let migrate (services : IServiceProvider) =
     let config =
         {   AllowRetroactiveMigrations = false
             LogMigrationRan = fun m -> printfn "Ran migration `%s`" m.MigrationName
         }
-    FileSystemModel.Migrate(config, connections)
+    FileSystemModel.Migrate(config, services)
 
 type private NukeDataSQL = SQL<"""
     delete from Files;

@@ -49,16 +49,7 @@ type private ConnectionsLocal() =
     inherit PlanLocal<Connections>()
     override __.Lifetime = Lifetime.Execution
     override __.Create(cxt) =
-        let provider =
-            match cxt.TryGetService<ConnectionProvider>() with
-            | Some provider -> provider
-            | None ->
-                failwith
-                    "No ConnectionProvider was registered in the IServiceProvider used by \
-                     this Rezoom plan execution. Register one with \
-                     `services.AddSingleton<ConnectionProvider, ConfigurationConnectionProvider>()` \
-                     (or your own ConnectionProvider subclass) before executing plans."
-        Connections(provider)
+        Connections(ConnectionProvider.ResolveFrom(cxt.Services))
     override __.Dispose(state, svc) = svc.Dispose(state)
 
 type private Batches(conns : Connections) =

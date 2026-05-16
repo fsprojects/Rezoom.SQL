@@ -4,7 +4,6 @@ open System.Security
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Rezoom
-open Rezoom.SQL.Mapping
 open FileSystem
 open FileSystem.Execution
 
@@ -175,18 +174,19 @@ let main argv =
             .AddEnvironmentVariables()
             .Build() :> IConfiguration
 
-    // DI: standard ASP.NET Core-style service registration. This demo doesn't use
-    // PlanExecutor because its custom ExecutionLog (the "round trips saved" stat)
-    // requires building an ExecutionConfig per call.
+    // DI setup: just register IConfiguration. Rezoom.SQL's ConnectionProvider falls
+    // back to a ConfigurationConnectionProvider built from this when no explicit
+    // ConnectionProvider is registered, so no per-app wire-up is needed.
+    // (This demo doesn't use PlanExecutor — its "round trips saved" stat requires
+    // a custom ExecutionLog per call, built inline in Execution.fs.)
     let collection = ServiceCollection()
     collection.AddSingleton<IConfiguration>(configuration) |> ignore
-    collection.AddSingleton<ConnectionProvider, ConfigurationConnectionProvider>() |> ignore
     use provider = collection.BuildServiceProvider()
+    let services = provider :> IServiceProvider
 
-    let connections = provider.GetRequiredService<ConnectionProvider>()
-    DemoSetup.migrate(connections)
+    DemoSetup.migrate(services)
 
-    let repl = Repl(provider :> IServiceProvider)
+    let repl = Repl(services)
     repl.Bench "Set up demo data" DemoSetup.setUpDemoData |> ignore
     repl.Run()
     0 // return an integer exit code

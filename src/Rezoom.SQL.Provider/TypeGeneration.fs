@@ -306,21 +306,23 @@ let generateSQLType (generate : GenerateType) (sql : string) =
 
 let generateMigrationMembers
     (config : Config.Config) (backend : IBackend) (provided : ProvidedTypeDefinition) migrationProperty =
-    // Migrate(MigrationConfig, ConnectionProvider): the only Migrate overload. Caller
-    // supplies the ConnectionProvider — typically resolved from DI. Note: NOT
-    // `ignore <| try ... finally ...` and NOT `try ... finally ... unit-typed`;
-    // ProvidedTypes' IL translator generates invalid IL for both of those shapes.
-    // The `let _ = try ... 0 finally ...; ()` form works around it.
+    // Migrate(MigrationConfig, IServiceProvider): the only Migrate overload. Caller
+    // supplies a host service provider; ConnectionProvider.ResolveFrom picks an
+    // explicitly-registered ConnectionProvider if present, otherwise falls back to
+    // a ConfigurationConnectionProvider built from a registered IConfiguration.
+    // Note: NOT `ignore <| try ... finally ...` and NOT a unit-typed try block;
+    // ProvidedTypes' IL translator generates invalid IL for those shapes. The
+    // `let _ = try ... 0 finally ...; ()` form works around it.
     do
         let connectionName = Quotations.Expr.Value(config.ConnectionName)
         let pars =
             [   ProvidedParameter("config", typeof<MigrationConfig>)
-                ProvidedParameter("connectionProvider", typeof<ConnectionProvider>)
+                ProvidedParameter("services", typeof<IServiceProvider>)
             ]
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
-            | [ config; connectionProvider ] ->
+            | [ config; services ] ->
                 <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
-                    let provider = (%%connectionProvider : ConnectionProvider)
+                    let provider = ConnectionProvider.ResolveFrom((%%services : IServiceProvider))
                     let backendInstance =
                         (%backend.MigrationBackend) (provider.GetConnectionString(%%connectionName))
                     let _ =
