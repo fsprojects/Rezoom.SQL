@@ -7,35 +7,28 @@ You'll need [Visual Studio 2022 or newer](https://visualstudio.microsoft.com/dow
 or the [.NET SDK](https://dotnet.microsoft.com/download) with your editor of
 choice. The free Community Edition of Visual Studio is fine.
 
-If you're using Visual Studio, make sure you check the box for "F# language
+If you're using Visual Studio, make sure you checked the box for "F# language
 support" in the installer. If you've already installed VS, you can re-run the
 installer and modify your installation to include F# language support.
 
 ## Creating a new F# project for the tutorial
 
-In Visual Studio, click File -> New -> Project, and select F# Console Application.
+In Visual Studio, click File -> New -> Project, and select F# Console App.
 Make sure you target .NET 8 or newer.
 
 If you're using the .NET CLI, run `dotnet new console -lang "F#" -o RezoomSQLTutorial`
-in a fresh folder. (The quotes around `F#` are mandatory — without them, several
-shells treat the `#` as the start of a comment and silently drop the rest of
-the line.)
-
-![screenshot of new project dialog](CreateNewProject.png)
+in a fresh folder.
 
 ## Installing Rezoom.SQL from NuGet
 
-From the project folder, run:
+Install two NuGet packages:
 
 ```sh
 dotnet add package Rezoom.SQL.Provider
 dotnet add package Rezoom.SQL.Provider.SQLite
 ```
 
-This will add Rezoom.SQL and its dependencies to your project, along with a few files to help you get started.
-
-If you are using [Paket](http://fsprojects.github.io/Paket) instead of NuGet,
-see the **important** note for Paket users [at the bottom of this page](#note-for-paket-users).
+This will add Rezoom.SQL and its dependencies to your project, plus SQLite-specific ADO.NET dependencies.
 
 ## Setting up your database model
 
@@ -238,24 +231,5 @@ let main argv =
     0
 ```
 
-## Note for Paket users
 
-The package `Rezoom.SQL.Provider.SQLite` includes sample configuration files to
-help you get started. These include V1.model.sql and rzsql.json.
-
-When you update using NuGet, if you changed these files, it'll ask you before
-overwriting them. You will probably want to answer "no" to this question.
-
-If you are using [Paket](https://fsprojects.github.io/Paket/), watch out. It
-will _not_ ask and will overwrite these files every time you update or restore
-packages. This is definitely not what you want! So if you are using Paket,
-either:
-
-* Just use Rezoom.SQL.Provider and create the configuration files yourself by
-  referring to the [configuration](../Configuration/README.md) section of this
-  manual. Once you've seen the examples it's not difficult.
-
-* Or use `nuget Rezoom.SQL.Provider.SQLite content: once` so the configuration
-  files get installed the first time, but never overwritten. [See Paket
-  docs](http://fsprojects.github.io/Paket/nuget-dependencies.html#Controlling-whether-content-files-should-be-copied-to-the-output-directory-during-build).
 
