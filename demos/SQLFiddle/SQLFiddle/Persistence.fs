@@ -31,8 +31,8 @@ let private sha1 (fiddleData :  FiddleInput) =
     hasher.Hash
 
 type SaveFiddleSQL = SQL<"""
-insert into Fiddles(SHA1, Backend, Model, Command)
-select @sha1, @backend, @model, @command
+insert into Fiddles(SHA1, CreatedUtc, Backend, Model, Command)
+select @sha1, @createdUtc, @backend, @model, @command
 where not exists(select null x from Fiddles where SHA1 = @sha1)
 """>
 
@@ -44,6 +44,7 @@ let saveFiddle fiddleData =
             SaveFiddleSQL.Command
                 ( fiddleData.Backend.ToString()
                 , fiddleData.Command
+                , DateTime.UtcNow
                 , fiddleData.Model
                 , sha1
                 )

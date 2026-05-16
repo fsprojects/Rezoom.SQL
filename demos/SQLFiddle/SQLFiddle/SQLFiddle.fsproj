@@ -24,8 +24,8 @@
     <PackageReference Include="FSharp.Core" Version="8.0.401" />
     <PackageReference Include="Rezoom" Version="1.4.0" />
     <!-- Wrapper meta-package: brings in Rezoom.SQL.Provider, Compiler, Mapping, and
-         Microsoft.Data.SqlClient as the TSQL runtime driver. -->
-    <PackageReference Include="Rezoom.SQL.Provider.TSQL" Version="0.13.0" />
+         Microsoft.Data.Sqlite as the SQLite runtime driver. -->
+    <PackageReference Include="Rezoom.SQL.Provider.SQLite" Version="0.13.0" />
   </ItemGroup>
 
 </Project>
