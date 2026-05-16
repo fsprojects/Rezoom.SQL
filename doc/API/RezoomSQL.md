@@ -90,9 +90,9 @@ let cmd : Command<ResultSets<IReadOnlyList<TwoSQL.Row1>, IReadOnlyList<TwoSQL.Ro
 ```
 
 Each `Command` object has a `ConnectionName` property. This determines the
-connection string name it will use (from `IConfiguration`'s `ConnectionStrings`
-section — see [Runtime configuration](../Configuration/Configuration.md)) when
-executed. You can call `myCommand.WithConnectionName(newName)` to get a new
+connection string name it will use when executed. By default that's resolved
+from `IConfiguration`'s `ConnectionStrings` section; see
+[Runtime configuration](../Configuration/Configuration.md). You can call `myCommand.WithConnectionName(newName)` to get a new
 `Command` object with a different `ConnectionName`. This is useful if you are
 using the same provided SQL command on multiple databases within the same
 running program.
@@ -151,6 +151,20 @@ open Rezoom.SQL.Migrations
 let main argv =
     ExampleModel.Migrate(MigrationConfig.Default, services)
     0
+```
+
+There is also a second overload that takes a raw connection string instead of
+an `IServiceProvider`. It's handy for standalone migrator tools that want to
+point at dev/staging/prod without setting up DI / IConfiguration. The ADO.NET
+provider invariant is fixed to the canonical driver for your backend (e.g.
+`Microsoft.Data.Sqlite`, `Npgsql`, `Microsoft.Data.SqlClient`); if you need a
+different one, register a custom `ConnectionProvider` and use the
+`IServiceProvider` overload instead.
+
+```fsharp
+ExampleModel.Migrate(
+    MigrationConfig.Default,
+    "Host=staging-db.internal;Database=app;Username=migrator;Password=...")
 ```
 
 The exact details of the `Migrate` method vary depending on your database

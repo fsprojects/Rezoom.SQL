@@ -110,7 +110,7 @@ Here's an example of how to actually run such a `Plan`:
 open Rezoom
 open System.Threading.Tasks
 
-// `services` here is the host's IServiceProvider — see
+// `services` here is the host's IServiceProvider. See
 // [Runtime configuration](../../doc/Configuration/Configuration.md). In an
 // ASP.NET Core app it's typically obtained from DI as `PlanExecutor`.
 let example (services : System.IServiceProvider) =

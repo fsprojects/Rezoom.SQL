@@ -15,6 +15,7 @@
     <Compile Include="Shared.fs" />
     <Compile Include="TestSelects.fs" />
     <Compile Include="TestPickles.fs" />
+    <Compile Include="TestMigrateConnectionString.fs" />
     <Compile Include="Program.fs" />
     <None Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
     <EmbeddedResource Include="V1.model.sql" />
@@ -26,7 +27,7 @@
     <PackageReference Include="Rezoom" Version="1.4.0" />
     <!-- Wrapper meta-package: brings in Rezoom.SQL.Provider, Compiler, Mapping, and
          Microsoft.Data.Sqlite as the SQLite runtime driver. -->
-    <PackageReference Include="Rezoom.SQL.Provider.SQLite" Version="0.12.1" />
+    <PackageReference Include="Rezoom.SQL.Provider.SQLite" Version="0.12.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />

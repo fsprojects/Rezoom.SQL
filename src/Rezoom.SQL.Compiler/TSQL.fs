@@ -25,6 +25,7 @@ type TSQLBackend() =
         member this.MigrationBackend = <@ fun conn -> new TSQLMigrationBackend(conn) :> IMigrationBackend @>
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
+        member this.DefaultProviderName = "Microsoft.Data.SqlClient"
         member this.ToCommandFragments(indexer, stmts) =
             let translator = TSQLStatement(indexer)
             translator.TotalStatements(stmts)

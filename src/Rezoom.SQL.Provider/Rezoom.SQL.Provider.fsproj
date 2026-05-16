@@ -4,7 +4,7 @@
     <!-- Type providers must be loaded by the F# compiler / IDE tooling at design time.
          netstandard2.0 maximizes host compatibility (modern fsc loads ns2.0 providers fine). -->
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>0.12.1</Version>
+    <Version>0.12.2</Version>
     <Authors>Robert Peele</Authors>
     <Description>F# type provider for Rezoom.SQL.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

@@ -67,7 +67,7 @@ values  ( (select Id from Users where Name = 'Marge')
 module Helpers =
     /// Process-wide service provider. Configuration sources, in order:
     ///  1. appsettings.json (default Host=localhost;Database=rz;Username=rz;Password=testtest)
-    ///  2. Env vars — REZOOM_TPU_POSTGRES overrides ConnectionStrings:rzsql.
+    ///  2. Env vars. REZOOM_TPU_POSTGRES overrides ConnectionStrings:rzsql.
     let services : IServiceProvider =
         let configuration =
             ConfigurationBuilder()

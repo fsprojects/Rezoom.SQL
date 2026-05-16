@@ -9,17 +9,16 @@ open System
 /// Static state + resolver used from Provider.ResolveAssembly so the override never
 /// touches `this`. F#'s `as this` machinery wraps every instance field/member access
 /// inside a class with a "has the ctor finished?" guard that throws FailInit if it
-/// hasn't. That guard fires when the runtime calls our ResolveAssembly during ctor
-/// (which is exactly what happens — the base class hooks AppDomain.AssemblyResolve in
-/// its own ctor, so any later assembly load during *our* ctor re-enters us). The
+/// hasn't. That guard fires when the runtime calls our ResolveAssembly during ctor,
+/// which is exactly what happens. The base class hooks AppDomain.AssemblyResolve in
+/// its own ctor, so any later assembly load during *our* ctor re-enters us. The
 /// CLR wraps the InvalidOperationException as "An operation is not legal in the
 /// current state. (HRESULT: 0x80131509)", reported as if the originally-requested
 /// assembly was the problem.
 [<RequireQualifiedAccess>]
 module private TpResolver =
     // Debug-only diagnostics. The TP runs inside fsc / IDE tooling; there's no console
-    // to write to, so a file is the only practical channel. Release builds are silent
-    // — invaluable when iterating on TP plumbing, intolerable in CI.
+    // to write to, so a file is the only practical channel. Release builds are silent.
     let plog (s : string) =
 #if DEBUG
         try
@@ -74,7 +73,7 @@ type public Provider(cfg : TypeProviderConfig) as this =
     // referenced anywhere in the ctor (e.g. UserModelCache, whose field types
     // transitively reference Rezoom.SQL.Compiler.UserModel). That resolution fires
     // AppDomain.AssemblyResolve. If we wait until the instance ctor to install a
-    // handler, it's already too late — the JIT load has been attempted.
+    // handler, it's already too late. The JIT load has been attempted.
     //
     // Install an AppDomain-wide handler that resolves Rezoom.SQL.* by walking the
     // nuget packages cache adjacent to *this* assembly's own folder. This needs no
@@ -210,8 +209,8 @@ type public Provider(cfg : TypeProviderConfig) as this =
     // On .NET Core/5+ fsc loads type providers in isolated AssemblyLoadContexts; the
     // base class's AppDomain.AssemblyResolve hook loads bytes into the DEFAULT ALC,
     // which the TP's ALC can't see. Hook the TP's own ALC's Resolving event when
-    // available. But this is irrelevant on .NET Framework — and we can't even probe
-    // for the System.Runtime.Loader type by name there, because Type.GetType triggers
+    // available. But this is irrelevant on .NET Framework, and we can't even probe
+    // for the System.Runtime.Loader type by name there: Type.GetType triggers
     // AssemblyResolve. Check FrameworkDescription (a pure string lookup) first.
     do
         let isNetCore =
@@ -297,7 +296,7 @@ type public Provider(cfg : TypeProviderConfig) as this =
         modelCache.Invalidated.Add(fun _ -> this.Invalidate())
         this.Disposing.Add(fun _ -> modelCache.Dispose())
 
-    // ResolveAssembly is overridden to route through TpResolver — a static module.
+    // ResolveAssembly is overridden to route through TpResolver, a static module.
     // No `this.<field>` access, no member calls, no `base.<member>`. That avoids
     // F#'s FailInit guard during the constructor.
     override __.ResolveAssembly args = TpResolver.resolve args.Name

@@ -8,7 +8,7 @@
     against live SQLite and Postgres connections. They replace the legacy
     "close VS in the user, build the provider, reopen, smoke test" workflow.
 
-    SQLite tests are hermetic — they drop/recreate the rzsql.db file each run.
+    SQLite tests are hermetic. They drop/recreate the rzsql.db file each run.
     Postgres tests skip themselves (NUnit Inconclusive) when no server is
     reachable at the configured connection string. Override the default via:
         $env:REZOOM_TPU_POSTGRES = 'Host=...;Database=...;Username=...;Password=...'

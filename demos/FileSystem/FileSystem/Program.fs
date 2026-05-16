@@ -8,11 +8,12 @@ open FileSystem
 open FileSystem.Execution
 
 /// Encapsulates the demo's REPL state. The IServiceProvider is captured once in the
-/// ctor and used to build per-call ExecutionConfigs (the demo's "round-trips saved"
-/// counter requires a fresh ExecutionLog per Execute, so we can't use PlanExecutor).
+/// ctor and used to make per-call ExecutionConfigs.
 type private Repl(services : IServiceProvider) =
     let mutable dumbMode = false
 
+    // (This demo doesn't use the PlanExecutor helper. Its "round trips" stat requires
+    // custom execution handling, which is defined in Execution.fs).
     let execute plan =
         if dumbMode then executeDumb services plan
         else executeSmart services plan
@@ -174,11 +175,7 @@ let main argv =
             .AddEnvironmentVariables()
             .Build() :> IConfiguration
 
-    // DI setup: just register IConfiguration. Rezoom.SQL's ConnectionProvider falls
-    // back to a ConfigurationConnectionProvider built from this when no explicit
-    // ConnectionProvider is registered, so no per-app wire-up is needed.
-    // (This demo doesn't use PlanExecutor — its "round trips saved" stat requires
-    // a custom ExecutionLog per call, built inline in Execution.fs.)
+
     let collection = ServiceCollection()
     collection.AddSingleton<IConfiguration>(configuration) |> ignore
     use provider = collection.BuildServiceProvider()

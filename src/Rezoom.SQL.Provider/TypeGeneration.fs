@@ -306,33 +306,64 @@ let generateSQLType (generate : GenerateType) (sql : string) =
 
 let generateMigrationMembers
     (config : Config.Config) (backend : IBackend) (provided : ProvidedTypeDefinition) migrationProperty =
-    // Migrate(MigrationConfig, IServiceProvider): the only Migrate overload. Caller
-    // supplies a host service provider; ConnectionProvider.ResolveFrom picks an
-    // explicitly-registered ConnectionProvider if present, otherwise falls back to
-    // a ConfigurationConnectionProvider built from a registered IConfiguration.
+    // Two Migrate overloads:
+    //   Migrate(MigrationConfig, IServiceProvider) is the DI-friendly one.
+    //     The services provider lets ConnectionProvider.ResolveFrom pick an
+    //     explicitly-registered ConnectionProvider, falling back to a
+    //     ConfigurationConnectionProvider built from a registered IConfiguration.
+    //   Migrate(MigrationConfig, string) is the connection-string shortcut
+    //     for standalone migrator tools that just want to point at
+    //     dev/staging/prod without going through IConfiguration. It uses the
+    //     backend's canonical ADO.NET provider invariant (e.g. Npgsql for Postgres).
     // Note: NOT `ignore <| try ... finally ...` and NOT a unit-typed try block;
     // ProvidedTypes' IL translator generates invalid IL for those shapes. The
     // `let _ = try ... 0 finally ...; ()` form works around it.
+    let connectionName = Quotations.Expr.Value(config.ConnectionName)
+    let runMigration backendInstanceExpr configExpr =
+        <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
+            let backendInstance : IMigrationBackend = %%backendInstanceExpr
+            let _ =
+                try
+                    MigrationUtilities.runMigrations (%%configExpr) backendInstance migrations
+                    0
+                finally
+                    backendInstance.Dispose()
+            ()
+        @@>
     do
-        let connectionName = Quotations.Expr.Value(config.ConnectionName)
         let pars =
             [   ProvidedParameter("config", typeof<MigrationConfig>)
                 ProvidedParameter("services", typeof<IServiceProvider>)
             ]
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
-            | [ config; services ] ->
-                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
-                    let provider = ConnectionProvider.ResolveFrom((%%services : IServiceProvider))
-                    let backendInstance =
+            | [ configArg; services ] ->
+                let backendInstance =
+                    <@@ let provider = ConnectionProvider.ResolveFrom((%%services : IServiceProvider))
                         (%backend.MigrationBackend) (provider.GetConnectionString(%%connectionName))
-                    let _ =
-                        try
-                            MigrationUtilities.runMigrations (%%config) backendInstance migrations
-                            0
-                        finally
-                            backendInstance.Dispose()
-                    ()
-                @@>
+                    @@>
+                runMigration backendInstance configArg
+            | _ -> bug "Invalid migrate argument list")
+        provided.AddMember meth
+    do
+        // Connection-string overload: builds a ConnectionInfo inline using the
+        // configured connection name and the backend's canonical ADO.NET provider
+        // invariant. For migrator tools / scripts that want to skip DI.
+        let providerName = Quotations.Expr.Value(backend.DefaultProviderName)
+        let pars =
+            [   ProvidedParameter("config", typeof<MigrationConfig>)
+                ProvidedParameter("connectionString", typeof<string>)
+            ]
+        let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
+            | [ configArg; connectionString ] ->
+                let backendInstance =
+                    <@@ let info =
+                            {   Name = (%%connectionName : string)
+                                ConnectionString = (%%connectionString : string)
+                                ProviderName = (%%providerName : string)
+                            }
+                        (%backend.MigrationBackend) info
+                    @@>
+                runMigration backendInstance configArg
             | _ -> bug "Invalid migrate argument list")
         provided.AddMember meth
 

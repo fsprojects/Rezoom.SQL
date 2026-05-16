@@ -211,6 +211,7 @@ type PostgresBackend() =
         member this.MigrationBackend = <@ fun conn -> new PostgresMigrationBackend(conn) :> IMigrationBackend @>
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
+        member this.DefaultProviderName = "Npgsql"
         member this.ToCommandFragments(indexer, stmts) =
             let translator = PostgresStatement(indexer)
             translator.TotalStatements(stmts)

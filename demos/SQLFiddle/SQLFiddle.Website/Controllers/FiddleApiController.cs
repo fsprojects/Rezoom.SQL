@@ -10,10 +10,8 @@ namespace SQLFiddle.Website.Controllers;
 [Route("api")]
 public class FiddleApiController(PlanExecutor planner) : ControllerBase
 {
-    // Newtonsoft.Json — not System.Text.Json — because the front-end JS reads F#
-    // discriminated unions in the {case, fields} shape that Newtonsoft serializes
-    // natively. Switching JSON libraries would require shipping a custom DU
-    // converter and updating the JS at the same time.
+    // Still using Newtonsoft.Json, not System.Text.Json, because the front-end JS reads F#
+    // discriminated unions in the {case, fields} shape that Newtonsoft serializes.
     private static readonly JsonSerializerSettings Settings = new()
     {
         ContractResolver = new CamelCasePropertyNamesContractResolver(),

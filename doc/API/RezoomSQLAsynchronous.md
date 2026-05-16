@@ -10,9 +10,9 @@ You can use these methods on a `DbConnection` obtained however you like.
 However, it is more idiomatic to use the `ConnectionContext` type in Rezoom.SQL.
 
 This will open a connection when needed using the `ConnectionProvider` you pass
-to its constructor (typically resolved from your host's `IServiceProvider` via
-`ConnectionProvider.ResolveFrom(services)` — see [Runtime
-configuration](../Configuration/Configuration.md)). If you have multiple
+to its constructor. That's typically resolved from your host's
+`IServiceProvider` via `ConnectionProvider.ResolveFrom(services)`; see
+[Runtime configuration](../Configuration/Configuration.md). If you have multiple
 connection names, you can work with all of them using the same
 `ConnectionContext`, and all the database connections will be disposed when the
 context is disposed.

@@ -56,11 +56,11 @@ type ConfigurationConnectionProvider(configuration : IConfiguration) =
         conn
 
 /// Augments ConnectionProvider with a static factory that resolves from any host's
-/// IServiceProvider — explicit registration first, then a fallback that constructs
-/// a ConfigurationConnectionProvider from a registered IConfiguration. This is what
-/// plan execution and TP-generated Migrate calls use, so any host with a normal
-/// ASP.NET Core / generic-host setup gets connection-string resolution for free
-/// without registering anything Rezoom-specific.
+/// IServiceProvider. It tries an explicitly-registered ConnectionProvider first,
+/// then falls back to constructing a ConfigurationConnectionProvider from a
+/// registered IConfiguration. This is what plan execution and TP-generated Migrate
+/// calls use, so any host with a normal ASP.NET Core / generic-host setup gets
+/// connection-string resolution for free without registering anything Rezoom-specific.
 [<AutoOpen>]
 module ConnectionProviderExtensions =
     type ConnectionProvider with
@@ -77,4 +77,4 @@ module ConnectionProviderExtensions =
                          in the IServiceProvider, but found neither. Register an IConfiguration \
                          (standard for ASP.NET Core / generic host) to get the default \
                          ConfigurationConnectionProvider, or supply your own with \
-                         `services.AddSingleton<ConnectionProvider, YourImpl>()`."
+                         `services.AddSingleton<Rezoom.SQL.Mapping.ConnectionProvider, YourImpl>()`."

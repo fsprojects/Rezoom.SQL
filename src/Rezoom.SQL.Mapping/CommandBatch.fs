@@ -337,9 +337,9 @@ type SyncCommandBatch(conn : DbConnection, tran : DbTransaction) =
         build builders conn tran cmd retrieveResult
 
 /// Runtime helpers invoked from TP-generated parameter-binding code. These exist
-/// because the ProvidedTypes IL emitter doesn't support enum operations, so the
-/// SQLite DateTime quotation can't inline the Kind comparison itself — it calls
-/// down here instead.
+/// because the ProvidedTypes IL emitter doesn't support enum operations. The
+/// SQLite DateTime quotation can't inline the Kind comparison itself, so it
+/// calls down here instead.
 type SqliteValueCodec =
     static member NormalizeDateTimeForSqlite(dt : DateTime) : string =
         let utc =

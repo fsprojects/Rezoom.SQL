@@ -8,7 +8,7 @@
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
-    <Version>0.12.1</Version>
+    <Version>0.12.2</Version>
     <Authors>Robert Peele</Authors>
     <Description>Convenience meta-package: Rezoom.SQL.Provider with the Microsoft.Data.Sqlite driver for SQLite.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Rezoom.SQL.Provider" Version="0.12.1" />
+    <PackageReference Include="Rezoom.SQL.Provider" Version="0.12.2" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
   </ItemGroup>
 

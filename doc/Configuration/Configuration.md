@@ -4,9 +4,9 @@ Two pieces of runtime configuration are needed: the connection string for each
 named connection, and the ADO.NET provider invariant (e.g.
 `Microsoft.Data.SqlClient`) used to open it.
 
-By default, Rezoom.SQL reads both from your host's `IConfiguration` — the
+By default, Rezoom.SQL reads both from your host's `IConfiguration`. That's the
 standard configuration abstraction used by ASP.NET Core and the .NET generic
-host. No App.config, no `ConfigurationManager`.
+host.
 
 ## appsettings.json
 
@@ -28,7 +28,7 @@ your [rzsql.json](Json.md).
 
 ## ASP.NET Core / generic host
 
-If your host already wires up `IConfiguration` (which ASP.NET Core's
+If your host already has a service provider with `IConfiguration` (which ASP.NET Core's
 `WebApplication.CreateBuilder` does by default), there is **nothing else to
 register**. Rezoom.SQL constructs a `ConfigurationConnectionProvider` lazily
 the first time something asks for a connection.
@@ -105,8 +105,8 @@ MyModel.Migrate(MigrationConfig.Default, services)
 ## Custom ConnectionProvider
 
 If you need to source the connection string from somewhere other than
-`IConfiguration` — e.g. Azure Key Vault, AWS Secrets Manager, an in-process
-secrets store — subclass `ConnectionProvider`:
+`IConfiguration` (Azure Key Vault, AWS Secrets Manager, an in-process secrets
+store, etc.), subclass `ConnectionProvider`:
 
 ```csharp
 public sealed class KeyVaultConnectionProvider : ConnectionProvider
