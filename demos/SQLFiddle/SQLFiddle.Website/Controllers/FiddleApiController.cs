@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Rezoom;
 using SQLFiddle;
 
 namespace SQLFiddle.Website.Controllers;
 
 [ApiController]
 [Route("api")]
-public class FiddleApiController : ControllerBase
+public class FiddleApiController(PlanExecutor planner) : ControllerBase
 {
     // Newtonsoft.Json — not System.Text.Json — because the front-end JS reads F#
     // discriminated unions in the {case, fields} shape that Newtonsoft serializes
@@ -33,7 +34,7 @@ public class FiddleApiController : ControllerBase
     {
         var input = await ReadBody<FiddleInput>(Request)
             ?? throw new ArgumentException("Missing fiddle input");
-        var checkedFiddle = await Execution.Execute(Domain.checkFiddle(input));
+        var checkedFiddle = await planner.Execute(Domain.checkFiddle(input));
         return JsonResponse(checkedFiddle.Output);
     }
 
@@ -41,7 +42,7 @@ public class FiddleApiController : ControllerBase
     public async Task<ContentResult> GetFiddle(string id)
     {
         var fiddleId = FiddleId.Parse(id);
-        var checkedFiddle = await Execution.Execute(Domain.getFiddle(fiddleId));
+        var checkedFiddle = await planner.Execute(Domain.getFiddle(fiddleId));
         return JsonResponse(checkedFiddle);
     }
 
@@ -50,14 +51,7 @@ public class FiddleApiController : ControllerBase
     {
         var input = await ReadBody<FiddleInput>(Request)
             ?? throw new ArgumentException("Missing fiddle input");
-        var fiddleId = await Execution.Execute(Domain.saveFiddle(input));
+        var fiddleId = await planner.Execute(Domain.saveFiddle(input));
         return JsonResponse(new { id = fiddleId.ToString() });
-    }
-
-    [HttpGet("migrate")]
-    public IActionResult Migrate()
-    {
-        Execution.Migrate();
-        return NoContent();
     }
 }

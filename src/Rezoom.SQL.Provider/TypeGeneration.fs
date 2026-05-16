@@ -354,6 +354,32 @@ let generateMigrationMembers
                 @@>
             | _ -> bug "Invalid migrate argument list")
         provided.AddMember meth
+    // DI-friendly overload: caller passes their own ConnectionProvider (typically
+    // resolved via DI). Lets ASP.NET Core consumers register a ConnectionProvider that
+    // pulls connection-string settings from IConfiguration without involving the
+    // ConfigurationManager / App.config fallback baked into DefaultConnectionProvider.
+    do
+        let connectionName = Quotations.Expr.Value(config.ConnectionName)
+        let pars =
+            [   ProvidedParameter("config", typeof<MigrationConfig>)
+                ProvidedParameter("connectionProvider", typeof<ConnectionProvider>)
+            ]
+        let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
+            | [ config; connectionProvider ] ->
+                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
+                    let provider = (%%connectionProvider : ConnectionProvider)
+                    let backendInstance =
+                        (%backend.MigrationBackend) (provider.GetConnectionString(%%connectionName))
+                    let _ =
+                        try
+                            MigrationUtilities.runMigrations (%%config) backendInstance migrations
+                            0
+                        finally
+                            backendInstance.Dispose()
+                    ()
+                @@>
+            | _ -> bug "Invalid migrate argument list")
+        provided.AddMember meth
 
 let generateModelType (generate : GenerateType) =
     let backend = generate.UserModel.Backend

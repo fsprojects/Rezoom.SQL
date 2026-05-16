@@ -26,10 +26,10 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />
-    <PackageReference Include="Rezoom" Version="1.1.1" />
-    <PackageReference Include="Rezoom.SQL.Compiler" Version="0.7.3" />
-    <PackageReference Include="Rezoom.SQL.Mapping" Version="0.7.3" />
-    <PackageReference Include="Rezoom.SQL.Provider" Version="0.7.4" />
+    <PackageReference Include="Rezoom" Version="1.3.0" />
+    <PackageReference Include="Rezoom.SQL.Compiler" Version="0.8.0" />
+    <PackageReference Include="Rezoom.SQL.Mapping" Version="0.8.0" />
+    <PackageReference Include="Rezoom.SQL.Provider" Version="0.8.0" />
     <!-- Runtime driver for TSQL; loaded reflectively by Rezoom.SQL's ConnectionProvider. -->
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>

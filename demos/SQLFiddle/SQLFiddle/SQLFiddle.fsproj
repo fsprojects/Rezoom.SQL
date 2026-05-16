@@ -16,7 +16,6 @@
     <Compile Include="Persistence.fs" />
     <Compile Include="Domain.fsi" />
     <Compile Include="Domain.fs" />
-    <Compile Include="Execution.fs" />
     <None Include="App.config" />
     <EmbeddedResource Include="V1.model.sql" />
     <EmbeddedResource Include="rzsql.json" />
@@ -24,10 +23,10 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />
-    <PackageReference Include="Rezoom" Version="1.1.1" />
-    <PackageReference Include="Rezoom.SQL.Compiler" Version="0.7.3" />
-    <PackageReference Include="Rezoom.SQL.Mapping" Version="0.7.3" />
-    <PackageReference Include="Rezoom.SQL.Provider" Version="0.7.4" />
+    <PackageReference Include="Rezoom" Version="1.3.0" />
+    <PackageReference Include="Rezoom.SQL.Compiler" Version="0.8.0" />
+    <PackageReference Include="Rezoom.SQL.Mapping" Version="0.8.0" />
+    <PackageReference Include="Rezoom.SQL.Provider" Version="0.8.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
 

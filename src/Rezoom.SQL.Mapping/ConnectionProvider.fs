@@ -9,6 +9,23 @@ type ConnectionProvider() =
     abstract member Open : name : string -> DbConnection
     abstract member BeginTransaction : DbConnection -> DbTransaction
     default __.BeginTransaction(conn) = conn.BeginTransaction()
+    /// Resolve a named connection to its <see cref="ConnectionStringSettings"/>
+    /// (connection string + provider invariant). Used by migrations, where the
+    /// settings are passed to the dialect's migration backend constructor.
+    ///
+    /// Default reads from <c>ConfigurationManager.ConnectionStrings</c> for backward
+    /// compatibility. ASP.NET Core / modern apps subclass and pull from
+    /// <c>IConfiguration</c> instead.
+    abstract member GetConnectionString : name : string -> ConnectionStringSettings
+    default __.GetConnectionString(name) =
+        let connectionStrings = ConfigurationManager.ConnectionStrings
+        if isNull connectionStrings then
+            failwith "No <connectionStrings> element in config"
+        let connectionString = connectionStrings.[name]
+        if isNull connectionString then
+            failwithf "No connection string named '%s' in config" name
+        else
+            connectionString
 
 module NetStandardHacks =
     let loadInstance (assemblyName : string) (typeName : string) =
