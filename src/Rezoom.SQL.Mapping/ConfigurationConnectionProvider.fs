@@ -1,5 +1,6 @@
 namespace Rezoom.SQL.Mapping
 open System
+open System.Collections.Concurrent
 open Microsoft.Extensions.Configuration
 
 /// <summary>
@@ -11,8 +12,11 @@ open Microsoft.Extensions.Configuration
 /// Looks up:
 /// <list type="bullet">
 ///   <item>Connection string at <c>ConnectionStrings:{name}</c></item>
-///   <item>Provider invariant at <c>RezoomSQL:Providers:{name}</c>, defaulting to
-///         <c>Microsoft.Data.SqlClient</c> when unset</item>
+///   <item>Provider invariant at <c>RezoomSQL:Providers:{name}</c>. If that's not
+///         set, falls back to a backend default registered by the TP-generated
+///         code for this connection name (e.g. <c>Microsoft.Data.Sqlite</c> for a
+///         SQLite project). If nothing is registered either, falls back to
+///         <c>Microsoft.Data.SqlClient</c>.</item>
 /// </list>
 /// Typical ASP.NET Core registration:
 /// <code>
@@ -23,7 +27,19 @@ type ConfigurationConnectionProvider(configuration : IConfiguration) =
     inherit ConnectionProvider()
 
     [<Literal>]
-    static let DefaultProviderName = "Microsoft.Data.SqlClient"
+    static let HardcodedFallback = "Microsoft.Data.SqlClient"
+
+    static let backendDefaults = ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+
+    /// Registers the canonical ADO.NET provider invariant for a given connection
+    /// name. The TP-generated Migrate and Command code calls this at first touch
+    /// so users don't have to write a RezoomSQL:Providers:{name} section in
+    /// appsettings.json for the 99% case where one project targets one backend.
+    /// Idempotent. Last writer wins if multiple registrations collide on the same
+    /// connection name; an explicit RezoomSQL:Providers config entry overrides
+    /// this registry entirely.
+    static member RegisterBackendDefault(connectionName : string, providerInvariant : string) =
+        backendDefaults.[connectionName] <- providerInvariant
 
     override __.GetConnectionString(name) =
         let connectionString = configuration.[sprintf "ConnectionStrings:%s" name]
@@ -33,7 +49,9 @@ type ConfigurationConnectionProvider(configuration : IConfiguration) =
                 name name
         let providerName =
             match configuration.[sprintf "RezoomSQL:Providers:%s" name] with
-            | null | "" -> DefaultProviderName
+            | null | "" ->
+                let registered, value = backendDefaults.TryGetValue(name)
+                if registered then value else HardcodedFallback
             | v -> v
         {   Name = name
             ConnectionString = connectionString

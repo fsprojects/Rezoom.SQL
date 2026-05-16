@@ -14,17 +14,30 @@ host.
 {
   "ConnectionStrings": {
     "rzsql": "Data Source=.\\SQLEXPRESS;Initial Catalog=rzsql;Integrated Security=SSPI;TrustServerCertificate=true"
-  },
-  "RezoomSQL": {
-    "Providers": {
-      "rzsql": "Microsoft.Data.SqlClient"
-    }
   }
 }
 ```
 
 The connection name (`rzsql` here) must match the `connectionName` setting in
 your [rzsql.json](Json.md).
+
+The ADO.NET provider invariant (Microsoft.Data.SqlClient, Microsoft.Data.Sqlite,
+Npgsql, etc.) is normally inferred from the dialect you targeted in
+[rzsql.json](Json.md). The TP-generated `SQLModel<>` type registers the right
+default for its connection name at type-load time, so most projects don't need
+a `RezoomSQL:Providers` section in their config at all. Override the default
+only when pointing the same connection name at a non-canonical driver:
+
+```json
+{
+  "ConnectionStrings": {
+    "rzsql": "..."
+  },
+  "RezoomSQL": {
+    "Providers": { "rzsql": "Some.Other.Driver" }
+  }
+}
+```
 
 ## ASP.NET Core / generic host
 
@@ -69,9 +82,6 @@ MyModel.Migrate(MigrationConfig.Default, services)
 {
   "ConnectionStrings": {
     "rzsql": "Data Source=rzsql.db"
-  },
-  "RezoomSQL": {
-    "Providers": { "rzsql": "Microsoft.Data.Sqlite" }
   }
 }
 ```
@@ -82,9 +92,6 @@ MyModel.Migrate(MigrationConfig.Default, services)
 {
   "ConnectionStrings": {
     "rzsql": "Data Source=.\\SQLEXPRESS;Initial Catalog=rzsql;Integrated Security=SSPI;TrustServerCertificate=true"
-  },
-  "RezoomSQL": {
-    "Providers": { "rzsql": "Microsoft.Data.SqlClient" }
   }
 }
 ```
@@ -95,9 +102,6 @@ MyModel.Migrate(MigrationConfig.Default, services)
 {
   "ConnectionStrings": {
     "rzsql": "Host=localhost;Database=rzsql;Username=your_user;Password=your_password"
-  },
-  "RezoomSQL": {
-    "Providers": { "rzsql": "Npgsql" }
   }
 }
 ```

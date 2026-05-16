@@ -104,9 +104,6 @@ You'll also need an `appsettings.json` next to your project. For SQLite that's j
 {
   "ConnectionStrings": {
     "rzsql": "Data Source=rzsql.db"
-  },
-  "RezoomSQL": {
-    "Providers": { "rzsql": "Microsoft.Data.Sqlite" }
   }
 }
 ```

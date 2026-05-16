@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
-    <Version>0.12.2</Version>
+    <Version>0.12.3</Version>
     <Authors>Robert Peele</Authors>
     <Description>Compiler and dialect translators for Rezoom.SQL.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>0.12.2: add Migrate(MigrationConfig, connectionString) overload for standalone migrator tools (resolves #49); requires the canonical ADO.NET provider invariant per backend via IBackend.DefaultProviderName.</PackageReleaseNotes>
+    <PackageReleaseNotes>0.12.3: TP-generated Migrate and Command code registers the backend's default ADO.NET provider invariant with ConfigurationConnectionProvider at first touch. RezoomSQL:Providers in appsettings.json is now optional and only needed when overriding the dialect default.</PackageReleaseNotes>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 

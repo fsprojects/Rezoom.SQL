@@ -170,6 +170,17 @@ let private maskOfTables (model : UserModel) (tables : QualifiedObjectName seq) 
             mask <- mask.WithBit(id % 128, true)
     mask
 
+/// Quotation that registers this model's backend-default provider invariant
+/// against its connection name with ConfigurationConnectionProvider. Prepended
+/// to every TP-generated Migrate and Command invokeCode so the runtime knows
+/// which ADO.NET driver to use without requiring a RezoomSQL:Providers config
+/// entry. Idempotent and cheap (one ConcurrentDictionary write).
+let private registerBackendDefaultExpr (generate : GenerateType) (backend : IBackend) =
+    let name = Quotations.Expr.Value(generate.UserModel.ConnectionName)
+    let invariant = Quotations.Expr.Value(backend.DefaultProviderName)
+    <@@ ConfigurationConnectionProvider.RegisterBackendDefault
+            ((%%name : string), (%%invariant : string)) @@>
+
 let private generateCommandMethod
     (generate : GenerateType) (command : CommandEffect) (retTy : Type) (callMeth : MethodInfo) =
     let backend = generate.UserModel.Backend
@@ -229,7 +240,9 @@ let private generateCommandMethod
                             let dbType = Quotations.Expr.Value(tx.ParameterType)
                             <@@ ScalarParameter(%%dbType, %%tx.ValueTransform ex) @@>)
                     )
-            Expr.CallUnchecked(callMeth, [ commandData; arr ]))
+            Expr.Sequential
+                ( registerBackendDefaultExpr generate backend
+                , Expr.CallUnchecked(callMeth, [ commandData; arr ])))
     meth
 
 let validateSQLCommand (generate : GenerateType) (effect : CommandEffect) =
@@ -319,8 +332,11 @@ let generateMigrationMembers
     // ProvidedTypes' IL translator generates invalid IL for those shapes. The
     // `let _ = try ... 0 finally ...; ()` form works around it.
     let connectionName = Quotations.Expr.Value(config.ConnectionName)
+    let providerInvariant = Quotations.Expr.Value(backend.DefaultProviderName)
     let runMigration backendInstanceExpr configExpr =
-        <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
+        <@@ ConfigurationConnectionProvider.RegisterBackendDefault
+                ((%%connectionName : string), (%%providerInvariant : string))
+            let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
             let backendInstance : IMigrationBackend = %%backendInstanceExpr
             let _ =
                 try
@@ -348,7 +364,7 @@ let generateMigrationMembers
         // Connection-string overload: builds a ConnectionInfo inline using the
         // configured connection name and the backend's canonical ADO.NET provider
         // invariant. For migrator tools / scripts that want to skip DI.
-        let providerName = Quotations.Expr.Value(backend.DefaultProviderName)
+        let providerName = providerInvariant
         let pars =
             [   ProvidedParameter("config", typeof<MigrationConfig>)
                 ProvidedParameter("connectionString", typeof<string>)
@@ -387,6 +403,20 @@ let generateModelType (generate : GenerateType) =
         )), isStatic = true)
     provided.AddMember <| migrationsProperty
     generateMigrationMembers generate.UserModel.Config backend provided migrationsProperty
+    // Static initializer: register the backend's default ADO.NET provider invariant
+    // for this connection name with ConfigurationConnectionProvider. This fires the
+    // first time anything in user code touches the model type (which the JIT does
+    // as soon as the type is referenced), so health-check probes that hit a
+    // ConfigurationConnectionProvider before Migrate runs still see the right
+    // default driver.
+    do
+        let connectionName = Quotations.Expr.Value(generate.UserModel.ConnectionName)
+        let providerInvariant = Quotations.Expr.Value(backend.DefaultProviderName)
+        let cctor = ProvidedConstructor([], fun _ ->
+            <@@ ConfigurationConnectionProvider.RegisterBackendDefault
+                    ((%%connectionName : string), (%%providerInvariant : string)) @@>)
+        cctor.IsTypeInitializer <- true
+        provided.AddMember cctor
     provided
 
 let generateType (generate : GenerateType) =

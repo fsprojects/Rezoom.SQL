@@ -83,6 +83,13 @@ module Helpers =
 
     let connectionProvider = ConnectionProvider.ResolveFrom(services)
 
+    // The probe below opens a connection without going through any TP-generated
+    // code, so the TestModel static initializer that registers Npgsql as the
+    // backend default never fires on its own. Force the cctor here.
+    do
+        System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(
+            typeof<TestModel>.TypeHandle) |> ignore
+
     let private postgresProbe =
         lazy
             try
