@@ -29,7 +29,7 @@
     <PackageReference Include="Rezoom" Version="1.1.1" />
     <PackageReference Include="Rezoom.SQL.Compiler" Version="0.7.3" />
     <PackageReference Include="Rezoom.SQL.Mapping" Version="0.7.3" />
-    <PackageReference Include="Rezoom.SQL.Provider" Version="0.7.3" />
+    <PackageReference Include="Rezoom.SQL.Provider" Version="0.7.4" />
     <!-- Runtime driver for TSQL; loaded reflectively by Rezoom.SQL's ConnectionProvider. -->
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>

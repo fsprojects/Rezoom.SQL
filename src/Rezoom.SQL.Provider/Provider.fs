@@ -17,14 +17,22 @@ open System
 /// assembly was the problem.
 [<RequireQualifiedAccess>]
 module private TpResolver =
+    // Debug-only diagnostics. The TP runs inside fsc / IDE tooling; there's no console
+    // to write to, so a file is the only practical channel. Release builds are silent
+    // — invaluable when iterating on TP plumbing, intolerable in CI.
     let plog (s : string) =
+#if DEBUG
         try
-            File.AppendAllText(@"C:\Users\humbo\rezoom-sql-tp.log",
+            let path = Path.Combine(Path.GetTempPath(), "rezoom-sql-tp.log")
+            File.AppendAllText(path,
                 sprintf "[%s pid=%d] %s%s"
                     (DateTime.Now.ToString("HH:mm:ss.fff"))
                     (System.Diagnostics.Process.GetCurrentProcess().Id)
                     s System.Environment.NewLine)
         with _ -> ()
+#else
+        ignore s
+#endif
 
     let mutable byName : Map<string, string> = Map.empty
 
