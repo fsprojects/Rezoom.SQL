@@ -1,4 +1,4 @@
-﻿module FileSystem.Execution
+module FileSystem.Execution
 open System
 open System.Collections.Generic
 open System.Threading
@@ -40,26 +40,26 @@ let executeSmart (plan : 'a Plan) =
 // Normally this would not be in a project, it is only written here so we run plans in "dumb" mode
 // and see how many round trips we saved in "smart" mode.
 
-type private DumbServiceContext(config : IServiceConfig) =
-    inherit ServiceContext()
-    let services = Dictionary<Type, obj>()
+type private DumbPlanContext(services : IServiceProvider) =
+    inherit PlanContext()
+    let instances = Dictionary<Type, obj>()
     let globals = Stack<_>()
-    override __.Configuration = config
-    override this.GetService<'f, 'a when 'f :> ServiceFactory<'a> and 'f : (new : unit -> 'f)>() =
+    override __.Services = services
+    override this.GetPlanLocal<'f, 'a when 'f :> PlanLocal<'a> and 'f : (new : unit -> 'f)>() =
         let ty = typeof<'f>
-        let succ, service = services.TryGetValue(ty)
-        if succ then Unchecked.unbox service else
+        let succ, existing = instances.TryGetValue(ty)
+        if succ then Unchecked.unbox existing else
         let factory = new 'f()
-        let service = factory.CreateService(this)
-        match factory.ServiceLifetime with
-        | ServiceLifetime.ExecutionLocal ->
-            services.Add(ty, box service)
+        let instance = factory.Create(this)
+        match factory.Lifetime with
+        | Lifetime.Execution ->
+            instances.Add(ty, box instance)
             globals.Push(fun state ->
-                factory.DisposeService(state, service)
-                ignore <| services.Remove(ty))
-            service
+                factory.Dispose(state, instance)
+                ignore <| instances.Remove(ty))
+            instance
         | _ ->
-            service
+            instance
     static member private ClearStack(stack : _ Stack, state) =
         let mutable exn = null
         while stack.Count > 0 do
@@ -77,15 +77,17 @@ type private DumbServiceContext(config : IServiceConfig) =
         try
             this.ClearLocals(ExecutionSuccess)
         finally
-            DumbServiceContext.ClearStack(globals, ExecutionSuccess)
+            DumbPlanContext.ClearStack(globals, ExecutionSuccess)
     interface IDisposable with
         member this.Dispose() = this.Dispose()
 
 let executeDumb (plan : 'a Plan) =
     task {
-        let config = { new IServiceConfig with member __.TryGetConfig() = None }
+        let services =
+            { new IServiceProvider with
+                member __.GetService(_) = null }
         let token = CancellationToken.None
-        use context = new DumbServiceContext(config)
+        use context = new DumbPlanContext(services)
         let mutable errandCount = 0
         let mutable plan = plan
         let mutable result = None
@@ -107,4 +109,3 @@ let executeDumb (plan : 'a Plan) =
                 result <- Some r
         return Option.get result, errandCount
     } |> fun t -> t.Result
-

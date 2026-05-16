@@ -1,4 +1,4 @@
-﻿namespace Rezoom.SQL.Plans
+namespace Rezoom.SQL.Plans
 open System.Runtime.CompilerServices
 open System
 open System.Collections.Generic
@@ -9,7 +9,7 @@ open Rezoom.SQL
 open Rezoom.SQL.Mapping
 open System.Threading
 
-type private ExecutionLocalConnections(provider : ConnectionProvider) =
+type private Connections(provider : ConnectionProvider) =
     let connections = Dictionary()
     member __.GetConnection(name) : DbConnection * DbTransaction =
         let succ, tuple = connections.TryGetValue(name)
@@ -19,7 +19,7 @@ type private ExecutionLocalConnections(provider : ConnectionProvider) =
         let tuple = conn, tran
         connections.Add(name, tuple)
         tuple
-    member __.Dispose(state) = 
+    member __.Dispose(state) =
         let mutable exn = null
         for conn, tran in connections.Values do
             try
@@ -45,18 +45,18 @@ type private ExecutionLocalConnections(provider : ConnectionProvider) =
         if not (isNull exn) then raise exn
     // don't implement IDisposable because we need exec. state to know how to end transactions
 
-type private ExecutionLocalConnectionsFactory() =
-    inherit ServiceFactory<ExecutionLocalConnections>()
-    override __.ServiceLifetime = ServiceLifetime.ExecutionLocal
-    override __.CreateService(cxt) =
-        let provider = 
-            match cxt.Configuration.TryGetConfig<ConnectionProvider>() with
+type private ConnectionsLocal() =
+    inherit PlanLocal<Connections>()
+    override __.Lifetime = Lifetime.Execution
+    override __.Create(cxt) =
+        let provider =
+            match cxt.TryGetService<ConnectionProvider>() with
             | None -> DefaultConnectionProvider() :> ConnectionProvider
             | Some provider -> provider
-        ExecutionLocalConnections(provider)
-    override __.DisposeService(state, svc) = svc.Dispose(state)
+        Connections(provider)
+    override __.Dispose(state, svc) = svc.Dispose(state)
 
-type private StepLocalBatches(conns : ExecutionLocalConnections) =
+type private Batches(conns : Connections) =
     let batches = Dictionary()
     member __.GetBatch(name) =
         let succ, batch = batches.TryGetValue(name)
@@ -66,11 +66,11 @@ type private StepLocalBatches(conns : ExecutionLocalConnections) =
         batches.Add(name, batch)
         batch
 
-type private StepLocalBatchesFactory() =
-    inherit ServiceFactory<StepLocalBatches>()
-    override __.ServiceLifetime = ServiceLifetime.StepLocal
-    override __.CreateService(cxt) = StepLocalBatches(cxt.GetService<ExecutionLocalConnectionsFactory, _>())
-    override __.DisposeService(_, _) = ()
+type private BatchesLocal() =
+    inherit PlanLocal<Batches>()
+    override __.Lifetime = Lifetime.Step
+    override __.Create(cxt) = Batches(cxt.GetPlanLocal<ConnectionsLocal, _>())
+    override __.Dispose(_, _) = ()
 
 type private CommandErrandArgument(parameters : CommandParameter IReadOnlyList) =
     member __.Parameters = parameters
@@ -90,17 +90,17 @@ type private CommandErrand<'a>(command : Command<'a>) =
     inherit AsynchronousErrand<'a>()
     let cacheArgument = CommandErrandArgument(command.Parameters)
     override __.CacheInfo = command.CacheInfo
-    override __.CacheArgument = box cacheArgument 
+    override __.CacheArgument = box cacheArgument
     override __.SequenceGroup = null
     override __.Prepare(cxt) =
-        let batches = cxt.GetService<StepLocalBatchesFactory, _>()
+        let batches = cxt.GetPlanLocal<BatchesLocal, _>()
         batches.GetBatch(command.ConnectionName).Batch(command)
     override __.ToString() =
         let all = CommandFragment.Stringize(command.Fragments)
         let truncate = 80
         if all.Length < truncate then all else all.Substring(0, truncate - 3) + "..."
 
-type private SharedCommandStepState<'id, 'a when 'id : equality>(factory : SharedCommandFactory<'id, 'a>, batch : AsyncCommandBatch) =
+type private SharedCommandState<'id, 'a when 'id : equality>(factory : SharedCommandFactory<'id, 'a>, batch : AsyncCommandBatch) =
     let ids = ResizeArray<'id>()
     // defer the command-building till the last possible moment before the batch executes
     let bulkTask = batch.Batch(fun () -> factory.BuildCommand(ids))
@@ -131,20 +131,20 @@ type private SharedCommandStepState<'id, 'a when 'id : equality>(factory : Share
                     else [||] :> 'a IReadOnlyList
             }
 
-and private SharedCommandStepStateLookup<'id, 'a when 'id : equality>() =
-    let idsByFactory = Dictionary<obj, SharedCommandStepState<'id, 'a>>()
+and private SharedCommandLookup<'id, 'a when 'id : equality>() =
+    let idsByFactory = Dictionary<obj, SharedCommandState<'id, 'a>>()
     member this.ByFactory(factory : SharedCommandFactory<'id, 'a>, batch : AsyncCommandBatch) =
         let succ, found = idsByFactory.TryGetValue(factory)
         if succ then found else
-        let state = SharedCommandStepState<'id, 'a>(factory, batch)
+        let state = SharedCommandState<'id, 'a>(factory, batch)
         idsByFactory.[factory] <- state
         state
 
-and private SharedCommandStepStateLookupFactory<'id, 'a when 'id : equality>() =
-    inherit ServiceFactory<SharedCommandStepStateLookup<'id, 'a>>()
-    override __.ServiceLifetime = ServiceLifetime.StepLocal
-    override __.CreateService(_) = SharedCommandStepStateLookup<'id, 'a>()
-    override __.DisposeService(_, _) = ()
+and private SharedCommandLookupLocal<'id, 'a when 'id : equality>() =
+    inherit PlanLocal<SharedCommandLookup<'id, 'a>>()
+    override __.Lifetime = Lifetime.Step
+    override __.Create(_) = SharedCommandLookup<'id, 'a>()
+    override __.Dispose(_, _) = ()
 
 and SharedCommandFactory<'id, 'a when 'id : equality>(buildCommand : 'id seq -> Command<'a IReadOnlyList>, selector : 'a -> 'id) =
     let templateCommand = buildCommand Seq.empty
@@ -161,9 +161,9 @@ and SharedCommandFactory<'id, 'a when 'id : equality>(buildCommand : 'id seq -> 
             override __.ToString() =
                 templateCommand.ToString() + " (Arg = " + string (box id) + ")"
             override __.Prepare(cxt) =
-                let batches = cxt.GetService<StepLocalBatchesFactory, _>()
+                let batches = cxt.GetPlanLocal<BatchesLocal, _>()
                 let batch = batches.GetBatch(connectionName)
-                let subErrands = cxt.GetService<SharedCommandStepStateLookupFactory<'id, 'a>, _>().ByFactory(factory, batch)
+                let subErrands = cxt.GetPlanLocal<SharedCommandLookupLocal<'id, 'a>, _>().ByFactory(factory, batch)
                 subErrands.PrepareId(id)
         } :> Errand<'a IReadOnlyList>
 
