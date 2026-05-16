@@ -16,8 +16,10 @@ installer and modify your installation to include F# language support.
 In Visual Studio, click File -> New -> Project, and select F# Console Application.
 Make sure you target .NET 8 or newer.
 
-If you're using the .NET CLI, run `dotnet new console -lang F# -o RezoomSQLTutorial`
-in a fresh folder.
+If you're using the .NET CLI, run `dotnet new console -lang "F#" -o RezoomSQLTutorial`
+in a fresh folder. (The quotes around `F#` are mandatory — without them, several
+shells treat the `#` as the start of a comment and silently drop the rest of
+the line.)
 
 ![screenshot of new project dialog](CreateNewProject.png)
 

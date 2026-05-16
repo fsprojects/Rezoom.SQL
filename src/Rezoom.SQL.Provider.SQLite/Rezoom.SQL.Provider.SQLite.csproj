@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Meta-package: brings in Rezoom.SQL.Provider plus the Microsoft.Data.Sqlite
+         ADO.NET driver. Modern cross-platform SQLite driver (replaces the older
+         System.Data.SQLite.Core that the original wrapper used). -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+    <Version>0.12.0</Version>
+    <Authors>Robert Peele</Authors>
+    <Description>Convenience meta-package: Rezoom.SQL.Provider with the Microsoft.Data.Sqlite driver for SQLite.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
+    <PackageTags>rezoom sql data sqlite fsharp typeprovider</PackageTags>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Rezoom.SQL.Provider" Version="0.12.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
+  </ItemGroup>
+
+</Project>
