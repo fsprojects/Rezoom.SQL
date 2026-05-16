@@ -1,6 +1,5 @@
 ﻿module Rezoom.SQL.Compiler.BackendUtilities
 open System
-open System.Configuration
 open System.Data
 open System.Data.Common
 open System.Text
@@ -91,10 +90,10 @@ type DbMigration(majorVersion : int, name : string) =
     member __.ToTuple() = (majorVersion, name)
 
 type DefaultMigrationBackend(conn : DbConnection) =
-    new(settings : ConnectionStringSettings) =
-        let provider = Rezoom.SQL.Mapping.NetStandardHacks.DbProviderFactories.GetFactory(settings.ProviderName)
+    new(info : ConnectionInfo) =
+        let provider = Rezoom.SQL.Mapping.NetStandardHacks.DbProviderFactories.GetFactory(info.ProviderName)
         let conn = provider.CreateConnection()
-        conn.ConnectionString <- settings.ConnectionString
+        conn.ConnectionString <- info.ConnectionString
         new DefaultMigrationBackend(conn)
     member __.Connection = conn
     abstract member Initialize : unit -> unit

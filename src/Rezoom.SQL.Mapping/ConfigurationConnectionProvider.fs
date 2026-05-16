@@ -1,7 +1,5 @@
 namespace Rezoom.SQL.Mapping
 open System
-open System.Configuration
-open System.Data.Common
 open Microsoft.Extensions.Configuration
 
 /// <summary>
@@ -37,15 +35,18 @@ type ConfigurationConnectionProvider(configuration : IConfiguration) =
             match configuration.[sprintf "RezoomSQL:Providers:%s" name] with
             | null | "" -> DefaultProviderName
             | v -> v
-        ConnectionStringSettings(name, connectionString, providerName)
+        {   Name = name
+            ConnectionString = connectionString
+            ProviderName = providerName
+        }
 
     override this.Open(name) =
-        let settings = this.GetConnectionString(name)
-        let factory = NetStandardHacks.DbProviderFactories.GetFactory(settings.ProviderName)
+        let info = this.GetConnectionString(name)
+        let factory = NetStandardHacks.DbProviderFactories.GetFactory(info.ProviderName)
         let conn = factory.CreateConnection()
         if isNull conn then
-            failwithf "Provider '%s' returned a null DbConnection" settings.ProviderName
-        conn.ConnectionString <- settings.ConnectionString
+            failwithf "Provider '%s' returned a null DbConnection" info.ProviderName
+        conn.ConnectionString <- info.ConnectionString
         conn.Open()
         if conn.GetType().Name = "SQLiteConnection" then
             // Encourage SQLite to put the R in RDBMS

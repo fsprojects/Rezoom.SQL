@@ -306,58 +306,11 @@ let generateSQLType (generate : GenerateType) (sql : string) =
 
 let generateMigrationMembers
     (config : Config.Config) (backend : IBackend) (provided : ProvidedTypeDefinition) migrationProperty =
-    do
-        let pars =
-            [   ProvidedParameter("config", typeof<MigrationConfig>)
-                ProvidedParameter("connectionName", typeof<string>)
-            ]
-        let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
-            | [ config; connectionName ] ->
-                // ProvidedTypes' IL translator emits a `void` local for the try-block's
-                // result when that result is unit-typed, producing JIT-invalid IL. Make
-                // the try block return a dummy int. Discard the int with `let _ = ...`
-                // (NOT `ignore <| ...` — the pipe operator pushes its function arg onto
-                // the stack BEFORE evaluating the try block, then loses it across the
-                // leave instruction, producing a different brand of invalid IL).
-                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
-                    let backendInstance =
-                        (%backend.MigrationBackend)
-                            (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
-                    let _ =
-                        try
-                            MigrationUtilities.runMigrations (%%config) backendInstance migrations
-                            0
-                        finally
-                            backendInstance.Dispose()
-                    ()
-                @@>
-            | _ -> bug "Invalid migrate argument list")
-        provided.AddMember meth
-    do
-        let connectionName = Quotations.Expr.Value(config.ConnectionName)
-        let pars =
-            [   ProvidedParameter("config", typeof<MigrationConfig>)
-            ]
-        let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
-            | [ config ] ->
-                <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
-                    let backendInstance =
-                        (%backend.MigrationBackend)
-                            (DefaultConnectionProvider.ResolveConnectionString(%%connectionName))
-                    let _ =
-                        try
-                            MigrationUtilities.runMigrations (%%config) backendInstance migrations
-                            0
-                        finally
-                            backendInstance.Dispose()
-                    ()
-                @@>
-            | _ -> bug "Invalid migrate argument list")
-        provided.AddMember meth
-    // DI-friendly overload: caller passes their own ConnectionProvider (typically
-    // resolved via DI). Lets ASP.NET Core consumers register a ConnectionProvider that
-    // pulls connection-string settings from IConfiguration without involving the
-    // ConfigurationManager / App.config fallback baked into DefaultConnectionProvider.
+    // Migrate(MigrationConfig, ConnectionProvider): the only Migrate overload. Caller
+    // supplies the ConnectionProvider — typically resolved from DI. Note: NOT
+    // `ignore <| try ... finally ...` and NOT `try ... finally ... unit-typed`;
+    // ProvidedTypes' IL translator generates invalid IL for both of those shapes.
+    // The `let _ = try ... 0 finally ...; ()` form works around it.
     do
         let connectionName = Quotations.Expr.Value(config.ConnectionName)
         let pars =

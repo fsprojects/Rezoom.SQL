@@ -51,8 +51,13 @@ type private ConnectionsLocal() =
     override __.Create(cxt) =
         let provider =
             match cxt.TryGetService<ConnectionProvider>() with
-            | None -> DefaultConnectionProvider() :> ConnectionProvider
             | Some provider -> provider
+            | None ->
+                failwith
+                    "No ConnectionProvider was registered in the IServiceProvider used by \
+                     this Rezoom plan execution. Register one with \
+                     `services.AddSingleton<ConnectionProvider, ConfigurationConnectionProvider>()` \
+                     (or your own ConnectionProvider subclass) before executing plans."
         Connections(provider)
     override __.Dispose(state, svc) = svc.Dispose(state)
 

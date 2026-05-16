@@ -7,9 +7,8 @@ open Rezoom.SQL.Mapping
 /// Keeps them cached and open until it is disposed, then closes all its connections.
 type ConnectionContext(provider : ConnectionProvider) =
     let connections = Dictionary(StringComparer.OrdinalIgnoreCase)
-    new() = new ConnectionContext(DefaultConnectionProvider())
-    /// Get the open `DbConnection` by name. If it is not already open, open it according to
-    /// the connection provider (usually via the connection string from App.confg).
+    /// Get the open `DbConnection` by name. If it is not already open, open it via
+    /// the connection provider.
     member __.GetConnection(name : string) =
         let succ, found = connections.TryGetValue(name)
         if succ then found else

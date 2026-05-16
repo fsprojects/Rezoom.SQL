@@ -1,17 +1,17 @@
 ﻿namespace Rezoom.SQL.Compiler.TSQL
 open System
-open System.Configuration
 open Microsoft.Data.SqlClient
 open System.Data.Common
 open System.Text.RegularExpressions
+open Rezoom.SQL.Mapping
 open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.BackendUtilities
 
-type TSQLMigrationBackend(settings : ConnectionStringSettings) =
-    inherit DefaultMigrationBackend(settings)
+type TSQLMigrationBackend(info : ConnectionInfo) =
+    inherit DefaultMigrationBackend(info)
     let attemptCreateDatabase (conn : DbConnection) =
         let oldConnectionString = conn.ConnectionString
-        let builder = SqlConnectionStringBuilder(settings.ConnectionString)
+        let builder = SqlConnectionStringBuilder(info.ConnectionString)
         let catalog = builder.InitialCatalog
         if String.IsNullOrEmpty(catalog) then
             false

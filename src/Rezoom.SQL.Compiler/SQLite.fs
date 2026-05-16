@@ -1,7 +1,7 @@
 ﻿namespace Rezoom.SQL.Compiler.SQLite
 open System
 open System.Collections.Generic
-open System.Configuration
+open Rezoom.SQL.Mapping
 open System.Data
 open System.Data.Common
 open System.IO
@@ -54,10 +54,10 @@ type private SQLiteStatement(indexer : IParameterIndexer) as this =
             Error.backendDoesNotSupportFeature
                 "SQLite" "ALTER TABLE statements other than RENAME TO/ADD COLUMN"
 
-type SQLiteMigrationBackend(settings : ConnectionStringSettings) =
-    inherit DefaultMigrationBackend(settings)
+type SQLiteMigrationBackend(info : ConnectionInfo) =
+    inherit DefaultMigrationBackend(info)
     override this.Initialize() =
-        let builder = DbConnectionStringBuilder(ConnectionString = settings.ConnectionString)
+        let builder = DbConnectionStringBuilder(ConnectionString = info.ConnectionString)
         let dataSource = "Data Source"
         if builder.ContainsKey(dataSource) then
             match builder.[dataSource] with
