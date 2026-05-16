@@ -97,11 +97,27 @@ tree is dirty (override with `-Force`). After it succeeds, tag and push:
 
 ```powershell
 ./build/pack-release.ps1
-git tag v0.13.0
-git push origin v0.13.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
 Drop the `.nupkg`s into wherever your nuget.org push lives.
+
+### `build/pack-parents.ps1`
+
+Packs the three parent libs (FParsec-Pipes, LicenseToCIL, Rezoom) from
+their sibling repos at the versions declared in each fsproj. Use this when
+you've edited a parent and want Rezoom.SQL to pick up the fresh bits.
+
+```powershell
+./build/pack-parents.ps1                  # all three
+./build/pack-parents.ps1 -Only Rezoom     # one at a time
+```
+
+The parents don't participate in the centralized `version.props` mechanism
+(they change rarely; their versions are bumped manually). If you're
+publishing parent changes, bump the parent's `<Version>` first, then run
+this script.
 
 ### `src/TypeProviderUsers/test-tp-users.ps1`
 
