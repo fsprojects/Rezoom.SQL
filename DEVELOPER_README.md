@@ -84,10 +84,6 @@ change you want the TPUs or demos to see.
 ./build/pack-dev.ps1
 ```
 
-Add `-NoPack` to bump the counter and write the suffix file without actually
-packing. This could be useful if you want consumers pointed at a specific dev version
-without rebuilding producers.
-
 ### `build/pack-release.ps1`
 
 Deletes `version.local.props` so the build has no prerelease suffix, then

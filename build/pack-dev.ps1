@@ -15,16 +15,9 @@
 
     Assumes the umbrella checkout layout: a directory containing both this repo
     and a .localfeed/ sibling. The umbrella directory name doesn't matter.
-
-.PARAMETER NoPack
-    Bump the counter and write version.local.props, but skip the actual
-    dotnet pack invocations. Useful when you just want consumers to point at a
-    specific dev version without packing producers.
 #>
 [CmdletBinding()]
-param(
-    [switch]$NoPack
-)
+param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
@@ -43,11 +36,14 @@ $versionPropsPath = Join-Path $repoRoot 'version.props'
 $baseVersion = $versionProps.Project.PropertyGroup.RezoomSqlVersion.Trim()
 
 # Find the highest existing dev counter for this base version in the feed.
+# Use the .NET API directly: Get-ChildItem -Filter has been observed to
+# return nothing in some restricted PowerShell hosts.
 $pattern = "Rezoom.SQL.Provider.$baseVersion-dev.*.nupkg"
-$existing = Get-ChildItem $feed -Filter $pattern -ErrorAction SilentlyContinue
+$existing = [System.IO.Directory]::GetFiles($feed, $pattern)
 $highest = 0
 foreach ($f in $existing) {
-    if ($f.BaseName -match "\.dev\.(\d+)$") {
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($f)
+    if ($name -match "-dev\.(\d+)$") {
         $n = [int]$Matches[1]
         if ($n -gt $highest) { $highest = $n }
     }
@@ -70,11 +66,6 @@ $localPropsBody = @"
 Set-Content -Path $localPropsPath -Value $localPropsBody -NoNewline -Encoding utf8
 
 Write-Host "Set version to $fullVersion in version.local.props" -ForegroundColor Cyan
-
-if ($NoPack) {
-    Write-Host "-NoPack specified; skipping dotnet pack." -ForegroundColor Yellow
-    return
-}
 
 # Clear any stale entries in the global packages cache for this version.
 $pkgs = @(
