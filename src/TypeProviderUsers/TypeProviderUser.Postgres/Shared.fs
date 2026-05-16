@@ -86,7 +86,7 @@ module Helpers =
     let private postgresProbe =
         lazy
             try
-                use conn = connectionProvider.Open("rzsql", "postgres")
+                use conn = connectionProvider.Open("rzsql", Backend.Postgres)
                 conn.Dispose()
                 Ok ()
             with exn -> Error (sprintf "%s: %s" (exn.GetType().Name) exn.Message)

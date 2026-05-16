@@ -38,8 +38,3 @@ type IBackend =
         : columnType : ColumnType -> ParameterTransform
     abstract member ToCommandFragments
         : indexer : IParameterIndexer * stmts : TTotalStmts -> CommandFragment IReadOnlyList
-    /// Canonical ADO.NET provider invariant for this dialect. Used when the TP
-    /// emits a `Migrate(config, connectionString)` overload so callers don't have
-    /// to spell out the provider name themselves. Matches the wrapper meta-package
-    /// driver for this backend.
-    abstract member DefaultProviderName : string

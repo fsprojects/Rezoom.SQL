@@ -33,10 +33,6 @@ type DefaultBackend() =
             @>
         member this.InitialModel = initialModel
         member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
-        // No real driver for the "rzsql" no-op backend. Pick TSQL's driver so the
-        // connection-string Migrate overload still compiles; anyone actually trying
-        // to run migrations on this backend has bigger problems.
-        member this.DefaultProviderName = "Microsoft.Data.SqlClient"
         member this.ToCommandFragments(indexer, stmts) =
             let translator = DefaultStatementTranslator(Name("RZSQL"), indexer)
             translator.TotalStatements(stmts)

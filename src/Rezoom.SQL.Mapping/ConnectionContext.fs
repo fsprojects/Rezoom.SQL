@@ -8,13 +8,13 @@ open Rezoom.SQL.Mapping
 type ConnectionContext(provider : ConnectionProvider) =
     let connections = Dictionary(StringComparer.OrdinalIgnoreCase)
     /// Get the open `DbConnection` by name. If it is not already open, open it via
-    /// the connection provider. `backendName` is the compile-time dialect identifier
-    /// from the originating Command; the provider may use it (e.g. to pick a default
+    /// the connection provider. `backend` is the compile-time dialect from the
+    /// originating Command; the provider may use it (e.g. to pick a default
     /// driver) or ignore it.
-    member __.GetConnection(name : string, backendName : string) =
+    member __.GetConnection(name : string, backend : Backend) =
         let succ, found = connections.TryGetValue(name)
         if succ then found else
-        let conn = provider.Open(name, backendName)
+        let conn = provider.Open(name, backend)
         connections.[name] <- conn
         conn
     /// Close all the open connections.

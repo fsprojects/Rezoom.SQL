@@ -171,15 +171,15 @@ let private maskOfTables (model : UserModel) (tables : QualifiedObjectName seq) 
             mask <- mask.WithBit(id % 128, true)
     mask
 
-/// Canonical lowercase name for a configured backend. Matches the lookup keys
-/// in ConfigurationConnectionProvider's canonical-driver dictionary and the
-/// strings the user writes in rzsql.json.
-let private backendNameOf (config : Config.Config) =
+/// Build a quotation expression for the Backend DU case configured in rzsql.json.
+/// One branch per case so F# emits the appropriate Expr.NewUnionCase under the
+/// hood; that's what the ProvidedTypes IL emitter knows how to translate.
+let private backendCaseExpr (config : Config.Config) =
     match config.Backend with
-    | Config.ConfigBackend.SQLite -> "sqlite"
-    | Config.ConfigBackend.TSQL -> "tsql"
-    | Config.ConfigBackend.Postgres -> "postgres"
-    | Config.ConfigBackend.Identity -> "rzsql"
+    | Backend.RzSQL -> <@@ Backend.RzSQL @@>
+    | Backend.SQLite -> <@@ Backend.SQLite @@>
+    | Backend.TSQL -> <@@ Backend.TSQL @@>
+    | Backend.Postgres -> <@@ Backend.Postgres @@>
 
 let private generateCommandMethod
     (generate : GenerateType) (command : CommandEffect) (retTy : Type) (callMeth : MethodInfo) =
@@ -199,7 +199,7 @@ let private generateCommandMethod
                 )
             | None -> false, BitMask.Full, BitMask.Full // assume the worst
         <@@ {   ConnectionName = %%Quotations.Expr.Value(generate.UserModel.ConnectionName)
-                BackendName = %%Quotations.Expr.Value(backendNameOf generate.UserModel.Config)
+                Backend = %%(backendCaseExpr generate.UserModel.Config)
                 Identity = %%Quotations.Expr.Value(identity)
                 Fragments = (%%fragments : _ array) :> _ IReadOnlyList
                 Cacheable = %%Quotations.Expr.Value(cacheable)
@@ -332,7 +332,10 @@ let generateMigrationMembers
     // ProvidedTypes' IL translator generates invalid IL for those shapes. The
     // `let _ = try ... 0 finally ...; ()` form works around it.
     let connectionName = Quotations.Expr.Value(config.ConnectionName)
-    let providerInvariant = Quotations.Expr.Value(backend.DefaultProviderName)
+    let providerInvariant =
+        // Resolve the canonical driver string at codegen time from the configured
+        // Backend DU case, then embed the resulting string as a quotation constant.
+        Quotations.Expr.Value(Backend.canonicalDriver config.Backend)
     let runMigration backendInstanceExpr configExpr =
         <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
             let backendInstance : IMigrationBackend = %%backendInstanceExpr

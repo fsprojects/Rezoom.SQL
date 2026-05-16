@@ -128,7 +128,6 @@ type SQLiteBackend() =
                     ValueTransform = transform
                 }
             | _ -> ParameterTransform.Default(columnType)
-        member this.DefaultProviderName = "Microsoft.Data.Sqlite"
         member this.ToCommandFragments(indexer, stmts) =
             let translator = SQLiteStatement(indexer)
             translator.TotalStatements(stmts)

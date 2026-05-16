@@ -8,7 +8,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>0.13.0: ConnectionProvider returns to its minimal abstract shape (Open / BeginTransaction). ConnectionInfo and configuration concerns move to ConfigurationConnectionProvider. Commands now carry their compile-time BackendName so the provider can pick the right ADO.NET driver without static side-channel registration. Breaking change for custom ConnectionProvider subclasses: Open now takes (connectionName, backendName).</PackageReleaseNotes>
+    <PackageReleaseNotes>0.13.0: ConnectionProvider returns to its minimal abstract shape (Open / BeginTransaction). ConnectionInfo and configuration concerns move to ConfigurationConnectionProvider. Commands now carry their compile-time dialect as a typed Backend DU (RzSQL / SQLite / TSQL / Postgres) rather than a string, parsed at the rzsql.json boundary and threaded through everywhere else. Breaking change for custom ConnectionProvider subclasses: Open now takes (connectionName : string, backend : Backend).</PackageReleaseNotes>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 

@@ -27,7 +27,7 @@ type Extensions =
     /// property.
     [<Extension>]
     static member Execute(cmd : Command<'a>, context : ConnectionContext, token : CancellationToken) =
-        cmd.Execute(context.GetConnection(cmd.ConnectionName, cmd.BackendName), token)
+        cmd.Execute(context.GetConnection(cmd.ConnectionName, cmd.Backend), token)
     
     /// Execute the command on a connection and return its result sets.
     /// The connection is obtained from the given `ConnectionContext` according to the command's `ConnectionName`
@@ -54,7 +54,7 @@ type Extensions =
     /// property.
     [<Extension>]
     static member ExecuteScalar(cmd : Command<#IScalar<_>>, context : ConnectionContext, token) =
-        cmd.ExecuteScalar(context.GetConnection(cmd.ConnectionName, cmd.BackendName), token)
+        cmd.ExecuteScalar(context.GetConnection(cmd.ConnectionName, cmd.Backend), token)
 
     /// Execute the command on a connection and return its scalar result.
     /// The connection is obtained from the given `ConnectionContext` according to the command's `ConnectionName`
@@ -89,7 +89,7 @@ type Extensions =
     /// property.
     [<Extension>]
     static member ExecuteTryExactlyOne(cmd : Command<#IReadOnlyList<_>>, context : ConnectionContext, token) =
-        cmd.ExecuteTryExactlyOne(context.GetConnection(cmd.ConnectionName, cmd.BackendName), token)
+        cmd.ExecuteTryExactlyOne(context.GetConnection(cmd.ConnectionName, cmd.Backend), token)
 
     /// Execute the command on a connection and return the optional first and only row of its single result set.
     /// If the command returns more than 1 row, this throws an exception.
@@ -120,7 +120,7 @@ type Extensions =
     /// property.
     [<Extension>]
     static member ExecuteExactlyOne(cmd : Command<#IReadOnlyList<_>>, context : ConnectionContext, token) =
-        cmd.ExecuteExactlyOne(context.GetConnection(cmd.ConnectionName, cmd.BackendName), token)
+        cmd.ExecuteExactlyOne(context.GetConnection(cmd.ConnectionName, cmd.Backend), token)
 
     /// Execute the command on a connection and return the first and only row of its single result set.
     /// If the command returns no rows or more than 1 row, this throws an exception.

@@ -1,6 +1,5 @@
 namespace Rezoom.SQL.Mapping
 open System
-open System.Collections.Generic
 open Microsoft.Extensions.Configuration
 
 /// Settings for a single named connection: connection string + ADO.NET provider invariant.
@@ -27,28 +26,16 @@ type ConnectionInfo =
 /// <list type="bullet">
 ///   <item>Connection string at <c>ConnectionStrings:{name}</c></item>
 ///   <item>Provider invariant at <c>RezoomSQL:Providers:{name}</c>. If not set,
-///         picks the canonical ADO.NET driver for the backend name passed by the
-///         TP-generated code (e.g. <c>Microsoft.Data.Sqlite</c> for SQLite). Set
-///         <c>RezoomSQL:Providers:{name}</c> to override for non-canonical drivers.</item>
+///         falls back to <see cref="Backend.canonicalDriver"/> for the dialect
+///         passed by the TP-generated code (e.g. <c>Microsoft.Data.Sqlite</c>
+///         for <c>Backend.SQLite</c>). Set <c>RezoomSQL:Providers:{name}</c> to
+///         override for non-canonical drivers.</item>
 /// </list>
 /// </remarks>
 type ConfigurationConnectionProvider(configuration : IConfiguration) =
     inherit ConnectionProvider()
 
-    /// Backend name -> canonical ADO.NET provider invariant. Matches what the
-    /// wrapper meta-packages (Rezoom.SQL.Provider.{SQLite,TSQL,Postgres}) ship.
-    /// The "rzsql" no-op backend points at SqlClient as a placeholder; if you're
-    /// actually running migrations on the Identity backend, register a custom
-    /// ConnectionProvider or set RezoomSQL:Providers:{name} explicitly.
-    static let canonicalDriver : IDictionary<string, string> =
-        let d = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        d.["sqlite"] <- "Microsoft.Data.Sqlite"
-        d.["tsql"] <- "Microsoft.Data.SqlClient"
-        d.["postgres"] <- "Npgsql"
-        d.["rzsql"] <- "Microsoft.Data.SqlClient"
-        upcast d
-
-    member __.GetConnectionInfo(name : string, backendName : string) : ConnectionInfo =
+    member __.GetConnectionInfo(name : string, backend : Backend) : ConnectionInfo =
         let connectionString = configuration.[sprintf "ConnectionStrings:%s" name]
         if String.IsNullOrEmpty(connectionString) then
             failwithf
@@ -56,21 +43,15 @@ type ConfigurationConnectionProvider(configuration : IConfiguration) =
                 name name
         let providerName =
             match configuration.[sprintf "RezoomSQL:Providers:%s" name] with
-            | null | "" ->
-                let succ, v = canonicalDriver.TryGetValue(backendName)
-                if succ then v
-                else
-                    failwithf
-                        "Unknown backend '%s' for connection '%s' and no RezoomSQL:Providers:%s override in configuration"
-                        backendName name name
+            | null | "" -> Backend.canonicalDriver backend
             | v -> v
         {   Name = name
             ConnectionString = connectionString
             ProviderName = providerName
         }
 
-    override this.Open(name, backendName) =
-        let info = this.GetConnectionInfo(name, backendName)
+    override this.Open(name, backend) =
+        let info = this.GetConnectionInfo(name, backend)
         let factory = NetStandardHacks.DbProviderFactories.GetFactory(info.ProviderName)
         let conn = factory.CreateConnection()
         if isNull conn then

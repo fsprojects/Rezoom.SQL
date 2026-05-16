@@ -5,13 +5,13 @@ open System.Reflection
 
 /// Minimal abstraction over "give me a live DbConnection by name." Implementations
 /// decide how to resolve a name to a connection (config file, secrets store,
-/// custom routing, test fixture intercept, etc.). The backend name is the
-/// compile-time-known dialect ("sqlite", "tsql", "postgres", "rzsql") from
-/// rzsql.json; implementations are free to ignore it. ConfigurationConnectionProvider
-/// uses it to pick a default ADO.NET driver when none is set in config.
+/// custom routing, test fixture intercept, etc.). `backend` is the compile-time
+/// dialect from rzsql.json; implementations are free to ignore it.
+/// `ConfigurationConnectionProvider` uses it to pick a default ADO.NET driver
+/// when none is set in config.
 [<AbstractClass>]
 type ConnectionProvider() =
-    abstract member Open : connectionName : string * backendName : string -> DbConnection
+    abstract member Open : connectionName : string * backend : Backend -> DbConnection
     abstract member BeginTransaction : DbConnection -> DbTransaction
     default __.BeginTransaction(conn) = conn.BeginTransaction()
 
