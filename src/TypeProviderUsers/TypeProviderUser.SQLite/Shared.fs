@@ -1,8 +1,12 @@
-﻿namespace TypeProviderUser.SQLite
+namespace TypeProviderUser.SQLite
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
+open Rezoom.Execution
 open Rezoom.SQL
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 open Rezoom.SQL.Synchronous
+open System
 open System.IO
 
 type TestModel = SQLModel<".">
@@ -53,10 +57,35 @@ values  ( (select Id from Users where Name = 'Marge')
 [<AutoOpen>]
 module Helpers =
     let dbFileName = "rzsql.db"
+
+    /// Process-wide service provider built once from appsettings.json. Rezoom.SQL's
+    /// ConnectionProvider.ResolveFrom falls back to a ConfigurationConnectionProvider
+    /// built from the registered IConfiguration, so no other registration is needed.
+    let services : IServiceProvider =
+        let configuration =
+            ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional = false)
+                .AddEnvironmentVariables()
+                .Build() :> IConfiguration
+        let collection = ServiceCollection()
+        collection.AddSingleton<IConfiguration>(configuration) |> ignore
+        collection.BuildServiceProvider() :> IServiceProvider
+
+    let connectionProvider = ConnectionProvider.ResolveFrom(services)
+
+    let executionConfig =
+        { ExecutionConfig.Default with Services = services }
+
+    let private freshDatabase () =
+        // Microsoft.Data.Sqlite keeps a pooled connection open on the file, so a
+        // direct File.Delete fails with "in use by another process". Drain the
+        // pool first.
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools()
+        if File.Exists(dbFileName) then File.Delete(dbFileName)
+        TestModel.Migrate(MigrationConfig.Default, services)
+
     let runOnTestData (cmd : Command<'a>) =
-        if File.Exists(dbFileName) then
-            File.Delete(dbFileName)
-        TestModel.Migrate(MigrationConfig.Default)
-        use cxt = new ConnectionContext()
+        freshDatabase ()
+        use cxt = new ConnectionContext(connectionProvider)
         TestData.Command().Execute(cxt)
         cmd.Execute(cxt)

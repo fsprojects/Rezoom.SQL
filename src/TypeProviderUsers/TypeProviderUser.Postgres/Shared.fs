@@ -1,9 +1,12 @@
-﻿namespace TypeProviderUser.SQLite
+namespace TypeProviderUser.Postgres
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
+open NUnit.Framework
 open Rezoom.SQL
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 open Rezoom.SQL.Synchronous
-open System.IO
+open System
 
 type TestModel = SQLModel<".">
 
@@ -62,12 +65,48 @@ values  ( (select Id from Users where Name = 'Marge')
 
 [<AutoOpen>]
 module Helpers =
+    /// Process-wide service provider. Configuration sources, in order:
+    ///  1. appsettings.json (default Host=localhost;Database=rz;Username=rz;Password=testtest)
+    ///  2. Env vars — REZOOM_TPU_POSTGRES overrides ConnectionStrings:rzsql.
+    let services : IServiceProvider =
+        let configuration =
+            ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional = false)
+                .AddEnvironmentVariables()
+                .Build()
+        let envOverride = Environment.GetEnvironmentVariable("REZOOM_TPU_POSTGRES")
+        if not (String.IsNullOrEmpty envOverride) then
+            configuration.["ConnectionStrings:rzsql"] <- envOverride
+        let collection = ServiceCollection()
+        collection.AddSingleton<IConfiguration>(configuration :> IConfiguration) |> ignore
+        collection.BuildServiceProvider() :> IServiceProvider
+
+    let connectionProvider = ConnectionProvider.ResolveFrom(services)
+
+    let private postgresReachable =
+        lazy
+            try
+                use conn = connectionProvider.Open("rzsql")
+                conn.Dispose()
+                true
+            with _ -> false
+
+    /// Skips the calling test (NUnit Inconclusive) if Postgres isn't reachable
+    /// with the configured connection string. Call from each test or from a
+    /// fixture's SetUp.
+    let requirePostgres () =
+        if not postgresReachable.Value then
+            Assert.Ignore
+                ( "Skipping Postgres TP test: no reachable server at the configured "
+                + "connection string. Set REZOOM_TPU_POSTGRES to override." )
+
     let runOnTestData (cmd : Command<'a>) =
-        TestModel.Migrate(MigrationConfig.Default)
+        requirePostgres ()
+        TestModel.Migrate(MigrationConfig.Default, services)
         do
-            use cxt = new ConnectionContext()
+            use cxt = new ConnectionContext(connectionProvider)
             CleanTestData.Command().Execute(cxt)
-        TestModel.Migrate(MigrationConfig.Default)
-        use cxt = new ConnectionContext()
+        TestModel.Migrate(MigrationConfig.Default, services)
+        use cxt = new ConnectionContext(connectionProvider)
         TestData.Command().Execute(cxt)
         cmd.Execute(cxt)

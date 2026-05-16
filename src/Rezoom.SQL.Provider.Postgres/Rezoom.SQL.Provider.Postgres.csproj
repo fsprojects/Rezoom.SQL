@@ -7,7 +7,7 @@
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
-    <Version>0.12.0</Version>
+    <Version>0.12.1</Version>
     <Authors>Robert Peele</Authors>
     <Description>Convenience meta-package: Rezoom.SQL.Provider with the Npgsql driver for PostgreSQL.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Rezoom.SQL.Provider" Version="0.12.0" />
+    <PackageReference Include="Rezoom.SQL.Provider" Version="0.12.1" />
     <PackageReference Include="Npgsql" Version="8.0.5" />
   </ItemGroup>
 

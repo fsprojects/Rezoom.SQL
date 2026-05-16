@@ -336,3 +336,15 @@ type SyncCommandBatch(conn : DbConnection, tran : DbTransaction) =
                 arrs.[builderIndex].[resultsIndex] |> Unchecked.unbox : 'a
         build builders conn tran cmd retrieveResult
 
+/// Runtime helpers invoked from TP-generated parameter-binding code. These exist
+/// because the ProvidedTypes IL emitter doesn't support enum operations, so the
+/// SQLite DateTime quotation can't inline the Kind comparison itself — it calls
+/// down here instead.
+type SqliteValueCodec =
+    static member NormalizeDateTimeForSqlite(dt : DateTime) : string =
+        let utc =
+            if dt.Kind = DateTimeKind.Unspecified
+            then DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+            else dt.ToUniversalTime()
+        utc.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ")
+

@@ -91,13 +91,11 @@ type SQLiteBackend() =
             | DateTimeType ->
                 let transform (expr : Quotations.Expr) =
                     let xform (dtExpr : Quotations.Expr<DateTime>) =
-                        <@  let utcDt =
-                                let dtExpr = %dtExpr
-                                if dtExpr.Kind = DateTimeKind.Unspecified
-                                then DateTime.SpecifyKind(dtExpr, DateTimeKind.Utc)
-                                else dtExpr.ToUniversalTime()
-                            utcDt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") |> box
-                        @>
+                        // The ProvidedTypes IL emitter doesn't handle operators on
+                        // enum types (DateTimeKind), so we can't inline the Kind
+                        // check here. Defer to a static runtime helper in Mapping
+                        // and keep this quotation method-call-only.
+                        <@  SqliteValueCodec.NormalizeDateTimeForSqlite(%dtExpr) |> box @>
                     let xform (dtExpr : Quotations.Expr) =
                         (xform (Expr.Cast(Expr.Coerce(dtExpr, typeof<DateTime>)))).Raw
                     let ty = expr.Type

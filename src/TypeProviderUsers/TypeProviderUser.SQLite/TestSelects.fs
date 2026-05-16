@@ -111,13 +111,15 @@ let ``test empty many`` () =
 
 [<Test>]
 let ``replay works`` () =
+    // Seed the DB once via the sync helper, then exercise the plan-based path.
+    TestInInteger.Command([| 1L |]) |> runOnTestData |> ignore
     let plan =
         plan {
             let! r1 = TestInInteger.Command([| 1L |]).Plan()
             let! r2 = TestInInteger.Command([| 2L |]).Plan()
             return r1.[0].Email, r2.[0].Email
         }
-    let config = Execution.ExecutionConfig.Default
+    let config = executionConfig
     let serializer =
         let bin = FsPickler.CreateBinarySerializer()
         { new Replay.IReplaySerializer with
@@ -146,12 +148,15 @@ type InsertPicture = SQL<"insert into Pictures row SHA256 = @sha, PNGData = @png
 
 [<Test>]
 let ``lotsa parameters`` () =
+    // Migrate + seed by running any test command first; runOnTestData drops/recreates
+    // the SQLite file each invocation.
+    TestInInteger.Command([| 1L |]) |> runOnTestData |> ignore
     let task =
         plan {
             let g() = Guid.NewGuid().ToByteArray()
             for i in batch [0..2000] do
                 do! InsertPicture.Command(g(), g()).Plan()
-        } |> Execution.execute Execution.ExecutionConfig.Default
+        } |> Execution.execute executionConfig
     task.Wait()
 
 open Rezoom.SQL.Raw

@@ -1,4 +1,4 @@
-﻿module TypeProviderUser.SQLite.TestSelects
+﻿module TypeProviderUser.Postgres.TestSelects
 open System
 open System.Threading
 open System.Threading.Tasks
