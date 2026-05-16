@@ -72,8 +72,9 @@ $pkgs = @(
     'rezoom.sql.mapping','rezoom.sql.compiler','rezoom.sql.provider',
     'rezoom.sql.provider.sqlite','rezoom.sql.provider.tsql','rezoom.sql.provider.postgres'
 )
+$packagesRoot = Join-Path $HOME '.nuget/packages'
 foreach ($p in $pkgs) {
-    $cacheDir = Join-Path "$env:USERPROFILE\.nuget\packages" "$p\$fullVersion"
+    $cacheDir = Join-Path $packagesRoot "$p/$fullVersion"
     if (Test-Path $cacheDir) { Remove-Item -Recurse -Force $cacheDir }
 }
 

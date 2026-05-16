@@ -2,6 +2,11 @@
 
 Notes for working on this repo.
 
+## Prerequisites
+
+- .NET SDK 10 or newer
+- PowerShell 5.1+ on Windows; PowerShell 7+ on Linux/macOS (install: <https://learn.microsoft.com/powershell/scripting/install/installing-powershell>). The build scripts (`build/pack-dev.ps1`, `build/pack-release.ps1`) are pwsh-only.
+
 ## Repo layout assumption
 
 The dev workflow assumes you have this repo cloned alongside its sibling
