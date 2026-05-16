@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
-    <Version>0.9.0</Version>
+    <Version>0.10.0</Version>
     <Authors>Robert Peele</Authors>
     <Description>Mapping / data reader infrastructure for Rezoom.SQL.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -38,6 +38,7 @@
     <Compile Include="Raw.fs" />
     <Compile Include="CommandBatch.fs" />
     <Compile Include="ConnectionProvider.fs" />
+    <Compile Include="ConfigurationConnectionProvider.fs" />
     <Compile Include="ConnectionContext.fs" />
     <Compile Include="Asynchronous.fsi" />
     <Compile Include="Asynchronous.fs" />
@@ -52,6 +53,7 @@
     <PackageReference Include="LicenseToCIL" Version="1.1.0" />
     <PackageReference Include="Rezoom" Version="1.4.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
   </ItemGroup>
 
   <!-- TypeBuilder / DynamicMethod / LocalBuilder are not in the netstandard2.0 BCL surface,

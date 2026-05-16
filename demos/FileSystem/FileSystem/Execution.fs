@@ -23,11 +23,12 @@ type DemoExecutionLog() =
 // Now we write a wrapper function around Rezoom.Execution.execute
 // that uses our logger in the config and records the # of batches.
 
-let executeSmart (plan : 'a Plan) =
+let executeSmart (services : IServiceProvider) (plan : 'a Plan) =
     task {
         let log = DemoExecutionLog()
         let config =
             { ExecutionConfig.Default with
+                Services = services
                 Instance = fun () -> ExecutionInstance(log)
             }
         let! result = execute config plan
@@ -81,11 +82,8 @@ type private DumbPlanContext(services : IServiceProvider) =
     interface IDisposable with
         member this.Dispose() = this.Dispose()
 
-let executeDumb (plan : 'a Plan) =
+let executeDumb (services : IServiceProvider) (plan : 'a Plan) =
     task {
-        let services =
-            { new IServiceProvider with
-                member __.GetService(_) = null }
         let token = CancellationToken.None
         use context = new DumbPlanContext(services)
         let mutable errandCount = 0

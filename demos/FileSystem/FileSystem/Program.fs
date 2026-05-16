@@ -1,15 +1,19 @@
 ﻿open System
 open System.Diagnostics
 open System.Security
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
 open Rezoom
+open Rezoom.SQL.Mapping
 open FileSystem
 open FileSystem.Execution
 
 let mutable dumbMode = false
+let mutable services : IServiceProvider = null
 
 let execute plan =
-    if dumbMode then executeDumb plan
-    else executeSmart plan
+    if dumbMode then executeDumb services plan
+    else executeSmart services plan
 
 let bench description (plan : 'a Plan) =
     let stopwatch = Stopwatch()
@@ -160,7 +164,26 @@ let mainLoop () =
 
 [<EntryPoint>]
 let main argv =
-    DemoSetup.migrate()
+    // Configuration: appsettings.json + environment variables (which override).
+    // The connection string for "rzsql" comes from ConnectionStrings:rzsql.
+    let configuration =
+        ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional = false)
+            .AddEnvironmentVariables()
+            .Build() :> IConfiguration
+
+    // DI: register the configuration-backed ConnectionProvider that Rezoom.SQL ships
+    // and (for non-dumb mode) we'd register PlanExecutor here too — but this demo
+    // wires its own ExecutionConfig in executeSmart because it wants a custom
+    // ExecutionLog for the "round trips saved" stat.
+    let collection = ServiceCollection()
+    collection.AddSingleton<IConfiguration>(configuration) |> ignore
+    collection.AddSingleton<ConnectionProvider, ConfigurationConnectionProvider>() |> ignore
+    use provider = collection.BuildServiceProvider()
+    services <- provider :> IServiceProvider
+
+    let connections = provider.GetRequiredService<ConnectionProvider>()
+    DemoSetup.migrate(connections)
     bench "Set up demo data" DemoSetup.setUpDemoData
     mainLoop()
     0 // return an integer exit code

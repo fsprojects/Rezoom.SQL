@@ -19,7 +19,7 @@
     <Compile Include="Domain.fs" />
     <Compile Include="Execution.fs" />
     <Compile Include="Program.fs" />
-    <None Include="App.config" />
+    <None Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
     <EmbeddedResource Include="V1.model.sql" />
     <EmbeddedResource Include="rzsql.json" />
   </ItemGroup>
@@ -27,9 +27,13 @@
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />
     <PackageReference Include="Rezoom" Version="1.4.0" />
-    <PackageReference Include="Rezoom.SQL.Compiler" Version="0.9.0" />
-    <PackageReference Include="Rezoom.SQL.Mapping" Version="0.9.0" />
-    <PackageReference Include="Rezoom.SQL.Provider" Version="0.9.0" />
+    <PackageReference Include="Rezoom.SQL.Compiler" Version="0.10.0" />
+    <PackageReference Include="Rezoom.SQL.Mapping" Version="0.10.0" />
+    <PackageReference Include="Rezoom.SQL.Provider" Version="0.10.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <!-- Runtime driver for TSQL; loaded reflectively by Rezoom.SQL's ConnectionProvider. -->
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
