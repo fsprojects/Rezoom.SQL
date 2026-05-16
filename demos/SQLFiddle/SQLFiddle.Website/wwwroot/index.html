@@ -147,11 +147,11 @@
                     var session = ({ ModelError: modelSession, CommandError: commandSession })[err.type.case];
                     var row = Math.max(0, err.startLine - 1);
                     var col = Math.max(0, err.startColumn - 1);
-                    session.setAnnotations([{ row: row, column: col, text: err.reason }]);
+                    session.setAnnotations([{ row: row, column: col, text: err.reason, type: 'error' }]);
                     removeMarker();
 
                     var range = new AceRange(row, col, Math.max(0, err.endLine - 1), Math.max(0, err.endColumn - 1));
-                    var markerId = session.addMarker(range, 'error-marker');
+                    var markerId = session.addMarker(range, 'error-marker', 'text');
                     removeMarker = function () {
                         session.removeMarker(markerId);
                     };
@@ -159,8 +159,8 @@
                     $output.toggleClass('valid', false);
 
                     $output.text(err.message);
-                    modelOutput.setValue('');
-                    commandOutput.setValue('');
+                    modelOutput.setValue('', -1);
+                    commandOutput.setValue('', -1);
                 },
                 FiddleValid: function () {
                     currentValid = true;

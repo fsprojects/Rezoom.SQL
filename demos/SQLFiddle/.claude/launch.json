@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sqlfiddle",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--no-launch-profile", "--urls", "http://localhost:5050", "--project", "SQLFiddle.Website"],
+      "port": 5050
+    }
+  ]
+}
