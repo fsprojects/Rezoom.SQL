@@ -1,6 +1,7 @@
-﻿/// Provides helpers for building raw SQL commands and parameters.
-/// This stuff does *NOT* go through RZSQL parsing/typechecking/translation.
-/// It should be a last resort for when you absolutely can't accomplish what you're doing statically.
+/// Helpers for building the raw SQL fragments and inline parameters that
+/// `unsafe_inject_raw` accepts inside an otherwise-static `SQL<...>` query.
+/// Anything passed through here bypasses RZSQL parsing, typechecking, and
+/// dialect translation, so write your fragments in your backend's native SQL.
 module Rezoom.SQL.Raw
 open System
 open System.Data
@@ -40,19 +41,3 @@ let arg (o : obj) =
         if isNull o then DbType.Object
         else guessDbType (o.GetType())
     argOfType dbType o
-
-let connectionDynamicCommand<'row> connectionName backendName (sql : CommandFragment array) =
-    let cmdData =
-        {   ConnectionName = connectionName // should match the one in rzsql.json / appsettings.json
-            BackendName = backendName       // matches rzsql.json's `backend` setting
-            Fragments = sql
-            Identity = ""
-            DependencyMask = Rezoom.BitMask.Full
-            InvalidationMask = Rezoom.BitMask.Full
-            Cacheable = false
-            ResultSetCount = None // not statically known
-        }
-    CommandConstructor.Command1<'row IReadOnlyList>(cmdData, [||])
-
-let dynamicCommand<'row> backendName (sql : CommandFragment array) =
-    connectionDynamicCommand<'row> "rzsql" backendName sql
