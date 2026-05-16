@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>SQLFiddle</RootNamespace>
     <AssemblyName>SQLFiddle</AssemblyName>
     <IsPackable>false</IsPackable>
@@ -24,10 +24,10 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />
-    <PackageReference Include="Rezoom" Version="1.1.0" />
-    <PackageReference Include="Rezoom.SQL.Compiler" Version="0.5.0" />
-    <PackageReference Include="Rezoom.SQL.Mapping" Version="0.5.0" />
-    <PackageReference Include="Rezoom.SQL.Provider" Version="0.7.2" />
+    <PackageReference Include="Rezoom" Version="1.1.1" />
+    <PackageReference Include="Rezoom.SQL.Compiler" Version="0.7.3" />
+    <PackageReference Include="Rezoom.SQL.Mapping" Version="0.7.3" />
+    <PackageReference Include="Rezoom.SQL.Provider" Version="0.7.3" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
   </ItemGroup>
 
