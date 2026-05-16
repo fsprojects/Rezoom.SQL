@@ -77,6 +77,11 @@ type ResultSetProcessor<'output>() =
 [<NoEquality>]
 type CommandData =
     {   ConnectionName : string
+        /// Compile-time dialect identifier: "sqlite", "tsql", "postgres", "rzsql".
+        /// Set by the TP from rzsql.json's `backend` setting. Passed to the
+        /// ConnectionProvider when opening connections so a configuration-driven
+        /// provider can default the ADO.NET driver invariant per dialect.
+        BackendName : string
         Identity : string
         Fragments : CommandFragment IReadOnlyList
         DependencyMask : BitMask

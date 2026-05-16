@@ -6,6 +6,7 @@ open System.Reflection
 open FSharp.Core.CompilerServices
 open FSharp.Quotations
 open FSharp.Reflection
+open Microsoft.Extensions.Configuration
 open ProviderImplementation.ProvidedTypes
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations
 open Rezoom
@@ -170,16 +171,15 @@ let private maskOfTables (model : UserModel) (tables : QualifiedObjectName seq) 
             mask <- mask.WithBit(id % 128, true)
     mask
 
-/// Quotation that registers this model's backend-default provider invariant
-/// against its connection name with ConfigurationConnectionProvider. Prepended
-/// to every TP-generated Migrate and Command invokeCode so the runtime knows
-/// which ADO.NET driver to use without requiring a RezoomSQL:Providers config
-/// entry. Idempotent and cheap (one ConcurrentDictionary write).
-let private registerBackendDefaultExpr (generate : GenerateType) (backend : IBackend) =
-    let name = Quotations.Expr.Value(generate.UserModel.ConnectionName)
-    let invariant = Quotations.Expr.Value(backend.DefaultProviderName)
-    <@@ ConfigurationConnectionProvider.RegisterBackendDefault
-            ((%%name : string), (%%invariant : string)) @@>
+/// Canonical lowercase name for a configured backend. Matches the lookup keys
+/// in ConfigurationConnectionProvider's canonical-driver dictionary and the
+/// strings the user writes in rzsql.json.
+let private backendNameOf (config : Config.Config) =
+    match config.Backend with
+    | Config.ConfigBackend.SQLite -> "sqlite"
+    | Config.ConfigBackend.TSQL -> "tsql"
+    | Config.ConfigBackend.Postgres -> "postgres"
+    | Config.ConfigBackend.Identity -> "rzsql"
 
 let private generateCommandMethod
     (generate : GenerateType) (command : CommandEffect) (retTy : Type) (callMeth : MethodInfo) =
@@ -199,6 +199,7 @@ let private generateCommandMethod
                 )
             | None -> false, BitMask.Full, BitMask.Full // assume the worst
         <@@ {   ConnectionName = %%Quotations.Expr.Value(generate.UserModel.ConnectionName)
+                BackendName = %%Quotations.Expr.Value(backendNameOf generate.UserModel.Config)
                 Identity = %%Quotations.Expr.Value(identity)
                 Fragments = (%%fragments : _ array) :> _ IReadOnlyList
                 Cacheable = %%Quotations.Expr.Value(cacheable)
@@ -240,9 +241,7 @@ let private generateCommandMethod
                             let dbType = Quotations.Expr.Value(tx.ParameterType)
                             <@@ ScalarParameter(%%dbType, %%tx.ValueTransform ex) @@>)
                     )
-            Expr.Sequential
-                ( registerBackendDefaultExpr generate backend
-                , Expr.CallUnchecked(callMeth, [ commandData; arr ])))
+            Expr.CallUnchecked(callMeth, [ commandData; arr ]))
     meth
 
 let validateSQLCommand (generate : GenerateType) (effect : CommandEffect) =
@@ -320,23 +319,22 @@ let generateSQLType (generate : GenerateType) (sql : string) =
 let generateMigrationMembers
     (config : Config.Config) (backend : IBackend) (provided : ProvidedTypeDefinition) migrationProperty =
     // Two Migrate overloads:
-    //   Migrate(MigrationConfig, IServiceProvider) is the DI-friendly one.
-    //     The services provider lets ConnectionProvider.ResolveFrom pick an
-    //     explicitly-registered ConnectionProvider, falling back to a
-    //     ConfigurationConnectionProvider built from a registered IConfiguration.
-    //   Migrate(MigrationConfig, string) is the connection-string shortcut
-    //     for standalone migrator tools that just want to point at
-    //     dev/staging/prod without going through IConfiguration. It uses the
-    //     backend's canonical ADO.NET provider invariant (e.g. Npgsql for Postgres).
+    //   Migrate(MigrationConfig, IServiceProvider) reads the connection string
+    //     from a registered IConfiguration. The backend's canonical ADO.NET
+    //     driver invariant is used (Microsoft.Data.Sqlite, Npgsql, etc.).
+    //   Migrate(MigrationConfig, string) takes the connection string directly,
+    //     intended for standalone migrator tools that don't want IConfiguration.
+    // Migration is its own concern: it doesn't go through ConnectionProvider
+    // even when one is registered. Users with custom ConnectionProviders who
+    // need migration to honor their routing should use the connection-string
+    // overload and supply the string themselves.
     // Note: NOT `ignore <| try ... finally ...` and NOT a unit-typed try block;
     // ProvidedTypes' IL translator generates invalid IL for those shapes. The
     // `let _ = try ... 0 finally ...; ()` form works around it.
     let connectionName = Quotations.Expr.Value(config.ConnectionName)
     let providerInvariant = Quotations.Expr.Value(backend.DefaultProviderName)
     let runMigration backendInstanceExpr configExpr =
-        <@@ ConfigurationConnectionProvider.RegisterBackendDefault
-                ((%%connectionName : string), (%%providerInvariant : string))
-            let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
+        <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
             let backendInstance : IMigrationBackend = %%backendInstanceExpr
             let _ =
                 try
@@ -346,6 +344,11 @@ let generateMigrationMembers
                     backendInstance.Dispose()
             ()
         @@>
+    let buildInfoExpr connectionStringExpr =
+        <@@ {   Name = (%%connectionName : string)
+                ConnectionString = (%%connectionStringExpr : string)
+                ProviderName = (%%providerInvariant : string)
+            } @@>
     do
         let pars =
             [   ProvidedParameter("config", typeof<MigrationConfig>)
@@ -354,17 +357,30 @@ let generateMigrationMembers
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
             | [ configArg; services ] ->
                 let backendInstance =
-                    <@@ let provider = ConnectionProvider.ResolveFrom((%%services : IServiceProvider))
-                        (%backend.MigrationBackend) (provider.GetConnectionString(%%connectionName))
+                    <@@ let svc = (%%services : IServiceProvider)
+                        let cfg = svc.GetService(typeof<IConfiguration>) :?> IConfiguration
+                        if isNull cfg then
+                            failwith
+                                "Migrate(MigrationConfig, IServiceProvider) needs an IConfiguration \
+                                 registered in the service provider. Either register one (standard \
+                                 for ASP.NET Core / generic host) or use the \
+                                 Migrate(MigrationConfig, connectionString) overload."
+                        let connStr = cfg.[sprintf "ConnectionStrings:%s" (%%connectionName : string)]
+                        if System.String.IsNullOrEmpty(connStr) then
+                            failwithf
+                                "No connection string named '%s' in configuration (looked for ConnectionStrings:%s)"
+                                (%%connectionName : string) (%%connectionName : string)
+                        let info : ConnectionInfo =
+                            {   Name = (%%connectionName : string)
+                                ConnectionString = connStr
+                                ProviderName = (%%providerInvariant : string)
+                            }
+                        (%backend.MigrationBackend) info
                     @@>
                 runMigration backendInstance configArg
             | _ -> bug "Invalid migrate argument list")
         provided.AddMember meth
     do
-        // Connection-string overload: builds a ConnectionInfo inline using the
-        // configured connection name and the backend's canonical ADO.NET provider
-        // invariant. For migrator tools / scripts that want to skip DI.
-        let providerName = providerInvariant
         let pars =
             [   ProvidedParameter("config", typeof<MigrationConfig>)
                 ProvidedParameter("connectionString", typeof<string>)
@@ -372,11 +388,7 @@ let generateMigrationMembers
         let meth = ProvidedMethod("Migrate", pars, typeof<unit>, isStatic = true, invokeCode = function
             | [ configArg; connectionString ] ->
                 let backendInstance =
-                    <@@ let info =
-                            {   Name = (%%connectionName : string)
-                                ConnectionString = (%%connectionString : string)
-                                ProviderName = (%%providerName : string)
-                            }
+                    <@@ let info : ConnectionInfo = %%buildInfoExpr connectionString
                         (%backend.MigrationBackend) info
                     @@>
                 runMigration backendInstance configArg
@@ -403,20 +415,6 @@ let generateModelType (generate : GenerateType) =
         )), isStatic = true)
     provided.AddMember <| migrationsProperty
     generateMigrationMembers generate.UserModel.Config backend provided migrationsProperty
-    // Static initializer: register the backend's default ADO.NET provider invariant
-    // for this connection name with ConfigurationConnectionProvider. This fires the
-    // first time anything in user code touches the model type (which the JIT does
-    // as soon as the type is referenced), so health-check probes that hit a
-    // ConfigurationConnectionProvider before Migrate runs still see the right
-    // default driver.
-    do
-        let connectionName = Quotations.Expr.Value(generate.UserModel.ConnectionName)
-        let providerInvariant = Quotations.Expr.Value(backend.DefaultProviderName)
-        let cctor = ProvidedConstructor([], fun _ ->
-            <@@ ConfigurationConnectionProvider.RegisterBackendDefault
-                    ((%%connectionName : string), (%%providerInvariant : string)) @@>)
-        cctor.IsTypeInitializer <- true
-        provided.AddMember cctor
     provided
 
 let generateType (generate : GenerateType) =

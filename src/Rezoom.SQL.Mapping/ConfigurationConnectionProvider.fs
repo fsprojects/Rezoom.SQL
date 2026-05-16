@@ -1,7 +1,21 @@
 namespace Rezoom.SQL.Mapping
 open System
-open System.Collections.Concurrent
+open System.Collections.Generic
 open Microsoft.Extensions.Configuration
+
+/// Settings for a single named connection: connection string + ADO.NET provider invariant.
+/// Built by <see cref="ConfigurationConnectionProvider"/> and consumed by dialect
+/// migration backends. Not part of <see cref="ConnectionProvider"/>'s abstract
+/// surface; it's an implementation detail of the configuration-driven path.
+[<NoEquality; NoComparison>]
+type ConnectionInfo =
+    {   /// The logical name this connection is known by.
+        Name : string
+        ConnectionString : string
+        /// Provider invariant. e.g. <c>"Microsoft.Data.SqlClient"</c>,
+        /// <c>"Npgsql"</c>, <c>"Microsoft.Data.Sqlite"</c>.
+        ProviderName : string
+    }
 
 /// <summary>
 /// <see cref="ConnectionProvider"/> that resolves settings via Microsoft.Extensions.Configuration
@@ -12,36 +26,29 @@ open Microsoft.Extensions.Configuration
 /// Looks up:
 /// <list type="bullet">
 ///   <item>Connection string at <c>ConnectionStrings:{name}</c></item>
-///   <item>Provider invariant at <c>RezoomSQL:Providers:{name}</c>. If that's not
-///         set, falls back to a backend default registered by the TP-generated
-///         code for this connection name (e.g. <c>Microsoft.Data.Sqlite</c> for a
-///         SQLite project). If nothing is registered either, falls back to
-///         <c>Microsoft.Data.SqlClient</c>.</item>
+///   <item>Provider invariant at <c>RezoomSQL:Providers:{name}</c>. If not set,
+///         picks the canonical ADO.NET driver for the backend name passed by the
+///         TP-generated code (e.g. <c>Microsoft.Data.Sqlite</c> for SQLite). Set
+///         <c>RezoomSQL:Providers:{name}</c> to override for non-canonical drivers.</item>
 /// </list>
-/// Typical ASP.NET Core registration:
-/// <code>
-///   services.AddSingleton&lt;ConnectionProvider, ConfigurationConnectionProvider&gt;();
-/// </code>
 /// </remarks>
 type ConfigurationConnectionProvider(configuration : IConfiguration) =
     inherit ConnectionProvider()
 
-    [<Literal>]
-    static let HardcodedFallback = "Microsoft.Data.SqlClient"
+    /// Backend name -> canonical ADO.NET provider invariant. Matches what the
+    /// wrapper meta-packages (Rezoom.SQL.Provider.{SQLite,TSQL,Postgres}) ship.
+    /// The "rzsql" no-op backend points at SqlClient as a placeholder; if you're
+    /// actually running migrations on the Identity backend, register a custom
+    /// ConnectionProvider or set RezoomSQL:Providers:{name} explicitly.
+    static let canonicalDriver : IDictionary<string, string> =
+        let d = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        d.["sqlite"] <- "Microsoft.Data.Sqlite"
+        d.["tsql"] <- "Microsoft.Data.SqlClient"
+        d.["postgres"] <- "Npgsql"
+        d.["rzsql"] <- "Microsoft.Data.SqlClient"
+        upcast d
 
-    static let backendDefaults = ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-
-    /// Registers the canonical ADO.NET provider invariant for a given connection
-    /// name. The TP-generated Migrate and Command code calls this at first touch
-    /// so users don't have to write a RezoomSQL:Providers:{name} section in
-    /// appsettings.json for the 99% case where one project targets one backend.
-    /// Idempotent. Last writer wins if multiple registrations collide on the same
-    /// connection name; an explicit RezoomSQL:Providers config entry overrides
-    /// this registry entirely.
-    static member RegisterBackendDefault(connectionName : string, providerInvariant : string) =
-        backendDefaults.[connectionName] <- providerInvariant
-
-    override __.GetConnectionString(name) =
+    member __.GetConnectionInfo(name : string, backendName : string) : ConnectionInfo =
         let connectionString = configuration.[sprintf "ConnectionStrings:%s" name]
         if String.IsNullOrEmpty(connectionString) then
             failwithf
@@ -50,16 +57,20 @@ type ConfigurationConnectionProvider(configuration : IConfiguration) =
         let providerName =
             match configuration.[sprintf "RezoomSQL:Providers:%s" name] with
             | null | "" ->
-                let registered, value = backendDefaults.TryGetValue(name)
-                if registered then value else HardcodedFallback
+                let succ, v = canonicalDriver.TryGetValue(backendName)
+                if succ then v
+                else
+                    failwithf
+                        "Unknown backend '%s' for connection '%s' and no RezoomSQL:Providers:%s override in configuration"
+                        backendName name name
             | v -> v
         {   Name = name
             ConnectionString = connectionString
             ProviderName = providerName
         }
 
-    override this.Open(name) =
-        let info = this.GetConnectionString(name)
+    override this.Open(name, backendName) =
+        let info = this.GetConnectionInfo(name, backendName)
         let factory = NetStandardHacks.DbProviderFactories.GetFactory(info.ProviderName)
         let conn = factory.CreateConnection()
         if isNull conn then
@@ -76,9 +87,7 @@ type ConfigurationConnectionProvider(configuration : IConfiguration) =
 /// Augments ConnectionProvider with a static factory that resolves from any host's
 /// IServiceProvider. It tries an explicitly-registered ConnectionProvider first,
 /// then falls back to constructing a ConfigurationConnectionProvider from a
-/// registered IConfiguration. This is what plan execution and TP-generated Migrate
-/// calls use, so any host with a normal ASP.NET Core / generic-host setup gets
-/// connection-string resolution for free without registering anything Rezoom-specific.
+/// registered IConfiguration.
 [<AutoOpen>]
 module ConnectionProviderExtensions =
     type ConnectionProvider with

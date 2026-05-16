@@ -11,10 +11,10 @@ open System.Threading
 
 type private Connections(provider : ConnectionProvider) =
     let connections = Dictionary()
-    member __.GetConnection(name) : DbConnection * DbTransaction =
+    member __.GetConnection(name, backendName) : DbConnection * DbTransaction =
         let succ, tuple = connections.TryGetValue(name)
         if succ then tuple else
-        let conn = provider.Open(name)
+        let conn = provider.Open(name, backendName)
         let tran = provider.BeginTransaction(conn)
         let tuple = conn, tran
         connections.Add(name, tuple)
@@ -54,10 +54,10 @@ type private ConnectionsLocal() =
 
 type private Batches(conns : Connections) =
     let batches = Dictionary()
-    member __.GetBatch(name) =
+    member __.GetBatch(name, backendName) =
         let succ, batch = batches.TryGetValue(name)
         if succ then batch else
-        let conn, tran = conns.GetConnection(name)
+        let conn, tran = conns.GetConnection(name, backendName)
         let batch = AsyncCommandBatch(conn, tran)
         batches.Add(name, batch)
         batch
@@ -90,7 +90,7 @@ type private CommandErrand<'a>(command : Command<'a>) =
     override __.SequenceGroup = null
     override __.Prepare(cxt) =
         let batches = cxt.GetPlanLocal<BatchesLocal, _>()
-        batches.GetBatch(command.ConnectionName).Batch(command)
+        batches.GetBatch(command.ConnectionName, command.BackendName).Batch(command)
     override __.ToString() =
         let all = CommandFragment.Stringize(command.Fragments)
         let truncate = 80
@@ -145,6 +145,7 @@ and private SharedCommandLookupLocal<'id, 'a when 'id : equality>() =
 and SharedCommandFactory<'id, 'a when 'id : equality>(buildCommand : 'id seq -> Command<'a IReadOnlyList>, selector : 'a -> 'id) =
     let templateCommand = buildCommand Seq.empty
     let connectionName = templateCommand.ConnectionName
+    let backendName = templateCommand.BackendName
     let cacheArgument = CommandErrandArgument(templateCommand.Parameters)
     member internal __.BuildCommand = buildCommand
     member internal __.Selector = selector
@@ -158,7 +159,7 @@ and SharedCommandFactory<'id, 'a when 'id : equality>(buildCommand : 'id seq -> 
                 templateCommand.ToString() + " (Arg = " + string (box id) + ")"
             override __.Prepare(cxt) =
                 let batches = cxt.GetPlanLocal<BatchesLocal, _>()
-                let batch = batches.GetBatch(connectionName)
+                let batch = batches.GetBatch(connectionName, backendName)
                 let subErrands = cxt.GetPlanLocal<SharedCommandLookupLocal<'id, 'a>, _>().ByFactory(factory, batch)
                 subErrands.PrepareId(id)
         } :> Errand<'a IReadOnlyList>

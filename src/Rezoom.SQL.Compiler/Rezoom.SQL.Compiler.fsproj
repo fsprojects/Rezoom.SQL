@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
-    <Version>0.12.3</Version>
+    <Version>0.13.0</Version>
     <Authors>Robert Peele</Authors>
     <Description>Compiler and dialect translators for Rezoom.SQL.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>0.12.3: TP-generated Migrate and Command code registers the backend's default ADO.NET provider invariant with ConfigurationConnectionProvider at first touch. RezoomSQL:Providers in appsettings.json is now optional and only needed when overriding the dialect default.</PackageReleaseNotes>
+    <PackageReleaseNotes>0.13.0: ConnectionProvider returns to its minimal abstract shape (Open / BeginTransaction). ConnectionInfo and configuration concerns move to ConfigurationConnectionProvider. Commands now carry their compile-time BackendName so the provider can pick the right ADO.NET driver without static side-channel registration. Breaking change for custom ConnectionProvider subclasses: Open now takes (connectionName, backendName).</PackageReleaseNotes>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 

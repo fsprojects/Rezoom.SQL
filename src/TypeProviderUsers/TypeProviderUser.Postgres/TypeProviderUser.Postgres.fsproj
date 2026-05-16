@@ -28,7 +28,7 @@
     <PackageReference Include="Rezoom" Version="1.4.0" />
     <!-- Wrapper meta-package: brings in Rezoom.SQL.Provider, Compiler, Mapping, and
          Npgsql as the PostgreSQL runtime driver. -->
-    <PackageReference Include="Rezoom.SQL.Provider.Postgres" Version="0.12.3" />
+    <PackageReference Include="Rezoom.SQL.Provider.Postgres" Version="0.13.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.0" />

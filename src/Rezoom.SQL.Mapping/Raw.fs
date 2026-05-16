@@ -41,9 +41,10 @@ let arg (o : obj) =
         else guessDbType (o.GetType())
     argOfType dbType o
 
-let connectionDynamicCommand<'row> connectionName (sql : CommandFragment array) =
+let connectionDynamicCommand<'row> connectionName backendName (sql : CommandFragment array) =
     let cmdData =
         {   ConnectionName = connectionName // should match the one in rzsql.json / appsettings.json
+            BackendName = backendName       // matches rzsql.json's `backend` setting
             Fragments = sql
             Identity = ""
             DependencyMask = Rezoom.BitMask.Full
@@ -53,5 +54,5 @@ let connectionDynamicCommand<'row> connectionName (sql : CommandFragment array) 
         }
     CommandConstructor.Command1<'row IReadOnlyList>(cmdData, [||])
 
-let dynamicCommand<'row> (sql : CommandFragment array) =
-    connectionDynamicCommand<'row> "rzsql" sql
+let dynamicCommand<'row> backendName (sql : CommandFragment array) =
+    connectionDynamicCommand<'row> "rzsql" backendName sql

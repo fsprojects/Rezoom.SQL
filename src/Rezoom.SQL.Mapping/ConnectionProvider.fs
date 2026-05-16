@@ -3,30 +3,17 @@ open System
 open System.Data.Common
 open System.Reflection
 
-/// Settings for a single named connection: connection string + provider invariant.
-/// Returned by <see cref="ConnectionProvider.GetConnectionString"/> and consumed by
-/// dialect-specific migration backends.
-[<NoEquality; NoComparison>]
-type ConnectionInfo =
-    {   /// The logical name this connection is known by (matches the name passed to
-        /// <see cref="ConnectionProvider.GetConnectionString"/>).
-        Name : string
-        ConnectionString : string
-        /// Provider invariant. e.g. <c>"Microsoft.Data.SqlClient"</c>,
-        /// <c>"Npgsql"</c>, <c>"Microsoft.Data.Sqlite"</c>.
-        ProviderName : string
-    }
-
+/// Minimal abstraction over "give me a live DbConnection by name." Implementations
+/// decide how to resolve a name to a connection (config file, secrets store,
+/// custom routing, test fixture intercept, etc.). The backend name is the
+/// compile-time-known dialect ("sqlite", "tsql", "postgres", "rzsql") from
+/// rzsql.json; implementations are free to ignore it. ConfigurationConnectionProvider
+/// uses it to pick a default ADO.NET driver when none is set in config.
 [<AbstractClass>]
 type ConnectionProvider() =
-    /// Open a live <see cref="DbConnection"/> for the named connection.
-    abstract member Open : name : string -> DbConnection
+    abstract member Open : connectionName : string * backendName : string -> DbConnection
     abstract member BeginTransaction : DbConnection -> DbTransaction
     default __.BeginTransaction(conn) = conn.BeginTransaction()
-    /// Resolve a named connection to its <see cref="ConnectionInfo"/>. Used by
-    /// migrations, where the result is passed to the dialect's migration backend
-    /// constructor.
-    abstract member GetConnectionString : name : string -> ConnectionInfo
 
 module NetStandardHacks =
     let loadInstance (assemblyName : string) (typeName : string) =
