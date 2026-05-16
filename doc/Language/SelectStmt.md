@@ -21,7 +21,7 @@ element called _select-core_, which actually contains the keyword `SELECT`.
 
 ### _select-core_
 
-{% include "Diagrams/SelectCore.svg" %}
+![](Diagrams/SelectCore.svg)
 
 ## The `SELECT` clause
 
@@ -46,7 +46,7 @@ the following:
 
 ### _select-property_
 
-{% include "Diagrams/SelectProperty.svg" %}
+![](Diagrams/SelectProperty.svg)
 
 ## The `FROM` clause and _table-expr_
 
@@ -55,7 +55,7 @@ are specified in the `FROM` clause as a _table-expr_.
 
 ### _table-expr_
 
-{% include "Diagrams/TableExpr.svg" %}
+![](Diagrams/TableExpr.svg)
 
 The simplest case for a _table-expr_ is right along the top of this diagram. It
 is an [_object-name_](Name.md) referring to a table or view from which to select
@@ -226,7 +226,7 @@ _compound-expr_ using **compound operators**.
 
 ### _compound-expr_
 
-{% include "Diagrams/CompoundExpr.svg" %}
+![](Diagrams/CompoundExpr.svg)
 
 ## The compound operators
 
@@ -261,7 +261,7 @@ pulled from other tables.
 
 ### _select-stmt_
 
-{% include "Diagrams/SelectStmt.svg" %}
+![](Diagrams/SelectStmt.svg)
 
 A select statement always begins with a _compound-expr_. After the whole
 compound expression come clauses that control the ordering and truncation of the

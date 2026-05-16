@@ -90,7 +90,8 @@ let cmd : Command<ResultSets<IReadOnlyList<TwoSQL.Row1>, IReadOnlyList<TwoSQL.Ro
 ```
 
 Each `Command` object has a `ConnectionName` property. This determines the
-connection string name it will use (from App.config or Web.config) when
+connection string name it will use (from `IConfiguration`'s `ConnectionStrings`
+section — see [Runtime configuration](../Configuration/Configuration.md)) when
 executed. You can call `myCommand.WithConnectionName(newName)` to get a new
 `Command` object with a different `ConnectionName`. This is useful if you are
 using the same provided SQL command on multiple databases within the same

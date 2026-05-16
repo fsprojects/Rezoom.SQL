@@ -58,9 +58,8 @@ its result (of type `'a`), you **should not** use the `.Result` property. This
 will block the calling thread while waiting for the task to finish, defeating
 the entire point of using tasks in the first place!
 
-Instead, you can use [the task computation
-expression](https://github.com/rspeele/TaskBuilder.fs) that comes with Rezoom,
-like so:
+Instead, you can use F#'s built-in `task { }` computation expression (in
+FSharp.Core 5.0+), like so:
 
 ```fsharp
 open Rezoom.SQL

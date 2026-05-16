@@ -9,7 +9,7 @@ reference.
 
 ### _expr_
 
-{% include "Diagrams/Expr.svg" %}
+![](Diagrams/Expr.svg)
 
 ## The simplest expressions
 

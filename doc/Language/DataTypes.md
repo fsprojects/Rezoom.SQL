@@ -27,7 +27,7 @@ diagram:
 
 ### _type-name_
 
-{% include "Diagrams/TypeName.svg" %}
+![](Diagrams/TypeName.svg)
 
 # How types are inferred
 

@@ -7,7 +7,7 @@ excluded from this diagram -- see the bottom of this section for a full diagram.
 
 ### _delete-stmt_
 
-{% include "Diagrams/DeleteStmtSimple.svg" %}
+![](Diagrams/DeleteStmtSimple.svg)
 
 All of the complexity of a delete statement goes in its `where` clause, which
 determines which rows to delete from the table. Rows for which the `where`
@@ -28,4 +28,4 @@ itself, which may perform better on some database backends.
 
 This is the full syntax for the delete statement.
 
-{% include "Diagrams/DeleteStmt.svg" %}
+![](Diagrams/DeleteStmt.svg)

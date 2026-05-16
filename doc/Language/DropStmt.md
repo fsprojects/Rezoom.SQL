@@ -6,7 +6,7 @@ for that, refer to the documentation on [delete statements](DeleteStmt.md).
 
 ### _drop-stmt_
 
-{% include "Diagrams/DropStmt.svg" %}
+![](Diagrams/DropStmt.svg)
 
 You must specify the type of object you are removing with a drop statement. If
 you specify it incorrectly, RZSQL will yell at you during compilation. For

@@ -4,7 +4,7 @@ An **alter table** statement is used to edit the schema of a table.
 
 ### _alter-table_
 
-{% include "Diagrams/AlterTable.svg" %}
+![](Diagrams/AlterTable.svg)
 
 ## Core features
 

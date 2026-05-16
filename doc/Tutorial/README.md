@@ -3,29 +3,31 @@
 This tutorial will get you up and running with [Rezoom.SQL](https://github.com/rspeele/Rezoom.SQL).
 In just a few minutes, you'll be writing statically typed SQL in your program and running it on a SQLite database.
 
-You'll need [Visual Studio 2015 or 2017](https://www.visualstudio.com/downloads/) -- the free
-Community Edition is fine.
+You'll need [Visual Studio 2022 or newer](https://visualstudio.microsoft.com/downloads/),
+or the [.NET SDK](https://dotnet.microsoft.com/download) with your editor of
+choice. The free Community Edition of Visual Studio is fine.
 
-Make sure you check the box for "F# language support" in the installer.
-If you've already installed VS2017, you can re-run the installer and modify
-your installation to include F# language support.
+If you're using Visual Studio, make sure you check the box for "F# language
+support" in the installer. If you've already installed VS, you can re-run the
+installer and modify your installation to include F# language support.
 
 ## Creating a new F# project for the tutorial
 
-In Visual Studio, click File -> New -> Project.
-On the left side, select Templates -> Other Languages -> Visual F#, and select Console Application.
-Make sure you target .NET framework 4.5 or newer.
+In Visual Studio, click File -> New -> Project, and select F# Console Application.
+Make sure you target .NET 8 or newer.
+
+If you're using the .NET CLI, run `dotnet new console -lang F# -o RezoomSQLTutorial`
+in a fresh folder.
 
 ![screenshot of new project dialog](CreateNewProject.png)
 
 ## Installing Rezoom.SQL from NuGet
 
-In your new project, open up the package manager console window (View -> Other Windows -> Package Manager Console)
-and type:
+From the project folder, run:
 
-```powershell
-Install-Package Rezoom.SQL.Provider
-Install-Package Rezoom.SQL.Provider.SQLite
+```sh
+dotnet add package Rezoom.SQL.Provider
+dotnet add package Rezoom.SQL.Provider.SQLite
 ```
 
 This will add Rezoom.SQL and its dependencies to your project, along with a few files to help you get started.

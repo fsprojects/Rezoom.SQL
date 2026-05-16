@@ -17,7 +17,6 @@ the database connections will be disposed when the context is disposed.
 Example usage:
 
 ```fsharp
-open FSharp.Control.Tasks
 open Rezoom.SQL
 open Rezoom.SQL.Asynchronous
 

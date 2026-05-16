@@ -5,7 +5,7 @@ type of statement can take in RZSQL.
 
 ### _insert-stmt_
 
-{% include "Diagrams/InsertStmt.svg" %}
+![](Diagrams/InsertStmt.svg)
 
 In the first form, which is common to most SQL databases, you specify the column
 names you'll be supplying data for, then give the data using a select statement.

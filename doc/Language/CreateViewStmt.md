@@ -5,7 +5,7 @@ syntax:
 
 ### _create-view_
 
-{% include "Diagrams/CreateView.svg" %}
+![](Diagrams/CreateView.svg)
 
 ## An example
 

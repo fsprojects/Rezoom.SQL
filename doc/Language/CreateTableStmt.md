@@ -12,7 +12,7 @@ Create table statements come in two forms.
 
 ### _create-table_
 
-{% include "Diagrams/CreateTable.svg" %}
+![](Diagrams/CreateTable.svg)
 
 ## Create as select
 
@@ -35,7 +35,7 @@ Each column is defined with a **column-def**.
 
 ### _column-def_
 
-{% include "Diagrams/ColumnDef.svg" %}
+![](Diagrams/ColumnDef.svg)
 
 This is often just a [_column-name_](Name.md) and a
 [_type-name_](TypeHierarchy.md), but can optionally include
@@ -43,14 +43,14 @@ This is often just a [_column-name_](Name.md) and a
 
 ### _column-constraint_
 
-{% include "Diagrams/ColumnConstraint.svg" %}
+![](Diagrams/ColumnConstraint.svg)
 
 A **foreign-key-clause** is a valid column constraint. This gets its own syntax
 diagram since it is also referenced by **table-constraint**.
 
 ### _foreign-key-clause_
 
-{% include "Diagrams/ForeignKeyClause.svg" %}
+![](Diagrams/ForeignKeyClause.svg)
 
 The supported constraints are:
 
@@ -70,7 +70,7 @@ The supported constraints are:
 After specifying the columns of the table, you can also define some table-wide
 constraints that apply to more than one column. These are **table-constraints**.
 
-{% include "Diagrams/TableConstraint.svg" %}
+![](Diagrams/TableConstraint.svg)
 
 Some of these are just multi-column versions of the column constraints and work
 the same. The CHECK constraint is table-wide and should be a boolean expression,
