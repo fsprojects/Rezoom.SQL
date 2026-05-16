@@ -47,12 +47,11 @@ compatibility layer: the functions available are still determined by the
 backend. **In this case, the T-SQL equivalent function is `scope_identity()`**.
 
 At this point your project should build, but you're not done yet. To be able to
-actually run the code, you'll need to edit your `appsettings.json` with
-connection settings for SQL Server. This part isn't actually Rezoom-specific,
-it's standard .NET connection string stuff. However, nobody can remember the
-details, so here they are. Open up `appsettings.json`, and you'll find something
-like this:
+actually run the code, you'll need to create/edit your `AppSettings.json` with
+connection settings for SQL Server. This is *runtime* configuration whereas `rzsql.json`
+was *compile-time* information.
 
+Here is an example AppSettings.json.
 
 ```json
 {
@@ -110,12 +109,11 @@ compatibility layer: the functions available are still determined by the
 backend. **In this case, the Postgres equivalent function is `lastval()`**.
 
 At this point your project should build, but you're not done yet. To be able to
-actually run the code, you'll need to edit your `appsettings.json` with
-connection settings for Postgres. This part isn't actually Rezoom-specific, it's
-standard .NET connection string stuff. However, nobody can remember the details,
-so here they are. Open up `appsettings.json`, and you'll find something like
-this:
+actually run the code, you'll need to create/edit your `AppSettings.json` with
+connection settings for Postgres. This is *runtime* configuration whereas `rzsql.json`
+was *compile-time* information.
 
+Here is an example AppSettings.json.
 
 ```json
 {
