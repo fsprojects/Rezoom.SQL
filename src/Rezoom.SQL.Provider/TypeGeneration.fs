@@ -339,13 +339,10 @@ let generateMigrationMembers
     let runMigration backendInstanceExpr configExpr =
         <@@ let migrations : string MigrationTree array = %%Expr.PropertyGet(migrationProperty)
             let backendInstance : IMigrationBackend = %%backendInstanceExpr
-            let _ =
-                try
-                    MigrationUtilities.runMigrations (%%configExpr) backendInstance migrations
-                    0
-                finally
-                    backendInstance.Dispose()
-            ()
+            try
+                MigrationUtilities.runMigrations (%%configExpr) backendInstance migrations
+            finally
+                backendInstance.Dispose()
         @@>
     let buildInfoExpr connectionStringExpr =
         <@@ {   Name = (%%connectionName : string)

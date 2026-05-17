@@ -14641,6 +14641,7 @@ namespace ProviderImplementation.ProvidedTypes
             | LessThan(None, [t1], [a1; a2]) -> 
                 emitExpr ExpectedStackState.Value a1
                 emitExpr ExpectedStackState.Value a2
+                let t1 = if t1.IsEnum then t1.GetEnumUnderlyingType() else t1
                 match t1 with 
                 | Bool | SByte | Char
                 | Double | Single
@@ -14659,6 +14660,7 @@ namespace ProviderImplementation.ProvidedTypes
             | GreaterThan(None, [t1], [a1; a2]) -> 
                 emitExpr ExpectedStackState.Value a1
                 emitExpr ExpectedStackState.Value a2
+                let t1 = if t1.IsEnum then t1.GetEnumUnderlyingType() else t1
                 match t1 with 
                 | Bool | SByte | Char
                 | Double | Single
@@ -14677,6 +14679,7 @@ namespace ProviderImplementation.ProvidedTypes
             | LessThanOrEqual(None, [t1], [a1; a2]) -> 
                 emitExpr ExpectedStackState.Value a1
                 emitExpr ExpectedStackState.Value a2
+                let t1 = if t1.IsEnum then t1.GetEnumUnderlyingType() else t1
                 match t1 with 
                 | Bool | SByte | Char
                 | Int16 | Int32 | Int64 -> 
@@ -14703,6 +14706,7 @@ namespace ProviderImplementation.ProvidedTypes
             | GreaterThanOrEqual(None, [t1], [a1; a2]) -> 
                 emitExpr ExpectedStackState.Value a1
                 emitExpr ExpectedStackState.Value a2
+                let t1 = if t1.IsEnum then t1.GetEnumUnderlyingType() else t1
                 match t1 with 
                 | Bool | SByte | Char
                 | Int16 | Int32 | Int64 -> 
@@ -14728,6 +14732,7 @@ namespace ProviderImplementation.ProvidedTypes
             | Equals(None, [t1], [a1; a2]) -> 
                 emitExpr ExpectedStackState.Value a1
                 emitExpr ExpectedStackState.Value a2
+                let t1 = if t1.IsEnum then t1.GetEnumUnderlyingType() else t1
                 match t1 with 
                 | Bool | SByte | Char
                 | Double | Single
@@ -14743,6 +14748,7 @@ namespace ProviderImplementation.ProvidedTypes
             | NotEquals(None, [t1], [a1; a2]) -> 
                 emitExpr ExpectedStackState.Value a1
                 emitExpr ExpectedStackState.Value a2
+                let t1 = if t1.IsEnum then t1.GetEnumUnderlyingType() else t1
                 match t1 with 
                 | Bool | SByte | Char
                 | Double | Single
@@ -16046,9 +16052,12 @@ namespace ProviderImplementation.ProvidedTypes
 
                             let methLocals = Dictionary<Var, ILLocalBuilder>()
 
-                            let expectedState = if (transType minfo.ReturnType = ILType.Void) then ExpectedStackState.Empty else ExpectedStackState.Value
+                            let retType = transType minfo.ReturnType
+                            let retUnit = retType = ILType.Void || retType.QualifiedName = (transType (convTypeToTgt typeof<unit>)).QualifiedName
+                            let expectedState = if retUnit then ExpectedStackState.Empty else ExpectedStackState.Value
                             let codeGen = CodeGenerator(assemblyMainModule, genUniqueTypeName, implicitCtorArgsAsFields, convTypeToTgt, transType, transFieldSpec, transMeth, transMethRef, transCtorSpec, ilg, methLocals, parameterVars)
                             codeGen.EmitExpr (expectedState, expr)
+                            if retUnit then ilg.Emit(I_ldnull)
                             ilg.Emit I_ret
                       | _ -> ()
 
