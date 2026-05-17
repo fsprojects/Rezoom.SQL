@@ -61,8 +61,6 @@ You can read more about this feature on the [Navigation
 Properties](../Language/NavigationProperties.md) page.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Using TSQL or Postgres](SwitchBackends.md) | [Asynchronous programming &rarr;](Async.md)
 <!-- /nav-bottom -->

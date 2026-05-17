@@ -323,8 +323,6 @@ implement `IScalar<'columnType>`. This allows you to use extension methods like
 `ExecuteScalar` on the generated command type for convenience.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Expressions](Expr.md) | [Insert statements &rarr;](InsertStmt.md)
 <!-- /nav-bottom -->

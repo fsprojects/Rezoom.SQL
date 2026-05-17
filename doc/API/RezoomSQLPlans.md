@@ -49,8 +49,6 @@ static member Scalar : cmd : Command<#IScalar<'a>> -> Plan<'a>
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Rezoom.SQL.Asynchronous](RezoomSQLAsynchronous.md) | [Rezoom.SQL.Migrations &rarr;](RezoomSQLMigrations.md)
 <!-- /nav-bottom -->

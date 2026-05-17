@@ -138,15 +138,25 @@ function Build-PrevNext($entry) {
 
 # ---- Rewrite each page ----
 
+$rootEntry = $entries[0]
+$topLevelSections = $entries | Where-Object { $_.Depth -eq 0 -and $_ -ne $rootEntry }
+
 $navTopMarker = '<!-- nav-top -->'
 $navTopEnd = '<!-- /nav-top -->'
 $navBottomMarker = '<!-- nav-bottom -->'
 $navBottomEnd = '<!-- /nav-bottom -->'
 
-# Regex with the `s` flag (single-line mode) so . matches newlines.
+# Regex with the `s` flag (single-line mode) so . matches newlines. The
+# bottom regex also consumes a preceding `---` horizontal rule (with optional
+# blank lines around it) so the separator we emit alongside the bottom nav
+# doesn't accumulate as an orphan on each rerun.
 $navTopRegex = "(?s)$([regex]::Escape($navTopMarker)).*?$([regex]::Escape($navTopEnd))\r?\n?"
-$navBottomRegex = "(?s)$([regex]::Escape($navBottomMarker)).*?$([regex]::Escape($navBottomEnd))\r?\n?"
+$navBottomRegex = "(?s)(?:\r?\n\s*---[ \t]*)*\r?\n?$([regex]::Escape($navBottomMarker)).*?$([regex]::Escape($navBottomEnd))\r?\n?"
 $legacyPreamble = "^\(this page is part of \[[^\]]+\]\([^)]+\)\)\s*\r?\n"
+# Trailing orphan `---` lines left over from earlier runs of this script before
+# the bottom-regex started consuming them. Allows blank lines between adjacent
+# orphans (which is exactly the pattern previous buggy runs produced).
+$trailingOrphanSep = "(?:\r?\n\s*---[ \t]*)+\s*$"
 
 $touched = 0
 foreach ($e in $entries) {
@@ -162,15 +172,29 @@ foreach ($e in $entries) {
     $body = [regex]::Replace($body, $navBottomRegex, '')
     # Strip legacy "(this page is part of ...)" preamble.
     $body = [regex]::Replace($body, $legacyPreamble, '')
+    # Strip any trailing orphan `---` lines left behind by previous script runs.
+    $body = [regex]::Replace($body, $trailingOrphanSep, '')
 
-    $crumb = Build-Breadcrumb $e
-    $bar = Build-PrevNext $e
-    $topBlock =
-        if ($bar) { "$navTopMarker`n$crumb`n`n$bar`n$navTopEnd`n`n" }
-        else      { "$navTopMarker`n$crumb`n$navTopEnd`n`n" }
-    $bottomBlock =
-        if ($bar) { "`n`n---`n$navBottomMarker`n$bar`n$navBottomEnd`n" }
-        else      { '' }
+    if ($e -eq $rootEntry) {
+        # Root README: no breadcrumb (it's Home), no prev/next bar. Instead,
+        # link out to each top-level section so readers can jump directly into
+        # the docs from the landing page.
+        $sectionLinks = foreach ($s in $topLevelSections) {
+            $rel = Get-Rel $e.AbsPath.Path $s.AbsPath.Path
+            "[$($s.Title)]($rel)"
+        }
+        $topBlock = "$navTopMarker`n**Documentation:** $($sectionLinks -join ' | ')`n$navTopEnd`n`n"
+        $bottomBlock = ''
+    } else {
+        $crumb = Build-Breadcrumb $e
+        $bar = Build-PrevNext $e
+        $topBlock =
+            if ($bar) { "$navTopMarker`n$crumb`n`n$bar`n$navTopEnd`n`n" }
+            else      { "$navTopMarker`n$crumb`n$navTopEnd`n`n" }
+        $bottomBlock =
+            if ($bar) { "`n`n---`n$navBottomMarker`n$bar`n$navBottomEnd`n" }
+            else      { '' }
+    }
 
     # Trim leading blank lines that may have been left by the strip, and
     # trailing whitespace, so the output is tidy.

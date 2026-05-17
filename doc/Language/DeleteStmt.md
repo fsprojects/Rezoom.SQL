@@ -37,8 +37,6 @@ This is the full syntax for the delete statement.
 ![](Diagrams/DeleteStmt.svg)
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Update statements](UpdateStmt.md) | [Common table expressions &rarr;](CommonTableExpression.md)
 <!-- /nav-bottom -->

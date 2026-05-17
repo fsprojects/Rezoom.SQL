@@ -93,8 +93,6 @@ have multiple CHECK constraints on one table. In this case you should explicitly
 name those constraints.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Common table expressions](CommonTableExpression.md) | [Create view statements &rarr;](CreateViewStmt.md)
 <!-- /nav-bottom -->

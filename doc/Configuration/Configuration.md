@@ -163,8 +163,6 @@ the connection string, and reconnects.
 [Source](https://github.com/rspeele/Rezoom.SQL/blob/master/src/Rezoom.SQL.Compiler/Postgres.MigrationBackend.fs)
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; rzsql.json](Json.md) | [Migration Trees &rarr;](MigrationTrees.md)
 <!-- /nav-bottom -->

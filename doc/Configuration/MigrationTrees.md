@@ -134,8 +134,6 @@ been run. In development, occasionally you *know* it'll be fine and just want to
 get your database up-to-speed.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Runtime configuration](Configuration.md) | [Language &rarr;](../Language/README.md)
 <!-- /nav-bottom -->

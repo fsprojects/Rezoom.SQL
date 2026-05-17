@@ -217,8 +217,6 @@ into domain methods so they didn't have to hit the DB again in a loop. Rezoom ju
 makes those annoying, error prone, explicit "here's what I already loaded" parameters unnecessary.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Asynchronous programming](../Tutorial/Async.md) | [Configuration &rarr;](../Configuration/README.md)
 <!-- /nav-bottom -->

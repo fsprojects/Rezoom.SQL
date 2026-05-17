@@ -54,8 +54,6 @@ You can experiment with the various insert statement types
 [here](http://rzsql.net/#63DD33DE821DA57BC8E3268EB8FB013441B48B46).
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Select statements](SelectStmt.md) | [Update statements &rarr;](UpdateStmt.md)
 <!-- /nav-bottom -->

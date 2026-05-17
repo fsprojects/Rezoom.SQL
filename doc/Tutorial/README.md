@@ -235,8 +235,6 @@ let main argv =
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; About](../../README.md) | [Adding migrations &rarr;](AddingMigrations.md)
 <!-- /nav-bottom -->

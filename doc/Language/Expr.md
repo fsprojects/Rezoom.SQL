@@ -265,8 +265,6 @@ The EXISTS expression takes a subquery on its right side. It returns true if the
 subquery yields any rows, false otherwise.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Literals](Literal.md) | [Select statements &rarr;](SelectStmt.md)
 <!-- /nav-bottom -->

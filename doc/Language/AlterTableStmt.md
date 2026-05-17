@@ -170,8 +170,6 @@ vendor tsql {
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Create view statements](CreateViewStmt.md) | [Drop object statements &rarr;](DropStmt.md)
 <!-- /nav-bottom -->

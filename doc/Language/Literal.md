@@ -59,8 +59,6 @@ the following quirks:
   `DATETIMEOFFSET` literal is `2017-03-30T00:32:57-04:00`.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Data types](DataTypes.md) | [Expressions &rarr;](Expr.md)
 <!-- /nav-bottom -->

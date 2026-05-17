@@ -145,8 +145,6 @@ You'll need to fill in your own username and password in the connection string.
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Adding migrations](AddingMigrations.md) | [Loading nested objects &rarr;](LoadingNestedObjects.md)
 <!-- /nav-bottom -->

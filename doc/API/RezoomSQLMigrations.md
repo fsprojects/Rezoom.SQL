@@ -39,8 +39,6 @@ It is defined as:
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Rezoom.SQL.Plans](RezoomSQLPlans.md)
 <!-- /nav-bottom -->

@@ -18,8 +18,6 @@ backends. Accordingly there are some areas where square pegs had to be driven
 into round holes. These are documented by backend in the following sub-chapters.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Postgres](../Functions/PostgresFunctions.md) | [SQLite &rarr;](SQLiteQuirks.md)
 <!-- /nav-bottom -->

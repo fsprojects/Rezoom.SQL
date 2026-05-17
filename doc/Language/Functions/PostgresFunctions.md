@@ -975,8 +975,6 @@ if you plan to make significant use of these Postgres-specific types.
 |yes|no|no|
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; TSQL](TSQLFunctions.md) | [Quirks &rarr;](../Quirks/README.md)
 <!-- /nav-bottom -->

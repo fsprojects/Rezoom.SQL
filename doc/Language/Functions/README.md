@@ -111,8 +111,6 @@ select * from Table where X is @a + nullable(@b)
 This way, only `@b` will be nullable.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Vendor statements](../VendorStatements.md) | [SQLite &rarr;](SQLiteFunctions.md)
 <!-- /nav-bottom -->

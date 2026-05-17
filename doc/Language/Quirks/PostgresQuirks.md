@@ -68,8 +68,6 @@ On Postgres, these operators translate like so:
 | NOT MATCH      | NOT SIMILAR TO    |
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; TSQL](TSQLQuirks.md) | [Dynamic SQL &rarr;](../DynamicSQL.md)
 <!-- /nav-bottom -->

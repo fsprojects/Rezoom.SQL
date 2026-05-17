@@ -96,8 +96,6 @@ let exampleCommand (nameSearch : string) =
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Postgres](Quirks/PostgresQuirks.md) | [What's missing? &rarr;](MissingFeatures.md)
 <!-- /nav-bottom -->

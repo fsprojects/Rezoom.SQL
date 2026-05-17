@@ -193,8 +193,6 @@ backend. However, basically it will go through the following steps:
    history table for it.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; API](README.md) | [Rezoom.SQL.Synchronous &rarr;](RezoomSQLSynchronous.md)
 <!-- /nav-bottom -->

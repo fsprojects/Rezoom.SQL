@@ -682,8 +682,6 @@ backend.
 |yes|no|no|
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; SQLite](SQLiteFunctions.md) | [Postgres &rarr;](PostgresFunctions.md)
 <!-- /nav-bottom -->

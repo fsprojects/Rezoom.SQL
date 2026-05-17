@@ -80,8 +80,6 @@ static member ExecuteScalar : cmd : Command<#IScalar<'a>> * context : Connection
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Rezoom.SQL](RezoomSQL.md) | [Rezoom.SQL.Asynchronous &rarr;](RezoomSQLAsynchronous.md)
 <!-- /nav-bottom -->

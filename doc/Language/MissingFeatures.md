@@ -47,8 +47,6 @@ though!
 * Stored procedures
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Dynamic SQL](DynamicSQL.md) | [API &rarr;](../API/README.md)
 <!-- /nav-bottom -->

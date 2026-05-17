@@ -316,8 +316,6 @@ backend.
 |yes|no|no|
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Functions](README.md) | [TSQL &rarr;](TSQLFunctions.md)
 <!-- /nav-bottom -->

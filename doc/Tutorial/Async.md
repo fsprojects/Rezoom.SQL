@@ -98,8 +98,6 @@ can save you from having to write complex or tightly coupled code to avoid
 excessive database round trips.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Loading nested objects](LoadingNestedObjects.md) | [Using Rezoom &rarr;](../Rezoom/README.md)
 <!-- /nav-bottom -->

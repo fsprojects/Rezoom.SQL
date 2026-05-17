@@ -145,8 +145,6 @@ let showClasses() =
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Drop object statements](DropStmt.md) | [Vendor statements &rarr;](VendorStatements.md)
 <!-- /nav-bottom -->

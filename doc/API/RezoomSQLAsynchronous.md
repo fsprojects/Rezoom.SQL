@@ -144,8 +144,6 @@ static member ExecuteScalar
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Rezoom.SQL.Synchronous](RezoomSQLSynchronous.md) | [Rezoom.SQL.Plans &rarr;](RezoomSQLPlans.md)
 <!-- /nav-bottom -->

@@ -26,8 +26,6 @@ This is valid if and only if `Foo` is a table. If `Foo` is a view, this code
 will not compile.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Alter table statements](AlterTableStmt.md) | [Navigation properties &rarr;](NavigationProperties.md)
 <!-- /nav-bottom -->

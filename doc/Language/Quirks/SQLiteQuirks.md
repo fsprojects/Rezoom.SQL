@@ -38,8 +38,6 @@ matches the actual support for schema changes in this database, so it won't be
 "fixed" unless SQLite itself is someday "fixed".
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Quirks](README.md) | [TSQL &rarr;](TSQLQuirks.md)
 <!-- /nav-bottom -->

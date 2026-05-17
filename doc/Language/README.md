@@ -74,8 +74,6 @@ I used [a python library](https://github.com/tabatkins/railroad-diagrams) by
 this documentation.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Migration Trees](../Configuration/MigrationTrees.md) | [Names &rarr;](Name.md)
 <!-- /nav-bottom -->

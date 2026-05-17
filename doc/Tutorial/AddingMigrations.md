@@ -64,8 +64,6 @@ trees](../Configuration/MigrationTrees.md) to help with those situations. It's
 beyond the scope of this tutorial, but check it out if you're curious.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Tutorial](README.md) | [Using TSQL or Postgres &rarr;](SwitchBackends.md)
 <!-- /nav-bottom -->

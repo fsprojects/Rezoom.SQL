@@ -107,8 +107,6 @@ recommended if you want to have your migration scripts be part of your project
 file (which is also recommended!).
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Configuration](README.md) | [Runtime configuration &rarr;](Configuration.md)
 <!-- /nav-bottom -->

@@ -1,10 +1,6 @@
 <!-- nav-top -->
-[Home](README.md) &gt; About
-
-[Tutorial &rarr;](doc/Tutorial/README.md)
+**Documentation:** [Tutorial](doc/Tutorial/README.md) | [Using Rezoom](doc/Rezoom/README.md) | [Configuration](doc/Configuration/README.md) | [Language](doc/Language/README.md) | [API](doc/API/README.md)
 <!-- /nav-top -->
-
-[Tutorial & full documentation](doc/Tutorial/README.md)
 
 [Query playground -- try out the SQL dialect live!](https://rzsql.com/#1F854F9945C2061389778AE5DB98238E21D3A62B)
 
@@ -161,11 +157,3 @@ without any of the effort of writing your own caching layer.
 To get started using RZSQL, read the
 [tutorial](doc/Tutorial/README.md). It'll get you
 up and running in 5 minutes or your money back.
-
----
-
----
-<!-- nav-bottom -->
-[Tutorial &rarr;](doc/Tutorial/README.md)
-<!-- /nav-bottom -->
-

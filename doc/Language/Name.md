@@ -58,8 +58,6 @@ statement.
 ![](Diagrams/ColumnName.svg)
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Language](README.md) | [Data types &rarr;](DataTypes.md)
 <!-- /nav-bottom -->

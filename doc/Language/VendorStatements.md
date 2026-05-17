@@ -137,8 +137,6 @@ vendor tsql <#
 ```
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Navigation properties](NavigationProperties.md) | [Functions &rarr;](Functions/README.md)
 <!-- /nav-bottom -->

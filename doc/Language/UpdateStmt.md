@@ -44,8 +44,6 @@ This is the full syntax for the update statement.
 ![](Diagrams/UpdateStmt.svg)
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Insert statements](InsertStmt.md) | [Delete statements &rarr;](DeleteStmt.md)
 <!-- /nav-bottom -->

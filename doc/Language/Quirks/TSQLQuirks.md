@@ -142,8 +142,6 @@ T-SQL supports bitwise `&` and `|`, but no left or right shifts. You'll get an
 exception at compile time if you use the `<<` or `>>` operators.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; SQLite](SQLiteQuirks.md) | [Postgres &rarr;](PostgresQuirks.md)
 <!-- /nav-bottom -->

@@ -43,8 +43,6 @@ columns to the table.
 You'll have to explicitly drop and recreate the view to update it.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Create table statements](CreateTableStmt.md) | [Alter table statements &rarr;](AlterTableStmt.md)
 <!-- /nav-bottom -->

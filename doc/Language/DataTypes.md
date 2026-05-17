@@ -161,8 +161,6 @@ Notice that this is an [erased function](Functions/README.md#erased-functions),
 so using it has no effect on the compiled SQL code.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; Names](Name.md) | [Literals &rarr;](Literal.md)
 <!-- /nav-bottom -->

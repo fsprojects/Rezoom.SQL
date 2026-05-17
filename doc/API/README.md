@@ -37,8 +37,6 @@ outside the lines and minor version releases may break the API.
   for deserializing objects from SQL result sets.
 
 ---
-
----
 <!-- nav-bottom -->
 [&larr; What's missing?](../Language/MissingFeatures.md) | [Rezoom.SQL &rarr;](RezoomSQL.md)
 <!-- /nav-bottom -->
