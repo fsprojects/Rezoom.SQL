@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Vendor statements
+
+[&larr; Navigation properties](NavigationProperties.md) | [Functions &rarr;](Functions/README.md)
+<!-- /nav-top -->
+
 # Vendor Statements
 
 Chances are, you'll eventually want to use a feature of your database that Rezoom.SQL doesn't understand yet.
@@ -129,3 +135,11 @@ vendor tsql <#
     delete from Comments where @count = 123 -- help typechecker figure out @count's type
 #>
 ```
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Navigation properties](NavigationProperties.md) | [Functions &rarr;](Functions/README.md)
+<!-- /nav-bottom -->
+

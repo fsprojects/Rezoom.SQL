@@ -1,4 +1,10 @@
-[Tutorial & full documentation](https://humbobst.gitbook.io/rezoom-sql/doc/Tutorial/)
+<!-- nav-top -->
+[Home](README.md) &gt; About
+
+[Tutorial &rarr;](doc/Tutorial/README.md)
+<!-- /nav-top -->
+
+[Tutorial & full documentation](doc/Tutorial/README.md)
 
 [Query playground -- try out the SQL dialect live!](https://rzsql.com/#1F854F9945C2061389778AE5DB98238E21D3A62B)
 
@@ -82,7 +88,7 @@ tables and columns you need for the feature you're coding, while your other team
 members do the same for their features -- _without_ having to decide the **One
 True Migration Order** when you merge.
 
-See details [here](https://humbobst.gitbook.io/rezoom-sql/doc/Configuration/MigrationTrees.html).
+See details [here](doc/Configuration/MigrationTrees.md).
 
 # Integration with Rezoom
 
@@ -153,6 +159,13 @@ without any of the effort of writing your own caching layer.
 ## Get started
 
 To get started using RZSQL, read the
-[tutorial](https://humbobst.gitbook.io/rezoom-sql/doc/Tutorial/). It'll get you
+[tutorial](doc/Tutorial/README.md). It'll get you
 up and running in 5 minutes or your money back.
+
+---
+
+---
+<!-- nav-bottom -->
+[Tutorial &rarr;](doc/Tutorial/README.md)
+<!-- /nav-bottom -->
 

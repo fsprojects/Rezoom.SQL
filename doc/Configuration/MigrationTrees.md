@@ -1,4 +1,9 @@
-﻿
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Configuration](README.md) &gt; Migration Trees
+
+[&larr; Runtime configuration](Configuration.md) | [Language &rarr;](../Language/README.md)
+<!-- /nav-top -->
+
 # Migration trees
 
 If you're working alone on a project, it usually makes sense to have a linear migration sequence. So next time you need
@@ -127,3 +132,11 @@ This allows you to run sub-migrations from older version numbers. Normally the
 version, but an older version still has some sub-migrations that have not yet
 been run. In development, occasionally you *know* it'll be fine and just want to
 get your database up-to-speed.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Runtime configuration](Configuration.md) | [Language &rarr;](../Language/README.md)
+<!-- /nav-bottom -->
+

@@ -1,7 +1,9 @@
 from railroad_diagrams import *
 
 def language(document, tag):
-    return 'https://rspeele.gitbooks.io/rezoom-sql/doc/Language/' + document + '.html#' + tag
+    # SVG diagrams live in doc/Language/Diagrams/ and reference language docs
+    # one directory up. Anchor is the markdown heading slug.
+    return '../' + document + '.md#' + tag
 
 def expr():
     return NonTerminal('expr', language('Expr', 'expr'))

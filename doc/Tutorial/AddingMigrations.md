@@ -1,4 +1,8 @@
-(this page is part of [the Rezoom.SQL tutorial](README.md))
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Tutorial](README.md) &gt; Adding migrations
+
+[&larr; Tutorial](README.md) | [Using TSQL or Postgres &rarr;](SwitchBackends.md)
+<!-- /nav-top -->
 
 # Adding Migrations
 
@@ -58,3 +62,11 @@ when you work on features in separate branches, or on a team with other
 developers. Rezoom.SQL has a feature called [migration
 trees](../Configuration/MigrationTrees.md) to help with those situations. It's
 beyond the scope of this tutorial, but check it out if you're curious.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Tutorial](README.md) | [Using TSQL or Postgres &rarr;](SwitchBackends.md)
+<!-- /nav-bottom -->
+

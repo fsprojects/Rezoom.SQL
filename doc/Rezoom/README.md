@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; Using Rezoom
+
+[&larr; Asynchronous programming](../Tutorial/Async.md) | [Configuration &rarr;](../Configuration/README.md)
+<!-- /nav-top -->
+
 # Introduction to Rezoom
 
 Although Rezoom.SQL can be used by itself, it is designed to work best with its
@@ -209,4 +215,11 @@ you don't requery the same things more than needed. We would often do this manua
 working with Entity Framework or other ORMs, passing already-loaded stuff explicitly down
 into domain methods so they didn't have to hit the DB again in a loop. Rezoom just
 makes those annoying, error prone, explicit "here's what I already loaded" parameters unnecessary.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Asynchronous programming](../Tutorial/Async.md) | [Configuration &rarr;](../Configuration/README.md)
+<!-- /nav-bottom -->
 

@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; API
+
+[&larr; What's missing?](../Language/MissingFeatures.md) | [Rezoom.SQL &rarr;](RezoomSQL.md)
+<!-- /nav-top -->
+
 # API
 
 This section covers the F# API to Rezoom.SQL.
@@ -30,5 +36,10 @@ outside the lines and minor version releases may break the API.
 * Rezoom.SQL.Mapping: code used at runtime by RZSQL provided types, primarily
   for deserializing objects from SQL result sets.
 
+---
 
+---
+<!-- nav-bottom -->
+[&larr; What's missing?](../Language/MissingFeatures.md) | [Rezoom.SQL &rarr;](RezoomSQL.md)
+<!-- /nav-bottom -->
 

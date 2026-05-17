@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Common table expressions
+
+[&larr; Delete statements](DeleteStmt.md) | [Create table statements &rarr;](CreateTableStmt.md)
+<!-- /nav-top -->
+
 # Common table expressions
 
 Sometimes it is necessary to use the same subquery multiple times within a
@@ -47,3 +53,11 @@ SELECT group_concat(rtrim(t),'CRLF') as x FROM a
 
 See it [typecheck
 here](http://rzsql.net/#7B68353227CCB1A78FEA0172676CE5F3A208C1FA).
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Delete statements](DeleteStmt.md) | [Create table statements &rarr;](CreateTableStmt.md)
+<!-- /nav-bottom -->
+

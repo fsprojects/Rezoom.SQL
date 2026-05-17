@@ -1,4 +1,8 @@
-(this page is part of [the Rezoom.SQL tutorial](README.md))
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Tutorial](README.md) &gt; Asynchronous programming
+
+[&larr; Loading nested objects](LoadingNestedObjects.md) | [Using Rezoom &rarr;](../Rezoom/README.md)
+<!-- /nav-top -->
 
 # Asynchronous programming
 
@@ -92,3 +96,11 @@ worth checking out the [Rezoom](../Rezoom/README.md) tutorial. Rezoom's `Plan`
 type is a bit like `Async` or `Task`, but is smart about data dependencies. It
 can save you from having to write complex or tightly coupled code to avoid
 excessive database round trips.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Loading nested objects](LoadingNestedObjects.md) | [Using Rezoom &rarr;](../Rezoom/README.md)
+<!-- /nav-bottom -->
+

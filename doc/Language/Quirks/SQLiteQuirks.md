@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../../README.md) &gt; [Language](../README.md) &gt; [Quirks](README.md) &gt; SQLite
+
+[&larr; Quirks](README.md) | [TSQL &rarr;](TSQLQuirks.md)
+<!-- /nav-top -->
+
 # SQLite Quirks
 
 Here are some surprises you may encounter when using RZSQL with SQLite.
@@ -31,4 +37,10 @@ Only `ALTER TABLE RENAME TO` and `ALTER TABLE ADD COLUMN` work on SQLite. This
 matches the actual support for schema changes in this database, so it won't be
 "fixed" unless SQLite itself is someday "fixed".
 
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Quirks](README.md) | [TSQL &rarr;](TSQLQuirks.md)
+<!-- /nav-bottom -->
 

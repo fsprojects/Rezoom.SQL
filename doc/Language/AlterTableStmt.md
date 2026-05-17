@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Alter table statements
+
+[&larr; Create view statements](CreateViewStmt.md) | [Drop object statements &rarr;](DropStmt.md)
+<!-- /nav-top -->
+
 # Alter Table Statements
 
 An **alter table** statement is used to edit the schema of a table.
@@ -162,3 +168,11 @@ vendor tsql {
         add NewColumn int null default(0);
 }
 ```
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Create view statements](CreateViewStmt.md) | [Drop object statements &rarr;](DropStmt.md)
+<!-- /nav-bottom -->
+

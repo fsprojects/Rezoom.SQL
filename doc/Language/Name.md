@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Names
+
+[&larr; Language](README.md) | [Data types &rarr;](DataTypes.md)
+<!-- /nav-top -->
+
 # Names
 
 Every programming language needs a way to name things like functions and
@@ -50,3 +56,11 @@ statement.
 ### _column-name_
 
 ![](Diagrams/ColumnName.svg)
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Language](README.md) | [Data types &rarr;](DataTypes.md)
+<!-- /nav-bottom -->
+

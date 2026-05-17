@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Literals
+
+[&larr; Data types](DataTypes.md) | [Expressions &rarr;](Expr.md)
+<!-- /nav-top -->
+
 # Literals
 
 A **literal** is the source code representation of a value. Different [data
@@ -52,6 +58,10 @@ the following quirks:
   the [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format. An example of a
   `DATETIMEOFFSET` literal is `2017-03-30T00:32:57-04:00`.
 
+---
 
-
+---
+<!-- nav-bottom -->
+[&larr; Data types](DataTypes.md) | [Expressions &rarr;](Expr.md)
+<!-- /nav-bottom -->
 

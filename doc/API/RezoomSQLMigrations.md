@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL.Migrations
+
+[&larr; Rezoom.SQL.Plans](RezoomSQLPlans.md)
+<!-- /nav-top -->
+
 # Rezoom.SQL.Migrations
 
 This namespace contains the migration configuration and some types representing
@@ -31,4 +37,11 @@ It is defined as:
     LogMigrationRan = fun _ -> ()
 }
 ```
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Rezoom.SQL.Plans](RezoomSQLPlans.md)
+<!-- /nav-bottom -->
 

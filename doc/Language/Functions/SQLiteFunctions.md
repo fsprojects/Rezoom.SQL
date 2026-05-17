@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../../README.md) &gt; [Language](../README.md) &gt; [Functions](README.md) &gt; SQLite
+
+[&larr; Functions](README.md) | [TSQL &rarr;](TSQLFunctions.md)
+<!-- /nav-top -->
+
 # SQLite functions
 
 This is the complete list of built-in functions supported by the `"sqlite"`
@@ -308,4 +314,11 @@ backend.
 | Idempotent | Erased | Aggregate |
 |-|-|-|
 |yes|no|no|
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Functions](README.md) | [TSQL &rarr;](TSQLFunctions.md)
+<!-- /nav-bottom -->
 

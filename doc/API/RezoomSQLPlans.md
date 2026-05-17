@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL.Plans
+
+[&larr; Rezoom.SQL.Asynchronous](RezoomSQLAsynchronous.md) | [Rezoom.SQL.Migrations &rarr;](RezoomSQLMigrations.md)
+<!-- /nav-top -->
+
 # Rezoom.SQL.Plans
 
 This namespace contains extension methods to run SQL commands as [Rezoom
@@ -41,3 +47,11 @@ like `select rowcount() as x;`.
 ```fsharp
 static member Scalar : cmd : Command<#IScalar<'a>> -> Plan<'a>
 ```
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Rezoom.SQL.Asynchronous](RezoomSQLAsynchronous.md) | [Rezoom.SQL.Migrations &rarr;](RezoomSQLMigrations.md)
+<!-- /nav-bottom -->
+

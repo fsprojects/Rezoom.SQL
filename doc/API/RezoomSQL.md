@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL
+
+[&larr; API](README.md) | [Rezoom.SQL.Synchronous &rarr;](RezoomSQLSynchronous.md)
+<!-- /nav-top -->
+
 # Rezoom.SQL
 
 This namespace contains the type providers defined in `Rezoom.SQL.Provider.dll`,
@@ -185,4 +191,11 @@ backend. However, basically it will go through the following steps:
 5. For each migration script that has not been recorded in the migration history
    table, run the script in a transaction and insert a row into the migration
    history table for it.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; API](README.md) | [Rezoom.SQL.Synchronous &rarr;](RezoomSQLSynchronous.md)
+<!-- /nav-bottom -->
 

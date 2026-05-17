@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; Tutorial
+
+[&larr; About](../../README.md) | [Adding migrations &rarr;](AddingMigrations.md)
+<!-- /nav-top -->
+
 # Tutorial
 
 This tutorial will get you up and running with [Rezoom.SQL](https://github.com/rspeele/Rezoom.SQL).
@@ -228,5 +234,10 @@ let main argv =
     0
 ```
 
+---
 
+---
+<!-- nav-bottom -->
+[&larr; About](../../README.md) | [Adding migrations &rarr;](AddingMigrations.md)
+<!-- /nav-bottom -->
 

@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Configuration](README.md) &gt; rzsql.json
+
+[&larr; Configuration](README.md) | [Runtime configuration &rarr;](Configuration.md)
+<!-- /nav-top -->
+
 # rzsql.json
 
 The RZSQL type provider is configured in a file called rzsql.json. If you're
@@ -99,3 +105,11 @@ as rzsql.json.
 Since it is painful to use sub-folders in F# projects, the default setting is
 recommended if you want to have your migration scripts be part of your project
 file (which is also recommended!).
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Configuration](README.md) | [Runtime configuration &rarr;](Configuration.md)
+<!-- /nav-bottom -->
+

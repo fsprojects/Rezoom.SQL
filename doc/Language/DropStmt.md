@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Drop object statements
+
+[&larr; Alter table statements](AlterTableStmt.md) | [Navigation properties &rarr;](NavigationProperties.md)
+<!-- /nav-top -->
+
 # Drop object statements
 
 A drop statement removes an object (which could be a table, view, or index) from
@@ -18,4 +24,11 @@ drop table Foo
 
 This is valid if and only if `Foo` is a table. If `Foo` is a view, this code
 will not compile.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Alter table statements](AlterTableStmt.md) | [Navigation properties &rarr;](NavigationProperties.md)
+<!-- /nav-bottom -->
 

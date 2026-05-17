@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Select statements
+
+[&larr; Expressions](Expr.md) | [Insert statements &rarr;](InsertStmt.md)
+<!-- /nav-top -->
+
 # Select Statements
 
 A **select statement** is used to retrieve data from the database and return it
@@ -315,3 +321,11 @@ row instead of an `IReadOnlyList` of rows.
 Additionally, if the row type only has one column, it will automatically
 implement `IScalar<'columnType>`. This allows you to use extension methods like
 `ExecuteScalar` on the generated command type for convenience.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Expressions](Expr.md) | [Insert statements &rarr;](InsertStmt.md)
+<!-- /nav-bottom -->
+

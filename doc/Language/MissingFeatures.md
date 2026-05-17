@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; What's missing?
+
+[&larr; Dynamic SQL](DynamicSQL.md) | [API &rarr;](../API/README.md)
+<!-- /nav-top -->
+
 # What's missing?
 
 If you are already familiar with a SQL dialect, here are some features you may
@@ -39,3 +45,11 @@ though!
 
 * General-purpose programming features (`IF`, `WHILE`, cursors)
 * Stored procedures
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Dynamic SQL](DynamicSQL.md) | [API &rarr;](../API/README.md)
+<!-- /nav-bottom -->
+

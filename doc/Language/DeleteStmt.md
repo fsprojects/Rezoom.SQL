@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Delete statements
+
+[&larr; Update statements](UpdateStmt.md) | [Common table expressions &rarr;](CommonTableExpression.md)
+<!-- /nav-top -->
+
 # Delete statements
 
 An **delete statement** permanently removes rows from a table.
@@ -29,3 +35,11 @@ itself, which may perform better on some database backends.
 This is the full syntax for the delete statement.
 
 ![](Diagrams/DeleteStmt.svg)
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Update statements](UpdateStmt.md) | [Common table expressions &rarr;](CommonTableExpression.md)
+<!-- /nav-bottom -->
+

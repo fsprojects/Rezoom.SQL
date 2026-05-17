@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Dynamic SQL
+
+[&larr; Postgres](Quirks/PostgresQuirks.md) | [What's missing? &rarr;](MissingFeatures.md)
+<!-- /nav-top -->
+
 # Dynamic SQL
 
 Occasionally it is necessary to generate SQL dynamically.
@@ -88,3 +94,11 @@ let exampleCommand (nameSearch : string) =
         |]
     MyMostlyStaticQuery.Command(dynSql = predicate)
 ```
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Postgres](Quirks/PostgresQuirks.md) | [What's missing? &rarr;](MissingFeatures.md)
+<!-- /nav-bottom -->
+

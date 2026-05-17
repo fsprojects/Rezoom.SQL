@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL.Synchronous
+
+[&larr; Rezoom.SQL](RezoomSQL.md) | [Rezoom.SQL.Asynchronous &rarr;](RezoomSQLAsynchronous.md)
+<!-- /nav-top -->
+
 # Rezoom.SQL.Synchronous
 
 This namespace contains extension methods to run SQL commands synchronously.
@@ -72,3 +78,11 @@ like `select rowcount() as x;`.
 static member ExecuteScalar : cmd : Command<#IScalar<'a>> * conn : DbConnection -> 'a
 static member ExecuteScalar : cmd : Command<#IScalar<'a>> * context : ConnectionContext -> 'a
 ```
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Rezoom.SQL](RezoomSQL.md) | [Rezoom.SQL.Asynchronous &rarr;](RezoomSQLAsynchronous.md)
+<!-- /nav-bottom -->
+

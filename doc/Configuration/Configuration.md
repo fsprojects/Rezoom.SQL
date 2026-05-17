@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Configuration](README.md) &gt; Runtime configuration
+
+[&larr; rzsql.json](Json.md) | [Migration Trees &rarr;](MigrationTrees.md)
+<!-- /nav-top -->
+
 # Runtime configuration
 
 Two pieces of runtime configuration are needed: the connection string for each
@@ -155,3 +161,11 @@ reconnects with `Database=postgres`, creates the database originally named in
 the connection string, and reconnects.
 
 [Source](https://github.com/rspeele/Rezoom.SQL/blob/master/src/Rezoom.SQL.Compiler/Postgres.MigrationBackend.fs)
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; rzsql.json](Json.md) | [Migration Trees &rarr;](MigrationTrees.md)
+<!-- /nav-bottom -->
+

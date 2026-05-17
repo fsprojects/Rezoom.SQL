@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL.Asynchronous
+
+[&larr; Rezoom.SQL.Synchronous](RezoomSQLSynchronous.md) | [Rezoom.SQL.Plans &rarr;](RezoomSQLPlans.md)
+<!-- /nav-top -->
+
 # Rezoom.SQL.Asynchronous
 
 This namespace contains extension methods to run SQL commands asynchronously as
@@ -136,3 +142,11 @@ static member ExecuteScalar
     * token : CancellationToken
     -> Task<'a>
 ```
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Rezoom.SQL.Synchronous](RezoomSQLSynchronous.md) | [Rezoom.SQL.Plans &rarr;](RezoomSQLPlans.md)
+<!-- /nav-bottom -->
+

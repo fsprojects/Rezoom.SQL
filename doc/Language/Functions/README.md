@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../../README.md) &gt; [Language](../README.md) &gt; Functions
+
+[&larr; Vendor statements](../VendorStatements.md) | [SQLite &rarr;](SQLiteFunctions.md)
+<!-- /nav-top -->
+
 # Functions
 
 This section is dedicated to documenting RZSQL's support for functions.
@@ -103,4 +109,11 @@ select * from Table where X is @a + nullable(@b)
 ```
 
 This way, only `@b` will be nullable.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Vendor statements](../VendorStatements.md) | [SQLite &rarr;](SQLiteFunctions.md)
+<!-- /nav-bottom -->
 

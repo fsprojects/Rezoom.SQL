@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Navigation properties
+
+[&larr; Drop object statements](DropStmt.md) | [Vendor statements &rarr;](VendorStatements.md)
+<!-- /nav-top -->
+
 # Navigation Properties
 
 Navigation properties are a small extension to the SQL language that help you
@@ -137,3 +143,11 @@ let showClasses() =
                         printfn "Wow, these are nested a lot! %s/%s/%s/%s"
                             order.Name family.Name genus.Name spec.Name
 ```
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Drop object statements](DropStmt.md) | [Vendor statements &rarr;](VendorStatements.md)
+<!-- /nav-bottom -->
+

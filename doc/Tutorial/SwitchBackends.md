@@ -1,4 +1,8 @@
-(this page is part of [the Rezoom.SQL tutorial](README.md))
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Tutorial](README.md) &gt; Using TSQL or Postgres
+
+[&larr; Adding migrations](AddingMigrations.md) | [Loading nested objects &rarr;](LoadingNestedObjects.md)
+<!-- /nav-top -->
 
 # Switching to SQL Server or PostgreSQL
 
@@ -139,3 +143,11 @@ You'll need to fill in your own username and password in the connection string.
   }
 }
 ```
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Adding migrations](AddingMigrations.md) | [Loading nested objects &rarr;](LoadingNestedObjects.md)
+<!-- /nav-bottom -->
+

@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; Language
+
+[&larr; Migration Trees](../Configuration/MigrationTrees.md) | [Names &rarr;](Name.md)
+<!-- /nav-top -->
+
 # Language
 
 This section covers RZSQL, the SQL dialect implemented by Rezoom.SQL.
@@ -66,3 +72,11 @@ Here's a real railroad diagram for whitespace and comments.
 I used [a python library](https://github.com/tabatkins/railroad-diagrams) by
 [tabatkins](https://github.com/tabatkins) to generate the railroad diagrams in
 this documentation.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Migration Trees](../Configuration/MigrationTrees.md) | [Names &rarr;](Name.md)
+<!-- /nav-bottom -->
+

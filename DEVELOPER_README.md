@@ -119,6 +119,19 @@ The parents don't participate in the centralized `version.props` mechanism
 publishing parent changes, bump the parent's `<Version>` first, then run
 this script.
 
+### `build/regen-doc-nav.ps1`
+
+Rewrites the breadcrumb + prev/next nav blocks at the top and bottom of
+every doc page listed in `SUMMARY.md`. Run after editing `SUMMARY.md`
+(adding pages, reordering, renaming) to bring all nav links back into sync.
+
+```powershell
+./build/regen-doc-nav.ps1
+```
+
+Each rewritten block is fenced by HTML comment markers (`<!-- nav-top -->` /
+`<!-- nav-bottom -->`) so the script can rerun cleanly.
+
 ### `src/TypeProviderUsers/test-tp-users.ps1`
 
 Runs `dotnet test` on both TPU projects. SQLite can make its own DB file, but Postgres auto-

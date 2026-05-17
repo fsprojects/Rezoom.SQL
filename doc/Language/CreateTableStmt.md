@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Create table statements
+
+[&larr; Common table expressions](CommonTableExpression.md) | [Create view statements &rarr;](CreateViewStmt.md)
+<!-- /nav-top -->
+
 # Create Table Statements
 
 A **create table** statement is used to... create a table that will hold data.
@@ -85,3 +91,11 @@ related column.
 Note that the default generated name for CHECK constraints will collide if you
 have multiple CHECK constraints on one table. In this case you should explicitly
 name those constraints.
+
+---
+
+---
+<!-- nav-bottom -->
+[&larr; Common table expressions](CommonTableExpression.md) | [Create view statements &rarr;](CreateViewStmt.md)
+<!-- /nav-bottom -->
+
