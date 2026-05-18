@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29424.173
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TypeProviderUser.SQLite", "TypeProviderUser.SQLite\TypeProviderUser.SQLite.fsproj", "{0F05CBC1-FFCA-41B0-89FC-DB11D13D823C}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TypeProviderUser.Postgres", "TypeProviderUser.Postgres\TypeProviderUser.Postgres.fsproj", "{EA4DD44F-F7E0-4953-961A-892D4BEC43BD}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TypeProviderUser.TSQL", "TypeProviderUser.TSQL\TypeProviderUser.TSQL.fsproj", "{EBBDDEAD-2646-40A9-BE39-8F25762D2875}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,8 +23,15 @@ Global
 		{EA4DD44F-F7E0-4953-961A-892D4BEC43BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA4DD44F-F7E0-4953-961A-892D4BEC43BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA4DD44F-F7E0-4953-961A-892D4BEC43BD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBBDDEAD-2646-40A9-BE39-8F25762D2875}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBBDDEAD-2646-40A9-BE39-8F25762D2875}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBBDDEAD-2646-40A9-BE39-8F25762D2875}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBBDDEAD-2646-40A9-BE39-8F25762D2875}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5D585200-02DB-4083-915A-12A1F78C5DB6}
 	EndGlobalSection
 EndGlobal
