@@ -113,7 +113,7 @@ let ``replay works`` () =
             let! r2 = TestInInteger.Command([| 2L |]).Plan()
             return r1.[0].Email, r2.[0].Email
         }
-    let config = Execution.ExecutionConfig.Default
+    let config = { Execution.ExecutionConfig.Default with Services = services }
     let serializer =
         let bin = FsPickler.CreateBinarySerializer()
         { new Replay.IReplaySerializer with
@@ -147,7 +147,7 @@ let ``lotsa parameters`` () =
             let g() = Guid.NewGuid().ToByteArray()
             for i in batch [0..2000] do
                 do! InsertPicture.Command(g(), g()).Plan()
-        } |> Execution.execute Execution.ExecutionConfig.Default
+        } |> Execution.execute { Execution.ExecutionConfig.Default with Services = services }
     task.Wait()
 
 open Rezoom.SQL.Raw
@@ -158,8 +158,21 @@ type RawSQLQuery = SQL<"""
 """>
 
 [<Test>]
-let ``test raw sql parameter`` () =
+[<Ignore("currently this is not supported due to TSQL boolean handling in backend, Issue #39")>]
+let ``test raw sql parameter unsupported version`` () =
     let results =
         RawSQLQuery.Command(whereClause = [| sql "1="; arg 1 |]) |> runOnTestData
+    for result in results do
+        printfn "%A" result.Email
+
+
+type RawSQLQuerySupported = SQL<"""
+    select * from Users where 0 = unsafe_inject_raw(@whereParameter)
+""">
+
+[<Test>]
+let ``test raw sql parameter supported version`` () =
+    let results =
+        RawSQLQuerySupported.Command(whereParameter = [| sql "cast("; arg "0"; sql " as int)" |]) |> runOnTestData
     for result in results do
         printfn "%A" result.Email

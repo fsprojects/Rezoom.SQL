@@ -101,28 +101,7 @@ module Helpers =
 
     let connectionProvider = ConnectionProvider.ResolveFrom(services)
 
-    let private tsqlProbe =
-        lazy
-            try
-                use conn = connectionProvider.Open("rzsql", Backend.TSQL)
-                conn.Dispose()
-                Ok ()
-            with exn -> Error (sprintf "%s: %s" (exn.GetType().Name) exn.Message)
-
-    /// Skips the calling test (NUnit Inconclusive) if SQL Sever isn't reachable
-    /// with the configured connection string. Surfaces the underlying error so
-    /// configuration mistakes don't look like silent skips.
-    let requireTSql () =
-        match tsqlProbe.Value with
-        | Ok () -> ()
-        | Error msg ->
-            Assert.Ignore
-                ( "Skipping TSQL TP test: connection probe failed -- "
-                + msg
-                + " (override the connection string via REZOOM_TPU_TSQL)" )
-
     let runOnTestData (cmd : Command<'a>) =
-        requireTSql ()
         TestModel.Migrate(MigrationConfig.Default, services)
         do
             use cxt = new ConnectionContext(connectionProvider)
