@@ -158,7 +158,6 @@ type RawSQLQuery = SQL<"""
 """>
 
 [<Test>]
-[<Ignore("currently this is not supported due to TSQL boolean handling in backend, Issue #39")>]
 let ``test raw sql parameter unsupported version`` () =
     let results =
         RawSQLQuery.Command(whereClause = [| sql "1="; arg 1 |]) |> runOnTestData

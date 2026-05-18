@@ -44,6 +44,60 @@ let ``first class to bool`` ()=
         """select 1 as col from Users where true"""
         """SELECT 1 AS [col] FROM [Users] WHERE ((1)<>0);"""
 
+// In TSQL there are two ways a boolean can appear:
+//   * as a "predicate" (a comparison like 1=1; not usable as a SELECT value)
+//   * as a "value" (a BIT-typed thing; not usable as a bare WHERE clause)
+// The backend inserts conversions when an expression's natural shape and
+// its surrounding context disagree:
+//   * predicate-shaped expr in value context -> CAST((CASE WHEN ... ) AS BIT)
+//   * value-shaped expr in predicate context -> ((expr)<>0)
+//
+// unsafe_inject_raw is a third case: the contents are opaque, so we must NOT
+// auto-wrap in either direction and instead trust the caller to produce SQL
+// that is valid in the context they injected it.
+
+[<Test>]
+let ``value in value context`` () =
+    translate
+        """select 1 as x"""
+        """SELECT 1 AS [x];"""
+
+[<Test>]
+let ``predicate in predicate context`` () =
+    translate
+        """select 1 as x from Users where 1 < 0"""
+        """SELECT 1 AS [x] FROM [Users] WHERE (1 < 0);"""
+
+[<Test>]
+let ``raw inject in predicate context`` () =
+    translate
+        """select 1 as x from Users where unsafe_inject_raw(@p)"""
+        """SELECT 1 AS [x] FROM [Users] WHERE @P0;"""
+
+[<Test>]
+let ``raw inject in value context`` () =
+    translate
+        """select unsafe_inject_raw(@p) as x"""
+        """SELECT @P0 AS [x];"""
+
+[<Test>]
+let ``raw inject anded with predicate stays unwrapped`` () =
+    translate
+        """select 1 as x from Users where unsafe_inject_raw(@p) and 1 < 0"""
+        """SELECT 1 AS [x] FROM [Users] WHERE (@P0 AND (1 < 0));"""
+
+[<Test>]
+let ``raw inject as value in equality`` () =
+    translate
+        """select 1 as x from Users where 0 = unsafe_inject_raw(@p)"""
+        """SELECT 1 AS [x] FROM [Users] WHERE (0 = @P0);"""
+
+[<Test>]
+let ``raw inject under not stays unwrapped`` () =
+    translate
+        """select 1 as x from Users where not unsafe_inject_raw(@p)"""
+        """SELECT 1 AS [x] FROM [Users] WHERE (NOT @P0);"""
+
 [<Test>]
 let ``iif with predicate`` ()=
     translate

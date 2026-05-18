@@ -125,21 +125,32 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
     /// These expressions don't produce actual values.
     /// For example, you can't `SELECT 1=1`, but you can do `SELECT 1 WHERE 1=1`.
     /// Conversely, you can't `SELECT 1 WHERE tbl.BitColumn`, but you can do `SELECT tbl.BitColumn`.
-    static member private IsPredicateBoolean(expr : TExpr) =
-        expr.Info.Type.Type = BooleanType
-        &&  match expr.Value with
+    /// ValueSome True means the expression is definitely a predicate and needs conversion if used in a FirstClassValue context.
+    /// ValueSome False means the expression is definitely a value and needs conversion if used in a Predicate context.
+    /// ValueNone means we have no idea what the expression is and will just leave it alone in all contexts. This is used for injected dynamic SQL.
+    static member private IsPredicateBoolean(expr : TExpr) : bool ValueOption =
+        // unsafe_inject_raw is an erased function (see DefaultFunctions.fs), which means
+        // the FunctionInvocationExpr is stripped from the AST during type-checking and
+        // replaced with its inner argument's Value (see ExprTypeChecker.fs). The original
+        // function is still discoverable via Info.Function, which erasure preserves.
+        match expr.Info.Function with
+        | Some f when f.FunctionName = Name(DefaultFunctions.Names.unsafe_inject_raw) -> ValueNone
+        | _ ->
+            if expr.Info.Type.Type <> BooleanType then ValueSome false else
+            match expr.Value with
             | SimilarityExpr _
             | BetweenExpr _
             | InExpr _
             | ExistsExpr _
             | BinaryExpr _
-            | UnaryExpr _ -> true
-            | _ -> false
+            | UnaryExpr _ -> ValueSome true
+            | _ -> ValueSome false
     member private __.BaseExpr(expr, context) = base.Expr(expr, context)
     override this.Expr(expr, context) =
         match context with
         | FirstClassValue ->
-            if TSQLExpression.IsPredicateBoolean(expr) then
+            match TSQLExpression.IsPredicateBoolean(expr) with
+            | ValueSome true ->
                 seq {
                     yield text "CAST((CASE WHEN"
                     yield ws
@@ -147,12 +158,15 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
                     yield ws
                     yield text "THEN 1 ELSE 0 END) AS BIT)"
                 }
-            else
+            | ValueSome false
+            | ValueNone ->
                 base.Expr(expr, context)
         | Predicate ->
-            if TSQLExpression.IsPredicateBoolean(expr) then
+            match TSQLExpression.IsPredicateBoolean(expr) with
+            | ValueNone
+            | ValueSome true ->
                 base.Expr(expr, context)
-            else
+            | ValueSome false ->
                 seq {
                     yield text "(("
                     yield! this.BaseExpr(expr, FirstClassValue)
