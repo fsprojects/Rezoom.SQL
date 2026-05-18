@@ -12,19 +12,21 @@
     Postgres tests skip themselves (NUnit Inconclusive) when no server is
     reachable at the configured connection string. Override the default via:
         $env:REZOOM_TPU_POSTGRES = 'Host=...;Database=...;Username=...;Password=...'
+    TSQL tests use localdb, which should "just work" on Windows but will be skipped on
+    other platforms.
 
-    The wrapper nupkgs (Rezoom.SQL.Provider.{SQLite,Postgres,TSQL} 0.12.0) must
+    The wrapper nupkgs (Rezoom.SQL.Provider.{SQLite,Postgres,TSQL}) must
     already be in ../../.localfeed or another configured NuGet source.
 
 .PARAMETER Skip
-    Subset to skip: 'Postgres', 'SQLite', or 'None' (default).
+    Subset to skip: 'Postgres', 'SQLite', 'TSQL', or 'None' (default).
 
 .PARAMETER Configuration
     Debug (default) or Release.
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('None', 'SQLite', 'Postgres')]
+    [ValidateSet('None', 'SQLite', 'Postgres', 'TSQL')]
     [string]$Skip = 'None',
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug'
@@ -39,6 +41,9 @@ if ($Skip -ne 'SQLite') {
 }
 if ($Skip -ne 'Postgres') {
     $projects += Join-Path $root 'TypeProviderUser.Postgres\TypeProviderUser.Postgres.fsproj'
+}
+if ($Skip -ne 'TSQL') {
+    $projects += Join-Path $root 'TypeProviderUser.TSQL\TypeProviderUser.TSQL.fsproj'
 }
 
 $failed = @()
