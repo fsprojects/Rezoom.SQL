@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Configuration](README.md) &gt; rzsql.json
+
+[&larr; Configuration](README.md) | [Runtime configuration &rarr;](Configuration.md)
+<!-- /nav-top -->
+
 # rzsql.json
 
 The RZSQL type provider is configured in a file called rzsql.json. If you're
@@ -58,8 +64,9 @@ is not tested.
 _default: `"rzsql"`_
 
 This setting determines the connection string name RZSQL will use at runtime.
-This should match the name used in the `<add name="..." .../>` element in the
-`<connectionStrings>` section of your program's App.config or Web.config file.
+By default this is resolved as `ConnectionStrings:{name}` in the host's
+`IConfiguration` (e.g. your `appsettings.json`). See [Runtime
+configuration](Configuration.md) for details.
 
 There is usually no reason to change the default.
 
@@ -98,3 +105,9 @@ as rzsql.json.
 Since it is painful to use sub-folders in F# projects, the default setting is
 recommended if you want to have your migration scripts be part of your project
 file (which is also recommended!).
+
+---
+<!-- nav-bottom -->
+[&larr; Configuration](README.md) | [Runtime configuration &rarr;](Configuration.md)
+<!-- /nav-bottom -->
+

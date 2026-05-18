@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../../README.md) &gt; [Language](../README.md) &gt; [Quirks](README.md) &gt; TSQL
+
+[&larr; SQLite](SQLiteQuirks.md) | [Postgres &rarr;](PostgresQuirks.md)
+<!-- /nav-top -->
+
 # T-SQL Quirks
 
 Here are some surprises you may encounter when using RZSQL with T-SQL.
@@ -134,4 +140,9 @@ running sp_rename and whatever else you need).
 
 T-SQL supports bitwise `&` and `|`, but no left or right shifts. You'll get an
 exception at compile time if you use the `<<` or `>>` operators.
+
+---
+<!-- nav-bottom -->
+[&larr; SQLite](SQLiteQuirks.md) | [Postgres &rarr;](PostgresQuirks.md)
+<!-- /nav-bottom -->
 

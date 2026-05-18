@@ -6,7 +6,6 @@ open System.Collections.Generic
 open System.Text
 open System.Threading
 open System.Threading.Tasks
-open FSharp.Control.Tasks.ContextInsensitive
 open Rezoom.SQL
 
 type private CommandBatchRuntimeBackend =
@@ -19,7 +18,8 @@ type private CommandBatchRuntimeBackend =
     | Other
     static member OfNamespace(ns : string) =
         match ns with
-        | "System.Data.SqlClient" -> SQLServer
+        | "System.Data.SqlClient"
+        | "Microsoft.Data.SqlClient" -> SQLServer
         | "System.Data.OracleClient"
         | "Oracle.DataAccess.Client" -> Oracle
         | "Npgsql" -> Postgres

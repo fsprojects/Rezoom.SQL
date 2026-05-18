@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../../README.md) &gt; [Language](../README.md) &gt; [Functions](README.md) &gt; TSQL
+
+[&larr; SQLite](SQLiteFunctions.md) | [Postgres &rarr;](PostgresFunctions.md)
+<!-- /nav-top -->
+
 # T-SQL functions
 
 This is the complete list of built-in functions supported by the `"tsql"`
@@ -674,4 +680,9 @@ backend.
 | Idempotent | Erased | Aggregate |
 |-|-|-|
 |yes|no|no|
+
+---
+<!-- nav-bottom -->
+[&larr; SQLite](SQLiteFunctions.md) | [Postgres &rarr;](PostgresFunctions.md)
+<!-- /nav-bottom -->
 

@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../../README.md) &gt; [Language](../README.md) &gt; [Quirks](README.md) &gt; Postgres
+
+[&larr; TSQL](TSQLQuirks.md) | [Dynamic SQL &rarr;](../DynamicSQL.md)
+<!-- /nav-top -->
+
 # Postgres Quirks
 
 Here are some surprises you may encounter when using RZSQL with Postgres.
@@ -60,3 +66,9 @@ On Postgres, these operators translate like so:
 | NOT REGEXP     | !~                |
 | MATCH          | SIMILAR TO        |
 | NOT MATCH      | NOT SIMILAR TO    |
+
+---
+<!-- nav-bottom -->
+[&larr; TSQL](TSQLQuirks.md) | [Dynamic SQL &rarr;](../DynamicSQL.md)
+<!-- /nav-bottom -->
+

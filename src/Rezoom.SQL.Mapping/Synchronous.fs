@@ -20,7 +20,7 @@ type Extensions =
     /// property.
     [<Extension>]
     static member Execute(cmd : Command<'a>, context : ConnectionContext) =
-        cmd.Execute(context.GetConnection(cmd.ConnectionName))
+        cmd.Execute(context.GetConnection(cmd.ConnectionName, cmd.Backend))
 
     /// Execute the command on a connection and return its scalar result.
     [<Extension>]
@@ -32,7 +32,7 @@ type Extensions =
     /// property.
     [<Extension>]
     static member ExecuteScalar(cmd : Command<#IScalar<_>>, context : ConnectionContext) =
-        cmd.ExecuteScalar(context.GetConnection(cmd.ConnectionName))
+        cmd.ExecuteScalar(context.GetConnection(cmd.ConnectionName, cmd.Backend))
 
     /// Execute the command on a connection and return the optional first and only row of its single result set.
     /// If the command returns more than 1 row, this throws an exception.
@@ -50,7 +50,7 @@ type Extensions =
     /// property.
     [<Extension>]
     static member ExecuteTryExactlyOne(cmd : Command<#IReadOnlyList<_>>, context : ConnectionContext) =
-        cmd.ExecuteTryExactlyOne(context.GetConnection(cmd.ConnectionName))
+        cmd.ExecuteTryExactlyOne(context.GetConnection(cmd.ConnectionName, cmd.Backend))
     
     /// Execute the command on a connection and return the first and only row of its single result set.
     /// If the command returns no rows or more than 1 row, this throws an exception.
@@ -64,4 +64,4 @@ type Extensions =
     /// property.
     [<Extension>]
     static member ExecuteExactlyOne(cmd : Command<#IReadOnlyList<_>>, context : ConnectionContext) =
-        cmd.ExecuteExactlyOne(context.GetConnection(cmd.ConnectionName))
+        cmd.ExecuteExactlyOne(context.GetConnection(cmd.ConnectionName, cmd.Backend))

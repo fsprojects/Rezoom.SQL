@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL
+
+[&larr; API](README.md) | [Rezoom.SQL.Synchronous &rarr;](RezoomSQLSynchronous.md)
+<!-- /nav-top -->
+
 # Rezoom.SQL
 
 This namespace contains the type providers defined in `Rezoom.SQL.Provider.dll`,
@@ -90,8 +96,9 @@ let cmd : Command<ResultSets<IReadOnlyList<TwoSQL.Row1>, IReadOnlyList<TwoSQL.Ro
 ```
 
 Each `Command` object has a `ConnectionName` property. This determines the
-connection string name it will use (from App.config or Web.config) when
-executed. You can call `myCommand.WithConnectionName(newName)` to get a new
+connection string name it will use when executed. By default that's resolved
+from `IConfiguration`'s `ConnectionStrings` section; see
+[Runtime configuration](../Configuration/Configuration.md). You can call `myCommand.WithConnectionName(newName)` to get a new
 `Command` object with a different `ConnectionName`. This is useful if you are
 using the same provided SQL command on multiple databases within the same
 running program.
@@ -137,26 +144,44 @@ type ExampleModel = SQLModel
 
 The main reason to use the `SQLModel` provider is to run migrations. The
 provided type (`ExampleModel` here) has a static `Migrate` method which takes a
-[MigrationConfig](RezoomSQLMigrations.md). For most applications using
-`MigrationConfig.Default` from the [Rezoom.SQL.Migrations
-namespace](RezoomSQLMigrations.md) is fine.
+[MigrationConfig](RezoomSQLMigrations.md) and an `IServiceProvider`. For most
+applications using `MigrationConfig.Default` from the [Rezoom.SQL.Migrations
+namespace](RezoomSQLMigrations.md) is fine. The `IServiceProvider` supplies the
+host's `IConfiguration` (or a custom `ConnectionProvider`); see [Runtime
+configuration](../Configuration/Configuration.md) for the setup.
 
 ```fsharp
 open Rezoom.SQL.Migrations
 
 [<EntryPoint>]
 let main argv =
-    ExampleModel.Migrate(MigrationConfig.Default)
+    ExampleModel.Migrate(MigrationConfig.Default, services)
+    0
+```
+
+There is also a second overload that takes a raw connection string instead of
+an `IServiceProvider`. It's handy for standalone migrator tools that want to
+point at dev/staging/prod without setting up DI / IConfiguration. The ADO.NET
+provider invariant is fixed to the canonical driver for your backend (e.g.
+`Microsoft.Data.Sqlite`, `Npgsql`, `Microsoft.Data.SqlClient`); if you need a
+different one, register a custom `ConnectionProvider` and use the
+`IServiceProvider` overload instead.
+
+```fsharp
+ExampleModel.Migrate(
+    MigrationConfig.Default,
+    "Host=staging-db.internal;Database=app;Username=migrator;Password=...")
 ```
 
 The exact details of the `Migrate` method vary depending on your database
 backend. However, basically it will go through the following steps:
 
-1. Open a database using the using the connection string in your App.config or
-   Web.config named matching the `"connectionName"` configuration setting from
-   [rzsql.json](../Configuration/Json.md).
+1. Resolve the connection string for the `"connectionName"` configured in
+   [rzsql.json](../Configuration/Json.md). By default this comes from the
+   `ConnectionStrings:{name}` section of the host's `IConfiguration` (e.g.
+   `appsettings.json`); register a custom `ConnectionProvider` to override.
 
-2. If it is unable to connect because the database does not exists, attempt to
+2. If it is unable to connect because the database does not exist, attempt to
    create it, then reconnect.
 
 3. Check for a table storing migration history (`__RZSQL_MIGRATIONS`).
@@ -167,8 +192,8 @@ backend. However, basically it will go through the following steps:
    table, run the script in a transaction and insert a row into the migration
    history table for it.
 
-There is an optional `connectionName` parameter to the `Migrate` method. If
-provided, this parameter will be used instead of the "connectionName" from
-[rzsql.json](../Configuration/Json.md) to look up the connection string in your
-App.config.
+---
+<!-- nav-bottom -->
+[&larr; API](README.md) | [Rezoom.SQL.Synchronous &rarr;](RezoomSQLSynchronous.md)
+<!-- /nav-bottom -->
 

@@ -1,4 +1,4 @@
 ﻿{
-  "backend": "tsql",
+  "backend": "sqlite",
   "connectionName": "SQLFiddle"
 }

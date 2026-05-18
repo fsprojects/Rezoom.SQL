@@ -1,4 +1,4 @@
-﻿namespace Rezoom.SQL
+namespace Rezoom.SQL
 open System
 open System.Collections.Generic
 open Rezoom.SQL.Mapping
@@ -7,13 +7,14 @@ open Rezoom.SQL.Mapping
 /// Keeps them cached and open until it is disposed, then closes all its connections.
 type ConnectionContext(provider : ConnectionProvider) =
     let connections = Dictionary(StringComparer.OrdinalIgnoreCase)
-    new() = new ConnectionContext(DefaultConnectionProvider())
-    /// Get the open `DbConnection` by name. If it is not already open, open it according to
-    /// the connection provider (usually via the connection string from App.confg).
-    member __.GetConnection(name : string) =
+    /// Get the open `DbConnection` by name. If it is not already open, open it via
+    /// the connection provider. `backend` is the compile-time dialect from the
+    /// originating Command; the provider may use it (e.g. to pick a default
+    /// driver) or ignore it.
+    member __.GetConnection(name : string, backend : Backend) =
         let succ, found = connections.TryGetValue(name)
         if succ then found else
-        let conn = provider.Open(name)
+        let conn = provider.Open(name, backend)
         connections.[name] <- conn
         conn
     /// Close all the open connections.
@@ -33,4 +34,3 @@ type ConnectionContext(provider : ConnectionProvider) =
             else raise <| AggregateException(exceptions)
     interface IDisposable with
         member this.Dispose() = this.Dispose()
-

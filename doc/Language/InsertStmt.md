@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Insert statements
+
+[&larr; Select statements](SelectStmt.md) | [Update statements &rarr;](UpdateStmt.md)
+<!-- /nav-top -->
+
 # Insert Statements
 
 An **insert statement** adds rows to a table. There are two syntactic forms this
@@ -5,7 +11,7 @@ type of statement can take in RZSQL.
 
 ### _insert-stmt_
 
-{% include "Diagrams/InsertStmt.svg" %}
+![](Diagrams/InsertStmt.svg)
 
 In the first form, which is common to most SQL databases, you specify the column
 names you'll be supplying data for, then give the data using a select statement.
@@ -46,3 +52,9 @@ This compiles to a `VALUES(...)` clause.
 
 You can experiment with the various insert statement types
 [here](http://rzsql.net/#63DD33DE821DA57BC8E3268EB8FB013441B48B46).
+
+---
+<!-- nav-bottom -->
+[&larr; Select statements](SelectStmt.md) | [Update statements &rarr;](UpdateStmt.md)
+<!-- /nav-bottom -->
+

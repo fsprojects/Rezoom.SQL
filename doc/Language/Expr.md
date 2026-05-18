@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Expressions
+
+[&larr; Literals](Literal.md) | [Select statements &rarr;](SelectStmt.md)
+<!-- /nav-top -->
+
 # Expressions
 
 Expressions are the most complex part of RZSQL's syntax. An expression
@@ -9,7 +15,7 @@ reference.
 
 ### _expr_
 
-{% include "Diagrams/Expr.svg" %}
+![](Diagrams/Expr.svg)
 
 ## The simplest expressions
 
@@ -257,3 +263,9 @@ END
 
 The EXISTS expression takes a subquery on its right side. It returns true if the
 subquery yields any rows, false otherwise.
+
+---
+<!-- nav-bottom -->
+[&larr; Literals](Literal.md) | [Select statements &rarr;](SelectStmt.md)
+<!-- /nav-bottom -->
+

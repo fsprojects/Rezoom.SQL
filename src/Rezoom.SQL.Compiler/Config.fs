@@ -1,18 +1,15 @@
-﻿module Rezoom.SQL.Compiler.Config
+module Rezoom.SQL.Compiler.Config
 open System
 open FParsec
+open Rezoom.SQL.Mapping
 
-type ConfigBackend =
-    | Identity // outputs Rezoom.SQL that can be parsed back
-    | SQLite
-    | TSQL
-    | Postgres
-    member this.ToBackend() =
-        match this with
-        | Identity -> DefaultBackend() :> IBackend
-        | SQLite -> SQLite.SQLiteBackend() :> IBackend
-        | TSQL -> TSQL.TSQLBackend() :> IBackend
-        | Postgres -> Postgres.PostgresBackend() :> IBackend
+/// Map the dialect DU to its corresponding compile-time IBackend implementation.
+let toIBackend (backend : Backend) : IBackend =
+    match backend with
+    | RzSQL -> DefaultBackend() :> IBackend
+    | SQLite -> SQLite.SQLiteBackend() :> IBackend
+    | TSQL -> TSQL.TSQLBackend() :> IBackend
+    | Postgres -> Postgres.PostgresBackend() :> IBackend
 
 type ConfigOptionalStyle =
     | CsStyle // optional value types get wrapped in Nullable, optional reference types untouched
@@ -20,7 +17,7 @@ type ConfigOptionalStyle =
 
 type Config =
     {   /// Which backend to use.
-        Backend : ConfigBackend
+        Backend : Backend
         /// Path to the migrations folder relative to the directory the config file resides in.
         MigrationsPath : string
         /// Connection string name to use at runtime.
@@ -30,7 +27,7 @@ type Config =
     }
 
 let defaultConfig =
-    {   Backend = Identity
+    {   Backend = RzSQL
         MigrationsPath = "."
         ConnectionName = "rzsql"
         Optionals = FsStyle
@@ -44,7 +41,7 @@ module private Parser =
         -- +.[  %% ci "SQLITE" -|> SQLite
                 %% [ ci "TSQL"; ci "MSSQL" ] -|> TSQL
                 %% ci "POSTGRES" -- zeroOrOne * ci "QL" -|> Postgres
-                %% ci "RZSQL" -|> Identity
+                %% ci "RZSQL" -|> RzSQL
             ]
         -- '"'
         -|> id
@@ -62,7 +59,7 @@ module private Parser =
             anyOf "\"\\/bfnrt"
             |>> function
                 | 'b' -> '\b'
-                | 'f' -> '\u000C'
+                | 'f' -> ''
                 | 'n' -> '\n'
                 | 'r' -> '\r'
                 | 't' -> '\t'
@@ -92,7 +89,7 @@ module private Parser =
 
     let property =
         %[
-            prop "BACKEND" (backend |>> fun backend config -> { config with Backend = backend })
+            prop "BACKEND" (backend |>> fun backend (config : Config) -> { config with Backend = backend })
             prop "MIGRATIONS" (stringLiteral |>> fun path config -> { config with MigrationsPath = path })
             prop "CONNECTIONNAME" (stringLiteral |>> fun conn config -> { config with ConnectionName = conn })
             prop "OPTIONALS" (optionals |>> fun opts config -> { config with Optionals = opts })

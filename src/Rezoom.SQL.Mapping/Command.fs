@@ -17,6 +17,7 @@ type Command(data : CommandData, parameters : CommandParameter IReadOnlyList) =
             override __.Cacheable = data.Cacheable
         }
     member __.ConnectionName = data.ConnectionName
+    member __.Backend = data.Backend
     member __.CacheInfo = cacheInfo
     member __.Fragments = data.Fragments
     member __.Parameters = parameters

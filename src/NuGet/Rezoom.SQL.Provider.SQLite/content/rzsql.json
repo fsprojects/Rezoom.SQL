@@ -1,6 +1,0 @@
-{
-  "backend": "sqlite",
-  "optionals":  "f#",
-  "migrations": ".",
-  "connectionname": "rzsql"
-}

@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Drop object statements
+
+[&larr; Alter table statements](AlterTableStmt.md) | [Navigation properties &rarr;](NavigationProperties.md)
+<!-- /nav-top -->
+
 # Drop object statements
 
 A drop statement removes an object (which could be a table, view, or index) from
@@ -6,7 +12,7 @@ for that, refer to the documentation on [delete statements](DeleteStmt.md).
 
 ### _drop-stmt_
 
-{% include "Diagrams/DropStmt.svg" %}
+![](Diagrams/DropStmt.svg)
 
 You must specify the type of object you are removing with a drop statement. If
 you specify it incorrectly, RZSQL will yell at you during compilation. For
@@ -18,4 +24,9 @@ drop table Foo
 
 This is valid if and only if `Foo` is a table. If `Foo` is a view, this code
 will not compile.
+
+---
+<!-- nav-bottom -->
+[&larr; Alter table statements](AlterTableStmt.md) | [Navigation properties &rarr;](NavigationProperties.md)
+<!-- /nav-bottom -->
 

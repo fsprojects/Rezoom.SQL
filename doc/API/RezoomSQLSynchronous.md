@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL.Synchronous
+
+[&larr; Rezoom.SQL](RezoomSQL.md) | [Rezoom.SQL.Asynchronous &rarr;](RezoomSQLAsynchronous.md)
+<!-- /nav-top -->
+
 # Rezoom.SQL.Synchronous
 
 This namespace contains extension methods to run SQL commands synchronously.
@@ -7,10 +13,13 @@ This namespace contains extension methods to run SQL commands synchronously.
 You can use these methods on a `DbConnection` obtained however you like.
 However, it is more idiomatic to use the `ConnectionContext` type in Rezoom.SQL.
 
-This will open a connection when needed using the connection strings section
-from your `app.config`. If you have multiple connection strings with differnt
-names, you can work with all of them using the same `ConnectionContext`, and all
-the database connections will be disposed when the context is disposed.
+This will open a connection when needed using the `ConnectionProvider` you pass
+to its constructor. That's typically resolved from your host's
+`IServiceProvider` via `ConnectionProvider.ResolveFrom(services)`; see
+[Runtime configuration](../Configuration/Configuration.md). If you have multiple
+connection names, you can work with all of them using the same
+`ConnectionContext`, and all the database connections will be disposed when the
+context is disposed.
 
 Example usage:
 
@@ -21,7 +30,7 @@ open Rezoom.SQL.Synchronous
 type QueryType = SQL<"select Name, Email from Users where Id = @id">
 
 let example() =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let results = QueryType.Command(id = 1).Execute(context)
     for result in results do
         printfn "%s %s" result.Name result.Email
@@ -69,3 +78,9 @@ like `select rowcount() as x;`.
 static member ExecuteScalar : cmd : Command<#IScalar<'a>> * conn : DbConnection -> 'a
 static member ExecuteScalar : cmd : Command<#IScalar<'a>> * context : ConnectionContext -> 'a
 ```
+
+---
+<!-- nav-bottom -->
+[&larr; Rezoom.SQL](RezoomSQL.md) | [Rezoom.SQL.Asynchronous &rarr;](RezoomSQLAsynchronous.md)
+<!-- /nav-bottom -->
+

@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../../README.md) &gt; [Language](../README.md) &gt; [Functions](README.md) &gt; Postgres
+
+[&larr; TSQL](TSQLFunctions.md) | [Quirks &rarr;](../Quirks/README.md)
+<!-- /nav-top -->
+
 # Postgres functions
 
 This is the complete list of built-in functions supported by the `"postgres"`
@@ -967,4 +973,9 @@ if you plan to make significant use of these Postgres-specific types.
 | Idempotent | Erased | Aggregate |
 |-|-|-|
 |yes|no|no|
+
+---
+<!-- nav-bottom -->
+[&larr; TSQL](TSQLFunctions.md) | [Quirks &rarr;](../Quirks/README.md)
+<!-- /nav-bottom -->
 

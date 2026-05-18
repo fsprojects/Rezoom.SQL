@@ -1,4 +1,5 @@
 ﻿module FileSystem.DemoSetup
+open System
 open Rezoom
 open Rezoom.SQL
 open Rezoom.SQL.Migrations
@@ -7,12 +8,12 @@ open Rezoom.SQL.Plans
 /// Model inferred from V1.model.sql.
 type private FileSystemModel = SQLModel
 
-let migrate() =
+let migrate (services : IServiceProvider) =
     let config =
         {   AllowRetroactiveMigrations = false
             LogMigrationRan = fun m -> printfn "Ran migration `%s`" m.MigrationName
         }
-    FileSystemModel.Migrate(config)
+    FileSystemModel.Migrate(config, services)
 
 type private NukeDataSQL = SQL<"""
     delete from Files;
@@ -101,7 +102,7 @@ let rec private setUpFolders parentId (entries : FolderStructureEntry list) =
                 let! id = InsertFolderSQL.Command(entry.Name, parentId).Scalar()
                 do! setUpFolders (Some id) entry.Children
             else
-                let content = "This is the content of " + entry.Name
+                let content = System.Text.Encoding.UTF8.GetBytes("This is the content of " + entry.Name)
                 do! InsertFileSQL.Command(content, entry.Name, Option.get parentId).Plan()
     }
 

@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <!--
+      Single source of truth for the upcoming/current release version of every
+      Rezoom.SQL package (Mapping, Compiler, Provider, and the three wrapper
+      meta-packages). Bumped only for actual releases.
+
+      During local dev iteration, build/pack-dev.ps1 writes a prerelease suffix
+      into version.local.props (gitignored). The combined version then looks
+      like 0.13.0-dev.5 until the next release.
+    -->
+    <RezoomSqlVersion>1.0.0</RezoomSqlVersion>
+  </PropertyGroup>
+</Project>

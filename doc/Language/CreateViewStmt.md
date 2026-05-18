@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Create view statements
+
+[&larr; Create table statements](CreateTableStmt.md) | [Alter table statements &rarr;](AlterTableStmt.md)
+<!-- /nav-top -->
+
 # Create View Statements
 
 A **view** is just a query with a name. To create one, you use the following
@@ -5,7 +11,7 @@ syntax:
 
 ### _create-view_
 
-{% include "Diagrams/CreateView.svg" %}
+![](Diagrams/CreateView.svg)
 
 ## An example
 
@@ -36,4 +42,8 @@ columns to the table.
 
 You'll have to explicitly drop and recreate the view to update it.
 
+---
+<!-- nav-bottom -->
+[&larr; Create table statements](CreateTableStmt.md) | [Alter table statements &rarr;](AlterTableStmt.md)
+<!-- /nav-bottom -->
 

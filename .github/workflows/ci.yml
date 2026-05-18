@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 2026netupgrade]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: build & test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore src/Rezoom.SQL.sln
+
+      - name: Build
+        run: dotnet build src/Rezoom.SQL.sln -c Release --no-restore
+
+      - name: Unit tests
+        run: dotnet test src/Rezoom.SQL.Test/Rezoom.SQL.Test.fsproj -c Release --no-build --nologo

@@ -9,7 +9,7 @@
 * [Using Rezoom](doc/Rezoom/README.md)
 * [Configuration](doc/Configuration/README.md)
     * [rzsql.json](doc/Configuration/Json.md)
-    * [App.config](doc/Configuration/AppConfig.md)
+    * [Runtime configuration](doc/Configuration/Configuration.md)
     * [Migration Trees](doc/Configuration/MigrationTrees.md)
 * [Language](doc/Language/README.md)
     * [Names](doc/Language/Name.md)

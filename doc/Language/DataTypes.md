@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Data types
+
+[&larr; Names](Name.md) | [Literals &rarr;](Literal.md)
+<!-- /nav-top -->
+
 # Data Types
 
 Currently RZSQL supports the following data types. These are the types you can
@@ -27,7 +33,7 @@ diagram:
 
 ### _type-name_
 
-{% include "Diagrams/TypeName.svg" %}
+![](Diagrams/TypeName.svg)
 
 # How types are inferred
 
@@ -154,4 +160,8 @@ select 1 as col where 1 is @x + nullable(@y)
 Notice that this is an [erased function](Functions/README.md#erased-functions),
 so using it has no effect on the compiled SQL code.
 
+---
+<!-- nav-bottom -->
+[&larr; Names](Name.md) | [Literals &rarr;](Literal.md)
+<!-- /nav-bottom -->
 

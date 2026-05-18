@@ -171,7 +171,7 @@ type UserModel =
                         Config.defaultConfig, path
         let migrationsDirectory = Path.Combine(configDirectory, config.MigrationsPath) |> Path.GetFullPath
         let migrations = loadMigrations migrationsDirectory
-        let backend = config.Backend.ToBackend()
+        let backend = Config.toIBackend config.Backend
         let migrations, model = nextModel backend.InitialModel migrations
         let migrations = stringizeMigrationTree backend migrations |> toReadOnlyList
         {   ConnectionName = config.ConnectionName

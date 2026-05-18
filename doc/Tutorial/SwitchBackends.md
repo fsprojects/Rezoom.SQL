@@ -1,4 +1,8 @@
-(this page is part of [the Rezoom.SQL tutorial](README.md))
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Tutorial](README.md) &gt; Using TSQL or Postgres
+
+[&larr; Adding migrations](AddingMigrations.md) | [Loading nested objects &rarr;](LoadingNestedObjects.md)
+<!-- /nav-top -->
 
 # Switching to SQL Server or PostgreSQL
 
@@ -47,60 +51,38 @@ compatibility layer: the functions available are still determined by the
 backend. **In this case, the T-SQL equivalent function is `scope_identity()`**.
 
 At this point your project should build, but you're not done yet. To be able to
-actually run the code, you'll need to edit your `App.config` with connection
-settings for SQL Server. This part isn't actually Rezoom-specific, it's standard
-.NET connection string stuff. However, nobody can remember the details, so here
-they are. Open up `App.config`, and you'll find something like this:
+actually run the code, you'll need to create/edit your `AppSettings.json` with
+connection settings for SQL Server. This is *runtime* configuration whereas `rzsql.json`
+was *compile-time* information.
 
+Here is an example AppSettings.json.
 
-```xml
-<configuration>
-<connectionStrings>
- <add
-  name="rzsql" providerName="System.Data.SQLite"
-  connectionString="Data Source=rzsql.db"
- />
-</connectionStrings>
-<system.data>
- <DbProviderFactories>
-  <remove invariant="System.Data.SQLite" />
-  <add
-   name="SQLite Data Provider"
-   invariant="System.Data.SQLite"
-   description=".NET Framework Data Provider for SQLite"
-   type="System.Data.SQLite.SQLiteFactory, System.Data.SQLite"
-   />
- </DbProviderFactories>
-</system.data>
-</configuration>
+```json
+{
+  "ConnectionStrings": {
+    "rzsql": "Data Source=rzsql.db"
+  },
+  "RezoomSQL": {
+    "Providers": { "rzsql": "Microsoft.Data.Sqlite" }
+  }
+}
 ```
 
-Change the `<connectionStrings>` and `<DbProviderFactories>` sections like so:
+Change the `ConnectionStrings` and `RezoomSQL.Providers` sections like so:
 
-```xml
-<configuration>
-<connectionStrings>
- <add
-  name="rzsql" providerName="System.Data.SqlClient"
-  connectionString="Data Source=.\SQLEXPRESS;Integrated Security=SSPI;Initial Catalog=rzsql"
- />
-</connectionStrings>
-<system.data>
- <DbProviderFactories>
-  <remove invariant="System.Data.SqlClient" />
-  <add
-   name="SqlClient Data Provider"
-   invariant="System.Data.SqlClient"
-   description=".Net Framework Data Provider for SqlServer"
-   type="System.Data.SqlClient.SqlClientFactory, System.Data"
-  />
- </DbProviderFactories>
-</system.data>
-</configuration>
+```json
+{
+  "ConnectionStrings": {
+    "rzsql": "Data Source=.\\SQLEXPRESS;Initial Catalog=rzsql;Integrated Security=SSPI;TrustServerCertificate=true"
+  },
+  "RezoomSQL": {
+    "Providers": { "rzsql": "Microsoft.Data.SqlClient" }
+  }
+}
 ```
 
 In the above configuration I am assuming your SQL server is located at
-.\SQLEXPRESS. If it isn't, change the `connectionString` attribute accordingly.
+.\SQLEXPRESS. If it isn't, change the connection string accordingly.
 
 ## Postgres
 
@@ -131,56 +113,39 @@ compatibility layer: the functions available are still determined by the
 backend. **In this case, the Postgres equivalent function is `lastval()`**.
 
 At this point your project should build, but you're not done yet. To be able to
-actually run the code, you'll need to edit your `App.config` with connection
-settings for Postgres. This part isn't actually Rezoom-specific, it's standard
-.NET connection string stuff. However, nobody can remember the details, so here
-they are. Open up `App.config`, and you'll find something like this:
+actually run the code, you'll need to create/edit your `AppSettings.json` with
+connection settings for Postgres. This is *runtime* configuration whereas `rzsql.json`
+was *compile-time* information.
 
+Here is an example AppSettings.json.
 
-```xml
-<configuration>
-<connectionStrings>
- <add
-  name="rzsql" providerName="System.Data.SQLite"
-  connectionString="Data Source=rzsql.db"
- />
-</connectionStrings>
-<system.data>
- <DbProviderFactories>
-  <remove invariant="System.Data.SQLite" />
-  <add
-   name="SQLite Data Provider"
-   invariant="System.Data.SQLite"
-   description=".NET Framework Data Provider for SQLite"
-   type="System.Data.SQLite.SQLiteFactory, System.Data.SQLite"
-   />
- </DbProviderFactories>
-</system.data>
-</configuration>
+```json
+{
+  "ConnectionStrings": {
+    "rzsql": "Data Source=rzsql.db"
+  },
+  "RezoomSQL": {
+    "Providers": { "rzsql": "Microsoft.Data.Sqlite" }
+  }
+}
 ```
 
-Change the `<connectionStrings>` and `<DbProviderFactories>` sections like so.
+Change the `ConnectionStrings` and `RezoomSQL.Providers` sections like so.
 You'll need to fill in your own username and password in the connection string.
 
-```xml
-<configuration>
-  <connectionStrings>
-    <add
-     name="rzsql" providerName="Npgsql"
-     connectionString="Host=localhost;Database=rzsql;Username=your_user_here;Password=your_password_here"
-    />
-  </connectionStrings>
-  <system.data>
-    <DbProviderFactories>
-      <remove invariant="Npgsql" />
-      <add
-       name="Npgsql Data Provider"
-       invariant="Npgsql"
-       support="FF"
-       description=".Net Framework Data Provider for Postgresql"
-       type="Npgsql.NpgsqlFactory, Npgsql"
-      />
-    </DbProviderFactories>
-  </system.data>
-</configuration>
+```json
+{
+  "ConnectionStrings": {
+    "rzsql": "Host=localhost;Database=rzsql;Username=your_user_here;Password=your_password_here"
+  },
+  "RezoomSQL": {
+    "Providers": { "rzsql": "Npgsql" }
+  }
+}
 ```
+
+---
+<!-- nav-bottom -->
+[&larr; Adding migrations](AddingMigrations.md) | [Loading nested objects &rarr;](LoadingNestedObjects.md)
+<!-- /nav-bottom -->
+

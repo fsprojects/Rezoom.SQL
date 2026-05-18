@@ -1,13 +1,13 @@
 ﻿namespace Rezoom.SQL.Compiler.Postgres
 open System
 open System.Collections
-open System.Configuration
 open System.Data.Common
 open System.Text.RegularExpressions
+open Rezoom.SQL.Mapping
 open Rezoom.SQL.Compiler.BackendUtilities
 
-type PostgresMigrationBackend(settings : ConnectionStringSettings) =
-    inherit DefaultMigrationBackend(settings)
+type PostgresMigrationBackend(info : ConnectionInfo) =
+    inherit DefaultMigrationBackend(info)
     static let tryGetCode (data : IDictionary) =
         if data.Contains("Code") then
             match data.["Code"] with
@@ -42,7 +42,7 @@ type PostgresMigrationBackend(settings : ConnectionStringSettings) =
         | :? DbException as exn when tryGetCode exn.Data = Some "3D000" -> // 3D000 Invalid Catalog Name
             conn.Close()
             try
-                attemptCreateDatabase conn settings.ConnectionString
+                attemptCreateDatabase conn info.ConnectionString
             with
             | innerExn -> 
                 raise <| AggregateException(exn, innerExn)

@@ -1,37 +1,40 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; Tutorial
+
+[&larr; About](../../README.md) | [Adding migrations &rarr;](AddingMigrations.md)
+<!-- /nav-top -->
+
 # Tutorial
 
 This tutorial will get you up and running with [Rezoom.SQL](https://github.com/rspeele/Rezoom.SQL).
 In just a few minutes, you'll be writing statically typed SQL in your program and running it on a SQLite database.
 
-You'll need [Visual Studio 2015 or 2017](https://www.visualstudio.com/downloads/) -- the free
-Community Edition is fine.
+You'll need [Visual Studio 2022 or newer](https://visualstudio.microsoft.com/downloads/),
+or the [.NET SDK](https://dotnet.microsoft.com/download) with your editor of
+choice. The free Community Edition of Visual Studio is fine.
 
-Make sure you check the box for "F# language support" in the installer.
-If you've already installed VS2017, you can re-run the installer and modify
-your installation to include F# language support.
+If you're using Visual Studio, make sure you checked the box for "F# language
+support" in the installer. If you've already installed VS, you can re-run the
+installer and modify your installation to include F# language support.
 
 ## Creating a new F# project for the tutorial
 
-In Visual Studio, click File -> New -> Project.
-On the left side, select Templates -> Other Languages -> Visual F#, and select Console Application.
-Make sure you target .NET framework 4.5 or newer.
+In Visual Studio, click File -> New -> Project, and select F# Console App.
+Make sure you target .NET 8 or newer.
 
-![screenshot of new project dialog](CreateNewProject.png)
+If you're using the .NET CLI, run `dotnet new console -lang "F#" -o RezoomSQLTutorial`
+in a fresh folder.
 
 ## Installing Rezoom.SQL from NuGet
 
-In your new project, open up the package manager console window (View -> Other Windows -> Package Manager Console)
-and type:
+Install two NuGet packages:
 
-```powershell
-Install-Package Rezoom.SQL.Provider
-Install-Package Rezoom.SQL.Provider.SQLite
+```sh
+dotnet add package Rezoom.SQL.Provider
+dotnet add package Rezoom.SQL.Provider.SQLite
 ```
 
-This will add Rezoom.SQL and its dependencies to your project, along with a few files to help you get started.
-
-If you are using [Paket](http://fsprojects.github.io/Paket) instead of NuGet,
-see the **important** note for Paket users [at the bottom of this page](#note-for-paket-users).
+This will add Rezoom.SQL and its dependencies to your project, plus SQLite-specific ADO.NET dependencies.
 
 ## Setting up your database model
 
@@ -61,10 +64,29 @@ Now open up `Program.fs`, the main module of your program. The first thing you'l
 and run that migration script to create your tables. Fortunately, this doesn't take much code.
 
 ```fsharp
+open System
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
 open Rezoom.SQL
+open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 
 type MyModel = SQLModel<"."> // find migrations in the project folder, "."
+
+// One-time setup: build an IConfiguration from appsettings.json and register it
+// in a service provider. Rezoom.SQL's ConnectionProvider falls back to a
+// ConfigurationConnectionProvider built from the registered IConfiguration, so
+// nothing Rezoom-specific needs to be registered.
+let services : IServiceProvider =
+    let configuration =
+        ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional = false)
+            .Build() :> IConfiguration
+    let collection = ServiceCollection()
+    collection.AddSingleton<IConfiguration>(configuration) |> ignore
+    collection.BuildServiceProvider() :> IServiceProvider
+
+let connectionProvider = ConnectionProvider.ResolveFrom(services)
 
 let migrate() =
     // customize the default migration config so that it outputs a message after running a migration
@@ -73,7 +95,7 @@ let migrate() =
             LogMigrationRan = fun m -> printfn "Ran migration: %s" m.MigrationName
         }
     // run the migrations, creating the database if it doesn't exist
-    MyModel.Migrate(config)
+    MyModel.Migrate(config, services)
 
 [<EntryPoint>]
 let main argv =
@@ -81,6 +103,19 @@ let main argv =
     // return 0 status code
     0
 ```
+
+You'll also need an `appsettings.json` next to your project. For SQLite that's just:
+
+```json
+{
+  "ConnectionStrings": {
+    "rzsql": "Data Source=rzsql.db"
+  }
+}
+```
+
+See [Runtime configuration](../Configuration/Configuration.md) for the full
+story and sample strings for the other backends.
 
 Go ahead and run this program with ctrl+F5. You should see that it outputs that
 it ran the migration. If you run it again, it won't output anything, since the
@@ -110,7 +145,7 @@ type InsertComment = SQL<"insert into Comments(AuthorId, Comment) values (@autho
 
 let addExampleUser name email =
     // open a context in which to run queries
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     // insert a user and get their ID
     let userId : int64 =
         InsertUser.Command(email = email, name = Some name).ExecuteScalar(context)
@@ -143,7 +178,7 @@ type ListUsers = SQL<"""
 """>
 
 let showUsers() =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let users = ListUsers.Command().Execute(context)
     printfn "There are %d users." users.Count
     for user in users do
@@ -181,7 +216,7 @@ type ListCommentsByUser = SQL<"""
 """>
 
 let showComments name =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let comments = ListCommentsByUser.Command(name).Execute(context)
     printfn "There are %d comments by users matching the name `%s`." comments.Count name
     for comment in comments do
@@ -199,24 +234,8 @@ let main argv =
     0
 ```
 
-## Note for Paket users
-
-The package `Rezoom.SQL.Provider.SQLite` includes sample configuration files to
-help you get started. These include V1.model.sql and rzsql.json.
-
-When you update using NuGet, if you changed these files, it'll ask you before
-overwriting them. You will probably want to answer "no" to this question.
-
-If you are using [Paket](https://fsprojects.github.io/Paket/), watch out. It
-will _not_ ask and will overwrite these files every time you update or restore
-packages. This is definitely not what you want! So if you are using Paket,
-either:
-
-* Just use Rezoom.SQL.Provider and create the configuration files yourself by
-  referring to the [configuration](../Configuration/README.md) section of this
-  manual. Once you've seen the examples it's not difficult.
-
-* Or use `nuget Rezoom.SQL.Provider.SQLite content: once` so the configuration
-  files get installed the first time, but never overwritten. [See Paket
-  docs](http://fsprojects.github.io/Paket/nuget-dependencies.html#Controlling-whether-content-files-should-be-copied-to-the-output-directory-during-build).
+---
+<!-- nav-bottom -->
+[&larr; About](../../README.md) | [Adding migrations &rarr;](AddingMigrations.md)
+<!-- /nav-bottom -->
 

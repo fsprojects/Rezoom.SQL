@@ -126,7 +126,7 @@ type Converters =
         | ColumnType.Boolean -> row.GetBoolean(col.Index)
         | _ -> 0 <> Converters.ToInt32(row, col)
     static member ToDateTime(row : Row, col : ColumnInfo) : DateTime =
-        let inline fromString str =
+        let inline fromString (str : string) =
             DateTime.Parse(str, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)
         let dt =
             match col.Type with
@@ -143,7 +143,7 @@ type Converters =
             dt.ToUniversalTime()
 
     static member ToDateTimeOffset(row : Row, col : ColumnInfo) : DateTimeOffset =
-        let inline fromString str =
+        let inline fromString (str : string) =
             DateTimeOffset.Parse(str, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind)
         let inline fromDateTime (dt : DateTime) =
             // assume if we're putting datetimes in the DB, they are UTC unless specified local
@@ -165,7 +165,7 @@ type Converters =
         | x -> failwithf "Invalid column type %A for DateTimeOffset" x
 
     static member ToGuid(row : Row, col : ColumnInfo) : Guid =
-        let inline fromString str = Guid.Parse(str)
+        let inline fromString (str : string) = Guid.Parse(str)
         let inline fromBytes bytes = Guid(bytes : byte array)
         match col.Type with
         | ColumnType.Guid -> row.GetGuid(col.Index)
@@ -245,7 +245,7 @@ let private enumTryParser (delTy) (enumTy : Type) =
             |] zero
         yield ldc'i4 0
         yield ret
-    }) null (IL(dynamicMethod.GetILGenerator())) |> ignore
+    }) null null (IL(dynamicMethod.GetILGenerator()))
     dynamicMethod.CreateDelegate(delTy)
 
 type EnumTryParserDelegate<'enum> = delegate of string * 'enum byref -> bool

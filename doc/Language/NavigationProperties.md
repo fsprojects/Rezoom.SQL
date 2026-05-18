@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Navigation properties
+
+[&larr; Drop object statements](DropStmt.md) | [Vendor statements &rarr;](VendorStatements.md)
+<!-- /nav-top -->
+
 # Navigation Properties
 
 Navigation properties are a small extension to the SQL language that help you
@@ -125,7 +131,7 @@ type GetClasses = SQL<"""
 """>
 
 let showClasses() =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let classes = GetClasses.Command().Execute(context)
     printfn "There are %d classes." classes.Count
     for c in classes do
@@ -137,3 +143,9 @@ let showClasses() =
                         printfn "Wow, these are nested a lot! %s/%s/%s/%s"
                             order.Name family.Name genus.Name spec.Name
 ```
+
+---
+<!-- nav-bottom -->
+[&larr; Drop object statements](DropStmt.md) | [Vendor statements &rarr;](VendorStatements.md)
+<!-- /nav-bottom -->
+

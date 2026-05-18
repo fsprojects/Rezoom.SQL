@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../../README.md) &gt; [Language](../README.md) &gt; Quirks
+
+[&larr; Postgres](../Functions/PostgresFunctions.md) | [SQLite &rarr;](SQLiteQuirks.md)
+<!-- /nav-top -->
+
 # Quirks
 
 This section is intended to inform readers of potential surprises they may
@@ -10,3 +16,9 @@ However, RZSQL *does* try to apply a consistent set of data types, query
 features, and schema change operations to a very _inconsistent_ set of database
 backends. Accordingly there are some areas where square pegs had to be driven
 into round holes. These are documented by backend in the following sub-chapters.
+
+---
+<!-- nav-bottom -->
+[&larr; Postgres](../Functions/PostgresFunctions.md) | [SQLite &rarr;](SQLiteQuirks.md)
+<!-- /nav-bottom -->
+

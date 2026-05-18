@@ -1,4 +1,8 @@
-(this page is part of [the Rezoom.SQL tutorial](README.md))
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Tutorial](README.md) &gt; Asynchronous programming
+
+[&larr; Loading nested objects](LoadingNestedObjects.md) | [Using Rezoom &rarr;](../Rezoom/README.md)
+<!-- /nav-top -->
 
 # Asynchronous programming
 
@@ -14,7 +18,7 @@ open Rezoom.SQL.Synchronous
 type MyQuery = SQL<"select * from MyTable">
 
 let runMyQuery () : IReadOnlyList<MyQuery.Row> =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let command = ListCommentsByUser.Command(name)
     command.Execute(context)
 ```
@@ -46,7 +50,7 @@ type MyQuery = SQL<"select * from MyTable">
 
                   // v-- notice the type difference
 let runMyQuery () : Task<IReadOnlyList<MyQuery.Row>> =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let command = ListCommentsByUser.Command(name)
     command.Execute(context)
 ```
@@ -58,9 +62,8 @@ its result (of type `'a`), you **should not** use the `.Result` property. This
 will block the calling thread while waiting for the task to finish, defeating
 the entire point of using tasks in the first place!
 
-Instead, you can use [the task computation
-expression](https://github.com/rspeele/TaskBuilder.fs) that comes with Rezoom,
-like so:
+Instead, you can use F#'s built-in `task { }` computation expression (in
+FSharp.Core 5.0+), like so:
 
 ```fsharp
 open Rezoom.SQL
@@ -70,7 +73,7 @@ type MyQuery = SQL<"select * from MyTable">
 
 let runMyQuery () : Task<int> =
     task {
-        use context = new ConnectionContext()
+        use context = new ConnectionContext(connectionProvider)
         let command = ListCommentsByUser.Command(name)
         // notice that this variable is bound with `let!`
         let! results = command.Execute(context)
@@ -93,3 +96,9 @@ worth checking out the [Rezoom](../Rezoom/README.md) tutorial. Rezoom's `Plan`
 type is a bit like `Async` or `Task`, but is smart about data dependencies. It
 can save you from having to write complex or tightly coupled code to avoid
 excessive database round trips.
+
+---
+<!-- nav-bottom -->
+[&larr; Loading nested objects](LoadingNestedObjects.md) | [Using Rezoom &rarr;](../Rezoom/README.md)
+<!-- /nav-bottom -->
+

@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Names
+
+[&larr; Language](README.md) | [Data types &rarr;](DataTypes.md)
+<!-- /nav-top -->
+
 # Names
 
 Every programming language needs a way to name things like functions and
@@ -17,7 +23,7 @@ brackets, or double quotes to wrap names.
 
 ### _name_
 
-{% include "Diagrams/Name.svg" %}
+![](Diagrams/Name.svg)
 
 Regardless of which name syntax you use in your RZSQL source code, the compiled
 code will quote all names using the syntax native to your chosen database
@@ -35,7 +41,7 @@ and `temp`.
 
 ### _object-name_
 
-{% include "Diagrams/ObjectName.svg" %}
+![](Diagrams/ObjectName.svg)
 
 ## Column names
 
@@ -49,4 +55,10 @@ statement.
 
 ### _column-name_
 
-{% include "Diagrams/ColumnName.svg" %}
+![](Diagrams/ColumnName.svg)
+
+---
+<!-- nav-bottom -->
+[&larr; Language](README.md) | [Data types &rarr;](DataTypes.md)
+<!-- /nav-bottom -->
+

@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/rspeele/Rezoom.SQL.svg?branch=master)](https://travis-ci.org/rspeele/Rezoom.SQL)
+<!-- nav-top -->
+**Documentation:** [Tutorial](doc/Tutorial/README.md) | [Using Rezoom](doc/Rezoom/README.md) | [Configuration](doc/Configuration/README.md) | [Language](doc/Language/README.md) | [API](doc/API/README.md)
+<!-- /nav-top -->
 
-[Tutorial & full documentation](https://rspeele.gitbooks.io/rezoom-sql/doc/Tutorial/)
-
-[Query playground -- try out the SQL dialect live!](http://rzsql.net/#52632EC5A298CFFFD652D53C03DD1318A9DACA3C)
+[Query playground -- try out the SQL dialect live!](https://rzsql.com/#1F854F9945C2061389778AE5DB98238E21D3A62B)
 
 # Statically typed SQL for F# #
 
@@ -45,7 +45,7 @@ langages. There is even an option to represent nullable types with C#-style
 extra smoothly.
 
 Check out the [query
-playground](http://rzsql.net/#52632EC5A298CFFFD652D53C03DD1318A9DACA3C) to see
+playground](https://rzsql.com/#1F854F9945C2061389778AE5DB98238E21D3A62B) to see
 what kinds of SQL you can write.
 
 ## The productivity of static typing
@@ -84,7 +84,7 @@ tables and columns you need for the feature you're coding, while your other team
 members do the same for their features -- _without_ having to decide the **One
 True Migration Order** when you merge.
 
-See details [here](https://rspeele.gitbooks.io/rezoom-sql/doc/Configuration/MigrationTrees.html).
+See details [here](doc/Configuration/MigrationTrees.md).
 
 # Integration with Rezoom
 
@@ -155,6 +155,5 @@ without any of the effort of writing your own caching layer.
 ## Get started
 
 To get started using RZSQL, read the
-[tutorial](https://rspeele.gitbooks.io/rezoom-sql/doc/Tutorial/). It'll get you
+[tutorial](doc/Tutorial/README.md). It'll get you
 up and running in 5 minutes or your money back.
-

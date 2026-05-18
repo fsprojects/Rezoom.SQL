@@ -1,4 +1,8 @@
-(this page is part of [the Rezoom.SQL tutorial](README.md))
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Tutorial](README.md) &gt; Loading nested objects
+
+[&larr; Using TSQL or Postgres](SwitchBackends.md) | [Asynchronous programming &rarr;](Async.md)
+<!-- /nav-top -->
 
 # Loading Nested Objects
 
@@ -35,7 +39,7 @@ type GetUsersWithComments = SQL<"""
 """>
 
 let showUsersWithComments() =
-    use context = new ConnectionContext()
+    use context = new ConnectionContext(connectionProvider)
     let users = GetUsersWithComments.Command().Execute(context)
     printfn "There are %d users." users.Count
     for user in users do
@@ -55,3 +59,9 @@ UserId`.
 
 You can read more about this feature on the [Navigation
 Properties](../Language/NavigationProperties.md) page.
+
+---
+<!-- nav-bottom -->
+[&larr; Using TSQL or Postgres](SwitchBackends.md) | [Asynchronous programming &rarr;](Async.md)
+<!-- /nav-bottom -->
+
