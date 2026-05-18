@@ -1,11 +1,25 @@
 ﻿namespace TypeProviderUser.TSQL
+open Microsoft.Extensions.Configuration
+open Microsoft.Extensions.DependencyInjection
+open NUnit.Framework
 open Rezoom.SQL
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 open Rezoom.SQL.Synchronous
 open System.IO
+open System
 
 type TestModel = SQLModel<".">
+
+type CleanTestData = SQL<"""
+vendor tsql {
+    drop table __RZSQL_MIGRATIONS;
+    drop table ArticleComments;
+    drop table Articles;
+    drop table Users;
+    drop table Pictures;
+}
+""">
 
 type TestData = SQL<"""
 delete from ArticleComments;
@@ -69,12 +83,51 @@ values  ( (select Id from Users where Name = 'Marge')
 
 [<AutoOpen>]
 module Helpers =
-  let runOnTestData (cmd : Command<'a>) =
-      TestModel.Migrate(MigrationConfig.Default)
-      do
-        use cxt = new ConnectionContext()
+    // Process-wide service provider. Configuration sources, in order:
+    ///  1. appsettings.json
+    ///  2. Env vars. REZOOM_TPU_TSQL overrides ConnectionStrings:rzsql.
+    let services : IServiceProvider =
+        let configuration =
+            ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional = false)
+                .AddEnvironmentVariables()
+                .Build()
+        let envOverride = Environment.GetEnvironmentVariable("REZOOM_TPU_TSQL")
+        if not (String.IsNullOrEmpty envOverride) then
+            configuration.["ConnectionStrings:rzsql"] <- envOverride
+        let collection = ServiceCollection()
+        collection.AddSingleton<IConfiguration>(configuration :> IConfiguration) |> ignore
+        collection.BuildServiceProvider() :> IServiceProvider
+
+    let connectionProvider = ConnectionProvider.ResolveFrom(services)
+
+    let private tsqlProbe =
+        lazy
+            try
+                use conn = connectionProvider.Open("rzsql", Backend.TSQL)
+                conn.Dispose()
+                Ok ()
+            with exn -> Error (sprintf "%s: %s" (exn.GetType().Name) exn.Message)
+
+    /// Skips the calling test (NUnit Inconclusive) if SQL Sever isn't reachable
+    /// with the configured connection string. Surfaces the underlying error so
+    /// configuration mistakes don't look like silent skips.
+    let requireTSql () =
+        match tsqlProbe.Value with
+        | Ok () -> ()
+        | Error msg ->
+            Assert.Ignore
+                ( "Skipping TSQL TP test: connection probe failed -- "
+                + msg
+                + " (override the connection string via REZOOM_TPU_TSQL)" )
+
+    let runOnTestData (cmd : Command<'a>) =
+        requireTSql ()
+        TestModel.Migrate(MigrationConfig.Default, services)
+        do
+            use cxt = new ConnectionContext(connectionProvider)
+            CleanTestData.Command().Execute(cxt)
+        TestModel.Migrate(MigrationConfig.Default, services)
+        use cxt = new ConnectionContext(connectionProvider)
         TestData.Command().Execute(cxt)
-      TestModel.Migrate(MigrationConfig.Default)
-      use cxt = new ConnectionContext()
-      TestData.Command().Execute(cxt)
-      cmd.Execute(cxt)
+        cmd.Execute(cxt)

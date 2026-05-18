@@ -1,14 +1,12 @@
 ﻿module TypeProviderUser.TSQL.TestSelects
 open System
 open System.Threading
-open System.Threading.Tasks
 open NUnit.Framework
 open FsUnit
 open Rezoom
 open Rezoom.SQL
 open Rezoom.SQL.Plans
 open MBrace.FsPickler
-open Rezoom
 
 type TestEqualInteger = SQL<"""
 select * from Users where Id = @userId
