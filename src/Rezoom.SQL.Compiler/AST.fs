@@ -1,4 +1,21 @@
-﻿namespace Rezoom.SQL.Compiler
+﻿// Abstract syntax tree for our generic SQL dialect that we can parse and translate to different backends.
+// "Last edited 9 years ago". My God. I was so ambitious and smart and utterly foolish then. I am less of all three now.
+// I thought this code was self-documenting.
+// Coming back to it after so long, I must admit it took me some head scratching to understand:
+// When a type in the AST takes generic parameters <'t, 'e>, 't means table type info and 'e means expression type info.
+// Well, technically 't could be info about something other than a table, like a view, but basically it's a table-ish thing in the DB.
+// AST members carry these info properties around so they can have metadata attached about what their type is.
+// A string goes through the parser and makes an AST<unit, unit> because we initially don't know jack about what it refers to.
+// When we start typechecking it against a user model (SQL schema, tables and views etc) in TypeChecker.fs, we produce
+// an AST of <ObjectInfo<InferredType>, ExprInfo<InferredType>>.
+// Those types are aliased in InferredTypes.fs.
+// When we are done processing type inference, we turn our conclusions about each type into a finalized
+// AST of <ObjectInfo<ColumnType>, ExprInfo<ColumnType>>.
+// Those types are aliased in ExprInfo.fs.
+// Finally, that fully typechecked AST is what gets fed into the backend for translation to CommandFragments.
+// And that's the way it is.
+
+namespace Rezoom.SQL.Compiler
 open System
 open System.Collections.Generic
 
