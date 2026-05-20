@@ -1,4 +1,4 @@
-module Rezoom.SQL.Mapping.CustomPrimitives
+namespace Rezoom.SQL.Mapping.CodeGeneration
 open System
 open System.Collections.Generic
 open System.Reflection
@@ -31,91 +31,9 @@ type CustomPrimitiveMapping =
         ToPrimitiveMethod : MethodInfo
     }
 
-[<Struct>]
-type private CandidateMethodType =
-    | FromPrimitive
-    | ToPrimitive
-
-type private CandidateMethod =
-    {   MethodInfo : MethodInfo
-        CandidateType : CandidateMethodType
-        CustomType : Type
-        UnderlyingPrimitive : Type
-    }
-
-let private checkForCandidateMethod (meth : MethodInfo) =
-    if meth.IsGenericMethod then None else
-    let candType =
-        match meth.Name with
-        | "FromPrimitive" -> Some FromPrimitive
-        | "ToPrimitive" -> Some ToPrimitive
-        | _ -> None
-    match candType with
-    | None -> None
-    | Some candType ->
-        match meth.GetParameters() with
-        | [| singleParam |] ->
-            let customType, underlyingType =
-                match candType with
-                | FromPrimitive -> meth.ReturnType, singleParam.ParameterType
-                | ToPrimitive -> singleParam.ParameterType, meth.ReturnType
-            {   MethodInfo = meth
-                CandidateType = candType
-                CustomType = customType
-                UnderlyingPrimitive = underlyingType
-            } |> Some
-        | _ -> None
-
-let findMappingsInAssembly (asm : Assembly) : CustomPrimitiveMapping seq =
-    seq {
-        for publicType in asm.GetExportedTypes() do
-            let methods = publicType.GetMethods(BindingFlags.Public ||| BindingFlags.Static ||| BindingFlags.DeclaredOnly)
-            let candidateGroups =
-                methods
-                |> Array.choose checkForCandidateMethod
-                |> Array.groupBy (fun a -> a.CustomType)
-            for customType, candidateMethods in candidateGroups do
-                let toPrims, fromPrims = candidateMethods |> Array.partition (fun m -> m.CandidateType = ToPrimitive)
-                match toPrims, fromPrims with
-                | [| singleToPrim |], [| singleFromPrim |] ->
-                    if singleToPrim.UnderlyingPrimitive <> singleFromPrim.UnderlyingPrimitive then
-                        failwithf
-                            "Custom type %s has conflicting primitive types: %s takes a %s, but %s returns a %s."
-                                customType.FullName
-                                (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
-                                singleFromPrim.UnderlyingPrimitive.FullName
-                                (singleToPrim.MethodInfo.DeclaringType.FullName + "." + singleToPrim.MethodInfo.Name)
-                                singleToPrim.UnderlyingPrimitive.FullName
-                    elif singleToPrim.UnderlyingPrimitive = singleToPrim.CustomType then
-                        failwithf
-                            "Custom type %s is mapped to itself via %s."
-                            singleToPrim.CustomType.FullName
-                            (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
-                    elif not <| ColumnType.isPrimitiveClrType singleToPrim.UnderlyingPrimitive then
-                        failwithf
-                            "Custom type %s maps to an unsupported primitive %s, via %s."
-                            singleToPrim.CustomType.FullName
-                            singleToPrim.UnderlyingPrimitive.FullName
-                            (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
-                    else
-                    yield
-                        {   CustomType = customType
-                            UnderlyingPrimitive = singleToPrim.UnderlyingPrimitive
-                            FromPrimitiveMethod = singleFromPrim.MethodInfo
-                            ToPrimitiveMethod = singleToPrim.MethodInfo
-                        }
-                | [||], _ ->
-                    failwithf "Missing ToPrimitive for custom type %s" customType.FullName
-                | _, [||] ->
-                    failwithf "Missing FromPrimitive for custom type %s" customType.FullName
-                | _ ->
-                    failwithf "Custom type %s has multiple ToPrimitive and FromPrimitive static methods defined for it, within the same type %s."
-                        customType.FullName
-                        publicType.FullName
-    }
-
 /// Holds all the custom primitive mappings we are aware of the user defining for their model.
-type CustomPrimitiveMappings(mappings : CustomPrimitiveMapping seq) =
+type CustomPrimitiveMappings(identity : string, mappings : CustomPrimitiveMapping seq) =
+    static let empty = CustomPrimitiveMappings("", Seq.empty)
     let byType = Dictionary<Type, CustomPrimitiveMapping>()
     do
         for mapping in mappings do
@@ -125,4 +43,11 @@ type CustomPrimitiveMappings(mappings : CustomPrimitiveMapping seq) =
     member this.TryGetMapping(t : Type) =
         let found, map = byType.TryGetValue(t)
         if found then ValueSome map else ValueNone
+    /// Identity of this set of mappings. This way we can cache the entity reader generated for each mapping set
+    /// in case the same row type is used by two different models with two different sets of configuration for
+    /// custom type mapping. Which would be a bad idea, but if people want to do it... fine.
+    /// The identity string can be anything, but we'll typically generate it from the set of assembly names that were searched
+    /// to locate mappings.
+    member this.Identity = identity
+    static member Empty = empty
 

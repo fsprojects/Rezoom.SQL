@@ -1,8 +1,13 @@
 ﻿module Rezoom.SQL.Test.Blueprints
 open NUnit.Framework
-open FsUnit
 open Rezoom.SQL.Mapping
+open Rezoom.SQL.Mapping.CodeGeneration
 open System
+
+// Shim to make these tests work without having to specify a custom mapping.
+module Blueprint =
+    let ofType (ty) =
+        Rezoom.SQL.Mapping.Blueprint.ofType CustomPrimitiveMappings.Empty ty
 
 type Folder =
     {

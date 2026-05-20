@@ -149,19 +149,19 @@ and SharedCommandFactory<'id, 'a when 'id : equality>(buildCommand : 'id seq -> 
     let cacheArgument = CommandErrandArgument(templateCommand.Parameters)
     member internal __.BuildCommand = buildCommand
     member internal __.Selector = selector
-    member factory.ErrandForKey(id : 'id) =
-        let cacheArg = box (id, cacheArgument)
+    member factory.ErrandForKey(key : 'id) =
+        let cacheArg = box (key, cacheArgument)
         { new AsynchronousErrand<'a IReadOnlyList>() with
             override __.CacheInfo = templateCommand.CacheInfo
             override __.CacheArgument = cacheArg
             override __.SequenceGroup = null
             override __.ToString() =
-                templateCommand.ToString() + " (Arg = " + string (box id) + ")"
+                templateCommand.ToString() + " (Arg = " + string (box key) + ")"
             override __.Prepare(cxt) =
                 let batches = cxt.GetPlanLocal<BatchesLocal, _>()
                 let batch = batches.GetBatch(connectionName, backend)
                 let subErrands = cxt.GetPlanLocal<SharedCommandLookupLocal<'id, 'a>, _>().ByFactory(factory, batch)
-                subErrands.PrepareId(id)
+                subErrands.PrepareId(key)
         } :> Errand<'a IReadOnlyList>
 
 // Have to use a C#-style extension method to support the scalar constraint.

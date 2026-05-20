@@ -3,7 +3,6 @@ open Rezoom.SQL.Mapping
 open LicenseToCIL
 open LicenseToCIL.Ops
 open System
-open System.Collections.Generic
 open System.Globalization
 open System.Reflection
 open System.Reflection.Emit
@@ -257,12 +256,29 @@ type EnumTryParser<'enum>() =
     static member TryParse(str : string, enum : 'enum byref) =
         parser.Invoke(str, &enum)
 
-let rec converter (ty : Type) : RowConversionMethod option =
+let rec converter (custom : CustomPrimitiveMappings) (ty : Type) : RowConversionMethod option =
+    match custom.TryGetMapping(ty) with
+    | ValueSome customMapping ->
+        let rawConverter = converter custom customMapping.UnderlyingPrimitive
+        match rawConverter with
+        | None ->
+            // we should not get here. the custom mapping loader already filters out mappings
+            // that do not use real primitives.
+            failwithf 
+                "No converter found for underlying primitive %s of custom type %s. Should never happen."
+                customMapping.UnderlyingPrimitive.FullName
+                customMapping.CustomType.FullName
+        | Some rawConverter ->
+            cil {
+                yield rawConverter
+                yield Ops.call1 customMapping.FromPrimitiveMethod
+            } |> Some
+    | ValueNone ->
     let succ, meth = convertersByType.TryGetValue(ty)
     if succ then
         Some (Ops.call2 meth)
     elif ty.IsEnum then
-        match converter (ty.GetEnumUnderlyingType()) with
+        match converter custom (ty.GetEnumUnderlyingType()) with
         | None -> None
         | Some converter ->
             cil {
@@ -290,15 +306,15 @@ let rec converter (ty : Type) : RowConversionMethod option =
                 yield converter
                 yield mark exit
             } |> Some
-    else genericConverter ty
+    else genericConverter custom ty
 
-and genericConverter (ty : Type) : RowConversionMethod option =
+and genericConverter (custom : CustomPrimitiveMappings) (ty : Type) : RowConversionMethod option =
     if ty.IsConstructedGenericType then
         let def = ty.GetGenericTypeDefinition()
         if def = typedefof<_ Nullable> then
             match ty.GetGenericArguments() with
             | [| nTy |] ->
-                match converter nTy with
+                match converter custom nTy with
                 | None -> None
                 | Some innerConverter ->
                 cil {
@@ -331,7 +347,7 @@ and genericConverter (ty : Type) : RowConversionMethod option =
         elif def = typedefof<_ option> then
             match ty.GetGenericArguments() with
             | [| nTy |] ->
-                match converter nTy with
+                match converter custom nTy with
                 | None -> None
                 | Some innerConverter ->
                 cil {
@@ -360,3 +376,86 @@ and genericConverter (ty : Type) : RowConversionMethod option =
             | _ -> failwith "Cannot function in world where FSharpOption<T> doesn't have one type argument."
         else None
     else None
+
+[<Struct>]
+type private CandidateMethodType =
+    | FromPrimitive
+    | ToPrimitive
+
+type private CandidateMethod =
+    {   MethodInfo : MethodInfo
+        CandidateType : CandidateMethodType
+        CustomType : Type
+        UnderlyingPrimitive : Type
+    }
+
+let private checkForCandidateMethod (meth : MethodInfo) =
+    if meth.IsGenericMethod then None else
+    let candType =
+        match meth.Name with
+        | "FromPrimitive" -> Some FromPrimitive
+        | "ToPrimitive" -> Some ToPrimitive
+        | _ -> None
+    match candType with
+    | None -> None
+    | Some candType ->
+        match meth.GetParameters() with
+        | [| singleParam |] ->
+            let customType, underlyingType =
+                match candType with
+                | FromPrimitive -> meth.ReturnType, singleParam.ParameterType
+                | ToPrimitive -> singleParam.ParameterType, meth.ReturnType
+            {   MethodInfo = meth
+                CandidateType = candType
+                CustomType = customType
+                UnderlyingPrimitive = underlyingType
+            } |> Some
+        | _ -> None
+
+let findCustomMappingsInAssembly (asm : Assembly) : CustomPrimitiveMapping seq =
+    seq {
+        for publicType in asm.GetExportedTypes() do
+            let methods = publicType.GetMethods(BindingFlags.Public ||| BindingFlags.Static ||| BindingFlags.DeclaredOnly)
+            let candidateGroups =
+                methods
+                |> Array.choose checkForCandidateMethod
+                |> Array.groupBy (fun a -> a.CustomType)
+            for customType, candidateMethods in candidateGroups do
+                let toPrims, fromPrims = candidateMethods |> Array.partition (fun m -> m.CandidateType = ToPrimitive)
+                match toPrims, fromPrims with
+                | [| singleToPrim |], [| singleFromPrim |] ->
+                    if singleToPrim.UnderlyingPrimitive <> singleFromPrim.UnderlyingPrimitive then
+                        failwithf
+                            "Custom type %s has conflicting primitive types: %s takes a %s, but %s returns a %s."
+                                customType.FullName
+                                (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
+                                singleFromPrim.UnderlyingPrimitive.FullName
+                                (singleToPrim.MethodInfo.DeclaringType.FullName + "." + singleToPrim.MethodInfo.Name)
+                                singleToPrim.UnderlyingPrimitive.FullName
+                    elif singleToPrim.UnderlyingPrimitive = singleToPrim.CustomType then
+                        failwithf
+                            "Custom type %s is mapped to itself via %s."
+                            singleToPrim.CustomType.FullName
+                            (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
+                    elif converter CustomPrimitiveMappings.Empty singleToPrim.UnderlyingPrimitive |> Option.isNone then
+                        failwithf
+                            "Custom type %s converter %s maps to %s, but that is not a supported primitive database type."
+                            singleToPrim.CustomType.FullName
+                            (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
+                            singleToPrim.UnderlyingPrimitive.FullName
+                    else
+                    yield
+                        {   CustomType = customType
+                            UnderlyingPrimitive = singleToPrim.UnderlyingPrimitive
+                            FromPrimitiveMethod = singleFromPrim.MethodInfo
+                            ToPrimitiveMethod = singleToPrim.MethodInfo
+                        }
+                | [||], _ ->
+                    failwithf "Missing ToPrimitive for custom type %s." customType.FullName
+                | _, [||] ->
+                    failwithf "Missing FromPrimitive for custom type %s." customType.FullName
+                | _ ->
+                    failwithf "Custom type %s has multiple ToPrimitive and FromPrimitive static methods defined for it, within the same type %s."
+                        customType.FullName
+                        publicType.FullName
+    }

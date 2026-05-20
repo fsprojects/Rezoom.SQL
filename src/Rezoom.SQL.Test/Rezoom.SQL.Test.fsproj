@@ -13,7 +13,6 @@
     <Compile Include="TestAggregateErrors.fs" />
     <Compile Include="TestAlterTable.fs" />
     <Compile Include="TestBlueprints.fs" />
-    <Compile Include="TestColumnType.fs" />
     <Compile Include="TestCompositeReaders.fs" />
     <Compile Include="TestCTEs.fs" />
     <Compile Include="TestIdempotence.fs" />

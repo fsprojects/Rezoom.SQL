@@ -1,15 +1,13 @@
 ﻿[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Rezoom.SQL.Mapping.Blueprint
 open Rezoom.SQL.Mapping.CodeGeneration
-open LicenseToCIL
 open System
 open System.Collections
 open System.Collections.Generic
-open System.ComponentModel
 open System.Reflection
 open System.Text.RegularExpressions
 
-let private blueprintCache = new Dictionary<Type, Blueprint>()
+let private blueprintCache = new Dictionary<struct (Type * string), Blueprint>()
 
 let private ciDictionary keyValues =
     let dictionary = new Dictionary<string, _>(StringComparer.OrdinalIgnoreCase)
@@ -115,7 +113,7 @@ let private pickName (name : string) (getter : Getter option) =
         if isNull columnNameAttr then name
         else columnNameAttr.Name
 
-let rec private compositeShapeOfType ty =
+let rec private compositeShapeOfType (custom : CustomPrimitiveMappings) ty =
     let ctor, pars = pickConstructor ty
     let props =
         ty.GetProperties() |> Array.filter (fun p -> p.CanRead)
@@ -147,7 +145,7 @@ let rec private compositeShapeOfType ty =
                     let getterTy, getter = getter
                     if getterTy.IsAssignableFrom(setterTy) then Some getter
                     else None
-                let blueprint = lazy ofType setterTy
+                let blueprint = lazy ofType custom setterTy
                 let name = pickName name getter
                 name, {
                     ColumnId = index
@@ -165,7 +163,7 @@ let rec private compositeShapeOfType ty =
         Columns = columns
     }
 
-and private cardinalityOfType (ty : Type) =
+and private cardinalityOfType (custom : CustomPrimitiveMappings) (ty : Type) =
     // If our type is an interface, choose a concrete representative instead.
     let ty = CollectionConverters.representativeForInterface ty
     if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
@@ -174,11 +172,11 @@ and private cardinalityOfType (ty : Type) =
         match CollectionConverters.converter ty null elemTy with
         | None -> failwith "Can't handle optional"
         | Some converter ->
-            Many (elementOfType elemTy, converter)
+            Many (elementOfType custom elemTy, converter)
     else
     let ifaces = ty.GetInterfaces()
     // For this to be a collection, it must implement IEnumerable.
-    if ifaces |> Array.contains (typeof<IEnumerable>) |> not then One (elementOfType ty) else
+    if ifaces |> Array.contains (typeof<IEnumerable>) |> not then One (elementOfType custom ty) else
     // Ok, really it needs to be a generic IEnumerable *of* something...
     let possible =
         ifaces
@@ -189,7 +187,7 @@ and private cardinalityOfType (ty : Type) =
         |> Seq.truncate 2
         |> Seq.toList
     match possible with
-    | [] -> One (elementOfType ty)
+    | [] -> One (elementOfType custom ty)
     | [ienum] ->
         // Also, we need to figure out some way to construct it.
         let elemTy =
@@ -197,29 +195,29 @@ and private cardinalityOfType (ty : Type) =
             | [|e|] -> e
             | _ -> failwith "Cannot run in bizzare universe where IEnumerable<T> doesn't have one generic arg."
         match CollectionConverters.converter ty ienum elemTy with
-        | None -> One (elementOfType ty)
-        | Some converter -> Many (elementOfType elemTy, converter)
+        | None -> One (elementOfType custom ty)
+        | Some converter -> Many (elementOfType custom elemTy, converter)
     | multiple ->
         failwithf "Type %O has %d IEnumerable<T> implementations. This confuses us."
             ty
             (List.length multiple)
 
-and private primitiveShapeOfType (ty : Type) =
-    PrimitiveConverters.converter ty
+and private primitiveShapeOfType (custom : CustomPrimitiveMappings) (ty : Type) =
+    PrimitiveConverters.converter custom ty
     |> Option.map (fun converter -> { Output = ty; Converter = converter })
 
-and private elementOfType (ty : Type) =
+and private elementOfType (custom : CustomPrimitiveMappings) (ty : Type) =
     let shape =
-        match primitiveShapeOfType ty with
+        match primitiveShapeOfType custom ty with
         | Some p -> Primitive p
-        | None -> Composite (compositeShapeOfType ty)
+        | None -> Composite (compositeShapeOfType custom ty)
     {
         Shape = shape
         Output = ty
     }
 
-and private ofTypeRaw (ty : Type) =
-    match primitiveShapeOfType ty with
+and private ofTypeRaw (custom : CustomPrimitiveMappings) (ty : Type) =
+    match primitiveShapeOfType custom ty with
     | Some p ->
         {
             Cardinality =
@@ -231,14 +229,17 @@ and private ofTypeRaw (ty : Type) =
         }
     | None -> 
         {
-            Cardinality = cardinalityOfType ty 
+            Cardinality = cardinalityOfType custom ty 
             Output = ty
         }
 
-and ofType ty =
+and ofType (custom : CustomPrimitiveMappings) ty =
+    let cacheKey = struct (ty, custom.Identity)
     lock blueprintCache <| fun () ->
-    let succ, existing = blueprintCache.TryGetValue(ty)
-    if succ then existing else
-    let blueprint = ofTypeRaw ty
-    blueprintCache.[ty] <- blueprint
-    blueprint
+        let succ, existing = blueprintCache.TryGetValue(cacheKey)
+        if succ then existing else
+        let blueprint = ofTypeRaw custom ty
+        blueprintCache.[cacheKey] <- blueprint
+        blueprint
+
+

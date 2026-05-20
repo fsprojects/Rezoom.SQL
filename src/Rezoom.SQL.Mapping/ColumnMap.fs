@@ -22,37 +22,6 @@ type ColumnType =
     | Boolean        = 16s
     | Guid           = 17s
 
-module ColumnType =
-    let clrType (columnType : ColumnType) =
-        match columnType with
-        | ColumnType.Invalid -> typeof<unit>
-        | ColumnType.Object -> typeof<obj>
-        | ColumnType.String -> typeof<string>
-        | ColumnType.Byte -> typeof<byte>
-        | ColumnType.Int16 -> typeof<int16>
-        | ColumnType.Int32 -> typeof<int32>
-        | ColumnType.Int64 -> typeof<int64>
-        | ColumnType.SByte -> typeof<sbyte>
-        | ColumnType.UInt16 -> typeof<uint16>
-        | ColumnType.UInt32 -> typeof<uint32>
-        | ColumnType.UInt64 -> typeof<uint64>
-        | ColumnType.Single -> typeof<single>
-        | ColumnType.Double -> typeof<double>
-        | ColumnType.Decimal -> typeof<decimal>
-        | ColumnType.DateTime -> typeof<DateTime>
-        | ColumnType.DateTimeOffset -> typeof<DateTimeOffset>
-        | ColumnType.Boolean -> typeof<bool>
-        | ColumnType.Guid -> typeof<Guid>
-        | _  -> invalidArg "type" "Unknown column type"
-    let private knownClrTypes =
-        let hs = HashSet()
-        for e in Enum.GetValues(typeof<ColumnType>) do
-            let cType = e :?> ColumnType
-            ignore <| hs.Add(clrType cType)
-        hs
-    let isPrimitiveClrType (ty : Type) =
-        knownClrTypes.Contains(ty)
-
 [<Struct>]
 type ColumnInfo =
     // must be mutable to be able to access with ldfld from generated code

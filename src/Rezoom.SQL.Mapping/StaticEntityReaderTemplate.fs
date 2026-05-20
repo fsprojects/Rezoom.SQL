@@ -193,6 +193,8 @@ type private StaticEntityReaderTemplate =
             cil {
                 let! self = deflocal builder
                 if constructorColumns |> Array.exists (fun c -> c.RequiresSelfReferenceToPush) then
+                    // todo call a wrapper method with framework check to invoke the right underlying
+                    // https://learn.microsoft.com/en-us/dotnet/fundamentals/syslib-diagnostics/syslib0050
                     let uninit =
                         typeof<System.Runtime.Serialization.FormatterServices>.GetMethod("GetUninitializedObject")
                     yield ldtoken composite.Output
@@ -268,7 +270,7 @@ type private StaticEntityReaderTemplate =
 type ReaderTemplate<'ent>() =
     static let badNamePartRegex = System.Text.RegularExpressions.Regex(@"[^a-zA-Z0-9_.]+")
     static let entType = typeof<'ent>
-    static let template =
+    static let buildTemplate (mappings : CustomPrimitiveMappings) =
         let moduleBuilder =
             let assembly = AssemblyName("RuntimeReaders." + badNamePartRegex.Replace(entType.FullName, "_"))
             let assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assembly, AssemblyBuilderAccess.Run)
@@ -281,7 +283,7 @@ type ReaderTemplate<'ent>() =
                     , TypeAttributes.Public ||| TypeAttributes.AutoClass ||| TypeAttributes.AnsiClass
                     , readerBaseType
                     )
-            StaticEntityReaderTemplate.ImplementReader(Blueprint.ofType entType, builder)
+            StaticEntityReaderTemplate.ImplementReader(Blueprint.ofType mappings entType, builder)
         let templateType =
             let builder =
                 moduleBuilder.DefineType
@@ -305,4 +307,16 @@ type ReaderTemplate<'ent>() =
             builder.CreateTypeInfo().AsType()
         Activator.CreateInstance(templateType)
         |> Unchecked.unbox : 'ent EntityReaderTemplate
-    static member Template() = template
+    static let templatesByMapping = Dictionary()
+    static let getTemplateByMapping (mappings : CustomPrimitiveMappings) =
+        lock templatesByMapping <| fun () ->
+            let succ, existing = templatesByMapping.TryGetValue(mappings.Identity)
+            if succ then existing else
+            let generated = buildTemplate mappings
+            templatesByMapping.[mappings.Identity] <- generated
+            generated
+    static let defaultTemplate = lazy getTemplateByMapping CustomPrimitiveMappings.Empty
+    static member Template(mappings: CustomPrimitiveMappings) =
+        getTemplateByMapping mappings
+            
+    static member Template() = defaultTemplate.Value
