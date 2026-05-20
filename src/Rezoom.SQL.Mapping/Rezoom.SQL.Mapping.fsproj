@@ -21,6 +21,7 @@
     <Compile Include="DataReader.fs" />
     <Compile Include="EntityReader.fs" />
     <Compile Include="Converters.fs" />
+    <Compile Include="CustomPrimitives.fs" />
     <Compile Include="PrimitiveConverters.fs" />
     <Compile Include="CollectionConverters.fs" />
     <Compile Include="BlueprintAttributes.fs" />
@@ -49,8 +50,6 @@
     <Compile Include="Plans.fsi" />
     <Compile Include="Plans.fs" />
   </ItemGroup>
-
-  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />

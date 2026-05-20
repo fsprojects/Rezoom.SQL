@@ -40,6 +40,9 @@ module ColumnType =
         | ColumnType.Double -> typeof<double>
         | ColumnType.Decimal -> typeof<decimal>
         | ColumnType.DateTime -> typeof<DateTime>
+        | ColumnType.DateTimeOffset -> typeof<DateTimeOffset>
+        | ColumnType.Boolean -> typeof<bool>
+        | ColumnType.Guid -> typeof<Guid>
         | _  -> invalidArg "type" "Unknown column type"
     let private knownClrTypes =
         let hs = HashSet()
@@ -59,7 +62,6 @@ type ColumnInfo =
 
     static member IndexField = typeof<ColumnInfo>.GetField("Index")
     static member TypeField = typeof<ColumnInfo>.GetField("Type")
-    member this.CLRType = ColumnType.clrType this.Type
 
 [<AllowNullLiteral>]
 type ColumnMap(columns, subMaps) =
