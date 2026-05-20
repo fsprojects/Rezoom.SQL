@@ -15,10 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <None Include="README.md" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Watcher.fs" />
     <Compile Include="UserModelCache.fs" />

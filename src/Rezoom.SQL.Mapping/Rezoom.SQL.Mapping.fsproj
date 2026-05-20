@@ -13,10 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <None Include="README.md" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="CILHelpers.fs" />
     <Compile Include="Row.fs" />
@@ -52,6 +49,8 @@
     <Compile Include="Plans.fsi" />
     <Compile Include="Plans.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />
