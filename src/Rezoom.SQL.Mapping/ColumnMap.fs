@@ -22,17 +22,9 @@ type ColumnType =
     | Boolean        = 16s
     | Guid           = 17s
 
-[<Struct>]
-type ColumnInfo =
-    // must be mutable to be able to access with ldfld from generated code
-    val mutable public Index : int16
-    val mutable public Type : ColumnType
-    new (index, rowValueType) = { Index = index; Type = rowValueType }
-
-    static member IndexField = typeof<ColumnInfo>.GetField("Index")
-    static member TypeField = typeof<ColumnInfo>.GetField("Type")
-    member this.CLRType =
-        match this.Type with
+module ColumnType =
+    let clrType (columnType : ColumnType) =
+        match columnType with
         | ColumnType.Invalid -> typeof<unit>
         | ColumnType.Object -> typeof<obj>
         | ColumnType.String -> typeof<string>
@@ -49,6 +41,25 @@ type ColumnInfo =
         | ColumnType.Decimal -> typeof<decimal>
         | ColumnType.DateTime -> typeof<DateTime>
         | _  -> invalidArg "type" "Unknown column type"
+    let private knownClrTypes =
+        let hs = HashSet()
+        for e in Enum.GetValues(typeof<ColumnType>) do
+            let cType = e :?> ColumnType
+            ignore <| hs.Add(clrType cType)
+        hs
+    let isPrimitiveClrType (ty : Type) =
+        knownClrTypes.Contains(ty)
+
+[<Struct>]
+type ColumnInfo =
+    // must be mutable to be able to access with ldfld from generated code
+    val mutable public Index : int16
+    val mutable public Type : ColumnType
+    new (index, rowValueType) = { Index = index; Type = rowValueType }
+
+    static member IndexField = typeof<ColumnInfo>.GetField("Index")
+    static member TypeField = typeof<ColumnInfo>.GetField("Type")
+    member this.CLRType = ColumnType.clrType this.Type
 
 [<AllowNullLiteral>]
 type ColumnMap(columns, subMaps) =

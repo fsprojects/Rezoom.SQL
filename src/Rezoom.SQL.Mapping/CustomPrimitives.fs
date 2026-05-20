@@ -82,10 +82,21 @@ let findMappingsInAssembly (asm : Assembly) : CustomPrimitiveMapping seq =
                         failwithf
                             "Custom type %s has conflicting primitive types: %s takes a %s, but %s returns a %s."
                                 customType.FullName
-                                (singleFromPrim.MethodInfo.DeclaringType.Name + "." + singleFromPrim.MethodInfo.Name)
+                                (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
                                 singleFromPrim.UnderlyingPrimitive.FullName
-                                (singleToPrim.MethodInfo.DeclaringType.Name + "." + singleToPrim.MethodInfo.Name)
+                                (singleToPrim.MethodInfo.DeclaringType.FullName + "." + singleToPrim.MethodInfo.Name)
                                 singleToPrim.UnderlyingPrimitive.FullName
+                    elif singleToPrim.UnderlyingPrimitive = singleToPrim.CustomType then
+                        failwithf
+                            "Custom type %s is mapped to itself via %s."
+                            singleToPrim.CustomType.FullName
+                            (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
+                    elif not <| ColumnType.isPrimitiveClrType singleToPrim.UnderlyingPrimitive then
+                        failwithf
+                            "Custom type %s maps to an unsupported primitive %s, via %s."
+                            singleToPrim.CustomType.FullName
+                            singleToPrim.UnderlyingPrimitive.FullName
+                            (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
                     else
                     yield
                         {   CustomType = customType
