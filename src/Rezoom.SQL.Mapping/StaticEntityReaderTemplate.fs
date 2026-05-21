@@ -316,7 +316,7 @@ type ReaderTemplate<'ent>() =
             templatesByMapping.[mappings.Identity] <- generated
             generated
     static let defaultTemplate = lazy getTemplateByMapping CustomPrimitiveMappings.Empty
-    static member Template(mappings: CustomPrimitiveMappings) =
+    static member Template(mappings: CustomPrimitiveMappings) : EntityReaderTemplate<'ent> =
         getTemplateByMapping mappings
             
-    static member Template() = defaultTemplate.Value
+    static member Template() : EntityReaderTemplate<'ent> = defaultTemplate.Value
