@@ -11,7 +11,7 @@ open System.Reflection.Emit
 [<NoComparison>]
 [<NoEquality>] 
 type private EntityReaderBuilder =
-    {
+    {   TemplateCacheField : TemplateCacheStaticField
         Ctor : E S * IL
         ProcessColumns : E S * IL
         ImpartKnowledge : E S * IL
@@ -26,18 +26,18 @@ module private UtilityInstr =
 open UtilityInstr
 
 type private StaticEntityReaderTemplate =
-    static member ColumnGenerator(builder, column) =
+    static member ColumnGenerator(builder, column, templateCacheField) =
         match column.Blueprint.Value.Cardinality with
         | One { Shape = Primitive p } ->
             PrimitiveColumnGenerator(builder, column, p) :> EntityReaderColumnGenerator
         | One { Shape = Composite c } ->
-            CompositeColumnGenerator(builder, column, c) :> EntityReaderColumnGenerator
+            CompositeColumnGenerator(builder, column, c, templateCacheField) :> EntityReaderColumnGenerator
         | Many (element, conversion) ->
             match element.Shape with
             | Composite c when c.Identity.Count > 0 ->
-                ManyEntityColumnGenerator(builder, Some column, element, conversion) :> EntityReaderColumnGenerator
+                ManyEntityColumnGenerator(builder, Some column, element, conversion, templateCacheField) :> EntityReaderColumnGenerator
             | _ ->
-                ManyColumnGenerator(builder, Some column, element, conversion) :> EntityReaderColumnGenerator
+                ManyColumnGenerator(builder, Some column, element, conversion, templateCacheField) :> EntityReaderColumnGenerator
 
     static member ImplementPrimitive(builder : TypeBuilder, ty : Type, primitive : Primitive, readerBuilder) =
         let info = builder.DefineField("_i", typeof<ColumnInfo>, FieldAttributes.Private)
@@ -78,13 +78,13 @@ type private StaticEntityReaderTemplate =
                 yield ret
             }
 
-    static member ImplementMany(builder : TypeBuilder, element : ElementBlueprint, conversion, readerBuilder) =
+    static member ImplementMany(builder : TypeBuilder, element : ElementBlueprint, conversion, readerBuilder, templateCacheField) =
         let generator =
             match element.Shape with
             | Composite c when c.Identity.Count > 0 ->
-                ManyEntityColumnGenerator(builder, None, element, conversion) :> EntityReaderColumnGenerator
+                ManyEntityColumnGenerator(builder, None, element, conversion, templateCacheField) :> EntityReaderColumnGenerator
             | _ ->
-                ManyColumnGenerator(builder, None, element, conversion) :> EntityReaderColumnGenerator
+                ManyColumnGenerator(builder, None, element, conversion, templateCacheField) :> EntityReaderColumnGenerator
         readerBuilder.Ctor |--> 
             cil {
                 yield ldarg 0
@@ -129,10 +129,10 @@ type private StaticEntityReaderTemplate =
                 yield ret
             }
             
-    static member ImplementComposite(builder, composite : Composite, readerBuilder) =
+    static member ImplementComposite(builder, composite : Composite, readerBuilder, templateCacheField) =
         let columns =
                 [| for column in composite.Columns.Values ->
-                    column, StaticEntityReaderTemplate.ColumnGenerator(builder, column)
+                    column, StaticEntityReaderTemplate.ColumnGenerator(builder, column, templateCacheField)
                 |]
         readerBuilder.Ctor |-->
             cil {
@@ -232,11 +232,13 @@ type private StaticEntityReaderTemplate =
                     | _ -> ()
                 yield ret
             } |> ignore
-    static member ImplementReader(blueprint : Blueprint, builder : TypeBuilder) =
+    static member ImplementReader(blueprint : Blueprint, builder : TypeBuilder, mappings : CustomPrimitiveMappings) =
         let readerTy = typedefof<_ EntityReader>.MakeGenericType(blueprint.Output)
         let methodAttrs = MethodAttributes.Public ||| MethodAttributes.Virtual
+        let genericType = typedefof<InternalReaderTemplateCache<_>>
+        let templateCacheField = Generation.makeTemplateStaticCacheField builder genericType
         let readerBuilder =
-            {
+            {   TemplateCacheField = templateCacheField
                 Ctor =
                     Stack.empty, IL(builder
                         .DefineConstructor(MethodAttributes.Public, CallingConventions.HasThis, Type.EmptyTypes)
@@ -262,12 +264,19 @@ type private StaticEntityReaderTemplate =
         | One { Shape = Primitive primitive } ->
             StaticEntityReaderTemplate.ImplementPrimitive(builder, blueprint.Output, primitive, readerBuilder)
         | One { Shape = Composite composite } ->
-            StaticEntityReaderTemplate.ImplementComposite(builder, composite, readerBuilder)
+            StaticEntityReaderTemplate.ImplementComposite(builder, composite, readerBuilder, templateCacheField)
         | Many (element, conversion) ->
-            StaticEntityReaderTemplate.ImplementMany(builder, element, conversion, readerBuilder)
-        builder.CreateTypeInfo().AsType()
+            StaticEntityReaderTemplate.ImplementMany(builder, element, conversion, readerBuilder, templateCacheField)
+        let finalTy = builder.CreateTypeInfo().AsType()
+        do
+            // Re-derive the closed generic type from the FINALIZED type, not the TypeBuilder.
+            let closedCacheTy = templateCacheField.GenericType.MakeGenericType(finalTy)
+            let instance = Activator.CreateInstance(closedCacheTy, [| box mappings |])
+            let fld = finalTy.GetField(templateCacheField.Field.Name)
+            fld.SetValue(null, instance)
+        finalTy
 
-type ReaderTemplate<'ent>() =
+and ReaderTemplate<'ent>() =
     static let badNamePartRegex = System.Text.RegularExpressions.Regex(@"[^a-zA-Z0-9_.]+")
     static let entType = typeof<'ent>
     static let buildTemplate (mappings : CustomPrimitiveMappings) =
@@ -283,7 +292,7 @@ type ReaderTemplate<'ent>() =
                     , TypeAttributes.Public ||| TypeAttributes.AutoClass ||| TypeAttributes.AnsiClass
                     , readerBaseType
                     )
-            StaticEntityReaderTemplate.ImplementReader(Blueprint.ofType mappings entType, builder)
+            StaticEntityReaderTemplate.ImplementReader(Blueprint.ofType mappings entType, builder, mappings)
         let templateType =
             let builder =
                 moduleBuilder.DefineType
@@ -309,6 +318,7 @@ type ReaderTemplate<'ent>() =
         |> Unchecked.unbox : 'ent EntityReaderTemplate
     static let templatesByMapping = Dictionary()
     static let getTemplateByMapping (mappings : CustomPrimitiveMappings) =
+        // TODO concurrent dict
         lock templatesByMapping <| fun () ->
             let succ, existing = templatesByMapping.TryGetValue(mappings.Identity)
             if succ then existing else
@@ -316,7 +326,22 @@ type ReaderTemplate<'ent>() =
             templatesByMapping.[mappings.Identity] <- generated
             generated
     static let defaultTemplate = lazy getTemplateByMapping CustomPrimitiveMappings.Empty
-    static member Template(mappings: CustomPrimitiveMappings) : EntityReaderTemplate<'ent> =
+    static member Template(mappings : CustomPrimitiveMappings) : EntityReaderTemplate<'ent> =
         getTemplateByMapping mappings
-            
     static member Template() : EntityReaderTemplate<'ent> = defaultTemplate.Value
+
+and InternalReaderTemplateCacheForEnt<'generatedType, 'ent>() =
+    static let mutable mapping : CustomPrimitiveMappings = Unchecked.defaultof<_>
+    static let template = lazy ReaderTemplate<'ent>.Template(mapping)
+    static member GetTemplate(mappings : CustomPrimitiveMappings) =
+        mapping <- mappings // it will be the same every time
+        template.Value
+/// Stored in static field on each generated type root. Enables stuff generated by ColumnGenerators to
+/// call in and get subtype reader templates *aware* of our mapping context, for *any* element type,
+/// without having to pass the mapping context around and do dict lookups on it every time.
+/// Note that we can't JUST store a single static ReaderTemplate<'a> for
+/// the top level entity type we're generating for. Column-generators will need to construct ReaderTemplates
+/// for column types or collection-element types, not just the top-level type. So we need a fast way
+/// for them to get mapping-aware readers for arbitrary types.
+and InternalReaderTemplateCache<'generatedType>(mappings : CustomPrimitiveMappings) =
+    member __.Template<'ent>() = InternalReaderTemplateCacheForEnt<'generatedType, 'ent>.GetTemplate(mappings)

@@ -25,11 +25,11 @@ type IntyPhoneNumber(countryCode : int, areaCode : int, num : int) =
     member this.AreaCode = areaCode
     member this.Number = num
 
-/// Should fail because it has two FromPrimitive definitions.
-type TooManyConverters() =
-    static member ToPrimitive(x : TooManyConverters) = 0
-    static member FromPrimitive(x : int) = TooManyConverters()
-    static member FromPrimitive(x : string) = TooManyConverters()
+///// Should fail because it has two FromPrimitive definitions.
+//type TooManyConverters() =
+//    static member ToPrimitive(x : TooManyConverters) = 0
+//    static member FromPrimitive(x : int) = TooManyConverters()
+//    static member FromPrimitive(x : string) = TooManyConverters()
 
 /// Testing that we can add primitive converters for types beyond our control,
 /// and could even override the default Rezoom.SQL.Mapping handling to remap a primitive

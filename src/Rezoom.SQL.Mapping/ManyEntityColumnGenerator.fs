@@ -174,6 +174,7 @@ type private ManyEntityColumnGenerator
     , column : Column option
     , element : ElementBlueprint
     , conversion : ConversionMethod
+    , templateCacheField : TemplateCacheStaticField
     ) =
     inherit EntityReaderColumnGenerator()
     let composite =
@@ -217,8 +218,7 @@ type private ManyEntityColumnGenerator
             yield keyColumns.ProcessColumns sub keyInfo
             yield cil {
                 yield dup // this
-                yield call0 (staticTemplate.GetMethod("Template")) // this, template
-                yield callvirt1 (entTemplate.GetMethod("CreateReader")) // this, reader
+                yield Generation.newEntReader templateCacheField elemTy
                 yield dup // this, reader, reader
                 yield ldloc sub // this, reader, reader, submap
                 yield callvirt2'void Generation.processColumnsMethod // this, reader
@@ -241,8 +241,7 @@ type private ManyEntityColumnGenerator
                 yield ldarg 1 // that
                 yield ldarg 0 // that, this
                 yield ldfld refReader // that, oldReader
-                yield call0 (staticTemplate.GetMethod("Template")) // that, oldReader, template
-                yield callvirt1 (entTemplate.GetMethod("CreateReader")) // that, oldReader, newReader
+                yield Generation.newEntReader templateCacheField elemTy
                 let! newReader = deflocal elemReaderTy
                 yield dup
                 yield stloc newReader
@@ -283,8 +282,7 @@ type private ManyEntityColumnGenerator
                 yield dup
                 yield ldfld entDict
                 yield ldloc keyLocal
-                yield call0 (staticTemplate.GetMethod("Template"))
-                yield callvirt1 (entTemplate.GetMethod("CreateReader"))
+                yield Generation.newEntReader templateCacheField elemTy
                 yield dup
                 yield stloc entReader
                 yield call3'void (dictTy.GetMethod("Add", [| keyColumns.Type; elemReaderTy |]))

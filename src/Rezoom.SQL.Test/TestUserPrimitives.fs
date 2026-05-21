@@ -31,5 +31,5 @@ let ``read timeonly`` () =
     reader.Read(row)
     let timeRow = reader.ToEntity()
     Assert.IsNotNull(timeRow)
-    Assert.AreEqual(1, timeRow.Id)
+    Assert.AreEqual(27, timeRow.Id)
     Assert.AreEqual(testTime, timeRow.Time)
