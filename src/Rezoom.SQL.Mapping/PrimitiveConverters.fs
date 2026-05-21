@@ -459,3 +459,8 @@ let findCustomMappingsInAssembly (asm : Assembly) : CustomPrimitiveMapping seq =
                         customType.FullName
                         publicType.FullName
     }
+
+let buildCustomMappingsFromAssemblies (asms : Assembly array) =
+    let mappings = asms |> Seq.collect findCustomMappingsInAssembly
+    let identity = asms |> Seq.map (fun a -> a.GetName().Name) |> Seq.sortBy (fun n -> n) |> String.concat "&"
+    CustomPrimitiveMappings(identity, mappings)

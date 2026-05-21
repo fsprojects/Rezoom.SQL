@@ -26,6 +26,7 @@
     <Compile Include="TestPostgres.fs" />
     <Compile Include="TestPostgresSmoke.fs" />
     <Compile Include="TestPrimitiveReaders.fs" />
+    <Compile Include="TestUserPrimitives.fs" />
     <Compile Include="TestQueryParents.fs" />
     <Compile Include="TestReadWriteReferences.fs" />
     <Compile Include="TestRoundTrip.fs" />
@@ -52,6 +53,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Rezoom.SQL.Compiler\Rezoom.SQL.Compiler.fsproj" />
     <ProjectReference Include="..\Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj" />
+    <ProjectReference Include="..\Rezoom.SQL.Test.UserTypes\Rezoom.SQL.Test.UserTypes.fsproj" />
   </ItemGroup>
 
 </Project>
