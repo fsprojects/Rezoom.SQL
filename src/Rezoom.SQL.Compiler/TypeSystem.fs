@@ -23,6 +23,7 @@ type CoreColumnType =
     | AnyTypeClass
     | ListType of CoreColumnType
     | RawSQLType
+    | UserTypeBasedOn of userTy : UserPrimitiveType * basedOn : CoreColumnType
     member this.ParentType =
         match this with
         | IntegerType Integer16 -> IntegralTypeClass
@@ -49,6 +50,7 @@ type CoreColumnType =
             let elementParent = element.ParentType
             if elementParent = element then AnyTypeClass
             else ListType elementParent
+        | UserTypeBasedOn (_, basedOn) -> basedOn
     member this.HasAncestor(candidate) =
         if this = candidate then true else
         let parent = this.ParentType
@@ -84,6 +86,7 @@ type CoreColumnType =
         | AnyTypeClass -> "<any>"
         | RawSQLType -> "<rawsql>"
         | ListType t -> "[" + string t + "]"
+        | UserTypeBasedOn (userTy, _) -> userTy.Name
     member this.ApproximateTypeName() =
         match this with
         | BooleanType -> BooleanTypeName
@@ -107,6 +110,7 @@ type CoreColumnType =
         | DateTimeishTypeClass
         | DateTimeType -> DateTimeTypeName
         | DateTimeOffsetType -> DateTimeOffsetTypeName
+        | UserTypeBasedOn (t, _) -> ResolvedUserType t
     static member OfTypeName(typeName : TypeName) =
         match typeName with
         | GuidTypeName -> GuidType
@@ -121,9 +125,7 @@ type CoreColumnType =
         | UnresolvedTypeName name ->
             bug <| sprintf "User type %s hit the type checker before the UserTypeResolution pass." name
         | ResolvedUserType t ->
-            // TODO instead of erasing immediately, represent usertypes in the CoreColumnType system
-            // so they flow up through selects, transfer inference to @params, etc.
-            CoreColumnType.OfTypeName(t.Underlying)
+            UserTypeBasedOn (t, CoreColumnType.OfTypeName(t.UnderlyingSQLTypeName))
 
 type ColumnType =
     {   Type : CoreColumnType

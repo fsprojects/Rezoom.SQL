@@ -28,7 +28,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             | DateTimeTypeName -> "DATETIME"
             | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
             | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
-            | ResolvedUserType r -> r.RawBackendType |> Option.defaultWith (fun () -> tyName r.Underlying)
+            | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> tyName r.UnderlyingSQLTypeName)
         tyName name |> text |> Seq.singleton
             
     override __.BinaryOperator op =

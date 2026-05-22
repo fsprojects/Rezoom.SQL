@@ -54,7 +54,7 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
             | DateTimeTypeName
             | DateTimeOffsetTypeName -> "TIMESTAMPTZ"
             | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
-            | ResolvedUserType r -> r.RawBackendType |> Option.defaultWith (fun () -> tyName r.Underlying)
+            | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> tyName r.UnderlyingSQLTypeName)
         tyName name |> text |> Seq.singleton
     override this.ObjectName name =
         seq {

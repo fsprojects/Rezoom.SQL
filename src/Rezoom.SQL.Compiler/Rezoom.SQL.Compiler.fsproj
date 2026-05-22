@@ -23,6 +23,7 @@
     <Compile Include="ASTMapping.fs" />
     <Compile Include="CoreParser.fs" />
     <Compile Include="Parser.fs" />
+    <Compile Include="TypeNameForCLRType.fs" />
     <Compile Include="TypeSystem.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="ModelOps.fs" />

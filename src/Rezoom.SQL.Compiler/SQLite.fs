@@ -39,7 +39,7 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | DecimalTypeName
             | DateTimeOffsetTypeName -> fail <| sprintf "Unsupported type ``%A``" name
             | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
-            | ResolvedUserType r -> r.RawBackendType |> Option.defaultWith (fun () -> tyName r.Underlying)
+            | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> tyName r.UnderlyingSQLTypeName)
         tyName name |> text |> Seq.singleton
 
 type private SQLiteStatement(indexer : IParameterIndexer) as this =

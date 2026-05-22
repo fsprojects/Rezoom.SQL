@@ -393,6 +393,7 @@ and findSingleCaseDU (publicType : Type) : UserPrimitiveType ValueOption =
                 {   UserCLRType = publicType
                     UnderlyingCLRType = singleProp.PropertyType
                     RawBackendSQLType = None
+                    SQLTypeLength = None
                     RuntimeMapping =
                         {   FromPrimitiveMethod = fromPrimitiveMethod
                             ToPrimitiveMethod = singleProp.GetMethod

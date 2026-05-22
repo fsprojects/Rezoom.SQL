@@ -18,6 +18,7 @@
 namespace Rezoom.SQL.Compiler
 open System
 open System.Collections.Generic
+open Rezoom.SQL.Mapping
 
 type NumericLiteral =
     | IntegerLiteral of uint64
@@ -50,16 +51,6 @@ type FloatSize =
     | Float32
     | Float64
 
-type ResolvedUserType =
-    {   Name : string
-        CLRType : Type
-        /// Underlying SQL type in our typesystem.
-        Underlying : TypeName
-        /// Raw string name to use on backend like char(x) for fixed-length non-unicode strs.
-        /// Can override our default type name handling.
-        RawBackendType : string option
-    }
-
 and TypeName =
     | GuidTypeName
     | StringTypeName of maxLength : int option
@@ -72,10 +63,10 @@ and TypeName =
     | DateTimeOffsetTypeName
     /// Note: case-sensitive! When resolving user types (CLR types mapped to SQL primitives)
     /// we require an exact case-sensitive match to the CLR type name.
-    | UnresolvedTypeName of string
+    | UnresolvedTypeName of typeName : string
     /// After the AST goes through user-type resolution all UnresolvedTypeNames are eliminated and replaced
     /// with ResolvedUserTypes.
-    | ResolvedUserType of ResolvedUserType
+    | ResolvedUserType of UserPrimitiveType
     member this.SupportsCollation =
         match this with
         | StringTypeName _ -> true

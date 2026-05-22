@@ -32,6 +32,9 @@ type UserPrimitiveType =
     {   UserCLRType : Type
         UnderlyingCLRType : Type
         RawBackendSQLType : string option
+        /// If our underlying type is string, we may want to specify a max length in SQL.
+        /// Ignored if RawBackendSQLType is Some, in which case we trust it directly.
+        SQLTypeLength : int option
         RuntimeMapping : RuntimeMapping
         /// True if this is an implementation we derived automatically, such as for an F#
         /// single-case DU, as opposed to one the user specified with their own ToPrimitive
