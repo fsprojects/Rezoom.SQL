@@ -38,7 +38,7 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | BinaryTypeName(_) -> "BLOB"
             | DecimalTypeName
             | DateTimeOffsetTypeName -> fail <| sprintf "Unsupported type ``%A``" name
-            | UnresolvedTypeName t -> failwithf "Unresolved UserType %s beyond resolution layer" t
+            | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
             | ResolvedUserType r -> r.RawBackendType |> Option.defaultWith (fun () -> tyName r.Underlying)
         tyName name |> text |> Seq.singleton
 

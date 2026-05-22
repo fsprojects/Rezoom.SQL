@@ -53,7 +53,7 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
             | DecimalTypeName -> "NUMERIC(38, 19)"
             | DateTimeTypeName
             | DateTimeOffsetTypeName -> "TIMESTAMPTZ"
-            | UnresolvedTypeName t -> failwithf "Unresolved UserType %s beyond resolution layer" t
+            | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
             | ResolvedUserType r -> r.RawBackendType |> Option.defaultWith (fun () -> tyName r.Underlying)
         tyName name |> text |> Seq.singleton
     override this.ObjectName name =

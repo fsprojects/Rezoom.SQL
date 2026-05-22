@@ -27,7 +27,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             | DecimalTypeName -> "DECIMAL"
             | DateTimeTypeName -> "DATETIME"
             | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
-            | UnresolvedTypeName t -> failwithf "Unresolved UserType %s beyond resolution layer" t
+            | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
             | ResolvedUserType r -> r.RawBackendType |> Option.defaultWith (fun () -> tyName r.Underlying)
         tyName name |> text |> Seq.singleton
             

@@ -34,6 +34,7 @@ let emptyDictionary<'k, 'v> =
         member __.Values = Seq.empty
     }
 
+/// For error that should "never" happen, meaning we have a bug.
 let inline bug msg = failwith msg
 
 let inline fail msg =

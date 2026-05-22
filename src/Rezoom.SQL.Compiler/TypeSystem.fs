@@ -119,7 +119,7 @@ type CoreColumnType =
         | DateTimeTypeName -> DateTimeType
         | DateTimeOffsetTypeName -> DateTimeOffsetType
         | UnresolvedTypeName name ->
-            failwithf "User type %s hit the type checker before the type-resolution pass. Should never happen." name
+            bug <| sprintf "User type %s hit the type checker before the UserTypeResolution pass." name
         | ResolvedUserType t ->
             // TODO instead of erasing immediately, represent usertypes in the CoreColumnType system
             // so they flow up through selects, transfer inference to @params, etc.
