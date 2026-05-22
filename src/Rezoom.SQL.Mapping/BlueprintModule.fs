@@ -113,7 +113,7 @@ let private pickName (name : string) (getter : Getter option) =
         if isNull columnNameAttr then name
         else columnNameAttr.Name
 
-let rec private compositeShapeOfType (custom : CustomPrimitiveMappings) ty =
+let rec private compositeShapeOfType (custom : UserTypeLibrary) ty =
     let ctor, pars = pickConstructor ty
     let props =
         ty.GetProperties() |> Array.filter (fun p -> p.CanRead)
@@ -163,7 +163,7 @@ let rec private compositeShapeOfType (custom : CustomPrimitiveMappings) ty =
         Columns = columns
     }
 
-and private cardinalityOfType (custom : CustomPrimitiveMappings) (ty : Type) =
+and private cardinalityOfType (custom : UserTypeLibrary) (ty : Type) =
     // If our type is an interface, choose a concrete representative instead.
     let ty = CollectionConverters.representativeForInterface ty
     if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
@@ -202,11 +202,11 @@ and private cardinalityOfType (custom : CustomPrimitiveMappings) (ty : Type) =
             ty
             (List.length multiple)
 
-and private primitiveShapeOfType (custom : CustomPrimitiveMappings) (ty : Type) =
+and private primitiveShapeOfType (custom : UserTypeLibrary) (ty : Type) =
     PrimitiveConverters.converter custom ty
     |> Option.map (fun converter -> { Output = ty; Converter = converter })
 
-and private elementOfType (custom : CustomPrimitiveMappings) (ty : Type) =
+and private elementOfType (custom : UserTypeLibrary) (ty : Type) =
     let shape =
         match primitiveShapeOfType custom ty with
         | Some p -> Primitive p
@@ -216,7 +216,7 @@ and private elementOfType (custom : CustomPrimitiveMappings) (ty : Type) =
         Output = ty
     }
 
-and private ofTypeRaw (custom : CustomPrimitiveMappings) (ty : Type) =
+and private ofTypeRaw (custom : UserTypeLibrary) (ty : Type) =
     match primitiveShapeOfType custom ty with
     | Some p ->
         {
@@ -233,7 +233,7 @@ and private ofTypeRaw (custom : CustomPrimitiveMappings) (ty : Type) =
             Output = ty
         }
 
-and ofType (custom : CustomPrimitiveMappings) ty =
+and ofType (custom : UserTypeLibrary) ty =
     let cacheKey = struct (ty, custom.Identity)
     lock blueprintCache <| fun () ->
         let succ, existing = blueprintCache.TryGetValue(cacheKey)

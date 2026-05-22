@@ -24,7 +24,7 @@ module IntyPhoneNumberConverters =
 let private mappings =
     let thisAsm = Assembly.GetExecutingAssembly()
     let referencedAsm = typeof<IntyPhoneNumber>.Assembly
-    PrimitiveConverters.buildCustomMappingsFromAssemblies [|thisAsm; referencedAsm|]
+    UserTypeLibraryLoader.loadUserTypeLibrary [|thisAsm; referencedAsm|]
 
 type TimeTestRow =
     {   Id : int

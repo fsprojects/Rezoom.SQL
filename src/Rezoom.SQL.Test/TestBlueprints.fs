@@ -7,7 +7,7 @@ open System
 // Shim to make these tests work without having to specify a custom mapping.
 module Blueprint =
     let ofType (ty) =
-        Rezoom.SQL.Mapping.Blueprint.ofType CustomPrimitiveMappings.Empty ty
+        Rezoom.SQL.Mapping.Blueprint.ofType UserTypeLibrary.Empty ty
 
 type Folder =
     {

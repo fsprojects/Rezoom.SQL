@@ -4,8 +4,8 @@ open LicenseToCIL
 open LicenseToCIL.Ops
 open System
 open System.Globalization
-open System.Reflection
 open System.Reflection.Emit
+open Microsoft.FSharp.Reflection
 
 let inline private convertVia convertFunction =
     fun o -> convertFunction(o, CultureInfo.InvariantCulture)
@@ -256,7 +256,7 @@ type EnumTryParser<'enum>() =
     static member TryParse(str : string, enum : 'enum byref) =
         parser.Invoke(str, &enum)
 
-let rec converter (custom : CustomPrimitiveMappings) (ty : Type) : RowConversionMethod option =
+let rec converter (custom : UserTypeLibrary) (ty : Type) : RowConversionMethod option =
     match custom.TryGetMapping(ty) with
     | ValueSome customMapping ->
         let rawConverter = converter custom customMapping.UnderlyingPrimitive
@@ -308,7 +308,7 @@ let rec converter (custom : CustomPrimitiveMappings) (ty : Type) : RowConversion
             } |> Some
     else genericConverter custom ty
 
-and genericConverter (custom : CustomPrimitiveMappings) (ty : Type) : RowConversionMethod option =
+and genericConverter (custom : UserTypeLibrary) (ty : Type) : RowConversionMethod option =
     if ty.IsConstructedGenericType then
         let def = ty.GetGenericTypeDefinition()
         if def = typedefof<_ Nullable> then
@@ -377,99 +377,25 @@ and genericConverter (custom : CustomPrimitiveMappings) (ty : Type) : RowConvers
         else None
     else None
 
-[<Struct>]
-type private CandidateMethodType =
-    | FromPrimitive
-    | ToPrimitive
-
-type private CandidateMethod =
-    {   MethodInfo : MethodInfo
-        CandidateType : CandidateMethodType
-        CustomType : Type
-        UnderlyingPrimitive : Type
-    }
-
-open System.Text.RegularExpressions
-
-// Funky naming for F# extension methods. The method names themselves contain dots.
-// Like "DateTimeOffset.FromPrimitive.Static" can be the MethodInfo.Name.
-let private toPrimitiveFSharpExtension = Regex(@"\.ToPrimitive$")
-let private fromPrimitiveFSharpExtension = Regex(@"\.FromPrimitive\.Static$")
-
-let private checkForCandidateMethod (meth : MethodInfo) =
-    if meth.IsGenericMethod then None else
-    let candType =
-        match meth.Name with
-        | "FromPrimitive" -> Some FromPrimitive
-        | "ToPrimitive" -> Some ToPrimitive
-        | x when toPrimitiveFSharpExtension.IsMatch(x) -> Some ToPrimitive
-        | x when fromPrimitiveFSharpExtension.IsMatch(x) -> Some FromPrimitive
-        | _ -> None
-    match candType with
-    | None -> None
-    | Some candType ->
-        match meth.GetParameters() with
-        | [| singleParam |] ->
-            let customType, underlyingType =
-                match candType with
-                | FromPrimitive -> meth.ReturnType, singleParam.ParameterType
-                | ToPrimitive -> singleParam.ParameterType, meth.ReturnType
-            {   MethodInfo = meth
-                CandidateType = candType
-                CustomType = customType
-                UnderlyingPrimitive = underlyingType
-            } |> Some
-        | _ -> None
-
-let findCustomMappingsInAssembly (asm : Assembly) : CustomPrimitiveMapping seq =
-    seq {
-        for publicType in asm.GetExportedTypes() do
-            let methods = publicType.GetMethods(BindingFlags.Public ||| BindingFlags.Static ||| BindingFlags.DeclaredOnly)
-            let candidateGroups =
-                methods
-                |> Array.choose checkForCandidateMethod
-                |> Array.groupBy (fun a -> a.CustomType)
-            for customType, candidateMethods in candidateGroups do
-                let toPrims, fromPrims = candidateMethods |> Array.partition (fun m -> m.CandidateType = ToPrimitive)
-                match toPrims, fromPrims with
-                | [| singleToPrim |], [| singleFromPrim |] ->
-                    if singleToPrim.UnderlyingPrimitive <> singleFromPrim.UnderlyingPrimitive then
-                        failwithf
-                            "Custom type %s has conflicting primitive types: %s takes a %s, but %s returns a %s."
-                                customType.FullName
-                                (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
-                                singleFromPrim.UnderlyingPrimitive.FullName
-                                (singleToPrim.MethodInfo.DeclaringType.FullName + "." + singleToPrim.MethodInfo.Name)
-                                singleToPrim.UnderlyingPrimitive.FullName
-                    elif singleToPrim.UnderlyingPrimitive = singleToPrim.CustomType then
-                        failwithf
-                            "Custom type %s is mapped to itself via %s."
-                            singleToPrim.CustomType.FullName
-                            (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
-                    elif converter CustomPrimitiveMappings.Empty singleToPrim.UnderlyingPrimitive |> Option.isNone then
-                        failwithf
-                            "Custom type %s converter %s maps to %s, but that is not a supported primitive database type."
-                            singleToPrim.CustomType.FullName
-                            (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
-                            singleToPrim.UnderlyingPrimitive.FullName
-                    else
-                    yield
-                        {   CustomType = customType
-                            UnderlyingPrimitive = singleToPrim.UnderlyingPrimitive
-                            FromPrimitiveMethod = singleFromPrim.MethodInfo
-                            ToPrimitiveMethod = singleToPrim.MethodInfo
+and findSingleCaseDU (publicType : Type) =
+    if not <| FSharpType.IsUnion(publicType) then ValueNone else
+    match FSharpType.GetUnionCases(publicType) with
+    | [| singleCase |] ->
+        match singleCase.GetFields() with
+        | [| singleProp |] when isFundamentalPrimitive singleProp.PropertyType ->
+            let fromPrimitiveMethod = FSharpValue.PreComputeUnionConstructorInfo(singleCase)
+            ValueSome
+                {   UserCLRType = publicType
+                    UnderlyingCLRType = singleProp.PropertyType
+                    RawBackendSQLType = None
+                    RuntimeMapping =
+                        {   FromPrimitiveMethod = fromPrimitiveMethod
+                            ToPrimitiveMethod = singleProp.GetMethod
                         }
-                | [||], _ ->
-                    failwithf "Missing ToPrimitive for custom type %s." customType.FullName
-                | _, [||] ->
-                    failwithf "Missing FromPrimitive for custom type %s." customType.FullName
-                | _ ->
-                    failwithf "Custom type %s has multiple ToPrimitive and FromPrimitive static methods defined for it, within the same type %s."
-                        customType.FullName
-                        publicType.FullName
-    }
+                    IsAutomaticImplemention = true
+                }
+        | _ -> ValueNone
+    | _ -> ValueNone
 
-let buildCustomMappingsFromAssemblies (asms : Assembly array) =
-    let mappings = asms |> Seq.collect findCustomMappingsInAssembly
-    let identity = asms |> Seq.map (fun a -> a.GetName().Name) |> Seq.sortBy (fun n -> n) |> String.concat "&"
-    CustomPrimitiveMappings(identity, mappings)
+and isFundamentalPrimitive (ty : Type) =
+    converter UserTypeLibrary.Empty ty |> Option.isSome

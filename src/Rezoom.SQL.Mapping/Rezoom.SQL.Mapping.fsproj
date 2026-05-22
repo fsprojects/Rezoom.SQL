@@ -21,8 +21,9 @@
     <Compile Include="DataReader.fs" />
     <Compile Include="EntityReader.fs" />
     <Compile Include="Converters.fs" />
-    <Compile Include="CustomPrimitives.fs" />
+    <Compile Include="UserTypeLibrary.fs" />
     <Compile Include="PrimitiveConverters.fs" />
+    <Compile Include="UserTypeLibraryLoader.fs" />
     <Compile Include="CollectionConverters.fs" />
     <Compile Include="BlueprintAttributes.fs" />
     <Compile Include="Blueprint.fs" />
