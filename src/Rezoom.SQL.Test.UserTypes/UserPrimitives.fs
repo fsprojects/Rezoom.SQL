@@ -12,10 +12,10 @@ type StringyPhoneNumber =
     }
     static member ToPrimitive(phone : StringyPhoneNumber) =
         sprintf "+%1d%03d%07d" phone.CountryCode phone.AreaCode phone.Number
-    static member FromPrimitive(str : string) = 
-        {   CountryCode = int (str.[1..2])
-            AreaCode = int (str.[3..5])
-            Number = int (str.[6..])
+    static member FromPrimitive(str : string) =
+        {   CountryCode = int (str.[1..1])
+            AreaCode = int (str.[2..4])
+            Number = int (str.[5..])
         }
 
 /// ToPrimitive and FromPrimitive will be declared as extensions in the consumer test assembly.
@@ -26,6 +26,8 @@ type IntyPhoneNumber(countryCode : int, areaCode : int, num : int) =
     member this.Number = num
 
 ///// Should fail because it has two FromPrimitive definitions.
+///// Need to have a separate assembly so we can test this failure without *all* the custom types tests failing
+///// at assembly-scan-time.
 //type TooManyConverters() =
 //    static member ToPrimitive(x : TooManyConverters) = 0
 //    static member FromPrimitive(x : int) = TooManyConverters()
@@ -38,7 +40,7 @@ module ExtendingSystemPrimitives =
     // F#-style extension methods can be used.
     type System.DateTimeOffset with
         member this.ToPrimitive() = this.ToString("o")
-        static member FromPrimitive(x : string) = System.DateTimeOffset.TryParse(x)
+        static member FromPrimitive(x : string) = System.DateTimeOffset.Parse(x)
     
     // F# let-bound functiosn can be used, as long as they are PascalCase.
     let ToPrimitive (ts : System.TimeSpan) = ts.Ticks

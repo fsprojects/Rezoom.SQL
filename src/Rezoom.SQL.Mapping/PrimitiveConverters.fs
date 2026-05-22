@@ -389,12 +389,21 @@ type private CandidateMethod =
         UnderlyingPrimitive : Type
     }
 
+open System.Text.RegularExpressions
+
+// Funky naming for F# extension methods. The method names themselves contain dots.
+// Like "DateTimeOffset.FromPrimitive.Static" can be the MethodInfo.Name.
+let private toPrimitiveFSharpExtension = Regex(@"\.ToPrimitive$")
+let private fromPrimitiveFSharpExtension = Regex(@"\.FromPrimitive\.Static$")
+
 let private checkForCandidateMethod (meth : MethodInfo) =
     if meth.IsGenericMethod then None else
     let candType =
         match meth.Name with
         | "FromPrimitive" -> Some FromPrimitive
         | "ToPrimitive" -> Some ToPrimitive
+        | x when toPrimitiveFSharpExtension.IsMatch(x) -> Some ToPrimitive
+        | x when fromPrimitiveFSharpExtension.IsMatch(x) -> Some FromPrimitive
         | _ -> None
     match candType with
     | None -> None
