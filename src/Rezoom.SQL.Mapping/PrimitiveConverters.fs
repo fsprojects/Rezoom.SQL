@@ -1,4 +1,4 @@
-﻿module Rezoom.SQL.Mapping.CodeGeneration.PrimitiveConverters
+module Rezoom.SQL.Mapping.CodeGeneration.PrimitiveConverters
 open Rezoom.SQL.Mapping
 open LicenseToCIL
 open LicenseToCIL.Ops
