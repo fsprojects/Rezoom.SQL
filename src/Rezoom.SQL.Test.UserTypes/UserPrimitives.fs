@@ -50,3 +50,15 @@ module ExtendingSystemPrimitives =
 type AdhocExtensionClass() =
     static member ToPrimitive(t : System.TimeOnly) = t.ToString("o")
     static member FromPrimitive(str : string) = System.TimeOnly.ParseExact(str, "o")
+
+// Single-case DUs, both struct and ref, should work without any annotation
+
+type CustomUserId = CustomUserId of System.Guid
+
+type CustomStringId = CustomStringId of string
+
+[<Struct>]
+type CustomUserIdStruct = CustomUserIdStruct of System.Guid
+
+[<Struct>]
+type CustomStringIdStruct = CustomStringIdStruct of string

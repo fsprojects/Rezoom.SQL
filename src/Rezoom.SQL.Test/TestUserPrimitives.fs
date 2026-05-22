@@ -193,6 +193,111 @@ let ``read nullable of custom type with null`` () =
     Assert.AreEqual(27, timeRow.Id)
     Assert.IsFalse(timeRow.Time.HasValue)
 
+type CustomUserIdTestRow =
+    {   Id : int
+        UserId : CustomUserId
+    }
+
+[<Test>]
+let ``read single-case ref DU wrapping Guid`` () =
+    let testGuid = Guid.Parse("12345678-1234-1234-1234-123456789abc")
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "UserId", ColumnType.Guid
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(1, testGuid)
+    let reader = ReaderTemplate<CustomUserIdTestRow>.Template(mappings).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let userRow = reader.ToEntity()
+    Assert.IsNotNull(userRow)
+    Assert.AreEqual(1, userRow.Id)
+    Assert.AreEqual(CustomUserId testGuid, userRow.UserId)
+
+type CustomStringIdTestRow =
+    {   Id : int
+        StringId : CustomStringId
+    }
+
+[<Test>]
+let ``read single-case ref DU wrapping string`` () =
+    let testString = "alice@example.com"
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "StringId", ColumnType.String
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(2, testString)
+    let reader = ReaderTemplate<CustomStringIdTestRow>.Template(mappings).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let stringRow = reader.ToEntity()
+    Assert.IsNotNull(stringRow)
+    Assert.AreEqual(2, stringRow.Id)
+    Assert.AreEqual(CustomStringId testString, stringRow.StringId)
+
+type CustomUserIdStructTestRow =
+    {   Id : int
+        UserId : CustomUserIdStruct
+    }
+
+[<Test>]
+let ``read single-case struct DU wrapping Guid`` () =
+    let testGuid = Guid.Parse("87654321-4321-4321-4321-cba987654321")
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "UserId", ColumnType.Guid
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(3, testGuid)
+    let reader = ReaderTemplate<CustomUserIdStructTestRow>.Template(mappings).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let userRow = reader.ToEntity()
+    Assert.IsNotNull(userRow)
+    Assert.AreEqual(3, userRow.Id)
+    Assert.AreEqual(CustomUserIdStruct testGuid, userRow.UserId)
+
+type CustomStringIdStructTestRow =
+    {   Id : int
+        StringId : CustomStringIdStruct
+    }
+
+[<Test>]
+let ``read single-case struct DU wrapping string`` () =
+    let testString = "bob@example.com"
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "StringId", ColumnType.String
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(4, testString)
+    let reader = ReaderTemplate<CustomStringIdStructTestRow>.Template(mappings).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let stringRow = reader.ToEntity()
+    Assert.IsNotNull(stringRow)
+    Assert.AreEqual(4, stringRow.Id)
+    Assert.AreEqual(CustomStringIdStruct testString, stringRow.StringId)
+
+[<Test>]
+let ``read single-case DU without explicit usertype mappings`` () =
+    let testString = "bob@example.com"
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "StringId", ColumnType.String
+        |] |> ColumnMap.Parse          //                          |                           |
+    let row = ObjectRow(4, testString) //                         vvv works without usertypes vvv
+    let reader = ReaderTemplate<CustomStringIdStructTestRow>.Template(UserTypeLibrary.Empty).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let stringRow = reader.ToEntity()
+    Assert.IsNotNull(stringRow)
+    Assert.AreEqual(4, stringRow.Id)
+    Assert.AreEqual(CustomStringIdStruct testString, stringRow.StringId)
+
 type TimeSpanTestRow =
     {   Id : int
         Span : TimeSpan
