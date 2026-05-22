@@ -258,21 +258,10 @@ type EnumTryParser<'enum>() =
 
 let rec converter (custom : UserTypeLibrary) (ty : Type) : RowConversionMethod option =
     match custom.TryGetMapping(ty) with
-    | ValueSome customMapping ->
-        let rawConverter = converter custom customMapping.UnderlyingPrimitive
-        match rawConverter with
-        | None ->
-            // we should not get here. the custom mapping loader already filters out mappings
-            // that do not use real primitives.
-            failwithf 
-                "No converter found for underlying primitive %s of custom type %s. Should never happen."
-                customMapping.UnderlyingPrimitive.FullName
-                customMapping.CustomType.FullName
-        | Some rawConverter ->
-            cil {
-                yield rawConverter
-                yield Ops.call1 customMapping.FromPrimitiveMethod
-            } |> Some
+    | ValueSome customMapping -> converterForRuntimeMapping custom customMapping
+    | ValueNone ->
+    match findSingleCaseDU ty with
+    | ValueSome autoMapping -> converterForRuntimeMapping custom autoMapping.RuntimeMapping
     | ValueNone ->
     let succ, meth = convertersByType.TryGetValue(ty)
     if succ then
@@ -307,6 +296,22 @@ let rec converter (custom : UserTypeLibrary) (ty : Type) : RowConversionMethod o
                 yield mark exit
             } |> Some
     else genericConverter custom ty
+
+and converterForRuntimeMapping custom customMapping =
+    let rawConverter = converter custom customMapping.UnderlyingPrimitive
+    match rawConverter with
+    | None ->
+        // we should not get here. the custom mapping loader already filters out mappings
+        // that do not use real primitives.
+        failwithf 
+            "No converter found for underlying primitive %s of custom type %s. Should never happen."
+            customMapping.UnderlyingPrimitive.FullName
+            customMapping.CustomType.FullName
+    | Some rawConverter ->
+        cil {
+            yield rawConverter
+            yield Ops.call1 customMapping.FromPrimitiveMethod
+        } |> Some
 
 and genericConverter (custom : UserTypeLibrary) (ty : Type) : RowConversionMethod option =
     if ty.IsConstructedGenericType then
@@ -377,7 +382,7 @@ and genericConverter (custom : UserTypeLibrary) (ty : Type) : RowConversionMetho
         else None
     else None
 
-and findSingleCaseDU (publicType : Type) =
+and findSingleCaseDU (publicType : Type) : UserPrimitiveType ValueOption =
     if not <| FSharpType.IsUnion(publicType) then ValueNone else
     match FSharpType.GetUnionCases(publicType) with
     | [| singleCase |] ->
