@@ -94,6 +94,105 @@ let ``read inty phone number`` () =
     Assert.AreEqual(testPhone.AreaCode, phoneRow.Phone.AreaCode)
     Assert.AreEqual(testPhone.Number, phoneRow.Phone.Number)
 
+type DateTimeOffsetTestRow =
+    {   Id : int
+        Stamp : DateTimeOffset
+    }
+
+[<Test>]
+let ``read datetimeoffset via override`` () =
+    let testStamp = DateTimeOffset.Parse("2026-05-20T22:26:17.9873551-04:00")
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "Stamp", ColumnType.String
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(7, testStamp.ToString("o"))
+    let reader = ReaderTemplate<DateTimeOffsetTestRow>.Template(mappings).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let stampRow = reader.ToEntity()
+    Assert.IsNotNull(stampRow)
+    Assert.AreEqual(7, stampRow.Id)
+    Assert.AreEqual(testStamp, stampRow.Stamp)
+
+type StringyPhoneOptionalTestRow =
+    {   Id : int
+        Phone : StringyPhoneNumber option
+    }
+
+[<Test>]
+let ``read option of custom type with value`` () =
+    let testPhone = { CountryCode = 1; AreaCode = 800; Number = 5551234 }
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "Phone", ColumnType.String
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(42, StringyPhoneNumber.ToPrimitive(testPhone))
+    let reader = ReaderTemplate<StringyPhoneOptionalTestRow>.Template(mappings).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let phoneRow = reader.ToEntity()
+    Assert.IsNotNull(phoneRow)
+    Assert.AreEqual(42, phoneRow.Id)
+    Assert.AreEqual(Some testPhone, phoneRow.Phone)
+
+[<Test>]
+let ``read option of custom type with null`` () =
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "Phone", ColumnType.String
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(42, (null : obj))
+    let reader = ReaderTemplate<StringyPhoneOptionalTestRow>.Template(mappings).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let phoneRow = reader.ToEntity()
+    Assert.IsNotNull(phoneRow)
+    Assert.AreEqual(42, phoneRow.Id)
+    Assert.AreEqual(None, phoneRow.Phone)
+
+type TimeOnlyNullableTestRow =
+    {   Id : int
+        Time : Nullable<TimeOnly>
+    }
+
+[<Test>]
+let ``read nullable of custom type with value`` () =
+    let testTime = System.TimeOnly.FromDateTime(DateTime.Parse("2026-05-20T22:26:17.9873551-04:00"))
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "Time", ColumnType.String
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(27, testTime.ToString("o"))
+    let reader = ReaderTemplate<TimeOnlyNullableTestRow>.Template(mappings).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let timeRow = reader.ToEntity()
+    Assert.IsNotNull(timeRow)
+    Assert.AreEqual(27, timeRow.Id)
+    Assert.IsTrue(timeRow.Time.HasValue)
+    Assert.AreEqual(testTime, timeRow.Time.Value)
+
+[<Test>]
+let ``read nullable of custom type with null`` () =
+    let colMap =
+        [|
+            "Id", ColumnType.Int32
+            "Time", ColumnType.String
+        |] |> ColumnMap.Parse
+    let row = ObjectRow(27, (null : obj))
+    let reader = ReaderTemplate<TimeOnlyNullableTestRow>.Template(mappings).CreateReader()
+    reader.ProcessColumns(colMap)
+    reader.Read(row)
+    let timeRow = reader.ToEntity()
+    Assert.IsNotNull(timeRow)
+    Assert.AreEqual(27, timeRow.Id)
+    Assert.IsFalse(timeRow.Time.HasValue)
+
 type TimeSpanTestRow =
     {   Id : int
         Span : TimeSpan
