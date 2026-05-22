@@ -24,7 +24,7 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
     let literal = SQLiteLiteral()
     override __.Literal = upcast literal
     override __.TypeName(name, autoIncrement) =
-        (Seq.singleton << text) <|
+        let rec tyName name =
             match name with
             | BooleanTypeName
             | IntegerTypeName Integer16
@@ -38,6 +38,9 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | BinaryTypeName(_) -> "BLOB"
             | DecimalTypeName
             | DateTimeOffsetTypeName -> fail <| sprintf "Unsupported type ``%A``" name
+            | UnresolvedTypeName t -> failwithf "Unresolved UserType %s beyond resolution layer" t
+            | ResolvedUserType r -> r.RawBackendType |> Option.defaultWith (fun () -> tyName r.Underlying)
+        tyName name |> text |> Seq.singleton
 
 type private SQLiteStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(Name("SQLITE"), indexer)

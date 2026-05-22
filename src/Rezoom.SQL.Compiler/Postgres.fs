@@ -35,7 +35,7 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
         "\"" + name.Value.Replace("\"", "\"\"") + "\""
         |> text
     override __.TypeName(name, autoIncrement) =
-        (Seq.singleton << text) <|
+        let rec tyName name =
             match name with
             | BooleanTypeName -> "BOOLEAN"
             | GuidTypeName -> "UUID"
@@ -53,6 +53,9 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
             | DecimalTypeName -> "NUMERIC(38, 19)"
             | DateTimeTypeName
             | DateTimeOffsetTypeName -> "TIMESTAMPTZ"
+            | UnresolvedTypeName t -> failwithf "Unresolved UserType %s beyond resolution layer" t
+            | ResolvedUserType r -> r.RawBackendType |> Option.defaultWith (fun () -> tyName r.Underlying)
+        tyName name |> text |> Seq.singleton
     override this.ObjectName name =
         seq {
             if name.ObjectName = eeName then

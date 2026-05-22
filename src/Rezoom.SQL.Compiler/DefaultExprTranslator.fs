@@ -11,7 +11,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         |> text
     override this.CollationName(name) = this.Name(name)
     override __.TypeName(name, _) =
-        (Seq.singleton << text) <|
+        let rec tyName name =
             match name with
             | BooleanTypeName -> "BOOL"
             | GuidTypeName -> "GUID"
@@ -27,6 +27,10 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             | DecimalTypeName -> "DECIMAL"
             | DateTimeTypeName -> "DATETIME"
             | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
+            | UnresolvedTypeName t -> failwithf "Unresolved UserType %s beyond resolution layer" t
+            | ResolvedUserType r -> r.RawBackendType |> Option.defaultWith (fun () -> tyName r.Underlying)
+        tyName name |> text |> Seq.singleton
+            
     override __.BinaryOperator op =
         CommandText <|
         match op with

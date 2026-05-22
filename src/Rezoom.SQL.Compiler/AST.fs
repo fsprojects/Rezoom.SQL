@@ -50,7 +50,17 @@ type FloatSize =
     | Float32
     | Float64
 
-type TypeName =
+type ResolvedUserType =
+    {   Name : string
+        CLRType : Type
+        /// Underlying SQL type in our typesystem.
+        Underlying : TypeName
+        /// Raw string name to use on backend like char(x) for fixed-length non-unicode strs.
+        /// Can override our default type name handling.
+        RawBackendType : string option
+    }
+
+and TypeName =
     | GuidTypeName
     | StringTypeName of maxLength : int option
     | BinaryTypeName of maxLength : int option
@@ -60,6 +70,12 @@ type TypeName =
     | BooleanTypeName
     | DateTimeTypeName
     | DateTimeOffsetTypeName
+    /// Note: case-sensitive! When resolving user types (CLR types mapped to SQL primitives)
+    /// we require an exact case-sensitive match to the CLR type name.
+    | UnresolvedTypeName of string
+    /// After the AST goes through user-type resolution all UnresolvedTypeNames are eliminated and replaced
+    /// with ResolvedUserTypes.
+    | ResolvedUserType of ResolvedUserType
     member this.SupportsCollation =
         match this with
         | StringTypeName _ -> true
@@ -80,6 +96,8 @@ type TypeName =
         | BooleanTypeName -> "BOOL"
         | DateTimeTypeName -> "DATETIME"
         | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
+        | UnresolvedTypeName s -> s
+        | ResolvedUserType r -> r.Name
 
 [<NoComparison>]
 [<CustomEquality>]
