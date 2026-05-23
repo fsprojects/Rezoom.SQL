@@ -110,6 +110,15 @@ let private findUserTypesInAssembly (asm : Assembly) : UserPrimitiveType seq =
     }
 
 let loadUserTypeLibrary (asms : Assembly array) =
+    if Array.isEmpty asms then UserTypeLibrary.Empty else
     let mappings = asms |> Seq.collect findUserTypesInAssembly |> Seq.toArray
     let identity = asms |> Seq.map (fun a -> a.GetName().Name) |> Seq.sortBy (fun n -> n) |> String.concat "&"
     UserTypeLibrary(identity, mappings)
+
+let loadUserTypeLibraryFromPaths (configDir : string) (paths : string seq) =
+    [|  for path in paths ->
+            let path =
+                if System.IO.Path.IsPathRooted(path) then path else
+                System.IO.Path.Combine(configDir, path)
+            Assembly.LoadFrom(path)
+    |] |> loadUserTypeLibrary

@@ -24,6 +24,8 @@ type Config =
         ConnectionName : string
         /// Type generation style for optionals.
         Optionals : ConfigOptionalStyle
+        /// Assembly filenames containing user-types
+        UserTypes : string list
     }
 
 let defaultConfig =
@@ -31,10 +33,13 @@ let defaultConfig =
         MigrationsPath = "."
         ConnectionName = "rzsql"
         Optionals = FsStyle
+        UserTypes = []
     }
 
 module private Parser =
     open FParsec.Pipes
+
+    let inline tws parser = %parser .>> spaces
 
     let backend =
         %% '"'
@@ -78,6 +83,13 @@ module private Parser =
         -- '"'
         -|> id
 
+    let listOf (parser : Parser<'a, 'u>) =
+        %% "["
+        -- spaces
+        -- +.(qty.[0..] / tws ',' * tws parser)
+        -- "]"
+        -|> id
+
     let prop (name : string) (parser : Parser<'a, 'u>) =
         %% ci ("\"" + name + "\"")
         -- spaces
@@ -93,6 +105,7 @@ module private Parser =
             prop "MIGRATIONS" (stringLiteral |>> fun path config -> { config with MigrationsPath = path })
             prop "CONNECTIONNAME" (stringLiteral |>> fun conn config -> { config with ConnectionName = conn })
             prop "OPTIONALS" (optionals |>> fun opts config -> { config with Optionals = opts })
+            prop "USERTYPES" (listOf stringLiteral |>> fun paths config -> { config with UserTypes = List.ofSeq paths })
         ]
 
     let config : Parser<Config, unit> =

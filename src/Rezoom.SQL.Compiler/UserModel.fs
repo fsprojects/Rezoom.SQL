@@ -88,13 +88,13 @@ module private UserModelLoader =
         let trees = [ for tree in migrationTrees -> mapFold true totalModel tree ]
         trees, totalModel
 
-    let nextModel initialModel (migrationTrees : TotalStmts MigrationTree seq) =
+    let nextModel (userTypes : UserTypeLibrary) initialModel (migrationTrees : TotalStmts MigrationTree seq) =
         let folder isRoot (parentModel : Model) (totalModel : Model) (migration : TotalStmts Migration) =
-            let totalEffect = CommandEffect.OfSQL(totalModel, migration.Source)
+            let totalEffect = CommandEffect.OfSQL(totalModel, migration.Source, userTypes)
             if not isRoot && totalEffect.DestructiveUpdates.Value then
                 fail <| Error.minorMigrationContainsDestruction migration.MigrationName
             let childModel =
-                CommandEffect.OfSQL(parentModel, migration.Source).ModelChange |? parentModel
+                CommandEffect.OfSQL(parentModel, migration.Source, userTypes).ModelChange |? parentModel
             let totalModel =
                 totalEffect.ModelChange |? totalModel
             totalEffect.Statements, childModel, totalModel
@@ -147,6 +147,7 @@ type UserModel =
         Model : Model
         TableIds : Map<QualifiedObjectName, int> Lazy
         Migrations : string MigrationTree IReadOnlyList
+        UserTypeLibrary : UserTypeLibrary
     }
     static member ConfigFileName = "rzsql.json"
     static member Load(resolutionFolder : string, modelPath : string) =
@@ -172,7 +173,8 @@ type UserModel =
         let migrationsDirectory = Path.Combine(configDirectory, config.MigrationsPath) |> Path.GetFullPath
         let migrations = loadMigrations migrationsDirectory
         let backend = Config.toIBackend config.Backend
-        let migrations, model = nextModel backend.InitialModel migrations
+        let userTypes = UserTypeLibraryLoader.loadUserTypeLibraryFromPaths configDirectory config.UserTypes
+        let migrations, model = nextModel userTypes backend.InitialModel migrations
         let migrations = stringizeMigrationTree backend migrations |> toReadOnlyList
         {   ConnectionName = config.ConnectionName
             MigrationsDirectory = migrationsDirectory
@@ -182,4 +184,5 @@ type UserModel =
             Model = model
             TableIds = lazy tableIds model
             Migrations = migrations
+            UserTypeLibrary = userTypes
         }

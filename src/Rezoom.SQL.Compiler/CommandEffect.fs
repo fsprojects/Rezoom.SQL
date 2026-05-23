@@ -4,6 +4,7 @@
 namespace Rezoom.SQL.Compiler
 open System
 open System.Collections.Generic
+open Rezoom.SQL
 open Rezoom.SQL.Compiler.InferredTypes
 
 [<NoComparison>]
@@ -30,15 +31,20 @@ type CommandEffect =
         |> Seq.map (fun s -> s.Value.Info.Table.Query)
     static member ParseSQL(descr: string, sql : string) : TotalStmts =
         Parser.parseStatements descr sql |> toReadOnlyList
-    static member OfSQL(model : Model, stmts : TotalStmts) =
+    static member OfSQL(model : Model, stmts : TotalStmts) = CommandEffect.OfSQL(model, stmts, Mapping.UserTypeLibrary.Empty)
+    static member OfSQL(model : Model, stmts : TotalStmts, userTypes : Mapping.UserTypeLibrary) =
         let builder = CommandEffectBuilder(model)
+        let typeResolution = UserTypeResolutionPass(userTypes)
         for stmt in stmts do
+            let stmt = typeResolution.TotalStmt(stmt)
             builder.AddTotalStmt(stmt)
         builder.CommandEffect()
     static member OfSQL(model : Model, descr : string, sql : string) =
+        CommandEffect.OfSQL(model, descr, sql, Mapping.UserTypeLibrary.Empty)
+    static member OfSQL(model : Model, descr : string, sql : string, userTypes : Mapping.UserTypeLibrary) =
         catchSource descr sql <| fun () ->
             let stmts = CommandEffect.ParseSQL(descr, sql)
-            CommandEffect.OfSQL(model, stmts)
+            CommandEffect.OfSQL(model, stmts, userTypes)
 
 and private CommandEffectBuilder(model : Model) =
     // shared throughout the whole command, since parameters are too.
