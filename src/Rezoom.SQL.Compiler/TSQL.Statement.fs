@@ -156,7 +156,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
         seq {
             yield this.Expr.Name(col.Name)
             yield ws
-            yield! this.Expr.TypeName(col.Type)
+            yield! this.Expr.TypeName(col.Type.Value)
             match col.Collation with
             | None -> ()
             | Some collation -> // collation first on TSQL
@@ -292,7 +292,7 @@ type private TSQLStatement(indexer : IParameterIndexer) as this =
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
                 yield!
                     this.AlterColumn
-                        (change.Column, change.NewType, schemaColumn.ColumnType.Nullable, schemaColumn.Collation)
+                        (change.Column, change.NewType.Value, schemaColumn.ColumnType.Nullable, schemaColumn.Collation)
             | ChangeNullability change ->
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
                 yield!

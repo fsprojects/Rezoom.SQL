@@ -290,7 +290,7 @@ let private typeName =
         %% kw "BOOL" -%> BooleanTypeName
         %% kw "DATETIME" -%> DateTimeTypeName
         %% kw "DATETIMEOFFSET" -%> DateTimeOffsetTypeName
-    ] <?> "type-name"
+    ] <?> "type-name" |> withSource
 
 let private cast expr =
     %% kw "CAST"

@@ -156,6 +156,9 @@ let insertDuplicateColumn columnName =
     sprintf "SQ065: The column ``%O`` is specified multiple times in the insert statement" columnName
 let updateDuplicateColumn columnName =
     sprintf "SQ066: The column ``%O`` is specified multiple times in the update statement" columnName
-
-let tableNameNotSuitableForPG =
-    "SQ069: Table name is not suitable for PG (maybe you thought you were writing R?)"
+let typeNameNotFound typeName asmList =
+    sprintf "SQ067: Type name ``%s`` is not a built-in nor found in user assemblies (%s)" typeName asmList
+let typeNameNotFoundButClose typeName candidates =
+    sprintf "SQ068: Type name ``%s`` not found. Did you mean %s?" typeName (candidates |> String.concat " or ")
+let typeNameAmbiguous typeName candidates =
+    sprintf "SQ069: Type name ``%s`` is ambiguous between %s" typeName (candidates |> String.concat ", ")

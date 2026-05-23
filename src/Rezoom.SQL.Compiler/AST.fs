@@ -247,7 +247,7 @@ and [<NoComparison>] BetweenExpr<'t, 'e> =
 
 and [<NoComparison>] CastExpr<'t, 'e> =
     {   Expression : Expr<'t, 'e>
-        AsType : TypeName
+        AsType : TypeName WithSource
     }
  
 and [<NoComparison>] TableInvocation<'t, 'e> =
@@ -552,7 +552,7 @@ type [<NoComparison>] ColumnConstraint<'t, 'e> =
 
 type [<NoComparison>] ColumnDef<'t, 'e> =
     {   Name : Name
-        Type : TypeName
+        Type : TypeName WithSource
         Nullable : bool
         Collation : Name option
         DefaultValue : Expr<'t, 'e> option
@@ -626,7 +626,7 @@ type [<NoComparison>] CreateIndexStmt<'t, 'e> =
 type AlterTableChangeType<'e> =
     {   ExistingInfo : 'e
         Column : Name
-        NewType : TypeName
+        NewType : TypeName WithSource
     }
 
 type AlterTableChangeNullability<'e> =

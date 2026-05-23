@@ -15,6 +15,7 @@
   <ItemGroup>
     <None Include="README.md" />
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Levenshtein.fs" />
     <Compile Include="CILHelpers.fs" />
     <Compile Include="Row.fs" />
     <Compile Include="ColumnMap.fs" />

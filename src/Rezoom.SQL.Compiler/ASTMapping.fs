@@ -3,6 +3,8 @@ open System
 open System.Collections.Generic
 
 type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
+    abstract member TypeName : tyName : TypeName WithSource -> TypeName WithSource
+    default this.TypeName(tyName) = tyName
     member this.Binary(binary : BinaryExpr<'t1, 'e1>) =
         {   Operator = binary.Operator
             Left = this.Expr(binary.Left)
@@ -24,7 +26,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         }
     member this.Cast(cast : CastExpr<'t1, 'e1>) =
         {   Expression = this.Expr(cast.Expression)
-            AsType = cast.AsType
+            AsType = this.TypeName(cast.AsType)
         }
     member this.Collation(collation : CollationExpr<'t1, 'e1>) =
         {   Input = this.Expr(collation.Input)
@@ -219,11 +221,12 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                 | ForeignKeyConstraint foreignKey -> ForeignKeyConstraint <| this.ForeignKey(foreignKey)
         }
     member this.ColumnDef(cdef : ColumnDef<'t1, 'e1> WithSource) =
-        {   Source = cdef.Source
+        let src = cdef.Source
+        {   Source = src
             Value =
                 let cdef = cdef.Value
                 {   Name = cdef.Name
-                    Type = cdef.Type
+                    Type = this.TypeName(cdef.Type)
                     Nullable = cdef.Nullable
                     Collation = cdef.Collation
                     DefaultValue = Option.map this.Expr cdef.DefaultValue
@@ -241,7 +244,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | DropDefault name -> DropDefault name
         | ChangeType change ->
             ChangeType
-                { ExistingInfo = mapE change.ExistingInfo; Column = change.Column; NewType = change.NewType }
+                { ExistingInfo = mapE change.ExistingInfo; Column = change.Column; NewType = this.TypeName(change.NewType) }
         | ChangeNullability change ->
             ChangeNullability
                 { ExistingInfo = mapE change.ExistingInfo; Column = change.Column; NewNullable = change.NewNullable }

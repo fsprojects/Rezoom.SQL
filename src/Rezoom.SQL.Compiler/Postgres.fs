@@ -25,7 +25,6 @@ type private PostgresLiteral() =
 
 type private PostgresExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
-    static let eeName = Name(String([| char 102uy; char 117uy; char 99uy; char 107uy|]))
     let literal = PostgresLiteral()
     override __.Literal = upcast literal
     override __.Name(name) =
@@ -58,8 +57,6 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
         tyName name |> text |> Seq.singleton
     override this.ObjectName name =
         seq {
-            if name.ObjectName = eeName then
-                failAt name.Source Error.tableNameNotSuitableForPG
             match name.SchemaName with
             // can't schema-qualify temp tables since they are created in a special schema
             // with a name generated per-connection
@@ -179,7 +176,7 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
                 yield text (if change.NewNullable then "DROP NOT NULL" else "SET NOT NULL")
             | ChangeType change ->
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
-                yield! changeType change.Column change.NewType schemaColumn.Collation true
+                yield! changeType change.Column change.NewType.Value schemaColumn.Collation true
             | ChangeCollation change ->
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
                 yield! changeType change.Column schemaColumn.ColumnTypeName (Some change.NewCollation) false

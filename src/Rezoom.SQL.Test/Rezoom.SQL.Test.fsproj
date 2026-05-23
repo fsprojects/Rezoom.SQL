@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Compile Include="Environment.fs" />
+    <Compile Include="TestLevenshtein.fs" />
     <Compile Include="TestAggregateErrors.fs" />
     <Compile Include="TestAlterTable.fs" />
     <Compile Include="TestBlueprints.fs" />

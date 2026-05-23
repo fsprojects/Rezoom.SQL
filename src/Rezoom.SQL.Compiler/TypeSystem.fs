@@ -169,6 +169,12 @@ type ColumnType =
         | RawSQLType ->
             // DbType part is not really used here
             Unchecked.defaultof<DbType>, typeof<CommandFragment array>
+        | UserTypeBasedOn (userTy, underlying) ->
+            let underlyingDbType, _ =
+                {   Type = underlying
+                    Nullable = ty.Nullable
+                }.TypeInfo(useOptional)
+            underlyingDbType, nullify userTy.UserCLRType
     member ty.CLRType(useOptional) = snd <| ty.TypeInfo(useOptional)
     member ty.DbType = fst <| ty.TypeInfo(false)
     override ty.ToString() =

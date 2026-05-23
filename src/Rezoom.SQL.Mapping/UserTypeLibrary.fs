@@ -46,7 +46,7 @@ type UserPrimitiveType =
 type TypeResolutionByName =
     | FoundType of UserPrimitiveType
     | AmbiguousType of UserPrimitiveType array
-    | NotFoundType
+    | NotFoundType of mistakeCandidates : string array
 
 /// All the compile-time information we have about user types.
 type UserTypeLibrary(identity : string, types : UserPrimitiveType array) =
@@ -70,7 +70,9 @@ type UserTypeLibrary(identity : string, types : UserPrimitiveType array) =
             | [| exactlyOne |] -> FoundType exactlyOne
             | multiple -> AmbiguousType multiple
         else
-            NotFoundType
+            let candidates =
+                byName.Keys |> Seq.append byFullName.Keys |> Levenshtein.mistakeCandidates name |> Seq.toArray
+            NotFoundType candidates
     member this.TryGetMapping(ty : Type) : RuntimeMapping voption =
         let succ, mapping = byCustomType.TryGetValue(ty)
         if succ then ValueSome mapping.RuntimeMapping

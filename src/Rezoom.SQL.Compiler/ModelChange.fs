@@ -39,7 +39,7 @@ type private ModelChange(model : Model, inference : ITypeInferenceContext) =
                 return! ModelOps.dropColumnDefault tableName (nearSourceOf tableName column)
             | ChangeType change ->
                 let column = nearSourceOf tableName change.Column
-                return! ModelOps.changeColumnType tableName column change.NewType
+                return! ModelOps.changeColumnType tableName column change.NewType.Value
             | ChangeNullability change ->
                 let column = nearSourceOf tableName change.Column
                 return! ModelOps.changeColumnNullability tableName column change.NewNullable

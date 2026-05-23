@@ -93,7 +93,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
             yield ws
             yield text "AS"
             yield ws
-            yield! this.TypeName(castExpr.AsType)
+            yield! this.TypeName(castExpr.AsType.Value)
             yield text ")"
         }
     override this.Collate(expr, collation) =

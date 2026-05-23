@@ -87,7 +87,7 @@ type private ExprTypeChecker(cxt : ITypeInferenceContext, scope : InferredSelect
 
     member this.Cast(source : SourceInfo, cast : CastExpr) =
         let input = this.Expr(cast.Expression)
-        let ty = InferredType.OfTypeName(cast.AsType, input.Info.Type)
+        let ty = InferredType.OfTypeName(cast.AsType.Value, input.Info.Type)
         {   Expr.Source = source
             Value =
                 {   Expression = input

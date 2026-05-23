@@ -196,7 +196,11 @@ type private StaticEntityReaderTemplate =
                     // todo call a wrapper method with framework check to invoke the right underlying
                     // https://learn.microsoft.com/en-us/dotnet/fundamentals/syslib-diagnostics/syslib0050
                     let uninit =
+#if NET5_0_OR_GREATER
+                        typeof<System.Runtime.CompilerServices.RuntimeHelpers>.GetMethod("GetUninitializedObject")
+#else
                         typeof<System.Runtime.Serialization.FormatterServices>.GetMethod("GetUninitializedObject")
+#endif
                     yield ldtoken composite.Output
                     yield call1 (typeof<Type>.GetMethod("GetTypeFromHandle"))
                     yield call1 uninit
