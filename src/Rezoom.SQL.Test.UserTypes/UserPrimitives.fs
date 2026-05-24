@@ -62,3 +62,8 @@ type CustomUserIdStruct = CustomUserIdStruct of System.Guid
 
 [<Struct>]
 type CustomStringIdStruct = CustomStringIdStruct of string
+
+type EmailAddress = EmailAddress of string
+
+[<Struct>]
+type UserId = UserId of int

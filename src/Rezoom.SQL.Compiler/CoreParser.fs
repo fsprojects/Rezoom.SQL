@@ -1,4 +1,5 @@
 ﻿// Parses our typechecked subset of the SQL language.
+// CoreParser is the RZSQL language. Parser adds "vendor statements" on top to allow bypassing RZSQL.
 
 module private Rezoom.SQL.Compiler.CoreParser
 open System
@@ -274,6 +275,15 @@ let private literal =
         %% +.numericLiteral -|> NumericLiteral
     ] <?> "literal"
 
+let private clrTypeName =
+    let acceptable (c : char) =
+        c >= 'a' && c <= 'z'
+        || c >= 'A' && c <= 'Z'
+        || c >= '0' && c <= '9'
+        || c = '_'
+        || c = '.'
+    many1Satisfy acceptable
+
 let private typeName =
     let maxBound = %% '(' -- ws -- +.p<int> -- ws -- ')' -- ws -%> id
     %[  %% kw "STRING" -- +.(zeroOrOne * maxBound) -%> StringTypeName
@@ -290,6 +300,7 @@ let private typeName =
         %% kw "BOOL" -%> BooleanTypeName
         %% kw "DATETIME" -%> DateTimeTypeName
         %% kw "DATETIMEOFFSET" -%> DateTimeOffsetTypeName
+        %% +.clrTypeName -- ws -|> UnresolvedTypeName
     ] <?> "type-name" |> withSource
 
 let private cast expr =

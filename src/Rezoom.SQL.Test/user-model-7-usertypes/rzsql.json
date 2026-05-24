@@ -1,0 +1,4 @@
+{ "backend": "sqlite"
+  , "migrations": "."
+  , "usertypes": ["../../Rezoom.SQL.Test.UserTypes/bin/Debug/net10.0/Rezoom.SQL.Test.UserTypes.dll"]
+}

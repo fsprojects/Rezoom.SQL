@@ -197,6 +197,7 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                             if autoIncrement then
                                 match found.ColumnType.Type with
                                 | IntegerType _ -> ()
+                                | UserTypeBasedOn (_, IntegerType _) -> ()
                                 | _ -> failAt constraintName.Source <| Error.onlyIntPrimaryKeyAutoincrement
                             { found with PrimaryKey = true })
                     { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }

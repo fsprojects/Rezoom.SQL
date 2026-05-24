@@ -28,6 +28,7 @@
     <Compile Include="TestPostgresSmoke.fs" />
     <Compile Include="TestPrimitiveReaders.fs" />
     <Compile Include="TestUserPrimitives.fs" />
+    <Compile Include="TestUserPrimitivesCompiler.fs" />
     <Compile Include="TestQueryParents.fs" />
     <Compile Include="TestReadWriteReferences.fs" />
     <Compile Include="TestRoundTrip.fs" />
