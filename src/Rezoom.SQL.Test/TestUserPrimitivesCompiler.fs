@@ -47,3 +47,17 @@ let ``simple query against user model preserves usertypes`` () =
             Assert.AreEqual("Rezoom.SQL.Test.UserTypes.StringyPhoneNumber", phoneUserType.UserCLRType.FullName)
     | _ ->
         failwith "Result set shape did not match expected"
+
+[<Test>]
+let ``query parameter unifies to usertype`` () =
+    let cmd = CommandEffect.OfSQL(userModel.Value.Model, "anonymous", @"
+        select * from Users where Email = @email
+    ", userModel.Value.UserTypeLibrary)
+    let parm, parmTy = cmd.Parameters |> Seq.exactlyOne
+    printfn "%A" parm
+    match parm, parmTy with
+    | NamedParameter e, { Type = UserTypeBasedOn(userTy, StringType); Nullable = false } ->
+        Assert.AreEqual(Name("email"), e)
+        Assert.AreEqual("Rezoom.SQL.Test.UserTypes.EmailAddress", userTy.UserCLRType.FullName)
+    | _ ->
+        failwith "Parameter shape did not match expected"
