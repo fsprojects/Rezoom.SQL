@@ -120,5 +120,6 @@ let loadUserTypeLibraryFromPaths (configDir : string) (paths : string seq) =
             let path =
                 if System.IO.Path.IsPathRooted(path) then path else
                 System.IO.Path.Combine(configDir, path)
-            Assembly.LoadFrom(path)
+            // avoid locking the path by loading from bytes
+            Assembly.Load(System.IO.File.ReadAllBytes(path))
     |] |> loadUserTypeLibrary
