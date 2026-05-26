@@ -13,7 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="README.md" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Levenshtein.fs" />
     <Compile Include="CILHelpers.fs" />

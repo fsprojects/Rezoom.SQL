@@ -4,7 +4,7 @@
 );
 
 create table Users
-( Id int64 primary key autoincrement
+( Id UserId primary key autoincrement
 , Name string(80)
 , Email string(254)
 , ProfilePictureSHA256 binary(32) null references Pictures(SHA256)
