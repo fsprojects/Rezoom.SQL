@@ -71,7 +71,7 @@ let private findCustomMappingsInType (publicType : Type) : RuntimeMapping seq =
                         "Custom type %s is mapped to itself via %s."
                         singleToPrim.CustomType.FullName
                         (singleFromPrim.MethodInfo.DeclaringType.FullName + "." + singleFromPrim.MethodInfo.Name)
-                elif not <| PrimitiveConverters.isFundamentalPrimitive singleToPrim.UnderlyingPrimitive then
+                elif not <| PrimitiveConverters.isFundamentalPrimitiveByFullName singleToPrim.UnderlyingPrimitive then
                     failwithf
                         "Custom type %s converter %s maps to %s, but that is not a supported primitive database type."
                         singleToPrim.CustomType.FullName

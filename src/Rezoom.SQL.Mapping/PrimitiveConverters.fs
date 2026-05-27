@@ -6,7 +6,6 @@ open System
 open System.Globalization
 open System.Reflection
 open System.Reflection.Emit
-open Microsoft.FSharp.Reflection
 
 let inline private convertVia convertFunction =
     fun o -> convertFunction(o, CultureInfo.InvariantCulture)
@@ -191,7 +190,7 @@ let private convertersByType =
 
 // Have to look this up by type name rather than type reference, because sometimes
 // we are in a MetadataLoadContext and don't have access to the real runtime Type.
-let private isFundamentalPrimitiveByFullName =
+let isFundamentalPrimitiveByFullName =
     let names = convertersByType |> Seq.map (fun kv -> kv.Key.FullName) |> System.Collections.Generic.HashSet
     fun (ty : Type) -> names.Contains(ty.FullName)
 
