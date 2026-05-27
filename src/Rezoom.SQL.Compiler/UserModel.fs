@@ -151,6 +151,8 @@ type UserModel =
     }
     static member ConfigFileName = "rzsql.json"
     static member Load(resolutionFolder : string, modelPath : string) =
+        UserModel.Load(resolutionFolder, modelPath, Seq.empty)
+    static member Load(resolutionFolder : string, modelPath : string, referencedAssemblyPaths : string seq) =
         let config, configDirectory =
             if String.IsNullOrEmpty(modelPath) then // implicit based on location of dbconfig.json
                 let configPath =
@@ -173,7 +175,11 @@ type UserModel =
         let migrationsDirectory = Path.Combine(configDirectory, config.MigrationsPath) |> Path.GetFullPath
         let migrations = loadMigrations migrationsDirectory
         let backend = Config.toIBackend config.Backend
-        let userTypes = UserTypeLibraryLoader.loadUserTypeLibraryFromPaths configDirectory config.UserTypes
+        let userTypes =
+            UserTypeLibraryLoader.loadUserTypeLibraryFromConfig
+                configDirectory
+                referencedAssemblyPaths
+                config.UserTypes
         let migrations, model = nextModel userTypes backend.InitialModel migrations
         let migrations = stringizeMigrationTree backend migrations |> toReadOnlyList
         {   ConnectionName = config.ConnectionName

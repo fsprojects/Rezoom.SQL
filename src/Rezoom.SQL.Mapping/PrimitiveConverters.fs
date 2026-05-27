@@ -4,6 +4,7 @@ open LicenseToCIL
 open LicenseToCIL.Ops
 open System
 open System.Globalization
+open System.Reflection
 open System.Reflection.Emit
 open Microsoft.FSharp.Reflection
 
@@ -187,6 +188,12 @@ let private convertersByType =
     |> Seq.map
         (fun m -> m.ReturnType, m)
     |> dict
+
+// Have to look this up by type name rather than type reference, because sometimes
+// we are in a MetadataLoadContext and don't have access to the real runtime Type.
+let private isFundamentalPrimitiveByFullName =
+    let names = convertersByType |> Seq.map (fun kv -> kv.Key.FullName) |> System.Collections.Generic.HashSet
+    fun (ty : Type) -> names.Contains(ty.FullName)
 
 let private columnIndexField = typeof<ColumnInfo>.GetField("Index")
 let private columnTypeField = typeof<ColumnInfo>.GetField("Type")
@@ -382,24 +389,57 @@ and genericConverter (custom : UserTypeLibrary) (ty : Type) : RowConversionMetho
         else None
     else None
 
+/// Look at a member's CustomAttributeData for a CompilationMappingAttribute
+/// and return its SourceConstructFlags kind, if any. Works on MetadataLoadContext types
+/// and real runtime types.
+and private compilationMappingKind (m : MemberInfo) : SourceConstructFlags option =
+    m.GetCustomAttributesData()
+    |> Seq.tryPick (fun cad ->
+        if cad.AttributeType.FullName = "Microsoft.FSharp.Core.CompilationMappingAttribute"
+           && cad.ConstructorArguments.Count >= 1
+        then
+            match cad.ConstructorArguments.[0].Value with
+            | :? int as v ->
+                Some (enum<SourceConstructFlags> (v &&& int SourceConstructFlags.KindMask))
+            | _ -> None
+        else None)
+
+and private hasCompilationMappingKind (m : MemberInfo) (kind : SourceConstructFlags) =
+    compilationMappingKind m = Some kind
+
+/// Detects a single-case F# discriminated union like `Type UserId = UserId of int`.
+/// Can't use FSharpType.IsUnion, FSharpType.GetUnionCases, because this has to work on MetadataLoadContext
+/// types as well as real runtime types. So we have to duplicate the logic of those by looking at attribute metadata without
+/// instantiating live attribute instances.
 and findSingleCaseDU (publicType : Type) : UserPrimitiveType ValueOption =
-    if not <| FSharpType.IsUnion(publicType) then ValueNone else
-    match FSharpType.GetUnionCases(publicType) with
-    | [| singleCase |] ->
-        match singleCase.GetFields() with
-        | [| singleProp |] when isFundamentalPrimitive singleProp.PropertyType ->
-            let fromPrimitiveMethod = FSharpValue.PreComputeUnionConstructorInfo(singleCase)
-            ValueSome
-                {   UserCLRType = publicType
-                    UnderlyingCLRType = singleProp.PropertyType
-                    RawBackendSQLType = None
-                    SQLTypeLength = None
-                    RuntimeMapping =
-                        {   FromPrimitiveMethod = fromPrimitiveMethod
-                            ToPrimitiveMethod = singleProp.GetMethod
-                        }
-                    IsAutomaticImplemention = true
-                }
+    if not (hasCompilationMappingKind publicType SourceConstructFlags.SumType) then ValueNone else
+    let caseCtors =
+        publicType.GetMethods(BindingFlags.Public ||| BindingFlags.Static ||| BindingFlags.DeclaredOnly)
+        |> Array.filter (fun m -> hasCompilationMappingKind m SourceConstructFlags.UnionCase)
+    match caseCtors with
+    | [| singleCaseCtor |] ->
+        match singleCaseCtor.GetParameters() with
+        | [| singleParam |] when isFundamentalPrimitiveByFullName singleParam.ParameterType ->
+            let candidates =
+                publicType.GetProperties(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.DeclaredOnly)
+                |> Array.filter (fun p ->
+                    p.PropertyType = singleParam.ParameterType
+                    && not (isNull p.GetMethod)
+                    && hasCompilationMappingKind p SourceConstructFlags.Field)
+            match candidates with
+            | [| singleProp |] ->
+                ValueSome
+                    {   UserCLRType = publicType
+                        UnderlyingCLRType = singleParam.ParameterType
+                        RawBackendSQLType = None
+                        SQLTypeLength = None
+                        RuntimeMapping =
+                            {   FromPrimitiveMethod = singleCaseCtor
+                                ToPrimitiveMethod = singleProp.GetMethod
+                            }
+                        IsAutomaticImplemention = true
+                    }
+            | _ -> ValueNone
         | _ -> ValueNone
     | _ -> ValueNone
 

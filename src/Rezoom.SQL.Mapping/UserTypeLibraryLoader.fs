@@ -1,8 +1,8 @@
 module Rezoom.SQL.Mapping.UserTypeLibraryLoader
 open System
+open System.IO
 open System.Reflection
 open System.Text.RegularExpressions
-open Microsoft.FSharp.Reflection
 open Rezoom.SQL.Mapping.CodeGeneration
 
 /// Logic to load UserTypeLibrary info from assemblies via reflection.
@@ -115,6 +115,51 @@ let loadUserTypeLibrary (asms : Assembly array) =
     let identity = asms |> Seq.map (fun a -> a.GetName().Name) |> Seq.sortBy (fun n -> n) |> String.concat "&"
     UserTypeLibrary(identity, mappings)
 
+/// An entry that contains a path separator or ends in ".dll" is
+/// treated as a literal file path; otherwise it's an assembly *name*
+/// to be resolved against the compilation's referenced assemblies.
+let private looksLikePath (entry : string) =
+    entry.IndexOfAny([| '/'; '\\' |]) >= 0
+    || entry.EndsWith(".dll", System.StringComparison.OrdinalIgnoreCase)
+
+let private resolveEntryPath
+    (configDir : string)
+    (referencedAssemblyPaths : string list)
+    (entry : string) : string =
+    if looksLikePath entry then
+        if System.IO.Path.IsPathRooted(entry) then entry
+        else System.IO.Path.Combine(configDir, entry)
+    else
+        match
+            referencedAssemblyPaths
+            |> List.tryFind (fun p ->
+                System.String.Equals(
+                    System.IO.Path.GetFileNameWithoutExtension(p),
+                    entry,
+                    System.StringComparison.OrdinalIgnoreCase))
+        with
+        | Some path -> path
+        | None ->
+            failwithf
+                "Could not resolve UserTypes assembly '%s' listed in rzsql.json. Make sure the project references it or the path exists."
+                entry
+
+/// Module-level so the MLC (and the Types/MethodInfos it produced) stays
+/// alive for the lifetime of the design-time process. Keyed by ref-set so
+/// multiple TPU projects loaded in the same host can share an MLC when
+/// their references match.
+let private mlcCache =
+    System.Collections.Concurrent.ConcurrentDictionary<string, MetadataLoadContext>()
+
+let private getOrCreateMetadataLoadContext (referencedAssemblyPaths : string list) =
+    let key = referencedAssemblyPaths |> List.sort |> String.concat "|"
+    mlcCache.GetOrAdd(key, fun _ ->
+        let resolver = new PathAssemblyResolver(referencedAssemblyPaths)
+        new MetadataLoadContext(resolver))
+
+// Easy path used by tests that load a UserTypeLibrary directly without a TP
+// host (and so without access to the compilation's referenced assemblies).
+// The TP design-time always goes through loadUserTypeLibraryFromConfig.
 let loadUserTypeLibraryFromPaths (configDir : string) (paths : string seq) =
     [|  for path in paths ->
             let path =
@@ -123,3 +168,32 @@ let loadUserTypeLibraryFromPaths (configDir : string) (paths : string seq) =
             // avoid locking the path by loading from bytes
             Assembly.Load(System.IO.File.ReadAllBytes(path))
     |] |> loadUserTypeLibrary
+
+let loadUserTypeLibraryFromConfig
+    (configDir : string)
+    (referencedAssemblyPaths : string seq)
+    (entries : string seq) =
+    let entriesList = entries |> Seq.toList
+    if List.isEmpty entriesList then UserTypeLibrary.Empty else
+    let refsList = referencedAssemblyPaths |> Seq.toList
+    if List.isEmpty refsList then loadUserTypeLibraryFromPaths configDir entriesList else
+    // Inspect user-types via MetadataLoadContext so the DLL is never loaded
+    // into the default AssemblyLoadContext. VS's F# language service
+    // introspects assemblies in the default ALC for IntelliSense, and that
+    // forces CLR materialization of every type's custom attributes.
+    // The F#-auto-emitted [<DebuggerDisplay>] fails to resolve in the VS host and breaks the TP.
+    // MLC isolation keeps the DLL invisible to that scan
+    // while still giving us the metadata the TP needs. The MethodInfos we
+    // return are MLC-flavoured and can't be called, but ProvidedTypes.fs
+    // source-to-target conversion (convMethodRefToTgt) can use them.
+    let mlc = getOrCreateMetadataLoadContext refsList
+    let asms =
+        [|  for entry in entriesList ->
+                let path = resolveEntryPath configDir refsList entry
+                // Load from MemoryStream instead of path so TP doesn't lock
+                // the assembly, which would be a huge pain for users.
+                let bytes = File.ReadAllBytes(path)
+                let stream = new MemoryStream(bytes, writable = false)
+                mlc.LoadFromStream(stream)
+        |]
+    asms |> loadUserTypeLibrary

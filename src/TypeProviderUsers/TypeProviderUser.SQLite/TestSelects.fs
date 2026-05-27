@@ -9,6 +9,7 @@ open Rezoom.SQL
 open Rezoom.SQL.Plans
 open MBrace.FsPickler
 open Rezoom
+open TypeProviderUser.UserTypes
 
 type TestEqualInteger = SQL<"""
 select * from Users where Id = @userId
@@ -16,7 +17,7 @@ select * from Users where Id = @userId
 
 [<Test>]
 let ``test = integer`` () =
-    let results = TestEqualInteger.Command(1L) |> runOnTestData
+    let results = TestEqualInteger.Command(UserId 1L) |> runOnTestData
     printfn "%A" results
     Assert.AreEqual
         ( [ "Homer" ]
@@ -29,7 +30,7 @@ select * from Users where Id in @userIds
 
 [<Test>]
 let ``test in integer`` () =
-    let results = TestInInteger.Command([| 1L; 2L |]) |> runOnTestData
+    let results = TestInInteger.Command([| UserId 1L; UserId 2L |]) |> runOnTestData
     printfn "%A" results
     Assert.AreEqual
         ( [ "Homer"; "Marge" ]
@@ -112,11 +113,11 @@ let ``test empty many`` () =
 [<Test>]
 let ``replay works`` () =
     // Seed the DB once via the sync helper, then exercise the plan-based path.
-    TestInInteger.Command([| 1L |]) |> runOnTestData |> ignore
+    TestInInteger.Command([| UserId 1L |]) |> runOnTestData |> ignore
     let plan =
         plan {
-            let! r1 = TestInInteger.Command([| 1L |]).Plan()
-            let! r2 = TestInInteger.Command([| 2L |]).Plan()
+            let! r1 = TestInInteger.Command([| UserId 1L |]).Plan()
+            let! r2 = TestInInteger.Command([| UserId 2L |]).Plan()
             return r1.[0].Email, r2.[0].Email
         }
     let config = executionConfig
@@ -150,7 +151,7 @@ type InsertPicture = SQL<"insert into Pictures row SHA256 = @sha, PNGData = @png
 let ``lotsa parameters`` () =
     // Migrate + seed by running any test command first; runOnTestData drops/recreates
     // the SQLite file each invocation.
-    TestInInteger.Command([| 1L |]) |> runOnTestData |> ignore
+    TestInInteger.Command([| UserId 1L |]) |> runOnTestData |> ignore
     let task =
         plan {
             let g() = Guid.NewGuid().ToByteArray()

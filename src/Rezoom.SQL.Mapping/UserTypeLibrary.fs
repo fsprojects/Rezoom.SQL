@@ -78,4 +78,12 @@ type UserTypeLibrary(identity : string, types : UserPrimitiveType array) =
         let succ, mapping = byCustomType.TryGetValue(ty)
         if succ then ValueSome mapping.RuntimeMapping
         else ValueNone
+    /// The runtime assemblies that contributed types to this library.
+    /// The TP design-time uses these to register source-side assemblies with
+    /// ProvidedTypes' target/source conversions, so target IL refs to
+    /// user types can be mapped back to their loaded reflection Types.
+    member this.SourceAssemblies : Assembly seq =
+        types
+        |> Seq.map (fun t -> t.UserCLRType.Assembly)
+        |> Seq.distinct
     static member Empty = empty

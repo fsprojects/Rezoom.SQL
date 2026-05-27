@@ -30,10 +30,12 @@ type ParameterTransform =
             let ty = expr.Type
             let asObj = Expr.Coerce(expr, typeof<obj>)
             if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
-                let invokeValue = Expr.Coerce(Expr.PropertyGet(expr, ty.GetProperty("Value")), typeof<obj>)
-                <@@ if isNull %%asObj then box DBNull.Value else box (%%nextStep(invokeValue)) @@>
+                let invokeValue = Expr.PropertyGet(expr, ty.GetProperty("Value"))
+                let nextAsObj = Expr.Coerce(nextStep invokeValue, typeof<obj>)
+                <@@ if isNull %%asObj then box DBNull.Value else %%nextAsObj @@>
             else
-                <@@ if isNull %%asObj then box DBNull.Value else box (%%nextStep(asObj)) @@>
+                let nextAsObj = Expr.Coerce(nextStep expr, typeof<obj>)
+                <@@ if isNull %%asObj then box DBNull.Value else %%nextAsObj @@>
         // 2. After null check, if the type is a UserTypeBasedOn, and is non-null, we call ToPrimitive on it.
         //    This is usually a static method but could be an instance method, for example on auto-generated DU
         //    UserPrimitive mappings.

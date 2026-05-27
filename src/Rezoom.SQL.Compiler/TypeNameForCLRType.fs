@@ -3,6 +3,9 @@ module Rezoom.SQL.Compiler.TypeNameForCLRType
 open System
 open Rezoom.SQL.Mapping
 
+/// CLR-type to SQL-type-name mappings. Key is type name rather than by
+/// type reference identity so it works with both real runtime types and Types loaded
+/// via MetadataLoadContext at design time.
 let clrTypeDict =
     [|  // 1:1 mappings
         typeof<int16>, fun _ -> IntegerTypeName Integer16
@@ -22,11 +25,10 @@ let clrTypeDict =
         typeof<uint16>, fun _ -> IntegerTypeName Integer32
         typeof<uint32>, fun _ -> IntegerTypeName Integer64
         typeof<uint64>, fun _ -> IntegerTypeName Integer64
-            
-    |] |> dict
+    |] |> Array.map (fun (t, f) -> (t.FullName, f)) |> dict
 type UserPrimitiveType with
     member this.UnderlyingSQLTypeName =
-        let succ, found = clrTypeDict.TryGetValue(this.UnderlyingCLRType)
+        let succ, found = clrTypeDict.TryGetValue(this.UnderlyingCLRType.FullName)
         if succ then found(this) else
         bug <|
             sprintf

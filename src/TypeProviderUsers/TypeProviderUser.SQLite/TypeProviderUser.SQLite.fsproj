@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />
-    <PackageReference Include="Rezoom" Version="1.4.0" />
+    <PackageReference Include="Rezoom" Version="2.0.0" />
     <!-- Wrapper meta-package: brings in Rezoom.SQL.Provider, Compiler, Mapping, and
          Microsoft.Data.Sqlite as the SQLite runtime driver. -->
     <PackageReference Include="Rezoom.SQL.Provider.SQLite" Version="$(RezoomSqlPkgVersion)" />
@@ -38,6 +38,10 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TypeProviderUser.UserTypes\TypeProviderUser.UserTypes.fsproj" />
   </ItemGroup>
 
 </Project>

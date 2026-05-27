@@ -225,12 +225,18 @@ let private generateCommandMethod
                     , (args, parameters) ||> List.map2 (fun ex (_, ty) ->
                         match ty.Type with
                         | ListType elemTy ->
-                            let tx = backend.ParameterTransform({ ty with Type = elemTy })
+                            let elemColType = { ty with Type = elemTy }
+                            let tx = backend.ParameterTransform(elemColType)
                             let dbType = Quotations.Expr.Value(tx.ParameterType)
                             let inputArr = Expr.Coerce(ex, typeof<Array>)
+                            // Coerce each element to the actual element CLR type,
+                            // so backend always sees a typed Expr like it does
+                            // in the scalar path.
+                            let elemClrTy = elemColType.CLRType(useOptional)
                             let lambda =
                                 let var = Var("x", typeof<obj>)
-                                Expr.Lambda(var, tx.ValueTransform (Expr.Var(var)))
+                                let typedElem = Expr.Coerce(Expr.Var(var), elemClrTy)
+                                Expr.Lambda(var, tx.ValueTransform typedElem)
                             let arr =
                                 <@@ [| for ex in ((%%inputArr) : Array) -> ((%%lambda) : obj -> obj) ex |] @@>
                             <@@ ListParameter(%%dbType, %%Expr.Coerce(arr, typeof<Array>)) @@>

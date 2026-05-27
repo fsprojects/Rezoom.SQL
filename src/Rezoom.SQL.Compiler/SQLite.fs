@@ -9,15 +9,28 @@ open FSharp.Quotations
 open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.BackendUtilities
 open Rezoom.SQL.Compiler.Translators
-open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
+
+/// For the SQLite backend we convert DateTimes and GUIDs to supported underlying types
+/// clob and blob respectively. The conversion methods live in this module so our quotations
+/// can call them rather than inlining conversion code.
+type SQLiteParamConversions() =
+    static member DateTimeToString(dt : DateTime) : string =
+        let utc =
+            if dt.Kind = DateTimeKind.Unspecified then
+                DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+            else
+                dt.ToUniversalTime()
+        utc.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ")
+
+    static member GuidToBytes(g : Guid) : byte[] = g.ToByteArray()
 
 type private SQLiteLiteral() =
     inherit DefaultLiteralTranslator()
     override __.BooleanLiteral(t) =
         CommandText <| if t then "1" else "0"
     override __.DateTimeLiteral(dt) =
-        CommandText <| "'" + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") + "'"
+        CommandText <| "'" + SQLiteParamConversions.DateTimeToString(dt) + "'"
 
 type private SQLiteExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
@@ -93,33 +106,14 @@ type SQLiteBackend() =
             ParameterTransform.Default(columnType, fun columnType ->
                 match columnType.Type with
                 | DateTimeType ->
-                    let transform (expr : Quotations.Expr) =
-                        let xform (dtExpr : Quotations.Expr<DateTime>) =
-                            <@  let utcDt =
-                                    let dtExpr = %dtExpr
-                                    if dtExpr.Kind = DateTimeKind.Unspecified
-                                    then DateTime.SpecifyKind(dtExpr, DateTimeKind.Utc)
-                                    else dtExpr.ToUniversalTime()
-                                utcDt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") |> box
-                            @>
-                        let xform (dtExpr : Quotations.Expr) =
-                            (xform (Expr.Cast(Expr.Coerce(dtExpr, typeof<DateTime>)))).Raw
-                        xform expr
                     {   ParameterType = DbType.String
-                        ValueTransform = transform
+                        ValueTransform = fun expr ->
+                            Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.DateTimeToString), [ expr ])
                     }
                 | GuidType ->
-                    let transform (expr : Quotations.Expr) =
-                        let xform (gExpr : Quotations.Expr<Guid>) =
-                            <@  let guid = %gExpr
-                                let bytes = guid.ToByteArray()
-                                box bytes
-                            @>
-                        let xform (gExpr : Quotations.Expr) =
-                            (xform (Expr.Cast(Expr.Coerce(gExpr, typeof<Guid>)))).Raw
-                        xform expr
                     {   ParameterType = DbType.Binary
-                        ValueTransform = transform
+                        ValueTransform = fun expr ->
+                            Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.GuidToBytes), [ expr ])
                     }
                 | _ -> ParameterTransform.Default(columnType)
             )
