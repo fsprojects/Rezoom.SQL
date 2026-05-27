@@ -62,6 +62,7 @@ type UserTypeLibrary(identity : string, types : UserPrimitiveType array) =
     let byCustomType = types |> Seq.map (fun t -> t.UserCLRType, t) |> dict
     member this.CountPrimitives = types.Length
     member this.Identity = identity
+    member this.AllTypes = types
     member this.UserPrimitiveByName(name : string) =
         let succ, ty = byFullName.TryGetValue(name)
         if succ then FoundType ty else
