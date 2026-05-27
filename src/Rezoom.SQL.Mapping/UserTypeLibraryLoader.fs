@@ -197,3 +197,60 @@ let loadUserTypeLibraryFromConfig
                 mlc.LoadFromStream(stream)
         |]
     asms |> loadUserTypeLibrary
+
+module FreezeDry =
+    open System.Collections.Concurrent
+
+    /// Used to rebuild a UserPrimitiveType at runtime with information that was known to the design-time type provider.
+    /// Faster than searching a list of assemblies exhaustively for usertypes.
+    type FreezeDriedUserPrimitiveType =
+        {   /// This is the type we are converting from/to.
+            UserCLRTypeFullName : string
+            UserCLRTypeAssemblyName : string
+
+            /// This is the type that owns the ToPrimitive and FromPrimitive methods.
+            /// It could be the same as the UserCLRType or it could be a totally separate extension class.
+            DeclaringTypeFullName : string
+            DeclaringAssemblyName : string
+
+            FromPrimitiveMethodName : string
+            ToPrimitiveMethodName : string
+            ToPrimitiveIsInstanceMethod : bool
+            IsAutomaticImplemention : bool
+        }
+
+    /// Used to rebuild a UserTypeLibrary at runtime with information that was known to the design-time type provider.
+    type FreezeDriedUserTypeLibrary =
+        {   Identity : string
+            Types : FreezeDriedUserPrimitiveType array
+        }
+
+    let private cache = ConcurrentDictionary<string, UserTypeLibrary>()
+    let rehydrate (freezeDried : FreezeDriedUserTypeLibrary) : UserTypeLibrary =
+        cache.GetOrAdd(freezeDried.Identity, fun _ ->
+            let types =
+                freezeDried.Types |> Array.map (fun h ->
+                    let clrAsm = Assembly.Load(h.UserCLRTypeAssemblyName)
+                    let clrTy = clrAsm.GetType(h.UserCLRTypeFullName)
+                    let decAsm =
+                        if h.DeclaringAssemblyName = h.UserCLRTypeAssemblyName then clrAsm
+                        else Assembly.Load(h.DeclaringAssemblyName)
+                    let decTy =
+                        if h.DeclaringAssemblyName = h.UserCLRTypeAssemblyName && h.DeclaringTypeFullName = h.UserCLRTypeFullName then clrTy
+                        else decAsm.GetType(h.DeclaringTypeFullName)
+
+                    let toPrim =
+                        if h.ToPrimitiveIsInstanceMethod then
+                            clrTy.GetMethod(h.ToPrimitiveMethodName, BindingFlags.Instance ||| BindingFlags.Public, null, [||], null)
+                        else
+                            decTy.GetMethod(h.ToPrimitiveMethodName, BindingFlags.Static ||| BindingFlags.Public, null, [|clrTy|], null)
+                    let underlyingTy = toPrim.ReturnType
+                    let fromPrim = decTy.GetMethod(h.FromPrimitiveMethodName, BindingFlags.Static ||| BindingFlags.Public, null, [|underlyingTy|], null)
+                    {   UserCLRType = clrTy
+                        UnderlyingCLRType = toPrim.ReturnType
+                        RawBackendSQLType = None // don't need at runtime
+                        SQLTypeLength = None // don't need at runtime
+                        RuntimeMapping = { FromPrimitiveMethod = fromPrim; ToPrimitiveMethod = toPrim }
+                        IsAutomaticImplemention = h.IsAutomaticImplemention
+                    })
+            UserTypeLibrary(freezeDried.Identity, types))
