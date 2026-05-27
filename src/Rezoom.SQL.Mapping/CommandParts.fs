@@ -87,6 +87,8 @@ type CommandData =
         InvalidationMask : BitMask
         Cacheable : bool
         ResultSetCount : int option
+        /// User type library to use (if any) when reading result entities.
+        UserTypeLibrary : FreezeDry.FreezeDriedUserTypeLibrary option
     }
 
 type CommandCategory = CommandCategory of connectionName : string

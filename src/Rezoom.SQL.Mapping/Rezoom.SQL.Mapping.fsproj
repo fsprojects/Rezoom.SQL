@@ -25,6 +25,7 @@
     <Compile Include="UserTypeLibrary.fs" />
     <Compile Include="PrimitiveConverters.fs" />
     <Compile Include="UserTypeLibraryLoader.fs" />
+    <Compile Include="FreezeDry.fs" />
     <Compile Include="CollectionConverters.fs" />
     <Compile Include="BlueprintAttributes.fs" />
     <Compile Include="Blueprint.fs" />

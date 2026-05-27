@@ -60,6 +60,7 @@ type UserTypeLibrary(identity : string, types : UserPrimitiveType array) =
     let byName = types |> Array.groupBy (fun t -> t.Name) |> dict
     let byFullName = types |> Seq.map (fun t -> t.UserCLRType.FullName, t) |> dict
     let byCustomType = types |> Seq.map (fun t -> t.UserCLRType, t) |> dict
+    member this.IsEmpty = types.Length = 0
     member this.CountPrimitives = types.Length
     member this.Identity = identity
     member this.AllTypes = types

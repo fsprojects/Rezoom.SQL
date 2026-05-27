@@ -187,6 +187,11 @@ let private generateCommandMethod
     let parameters = command.Parameters |> Seq.sortBy fst |> Seq.toList
     let indexer = parameterIndexer (parameters |> Seq.map fst)
     let commandData =
+        let userTypes =
+            if generate.UserModel.UserTypeLibrary.IsEmpty then <@@ None : FreezeDry.FreezeDriedUserTypeLibrary option @@>
+            else
+                let quoted = FreezeDry.FreezeDriedUserTypeLibrary.Of(generate.UserModel.UserTypeLibrary).Quote()
+                <@@ Some %%quoted : FreezeDry.FreezeDriedUserTypeLibrary option @@>
         let fragments = backend.ToCommandFragments(indexer, command.Statements) |> toFragmentArrayExpr
         let identity = generate.Namespace + generate.TypeName
         let resultSetCount = command.ResultSets() |> Seq.length
@@ -212,6 +217,7 @@ let private generateCommandMethod
                         ( %%Quotations.Expr.Value(invalidations.HighBits)
                         , %%Quotations.Expr.Value(invalidations.LowBits))
                 ResultSetCount = Some (%%Quotations.Expr.Value(resultSetCount))
+                UserTypeLibrary = %%userTypes
             } @@>
     let useOptional = generate.UserModel.Config.Optionals = Config.FsStyle
     let methodParameters =

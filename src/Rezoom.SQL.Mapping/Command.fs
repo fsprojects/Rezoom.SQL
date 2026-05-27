@@ -5,6 +5,16 @@ open Rezoom
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Mapping.CodeGeneration
 
+[<AutoOpen>]
+module CommandDataExtensions =
+    type CommandData with
+        member this.EntityReader<'a>() =
+            match this.UserTypeLibrary with
+            | None -> ReaderTemplate<'a>.Template().CreateReader()
+            | Some freezeDried ->
+                let rehydrated = FreezeDry.rehydrate freezeDried
+                ReaderTemplate<'a>.Template(rehydrated).CreateReader()
+
 [<AbstractClass>]
 type Command(data : CommandData, parameters : CommandParameter IReadOnlyList) =
     let category = CommandCategory data.ConnectionName
@@ -76,9 +86,9 @@ type private Command0(data, parameters) =
         upcast Command0({ data with ConnectionName = connectionName}, parameters)
     override __.ResultSetProcessor() = upcast ResultSetProcessor0<unit>()
 
-type private ResultSetProcessor1<'a>() =
+type private ResultSetProcessor1<'a>(data : CommandData) =
     inherit ResultSetProcessor<'a>()
-    let reader = ReaderTemplate<'a>.Template().CreateReader()
+    let reader = data.EntityReader<'a>()
     let mutable row = Unchecked.defaultof<Row>
     let result = lazy reader.ToEntity()
     override __.BeginResultSet(dataReader) =
@@ -92,7 +102,7 @@ type private Command1<'a>(data, parameters) =
     inherit Command<'a>(data, parameters)
     override __.WithConnectionName(connectionName) =
         upcast Command1({ data with ConnectionName = connectionName}, parameters)
-    override __.ResultSetProcessor() = upcast ResultSetProcessor1<'a>()
+    override __.ResultSetProcessor() = upcast ResultSetProcessor1<'a>(data)
 
 type private MultiResultSetProcessor(readers : EntityReader list) =
     let mutable row = Unchecked.defaultof<Row>
@@ -108,10 +118,10 @@ type private MultiResultSetProcessor(readers : EntityReader list) =
     member __.ProcessRow() =
         (List.head readers).Read(row)
 
-type private ResultSetProcessor2<'a, 'b>() =
+type private ResultSetProcessor2<'a, 'b>(data : CommandData) =
     inherit ResultSetProcessor<ResultSets<'a, 'b>>()
-    let aReader = ReaderTemplate<'a>.Template().CreateReader()
-    let bReader = ReaderTemplate<'b>.Template().CreateReader()
+    let aReader = data.EntityReader<'a>()
+    let bReader = data.EntityReader<'b>()
     let proc = MultiResultSetProcessor([ aReader; bReader ])
     let result = lazy ResultSets<'a, 'b>(aReader.ToEntity(), bReader.ToEntity())
     override __.BeginResultSet(dataReader) = proc.BeginResultSet(dataReader)
@@ -122,13 +132,13 @@ type private Command2<'a, 'b>(data, parameters) =
     inherit Command<ResultSets<'a, 'b>>(data, parameters)
     override __.WithConnectionName(connectionName) =
         upcast Command2({ data with ConnectionName = connectionName}, parameters)
-    override __.ResultSetProcessor() = upcast ResultSetProcessor2<'a, 'b>()
+    override __.ResultSetProcessor() = upcast ResultSetProcessor2<'a, 'b>(data)
 
-type private ResultSetProcessor3<'a, 'b, 'c>() =
+type private ResultSetProcessor3<'a, 'b, 'c>(data : CommandData) =
     inherit ResultSetProcessor<ResultSets<'a, 'b, 'c>>()
-    let aReader = ReaderTemplate<'a>.Template().CreateReader()
-    let bReader = ReaderTemplate<'b>.Template().CreateReader()
-    let cReader = ReaderTemplate<'c>.Template().CreateReader()
+    let aReader = data.EntityReader<'a>()
+    let bReader = data.EntityReader<'b>()
+    let cReader = data.EntityReader<'c>()
     let proc = MultiResultSetProcessor([ aReader; bReader; cReader ])
     let result = lazy ResultSets<'a, 'b, 'c>(aReader.ToEntity(), bReader.ToEntity(), cReader.ToEntity())
     override __.BeginResultSet(dataReader) = proc.BeginResultSet(dataReader)
@@ -139,14 +149,14 @@ type private Command3<'a, 'b, 'c>(data, parameters) =
     inherit Command<ResultSets<'a, 'b, 'c>>(data, parameters)
     override __.WithConnectionName(connectionName) =
         upcast Command3({ data with ConnectionName = connectionName}, parameters)
-    override __.ResultSetProcessor() = upcast ResultSetProcessor3<'a, 'b, 'c>()
+    override __.ResultSetProcessor() = upcast ResultSetProcessor3<'a, 'b, 'c>(data)
 
-type private ResultSetProcessor4<'a, 'b, 'c, 'd>() =
+type private ResultSetProcessor4<'a, 'b, 'c, 'd>(data : CommandData) =
     inherit ResultSetProcessor<ResultSets<'a, 'b, 'c, 'd>>()
-    let aReader = ReaderTemplate<'a>.Template().CreateReader()
-    let bReader = ReaderTemplate<'b>.Template().CreateReader()
-    let cReader = ReaderTemplate<'c>.Template().CreateReader()
-    let dReader = ReaderTemplate<'d>.Template().CreateReader()
+    let aReader = data.EntityReader<'a>()
+    let bReader = data.EntityReader<'b>()
+    let cReader = data.EntityReader<'c>()
+    let dReader = data.EntityReader<'d>()
     let proc = MultiResultSetProcessor([ aReader; bReader; cReader; dReader ])
     let result =
         lazy ResultSets<'a, 'b, 'c, 'd>
@@ -159,7 +169,7 @@ type private Command4<'a, 'b, 'c, 'd>(data, parameters) =
     inherit Command<ResultSets<'a, 'b, 'c, 'd>>(data, parameters)
     override __.WithConnectionName(connectionName) =
         upcast Command4({ data with ConnectionName = connectionName}, parameters)
-    override __.ResultSetProcessor() = upcast ResultSetProcessor4<'a, 'b, 'c, 'd>()
+    override __.ResultSetProcessor() = upcast ResultSetProcessor4<'a, 'b, 'c, 'd>(data)
 
 type CommandConstructor =
     static member Command0(data, parameters) =
