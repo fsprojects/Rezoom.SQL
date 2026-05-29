@@ -97,7 +97,11 @@ let private addScalarInterface (ty : ProvidedTypeDefinition) (field : ProvidedFi
         ||| MethodAttributes.NewSlot
         ||| MethodAttributes.HasSecurity
     getterMethod.SetMethodAttrs(flags)
-    let scalarInterface = typedefof<_ IScalar>.MakeGenericType(field.FieldType)
+    // Use ProvidedTypeBuilder.MakeGenericType so that MLC-flavoured user types
+    // (e.g. a UserId DU loaded via MetadataLoadContext) produce a TypeSymbol
+    // instead of a TypeBuilderInstantiation — the latter throws NotSupportedException
+    // from GetMethod and breaks the IL emit pass.
+    let scalarInterface = ProvidedTypeBuilder.MakeGenericType(typedefof<_ IScalar>, [field.FieldType])
     let getScalarValue = scalarInterface.GetMethod("get_ScalarValue")
     ty.AddInterfaceImplementation(scalarInterface)
     ty.DefineMethodOverride(getterMethod, getScalarValue)

@@ -42,6 +42,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\TypeProviderUser.UserTypes\TypeProviderUser.UserTypes.fsproj" />
+    <ProjectReference Include="..\TypeProviderUser.BclOnlyTypes\TypeProviderUser.BclOnlyTypes.fsproj" />
   </ItemGroup>
 
 </Project>

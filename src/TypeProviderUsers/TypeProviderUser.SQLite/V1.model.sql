@@ -10,6 +10,9 @@ create table Users
 , ProfilePictureSHA256 binary(32) null references Pictures(SHA256)
 , Created datetime
 , RandomId guid default(cast(randomblob(16) as guid))
+, FavoriteTimeOfDay TimeOnly default('00:00:00.0000000')
+, BedtimeIfAny TimeOnly null
+, SignupDate DateOnly null
 );
 
 create table Articles

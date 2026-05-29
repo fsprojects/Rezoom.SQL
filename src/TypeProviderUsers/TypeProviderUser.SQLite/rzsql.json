@@ -1,4 +1,4 @@
 ﻿{
   "backend": "sqlite",
-  "usertypes": [ "TypeProviderUser.UserTypes" ]
+  "usertypes": [ "TypeProviderUser.UserTypes", "TypeProviderUser.BclOnlyTypes" ]
 }

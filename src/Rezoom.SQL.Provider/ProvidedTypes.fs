@@ -8584,11 +8584,21 @@ namespace ProviderImplementation.ProvidedTypes
             | _ ->
                 let hasProvidedArguments =
                     genericArguments
-                    |> List.exists (function 
+                    |> List.exists (function
                         | :? TypeSymbol
                         | :? ProvidedTypeDefinition
                         | :? ProvidedTypeSymbol -> true
-                        | _ -> false )
+                        // A TargetTypeDefinition must keep using .MakeGenericType():
+                        // letting it fall through to the MLC path triggers a target -> source
+                        // conversion of the arg that fails for BCL types not present in the
+                        // design-time source asm set.
+                        | :? TargetTypeDefinition -> false
+                        | t when t.IsGenericParameter -> false
+                        // MetadataLoadContext-loaded types are not the runtime System.RuntimeType.
+                        // Passing them to .MakeGenericType() makes a TypeBuilderInstantiation
+                        // whose member-resolution APIs throw, so treat them like provided arguments.
+                        | mlc when mlc.GetType() <> typeof<obj>.GetType() -> true
+                        | _ -> false)
                 if hasProvidedArguments then
                     TypeSymbol(TypeSymbolKind.OtherGeneric genericTypeDefinition, List.toArray genericArguments, ProvidedTypeBuilder.typeBuilder) :> Type
                 else
@@ -9297,6 +9307,17 @@ namespace ProviderImplementation.ProvidedTypes
         let typeBuilder = ProvidedTypeBuilder.typeBuilder
         let rec convTypeRef toTgt (t:Type) =
             let table = (if toTgt then typeTableFwd else typeTableBwd)
+            // Cache the resolved mapping in BOTH directions. Saving the reverse mapping
+            // fixes inverse lookups when the inverse-direction asm set lacks the type entirely.
+            // For example, building in Visual Studio we have a .NET Framework MSBuild host
+            // whose source asms are netstandard facades with no System.TimeOnly.
+            // But the consumer's target asms do have it.
+            // Without reverse caching, converting System.TimeOnly would trigger a walk of the bare source asms,
+            // fail to find the type, and die with FS3033.
+            let otherTable = (if toTgt then typeTableBwd else typeTableFwd)
+            let cacheBoth (newT: Type) =
+                table.[t] <- newT
+                if not (otherTable.ContainsKey newT) then otherTable.[newT] <- t
             match table.TryGetValue(t) with
             | true, newT -> newT
             | false, _ ->
@@ -9328,7 +9349,7 @@ namespace ProviderImplementation.ProvidedTypes
 
                 match bestGuess with
                 | Some (newT, canSave) ->
-                    if canSave then table.[t] <- newT
+                    if canSave then cacheBoth newT
                     newT
                 | None ->
 
@@ -9344,7 +9365,7 @@ namespace ProviderImplementation.ProvidedTypes
                         else
                             match tryGetTypeFromAssembly toTgt t.Assembly.FullName fullName asms.[i] with
                             | Some (newT, canSave) ->
-                                if canSave then table.[t] <- newT
+                                if canSave then cacheBoth newT
                                 newT
                             | None -> loop (i - 1)
                     loop (asms.Count - 1)

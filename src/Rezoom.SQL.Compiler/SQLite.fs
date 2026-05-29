@@ -115,7 +115,7 @@ type SQLiteBackend() =
                         ValueTransform = fun expr ->
                             Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.GuidToBytes), [ expr ])
                     }
-                | _ -> ParameterTransform.Default(columnType)
+                | _ -> { ParameterType = columnType.DbType; ValueTransform = fun e -> e }
             )
             
         member this.ToCommandFragments(indexer, stmts) =

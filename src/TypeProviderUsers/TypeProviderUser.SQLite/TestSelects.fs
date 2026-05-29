@@ -96,6 +96,140 @@ let ``test optional guid parameter`` () =
     let results = TestOptionalGuidParameter.Command(Some (Guid.NewGuid())) |> runOnTestData
     printfn "%A" results
 
+// Exercises the F# extension-method form of a custom user primitive
+// (TypeProviderUser.UserTypes.Extensions extends System.TimeOnly with
+// ToPrimitive/FromPrimitive). This is the BCL-type-extension path that
+// requires SourceAssemblies to use the *declaring* assembly of the
+// converter methods rather than the UserCLRType's assembly (otherwise
+// MLC's System.Runtime would leak into ProvidedTypes' source→target
+// mapping and break every System.String/DateTime/Guid splice site).
+type SelectTime = SQL<"""
+select Name, FavoriteTimeOfDay from Users where Name = 'Homer';
+""">
+
+[<Test>]
+let ``test TimeOnly user primitive read`` () =
+    let results = SelectTime.Command() |> runOnTestData
+    Assert.AreEqual(1, results.Count)
+    Assert.AreEqual("Homer", results.[0].Name)
+    // We seeded FavoriteTimeOfDay with the default '00:00:00.0000000'.
+    Assert.AreEqual(TimeOnly(0, 0, 0), results.[0].FavoriteTimeOfDay)
+
+type UpdateTimeAndRead = SQL<"""
+update Users set FavoriteTimeOfDay = @t where Name = 'Homer';
+select Name, FavoriteTimeOfDay from Users where Name = 'Homer';
+""">
+
+[<Test>]
+let ``test TimeOnly user primitive write+read roundtrip`` () =
+    // Roundtrips the F#-extension-on-BCL-type ToPrimitive (TimeOnly -> string)
+    // path through a parameter, and the FromPrimitive (string -> TimeOnly)
+    // path through the SELECT.
+    let t = TimeOnly(13, 37, 42)
+    let results = UpdateTimeAndRead.Command(t) |> runOnTestData
+    Assert.AreEqual(1, results.Count)
+    Assert.AreEqual(t, results.[0].FavoriteTimeOfDay)
+
+type SelectTimeOnlyScalar = SQL<"""
+select FavoriteTimeOfDay from Users where Name = 'Homer';
+""">
+
+[<Test>]
+let ``test TimeOnly user primitive single-column scalar`` () =
+    let results = SelectTimeOnlyScalar.Command() |> runOnTestData
+    Assert.AreEqual(1, results.Count)
+
+// Single-column row whose CLR type is a user-DLL UserPrimitive (UserId is a
+// single-case DU defined in TypeProviderUser.UserTypes, loaded into the
+// design-time host via MetadataLoadContext). This exercises addScalarInterface
+// in TypeGeneration.fs — passing an MLC-flavoured Type to MakeGenericType
+// previously produced a TypeBuilderInstantiation and threw at the GetMethod
+// call. Multi-column variants (e.g. `select Name, Id from Users`) sidestep
+// the bug since IScalar is only added for single-column rows.
+type SelectUserIdScalar = SQL<"""
+select Id from Users where Name = 'Homer';
+""">
+
+[<Test>]
+let ``test UserId user primitive single-column scalar`` () =
+    let results = SelectUserIdScalar.Command() |> runOnTestData
+    Assert.AreEqual(1, results.Count)
+    Assert.AreEqual(UserId 1L, results.[0].Id)
+
+type TimeOnlyListParam = SQL<"""
+select * from Users where FavoriteTimeOfDay in @times;
+""">
+
+[<Test>]
+let ``test TimeOnly user primitive list parameter`` () =
+    // List-of-UserPrimitive parameter — exercises the per-element
+    // ToPrimitive call inside the ListType ParameterTransform path in
+    // TypeGeneration.fs.
+    let results =
+        TimeOnlyListParam.Command([| TimeOnly(0, 0, 0); TimeOnly(13, 37, 42) |])
+        |> runOnTestData
+    // Both seeded users have default time 00:00:00 — both should match.
+    Assert.AreEqual(2, results.Count)
+
+type OptionalTimeOnlyParam = SQL<"""
+select * from Users where FavoriteTimeOfDay = @t or @t is null;
+""">
+
+[<Test>]
+let ``test TimeOnly user primitive optional parameter`` () =
+    // Option<TimeOnly> parameter exercises the optionalsToDbNull path in
+    // Backend.fs combined with the user-primitive unwrapper.
+    let results =
+        OptionalTimeOnlyParam.Command(Some (TimeOnly(0, 0, 0)))
+        |> runOnTestData
+    Assert.AreEqual(2, results.Count)
+    let results2 = OptionalTimeOnlyParam.Command(None) |> runOnTestData
+    Assert.AreEqual(2, results2.Count)
+
+type SetAndReadBedtime = SQL<"""
+update Users set BedtimeIfAny = @bedtime where Name = 'Homer';
+select Name, BedtimeIfAny from Users order by Name;
+""">
+
+[<Test>]
+let ``test nullable TimeOnly column roundtrip with Some`` () =
+    let t = TimeOnly(22, 30, 0)
+    let results = SetAndReadBedtime.Command(Some t) |> runOnTestData
+    Assert.AreEqual(2, results.Count)
+    let homer = results |> Seq.find (fun r -> r.Name = "Homer")
+    let marge = results |> Seq.find (fun r -> r.Name = "Marge")
+    Assert.AreEqual(Some t, homer.BedtimeIfAny)
+    Assert.AreEqual(None, marge.BedtimeIfAny)
+
+[<Test>]
+let ``test nullable TimeOnly column roundtrip with None`` () =
+    let results = SetAndReadBedtime.Command(None) |> runOnTestData
+    Assert.AreEqual(2, results.Count)
+    for r in results do Assert.AreEqual(None, r.BedtimeIfAny)
+
+type SetAndReadSignupDate = SQL<"""
+update Users set SignupDate = @date where Name = 'Homer';
+select Name, SignupDate from Users order by Name;
+""">
+
+[<Test>]
+let ``test BCL-extension-only user-types DLL roundtrip`` () =
+    // SignupDate is System.DateOnly, extended via ToPrimitive/FromPrimitive in
+    // TypeProviderUser.BclOnlyTypes — a user-types DLL that contains ONLY a BCL
+    // extension and NO single-case DU. The only way that DLL gets registered as a
+    // ProvidedTypes source assembly is via the *declaring* assembly of its
+    // To/FromPrimitive methods (UserTypeLibrary.SourceAssemblies). If that used
+    // UserCLRType.Assembly instead, DateOnly's assembly would resolve to the MLC
+    // System.Runtime (dropped), the DLL would never be registered, and DateOnly's
+    // FromPrimitive would fail to resolve in the generated command.
+    let d = System.DateOnly(2017, 1, 1)
+    let results = SetAndReadSignupDate.Command(Some d) |> runOnTestData
+    Assert.AreEqual(2, results.Count)
+    let homer = results |> Seq.find (fun r -> r.Name = "Homer")
+    let marge = results |> Seq.find (fun r -> r.Name = "Marge")
+    Assert.AreEqual(Some d, homer.SignupDate)
+    Assert.AreEqual(None, marge.SignupDate)
+
 type TestEmptyMany = SQL<"""
 select p.*, many Children(c.*)
 from Users p
