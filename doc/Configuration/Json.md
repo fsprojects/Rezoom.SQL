@@ -19,7 +19,8 @@ rzsql.json looks like this:
   "backend": "tsql",
   "connectionname": "rzsql",
   "optionals":  "f#",
-  "migrations": "."
+  "migrations": ".",
+  "usertypes": ["Contoso.IdTypes", "Contoso.Primitives"]
 }
 ```
 
@@ -105,6 +106,14 @@ as rzsql.json.
 Since it is painful to use sub-folders in F# projects, the default setting is
 recommended if you want to have your migration scripts be part of your project
 file (which is also recommended!).
+
+## UserTypes
+
+_default: `[]`_
+
+This setting allows you to bring your own primitive types into RZSQL's type system.
+
+
 
 ---
 <!-- nav-bottom -->

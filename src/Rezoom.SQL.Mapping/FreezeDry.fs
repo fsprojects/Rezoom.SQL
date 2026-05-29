@@ -18,7 +18,6 @@ type FreezeDriedUserPrimitiveType =
         FromPrimitiveMethodName : string
         ToPrimitiveMethodName : string
         ToPrimitiveIsInstanceMethod : bool
-        IsAutomaticImplemention : bool
     }
     static member Of(t : UserPrimitiveType) =
         let rtMap = t.RuntimeMapping
@@ -30,7 +29,6 @@ type FreezeDriedUserPrimitiveType =
             FromPrimitiveMethodName = rtMap.FromPrimitiveMethod.Name
             ToPrimitiveMethodName = rtMap.ToPrimitiveMethod.Name
             ToPrimitiveIsInstanceMethod = not rtMap.ToPrimitiveMethod.IsStatic
-            IsAutomaticImplemention = t.IsAutomaticImplemention
         }
     member this.Quote() =
         <@@
@@ -41,7 +39,6 @@ type FreezeDriedUserPrimitiveType =
                 FromPrimitiveMethodName = %%Expr.Value(this.FromPrimitiveMethodName)
                 ToPrimitiveMethodName = %%Expr.Value(this.ToPrimitiveMethodName)
                 ToPrimitiveIsInstanceMethod = %%Expr.Value(this.ToPrimitiveIsInstanceMethod)
-                IsAutomaticImplemention = %%Expr.Value(this.IsAutomaticImplemention)
             }
         @@>
 
@@ -50,15 +47,23 @@ type FreezeDriedUserPrimitiveType =
 /// Types is a function rather than a materialized array: the generated Command method
 /// runs this record's construction on *every* call, so we don't want to allocate
 /// the whole array of records every time. Especially since the user's library could have
-/// dozens of user types (they have a wrapper for every entity's ID type, for example).
+/// dozens of user types (they have a wrapper with custom conversions for every entity's ID type, for example).
 /// Rehydrate forces it once (and caches the result by Identity), so subsequent callers don't actually
-/// invoke Types().
+/// invoke Types() and build all those records.
 type FreezeDriedUserTypeLibrary =
     {   Identity : string
         Types : unit -> FreezeDriedUserPrimitiveType array
     }
     static member Of(lib : UserTypeLibrary) =
-        let types = lib.AllTypes |> Array.map FreezeDriedUserPrimitiveType.Of
+        // Exclude IsAutomaticImplemention types (single-case F# DUs like `type UserId = UserId of int64`).
+        // The runtime can re-derive those on the fly.
+        // Example: PrimitiveConverters.converter falls back to findSingleCaseDU
+        // when an explicit usertype mapping is not present.
+        // So freeze drying them would be redundant and would bloat the code the type provider generates.
+        let types =
+            lib.AllTypes
+            |> Array.filter (fun t -> not t.IsAutomaticImplemention)
+            |> Array.map FreezeDriedUserPrimitiveType.Of
         {   Identity = lib.Identity
             Types = fun () -> types
         }
@@ -103,6 +108,8 @@ let rehydrate (freezeDried : FreezeDriedUserTypeLibrary) : UserTypeLibrary =
                     RawBackendSQLType = None // don't need at runtime
                     SQLTypeLength = None // don't need at runtime
                     RuntimeMapping = { FromPrimitiveMethod = fromPrim; ToPrimitiveMethod = toPrim }
-                    IsAutomaticImplemention = h.IsAutomaticImplemention
+                    // Freeze-dried libraries do not include auto-implementations since the runtime would rederive them anyway
+                    // so it would be code bloat.
+                    IsAutomaticImplemention = false
                 })
         UserTypeLibrary(freezeDried.Identity, types))
