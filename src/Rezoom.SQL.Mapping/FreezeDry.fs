@@ -46,19 +46,28 @@ type FreezeDriedUserPrimitiveType =
         @@>
 
 /// Used to rebuild a UserTypeLibrary at runtime with information that was known to the design-time type provider.
+///
+/// Types is a function rather than a materialized array: the generated Command method
+/// runs this record's construction on *every* call, so we don't want to allocate
+/// the whole array of records every time. Especially since the user's library could have
+/// dozens of user types (they have a wrapper for every entity's ID type, for example).
+/// Rehydrate forces it once (and caches the result by Identity), so subsequent callers don't actually
+/// invoke Types().
 type FreezeDriedUserTypeLibrary =
     {   Identity : string
-        Types : FreezeDriedUserPrimitiveType array
+        Types : unit -> FreezeDriedUserPrimitiveType array
     }
     static member Of(lib : UserTypeLibrary) =
+        let types = lib.AllTypes |> Array.map FreezeDriedUserPrimitiveType.Of
         {   Identity = lib.Identity
-            Types = lib.AllTypes |> Array.map FreezeDriedUserPrimitiveType.Of
+            Types = fun () -> types
         }
     member this.Quote() =
-        let typeQuotes = [ for t in this.Types -> t.Quote() ]
+        let typeQuotes = [ for t in this.Types() -> t.Quote() ]
+        let arr = Expr.NewArray(typeof<FreezeDriedUserPrimitiveType>, typeQuotes)
         <@@
             {   Identity = %%Expr.Value(this.Identity)
-                Types = %%Expr.NewArray(typeof<FreezeDriedUserPrimitiveType>, typeQuotes)
+                Types = fun () -> (%%arr : FreezeDriedUserPrimitiveType array)
             }
         @@>
 
@@ -66,7 +75,7 @@ let private cache = ConcurrentDictionary<string, UserTypeLibrary>()
 let rehydrate (freezeDried : FreezeDriedUserTypeLibrary) : UserTypeLibrary =
     cache.GetOrAdd(freezeDried.Identity, fun _ ->
         let types =
-            freezeDried.Types |> Array.map (fun h ->
+            freezeDried.Types() |> Array.map (fun h ->
                 let clrAsm = Assembly.Load(h.UserCLRTypeAssemblyName)
                 let clrTy = clrAsm.GetType(h.UserCLRTypeFullName, throwOnError = true)
                 let decAsm =
