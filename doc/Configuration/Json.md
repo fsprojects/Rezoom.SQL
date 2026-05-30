@@ -147,11 +147,13 @@ In the latter two cases, it should be noted that `T` does not HAVE to be a type 
 
 For example, you can write ToPrimitive and FromPrimitive extension methods for `System.TimeOnly` in your UserTypes assembly, and then use `TimeOnly` in your SQL schema.
 
-Extensions:
+User-type code:
 
 ```fsharp
+// simple DU
 type UserId = UserId of System.Guid
 
+// custom mapping for a type defined elsewhere
 module TimeOnlyMapping =
     type System.TimeOnly with
         member this.ToPrimitive() =
@@ -173,9 +175,9 @@ create table Employees
 
 The actual SQL that runs on your database will treat ShiftStarts and ShiftEnds as if you'd written `string`.
 
-Selecting from this table will give you a `TimeOnly` properties in your result set rows from the type provider.
+Selecting from this table will give you a `TimeOnly` property in your result set rows from the type provider.
 
-Comparing to a parameter will cause that parameter to get a `TimeOnly` type:
+Comparing to a parameter will cause that parameter to get a `TimeOnly` type inferred:
 
 
 ```fsharp

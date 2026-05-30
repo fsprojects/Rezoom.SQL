@@ -52,6 +52,8 @@ and [<NoComparison>]
             /// If we know ahead of time how many rows will be returned, this is that.
             StaticRowCount : int option
             ClausesIdempotent : bool
+            /// CLR type names the user specified the query should implement.
+            RowTypes : string array option
         }
         member this.Idempotent =
             this.ClausesIdempotent && this.Columns |> Seq.forall (fun e -> e.Expr.Info.Idempotent)
@@ -86,15 +88,11 @@ and [<NoComparison>]
                     ||> Seq.map2 (fun col newName -> { col with ColumnName = newName })
                     |> toReadOnlyList
                 Ok { this with Columns = newColumns }
-        member this.Append(right : 't QueryExprInfo) =
-            {   Columns = appendLists this.Columns right.Columns
-                StaticRowCount = None
-                ClausesIdempotent = this.ClausesIdempotent && right.ClausesIdempotent
-            }
         member this.Map(f : 't -> _) =
             {   Columns = this.Columns |> Seq.map (fun c -> c.Map(f)) |> toReadOnlyList
                 StaticRowCount = this.StaticRowCount
                 ClausesIdempotent = this.ClausesIdempotent
+                RowTypes = this.RowTypes
             }
         member this.MergeInfo(other : QueryExprInfo<'t>, merge : 't -> 't -> 't) =
             {   Columns =
@@ -107,6 +105,7 @@ and [<NoComparison>]
                     |> ResizeArray
                 StaticRowCount = None
                 ClausesIdempotent = this.ClausesIdempotent && other.ClausesIdempotent
+                RowTypes = this.RowTypes
             }
 
 and [<NoComparison>]

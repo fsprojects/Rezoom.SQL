@@ -429,7 +429,9 @@ and [<NoComparison>] GroupBy<'t, 'e> =
     }
 
 and [<NoComparison>] ResultColumns<'t, 'e> =
-    {   Distinct : Distinct option
+    {   /// CLR type names (interfaces) the user declares this result set can implement
+        RowTypes : string array option
+        Distinct : Distinct option
         Columns : ResultColumn<'t, 'e> array
     }
 

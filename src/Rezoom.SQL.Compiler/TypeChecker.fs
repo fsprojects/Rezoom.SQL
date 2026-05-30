@@ -211,6 +211,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 ignore <| cxt.Unify(selected.Source, selected.Info.Type.InferredType, TypeKnown ScalarTypeClass)
         {   Distinct = resultColumns.Distinct
             Columns = columns
+            RowTypes = resultColumns.RowTypes
         }
 
     member this.GroupBy(groupBy : GroupBy) =
@@ -270,6 +271,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                             {   Columns = infoColumns
                                 StaticRowCount = staticCount
                                 ClausesIdempotent = whereIdempotent && groupByIdempotent
+                                RowTypes = select.Columns.RowTypes
                             }
                     } |> TableLike
             } |> AggregateChecker.check
@@ -332,7 +334,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 let idempotent = vals |> Array.forall (fun r -> r.Value |> Array.forall (fun v -> v.Info.Idempotent))
                 TableLike
                     {   Table = CompoundTermResults
-                        Query = { Columns = columns; StaticRowCount = Some vals.Length; ClausesIdempotent = idempotent }
+                        Query = { Columns = columns; StaticRowCount = Some vals.Length; ClausesIdempotent = idempotent; RowTypes = None }
                     }, this, Values vals
             | Values _, None ->
                 failAt term.Source Error.valuesRequiresKnownShape

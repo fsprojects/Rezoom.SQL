@@ -282,7 +282,7 @@ let private clrTypeName =
         || c >= '0' && c <= '9'
         || c = '_'
         || c = '.'
-    many1Satisfy acceptable
+    many1Satisfy acceptable .>> ws
 
 let private typeName =
     let maxBound = %% '(' -- ws -- +.p<int> -- ws -- ')' -- ws -%> id
@@ -300,7 +300,7 @@ let private typeName =
         %% kw "BOOL" -%> BooleanTypeName
         %% kw "DATETIME" -%> DateTimeTypeName
         %% kw "DATETIMEOFFSET" -%> DateTimeOffsetTypeName
-        %% +.clrTypeName -- ws -|> UnresolvedTypeName
+        %% +.clrTypeName -|> UnresolvedTypeName
     ] <?> "type-name" |> withSource
 
 let private cast expr =
@@ -614,18 +614,27 @@ let private resultColumns =
         %% +.(qty.[1..] /. tws ',' * column)
         -|> Seq.toArray
 
+let private rowTypeParameters =
+    %% '<'
+    -- ws
+    -- +.(qty.[1..] / tws ',' * clrTypeName)
+    -- '>'
+    -- ws
+    -|> Seq.toArray
+
 let private selectColumns =
     let badTop =
         (%ci "TOP" <?> "TOP")
         .>> FParsec.Primitives.fail
             "SELECT TOP (X) syntax is not supported, use LIMIT (X) at the end of your query instead"
     %% kw "SELECT"
+    -- +.(zeroOrOne * rowTypeParameters)
     -- (zeroOrOne * badTop)
     -- +.[  %% kw "DISTINCT" -|> Some Distinct
             preturn None
         ]
     -- +.resultColumns
-    -|> fun distinct cols -> { Distinct = distinct; Columns = cols }
+    -|> fun rowTypes distinct cols -> { RowTypes = rowTypes; Distinct = distinct; Columns = cols }
 
 let private tableOrSubquery =
     let subterm =
