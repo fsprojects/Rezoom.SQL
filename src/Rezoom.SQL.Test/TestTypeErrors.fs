@@ -27,12 +27,19 @@ let ``unioned queries must have the same number of columns`` () =
 
 [<Test>]
 let ``rowtypes may only be on the first compound expr`` () =
-    expectError (Error.rowTypesMustBeDeclaredOnLeftmostCompound)
-        """
+    let sql = """
             select 1 a, 2 b, 3 c
             union all
-            select<ExampleTypeName> 4, 5
+            select<IFoo> 4, 5
         """
+    let userModel = userModelByName "user-model-7-usertypes"
+    try
+        ignore <| CommandEffect.OfSQL(userModel.Model, "anonymous", sql, userModel.UserTypeLibrary)
+        failwith "Should've thrown an exception!"
+    with
+    | :? SourceException as exn ->
+        printfn "\"%s\"" exn.Message
+        Assert.AreEqual(Error.rowTypesMustBeDeclaredOnLeftmostCompound, exn.Reason.Trim())
 
 [<Test>]
 let ``updates must set actual columns`` () =
