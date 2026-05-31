@@ -162,3 +162,5 @@ let typeNameNotFoundButClose typeName candidates =
     sprintf "SQ068: Type name ``%s`` not found. Did you mean %s?" typeName (candidates |> String.concat " or ")
 let typeNameAmbiguous typeName candidates =
     sprintf "SQ069: Type name ``%s`` is ambiguous between %s" typeName (candidates |> String.concat ", ")
+let rowTypesMustBeDeclaredOnLeftmostCompound =
+    "SQ070: <Row Types> may only be declared on the first SELECT of a compound expression (union, intersect, etc)"

@@ -26,6 +26,15 @@ let ``unioned queries must have the same number of columns`` () =
         """
 
 [<Test>]
+let ``rowtypes may only be on the first compound expr`` () =
+    expectError (Error.rowTypesMustBeDeclaredOnLeftmostCompound)
+        """
+            select 1 a, 2 b, 3 c
+            union all
+            select<ExampleTypeName> 4, 5
+        """
+
+[<Test>]
 let ``updates must set actual columns`` () =
     expectError (Error.noSuchColumnToSet "Users" "Nane")
         """

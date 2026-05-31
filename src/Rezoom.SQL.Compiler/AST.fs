@@ -357,6 +357,17 @@ and [<NoComparison>] CompoundExprCore<'t, 'e> =
     | UnionAll of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
     | Intersect of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
     | Except of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
+    member this.Terms =
+        seq {
+            match this with
+            | CompoundTerm term -> yield term
+            | Union (leftExpr, term)
+            | UnionAll (leftExpr, term)
+            | Intersect (leftExpr, term)
+            | Except (leftExpr, term) ->
+                yield! leftExpr.Value.Terms
+                yield term
+        }
     member this.LeftmostInfo =
         match this with
         | CompoundTerm term -> term.Info
@@ -377,6 +388,10 @@ and CompoundExpr<'t, 'e> = CompoundExprCore<'t, 'e> WithSource
 and [<NoComparison>] CompoundTermCore<'t, 'e> =
     | Values of Expr<'t, 'e> array WithSource array
     | Select of SelectCore<'t, 'e>
+    member this.RowTypes =
+        match this with
+        | Values _ -> None
+        | Select s -> s.Columns.RowTypes
 
 and
     [<NoComparison>]

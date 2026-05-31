@@ -16,6 +16,7 @@
     <Compile Include="TestBlueprints.fs" />
     <Compile Include="TestCompositeReaders.fs" />
     <Compile Include="TestCTEs.fs" />
+    <Compile Include="TestRowTypesDeclarations.fs" />
     <Compile Include="TestIdempotence.fs" />
     <Compile Include="TestManyPrimitives.fs" />
     <Compile Include="TestMigrations.fs" />

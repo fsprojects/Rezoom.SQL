@@ -22,7 +22,7 @@ let ``small input`` () =
 [<Test>]
 let ``error at eof`` () =
     expectError
-        "SQ000: Expecting: DISTINCT, MANY, ONE, OPTIONAL, TOP, expr, name, whitespace or '*'"
+        "SQ000: Expecting: DISTINCT, MANY, ONE, OPTIONAL, TOP, expr, name, whitespace, '*' or\r\n'<'"
         "select"
 
 [<Test>]

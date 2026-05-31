@@ -411,6 +411,9 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                     | Some withClause ->
                         let checker, withClause = this.WithClause(withClause)
                         checker, Some withClause
+                let illegalTerms = select.Compound.Value.Terms |> Seq.skip 1 |> Seq.filter (fun t -> t.Value.RowTypes |> Option.isSome)
+                for illegalTerm in illegalTerms do
+                    failAt illegalTerm.Source <| Error.rowTypesMustBeDeclaredOnLeftmostCompound
                 let fromChecker, compound = checker.CompoundTop(select.Compound, selfShape)
                 let limit = Option.map checker.Limit select.Limit
                 let info =
