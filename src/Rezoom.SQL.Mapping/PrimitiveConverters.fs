@@ -436,7 +436,7 @@ and findSingleCaseDU (publicType : Type) : UserPrimitiveType ValueOption =
                             {   FromPrimitiveMethod = singleCaseCtor
                                 ToPrimitiveMethod = singleProp.GetMethod
                             }
-                        IsAutomaticImplemention = true
+                        IsAutomaticImplementation = true
                     }
             | _ -> ValueNone
         | _ -> ValueNone

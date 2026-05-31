@@ -102,18 +102,28 @@ let private findUserTypesInAssembly (asm : Assembly) : UserPrimitiveType seq =
                         RawBackendSQLType = None
                         SQLTypeLength = None
                         RuntimeMapping = customMapping
-                        IsAutomaticImplemention = false
+                        IsAutomaticImplementation = false
                     }
             match PrimitiveConverters.findSingleCaseDU publicType with
             | ValueNone -> ()
             | ValueSome singleCase -> yield singleCase
     }
 
+let private findRowTypesInAssembly (asm : Assembly) : UserRowType seq =
+    seq {
+        for publicType in asm.GetExportedTypes() do
+            // right now we make no attempt to filter this to only interfaces
+            // that would be constructable (e.g. all members are primitive types).
+            // that'll error out at type-generation time anyway.
+            if publicType.IsInterface then yield { UserCLRType = publicType }
+    }
+
 let loadUserTypeLibrary (asms : Assembly array) =
     if Array.isEmpty asms then UserTypeLibrary.Empty else
     let mappings = asms |> Seq.collect findUserTypesInAssembly |> Seq.toArray
+    let rowTypes = asms |> Seq.collect findRowTypesInAssembly |> Seq.toArray
     let identity = asms |> Seq.map (fun a -> a.GetName().Name) |> Seq.sortBy (fun n -> n) |> String.concat "&"
-    UserTypeLibrary(identity, mappings)
+    UserTypeLibrary(identity, mappings, rowTypes)
 
 /// An entry that contains a path separator or ends in ".dll" is
 /// treated as a literal file path; otherwise it's an assembly *name*

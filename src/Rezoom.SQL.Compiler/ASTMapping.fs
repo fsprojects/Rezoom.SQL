@@ -133,7 +133,8 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                     Columns = nav.Columns |> Array.map this.ResultColumn
                 } |> ColumnNav
         { Case = case; Source = resultColumn.Source }
-    member this.ResultColumns(resultColumns : ResultColumns<'t1, 'e1>) =
+    abstract member ResultColumns : ResultColumns<'t1, 'e1> -> ResultColumns<'t2, 'e2>
+    default this.ResultColumns(resultColumns : ResultColumns<'t1, 'e1>) =
         {   Distinct = resultColumns.Distinct
             Columns = resultColumns.Columns |> rmap this.ResultColumn
             RowTypes = resultColumns.RowTypes

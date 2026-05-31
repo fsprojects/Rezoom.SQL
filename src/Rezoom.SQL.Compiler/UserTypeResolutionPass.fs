@@ -20,3 +20,25 @@ type private UserTypeResolutionPass(userTypeLibrary : UserTypeLibrary) =
                 let candidates = candidates |> Seq.map (fun t -> t.UserCLRType.FullName)
                 failAt typeName.Source <| Error.typeNameAmbiguous name candidates
         | _ -> typeName
+    override this.ResultColumns(resultColumns) =
+        let resolveRowType (rowType : RowType WithSource) =
+            let resolvedValue =
+                match rowType.Value with
+                | ResolvedRowType _ as r -> r
+                | UnresolvedRowType name ->
+                    match userTypeLibrary.UserRowTypeByName(name) with
+                    | FoundType userType -> ResolvedRowType userType
+                    | NotFoundType [||] ->
+                        failAt rowType.Source <| Error.typeNameNotFound name userTypeLibrary.Identity
+                    | NotFoundType candidates ->
+                        failAt rowType.Source <| Error.typeNameNotFoundButClose name candidates
+                    | AmbiguousType candidates ->
+                        let candidates = candidates |> Seq.map (fun t -> t.UserCLRType.FullName)
+                        failAt rowType.Source <| Error.typeNameAmbiguous name candidates
+            { rowType with Value = resolvedValue }
+        {   Distinct = resultColumns.Distinct
+            Columns = resultColumns.Columns |> rmap this.ResultColumn
+            RowTypes =
+                resultColumns.RowTypes
+                |> Option.map (Array.map resolveRowType)
+        }

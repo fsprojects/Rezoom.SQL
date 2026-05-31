@@ -443,9 +443,13 @@ and [<NoComparison>] GroupBy<'t, 'e> =
         Having : Expr<'t, 'e> option
     }
 
+and [<NoComparison>] RowType =
+    | UnresolvedRowType of string
+    | ResolvedRowType of UserRowType
+
 and [<NoComparison>] ResultColumns<'t, 'e> =
     {   /// CLR type names (interfaces) the user declares this result set can implement
-        RowTypes : string array option
+        RowTypes : RowType WithSource array option
         Distinct : Distinct option
         Columns : ResultColumn<'t, 'e> array
     }

@@ -617,7 +617,7 @@ let private resultColumns =
 let private rowTypeParameters =
     %% '<'
     -- ws
-    -- +.(qty.[1..] / tws ',' * clrTypeName)
+    -- +.(qty.[1..] / tws ',' * withSource (clrTypeName |>> UnresolvedRowType))
     -- '>'
     -- ws
     -|> Seq.toArray

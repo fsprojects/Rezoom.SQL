@@ -3,9 +3,7 @@ open System
 open System.Collections.Generic
 open System.Text.RegularExpressions
 open System.Reflection
-open FSharp.Core.CompilerServices
 open FSharp.Quotations
-open FSharp.Reflection
 open Microsoft.Extensions.Configuration
 open ProviderImplementation.ProvidedTypes
 open ProviderImplementation.ProvidedTypes.UncheckedQuotations

@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="UserInterfaces.fs" />
     <Compile Include="UserPrimitives.fs" />
   </ItemGroup>
 

@@ -28,6 +28,7 @@ type RuntimeMapping =
     member this.UnderlyingPrimitive = this.ToPrimitiveMethod.ReturnType
     member this.CustomType = this.FromPrimitiveMethod.ReturnType
 
+/// User types mapped to/from SQL primitive types.
 type UserPrimitiveType =
     {   UserCLRType : Type
         UnderlyingCLRType : Type
@@ -39,32 +40,24 @@ type UserPrimitiveType =
         /// True if this is an implementation we derived automatically, such as for an F#
         /// single-case DU, as opposed to one the user specified with their own ToPrimitive
         /// and FromPrimitive method implementations.
-        IsAutomaticImplemention : bool
+        IsAutomaticImplementation : bool
     }
     member this.Name = this.UserCLRType.Name
 
-type TypeResolutionByName =
-    | FoundType of UserPrimitiveType
-    | AmbiguousType of UserPrimitiveType array
+/// User types for rows read from result sets. Currently interfaces only.
+type UserRowType =
+    {   UserCLRType : Type
+    }
+
+type TypeResolutionByName<'a> =
+    | FoundType of 'a
+    | AmbiguousType of 'a array
     | NotFoundType of mistakeCandidates : string array
 
-/// All the compile-time information we have about user types.
-type UserTypeLibrary(identity : string, types : UserPrimitiveType array) =
-    static let empty = UserTypeLibrary("", [||])
-    // if we have two UserPrimitiveTypes for the same CLR type, one is auto, one is manual
-    // only keep the manual one
-    let types =
-        [| for _, implementations in types |> Seq.groupBy (fun t -> t.UserCLRType) do
-            yield implementations |> Seq.sortBy (fun t -> t.IsAutomaticImplemention) |> Seq.head
-        |]
-    let byName = types |> Array.groupBy (fun t -> t.Name) |> dict
-    let byFullName = types |> Seq.map (fun t -> t.UserCLRType.FullName, t) |> dict
-    let byCustomType = types |> Seq.map (fun t -> t.UserCLRType, t) |> dict
-    member this.IsEmpty = types.Length = 0
-    member this.CountPrimitives = types.Length
-    member this.Identity = identity
-    member this.AllTypes = types
-    member this.UserPrimitiveByName(name : string) =
+type private NameMap<'a>(elements : 'a array, name : 'a -> string, fullName : 'a -> string) =
+    let byName = elements |> Array.groupBy name |> dict
+    let byFullName = elements |> Seq.map (fun t -> fullName t, t) |> dict
+    member this.Find(name : string) =
         let succ, ty = byFullName.TryGetValue(name)
         if succ then FoundType ty else
         let succ, matches = byName.TryGetValue(name)
@@ -76,8 +69,27 @@ type UserTypeLibrary(identity : string, types : UserPrimitiveType array) =
             let candidates =
                 byName.Keys |> Seq.append byFullName.Keys |> Levenshtein.mistakeCandidates name |> Seq.toArray
             NotFoundType candidates
+
+/// All the compile-time information we have about user types.
+type UserTypeLibrary(identity : string, primitives : UserPrimitiveType array, rowTypes : UserRowType array) =
+    static let empty = UserTypeLibrary("", [||], [||])
+    // if we have two UserPrimitiveTypes for the same CLR type, one is auto, one is manual
+    // only keep the manual one
+    let primTypes =
+        [| for _, implementations in primitives |> Seq.groupBy (fun t -> t.UserCLRType) do
+            yield implementations |> Seq.sortBy (fun t -> t.IsAutomaticImplementation) |> Seq.head
+        |]
+    let primsByName = NameMap(primTypes, (fun t -> t.Name), fun t -> t.UserCLRType.FullName)
+    let primsByCLRType = primTypes |> Seq.map (fun t -> t.UserCLRType, t) |> dict
+    let rowTypesByName = NameMap(rowTypes, (fun t -> t.UserCLRType.Name), fun t -> t.UserCLRType.FullName)
+    member this.IsEmpty = primTypes.Length = 0
+    member this.CountPrimitives = primTypes.Length
+    member this.Identity = identity
+    member this.AllPrimitives = primTypes
+    member this.UserPrimitiveByName(name : string) = primsByName.Find(name)
+    member this.UserRowTypeByName(name : string) = rowTypesByName.Find(name)
     member this.TryGetMapping(ty : Type) : RuntimeMapping voption =
-        let succ, mapping = byCustomType.TryGetValue(ty)
+        let succ, mapping = primsByCLRType.TryGetValue(ty)
         if succ then ValueSome mapping.RuntimeMapping
         else ValueNone
     /// The runtime assemblies that contributed types to this library.
@@ -85,7 +97,7 @@ type UserTypeLibrary(identity : string, types : UserPrimitiveType array) =
     /// ProvidedTypes' target/source conversions, so target IL refs to
     /// user types can be mapped back to their loaded reflection Types.
     member this.SourceAssemblies : Assembly seq =
-        types
+        primTypes
         |> Seq.map (fun t -> t.UserCLRType.Assembly)
         |> Seq.distinct
     static member Empty = empty

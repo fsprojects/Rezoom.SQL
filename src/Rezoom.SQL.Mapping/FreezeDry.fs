@@ -61,8 +61,8 @@ type FreezeDriedUserTypeLibrary =
         // when an explicit usertype mapping is not present.
         // So freeze drying them would be redundant and would bloat the code the type provider generates.
         let types =
-            lib.AllTypes
-            |> Array.filter (fun t -> not t.IsAutomaticImplemention)
+            lib.AllPrimitives
+            |> Array.filter (fun t -> not t.IsAutomaticImplementation)
             |> Array.map FreezeDriedUserPrimitiveType.Of
         {   Identity = lib.Identity
             Types = fun () -> types
@@ -110,6 +110,8 @@ let rehydrate (freezeDried : FreezeDriedUserTypeLibrary) : UserTypeLibrary =
                     RuntimeMapping = { FromPrimitiveMethod = fromPrim; ToPrimitiveMethod = toPrim }
                     // Freeze-dried libraries do not include auto-implementations since the runtime would rederive them anyway
                     // so it would be code bloat.
-                    IsAutomaticImplemention = false
+                    IsAutomaticImplementation = false
                 })
-        UserTypeLibrary(freezeDried.Identity, types))
+        // row types empty because these are only relevant at design-time and freezedry rehydrate is
+        // for making the runtime work.
+        UserTypeLibrary(freezeDried.Identity, types, rowTypes = [||]))

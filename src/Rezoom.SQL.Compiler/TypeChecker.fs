@@ -260,6 +260,14 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 let byIdempotent = groupBy.By |> Array.forall (fun e -> e.Info.Idempotent)
                 let havingIdempotent = groupBy.Having |> Option.forall (fun e -> e.Info.Idempotent)
                 Some groupBy, byIdempotent && havingIdempotent
+        let rowTypes =
+            select.Columns.RowTypes
+            |> Option.map
+                (Array.map (fun t ->
+                    match t.Value with
+                    | ResolvedRowType t -> t
+                    | UnresolvedRowType _ ->
+                        bug "Row type should have been resolved before TypeChecker"))
         checker,
             {   Columns = columns
                 From = from
@@ -271,7 +279,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                             {   Columns = infoColumns
                                 StaticRowCount = staticCount
                                 ClausesIdempotent = whereIdempotent && groupByIdempotent
-                                RowTypes = select.Columns.RowTypes
+                                RowTypes = rowTypes
                             }
                     } |> TableLike
             } |> AggregateChecker.check
