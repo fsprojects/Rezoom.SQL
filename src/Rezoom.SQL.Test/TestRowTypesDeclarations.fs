@@ -14,8 +14,8 @@ let ``simple select with rowtypes`` () =
     let sets = parsed.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, sets.Length)
     let set = sets.[0]
-    let expected = Some [ "Rezoom.SQL.Test.UserTypes.IRowXYZ"; "Rezoom.SQL.Test.UserTypes.IFoo" ]
-    Assert.AreEqual(expected, set.RowTypes |> Option.map (Seq.map (fun t -> t.UserCLRType.FullName) >> Seq.toList))
+    let expected = [ "Rezoom.SQL.Test.UserTypes.IRowXYZ"; "Rezoom.SQL.Test.UserTypes.IFoo" ]
+    Assert.AreEqual(expected, set.RowTypes |> Seq.map (fun t -> t.UserCLRType.FullName) |> Seq.toList)
 
 [<Test>]
 let ``compound expr with rowtypes`` () =
@@ -24,8 +24,8 @@ let ``compound expr with rowtypes`` () =
     let sets = parsed.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, sets.Length)
     let set = sets.[0]
-    let expected = Some [ "Rezoom.SQL.Test.UserTypes.IFoo" ]
-    Assert.AreEqual(expected, set.RowTypes |> Option.map (Seq.map (fun t -> t.UserCLRType.FullName) >> Seq.toList))
+    let expected = [ "Rezoom.SQL.Test.UserTypes.IFoo" ]
+    Assert.AreEqual(expected, set.RowTypes |> Seq.map (fun t -> t.UserCLRType.FullName) |> Seq.toList)
 
 [<Test>]
 let ``rowtypes with spaces`` () =
@@ -34,5 +34,5 @@ let ``rowtypes with spaces`` () =
     let sets = parsed.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, sets.Length)
     let set = sets.[0]
-    let expected = Some [ "Rezoom.SQL.Test.UserTypes.IFoo"; "Rezoom.SQL.Test.UserTypes.IBar" ]
-    Assert.AreEqual(expected, set.RowTypes |> Option.map (Seq.map (fun t -> t.UserCLRType.FullName) >> Seq.toList))
+    let expected = [ "Rezoom.SQL.Test.UserTypes.IFoo"; "Rezoom.SQL.Test.UserTypes.IBar" ]
+    Assert.AreEqual(expected, set.RowTypes |> Seq.map (fun t -> t.UserCLRType.FullName) |> Seq.toList)

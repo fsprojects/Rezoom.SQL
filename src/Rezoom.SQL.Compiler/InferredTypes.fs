@@ -181,7 +181,7 @@ let inferredOfTable (table : SchemaTable) =
             |> toReadOnlyList
         StaticRowCount = None
         ClausesIdempotent = true
-        RowTypes = None
+        RowTypes = [||]
     }
 
 [<NoComparison>]

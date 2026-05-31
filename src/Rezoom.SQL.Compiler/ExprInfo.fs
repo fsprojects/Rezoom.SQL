@@ -52,7 +52,7 @@ and [<NoComparison>]
             /// If we know ahead of time how many rows will be returned, this is that.
             StaticRowCount : int option
             ClausesIdempotent : bool
-            RowTypes : Rezoom.SQL.Mapping.UserRowType array option
+            RowTypes : Rezoom.SQL.Mapping.UserRowType array
         }
         member this.Idempotent =
             this.ClausesIdempotent && this.Columns |> Seq.forall (fun e -> e.Expr.Info.Idempotent)

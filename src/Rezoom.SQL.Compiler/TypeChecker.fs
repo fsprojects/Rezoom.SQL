@@ -268,6 +268,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                     | ResolvedRowType t -> t
                     | UnresolvedRowType _ ->
                         bug "Row type should have been resolved before TypeChecker"))
+            |> Option.defaultValue [||]
         checker,
             {   Columns = columns
                 From = from
@@ -342,7 +343,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 let idempotent = vals |> Array.forall (fun r -> r.Value |> Array.forall (fun v -> v.Info.Idempotent))
                 TableLike
                     {   Table = CompoundTermResults
-                        Query = { Columns = columns; StaticRowCount = Some vals.Length; ClausesIdempotent = idempotent; RowTypes = None }
+                        Query = { Columns = columns; StaticRowCount = Some vals.Length; ClausesIdempotent = idempotent; RowTypes = [||] }
                     }, this, Values vals
             | Values _, None ->
                 failAt term.Source Error.valuesRequiresKnownShape
