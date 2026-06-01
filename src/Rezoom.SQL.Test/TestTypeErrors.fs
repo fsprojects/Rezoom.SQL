@@ -25,13 +25,7 @@ let ``unioned queries must have the same number of columns`` () =
             select 4, 5
         """
 
-[<Test>]
-let ``rowtypes may only be on the first compound expr`` () =
-    let sql = """
-            select 1 a, 2 b, 3 c
-            union all
-            select<IFoo> 4, 5
-        """
+let private expectErrorWithUserTypes (msg : string) (sql : string) =
     let userModel = userModelByName "user-model-7-usertypes"
     try
         ignore <| CommandEffect.OfSQL(userModel.Model, "anonymous", sql, userModel.UserTypeLibrary)
@@ -39,7 +33,39 @@ let ``rowtypes may only be on the first compound expr`` () =
     with
     | :? SourceException as exn ->
         printfn "\"%s\"" exn.Message
-        Assert.AreEqual(Error.rowTypesMustBeDeclaredOnLeftmostCompound, exn.Reason.Trim())
+        Assert.AreEqual(msg, exn.Reason.Trim())
+
+[<Test>]
+let ``rowtypes may only be on the first compound expr`` () =
+    expectErrorWithUserTypes (Error.rowTypesMustBeDeclaredOnLeftmostCompound)
+        """
+            select 1 a, 2 b, 3 c
+            union all
+            select<IFoo> 4, 5
+        """
+
+[<Test>]
+let ``rowtypes are rejected on a FROM-clause subquery`` () =
+    expectErrorWithUserTypes (Error.rowTypesMayOnlyBeDeclaredAtTopLevel)
+        """
+            select * from (select<IFoo> Id, Name from Users) sq
+        """
+
+[<Test>]
+let ``rowtypes are rejected on a CTE's defining SELECT`` () =
+    expectErrorWithUserTypes (Error.rowTypesMayOnlyBeDeclaredAtTopLevel)
+        """
+            with cte as (select<IFoo> Id, Name from Users)
+            select * from cte
+        """
+
+[<Test>]
+let ``rowtypes are rejected on an EXISTS subquery`` () =
+    expectErrorWithUserTypes (Error.rowTypesMayOnlyBeDeclaredAtTopLevel)
+        """
+            select Id from Users
+            where exists (select<IFoo> 1 from Groups)
+        """
 
 [<Test>]
 let ``updates must set actual columns`` () =
