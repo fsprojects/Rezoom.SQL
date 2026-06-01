@@ -95,7 +95,7 @@ let private addScalarInterface (ty : ProvidedTypeDefinition) (field : ProvidedFi
         ||| MethodAttributes.NewSlot
         ||| MethodAttributes.HasSecurity
     getterMethod.SetMethodAttrs(flags)
-    // Use ProvidedTypeBuilder.MakeGenericType so that MLC-flavoured user types
+    // Use ProvidedTypeBuilder.MakeGenericType so that MLC-loaded user types
     // (e.g. a UserId DU loaded via MetadataLoadContext) produce a TypeSymbol
     // instead of a TypeBuilderInstantiation — the latter throws NotSupportedException
     // from GetMethod and breaks the IL emit pass.
@@ -117,6 +117,7 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (colu
     if isRoot && not columnMap.HasSubMaps then
         ty.AddCustomAttribute(BlueprintNoKeyAttributeData())
     let fields = ResizeArray()
+    let props = ResizeArray()
     let addField pk (name : string) (fieldTy : Type) =
         let fieldTy, propName =
             if name.EndsWith("*") then
@@ -136,6 +137,7 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (colu
             getter.AddCustomAttribute(BlueprintColumnNameAttributeData(name))
         ty.AddMembers [ field :> MemberInfo; getter :> _ ]
         fields.Add(camel, field)
+        props.Add(getter)
     for KeyValue(name, (_, column)) in columnMap.Columns do
         let info = column.Expr.Info
         addField info.PrimaryKey name <| info.Type.CLRType(useOptional = (model.Config.Optionals = Config.FsStyle))

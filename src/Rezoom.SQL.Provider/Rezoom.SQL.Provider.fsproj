@@ -24,6 +24,7 @@
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
     <Compile Include="DocStrings.fs" />
+    <Compile Include="InterfaceImpls.fs" />
     <Compile Include="TypeGeneration.fs" />
     <Compile Include="Provider.fs" />
   </ItemGroup>

@@ -166,3 +166,13 @@ let rowTypesMustBeDeclaredOnLeftmostCompound =
     "SQ070: <Row Types> may only be declared on the first SELECT of a compound expression (union, intersect, etc)"
 let rowTypesMayOnlyBeDeclaredAtTopLevel =
     "SQ071: <Row Types> may only be declared on a top-level SELECT statement, not a subquery"
+let rowTypeMayOnlyImplementReadOnlyInterface ifaceName =
+    sprintf "SQ072: Row types are immutable and cannot implement an interface ``%s`` with writable properties" ifaceName
+let rowTypeIsMissingInterfaceProperty ifaceName ifaceProp =
+    sprintf "SQ073: Row type cannot implement interface ``%s`` because it lacks property ``%s``" ifaceName ifaceProp
+let rowPropertyHasWrongTypeForInterfaceProperty propName propType ifaceName ifacePropType =
+    sprintf "SQ074: Row type property ``%s`` has type ``%s``, but declared interface ``%s`` expects a ``%s``-typed property"
+        propName
+        propType
+        ifaceName
+        ifacePropType
