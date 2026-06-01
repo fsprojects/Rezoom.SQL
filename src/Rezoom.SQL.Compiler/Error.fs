@@ -164,3 +164,5 @@ let typeNameAmbiguous typeName candidates =
     sprintf "SQ069: Type name ``%s`` is ambiguous between %s" typeName (candidates |> String.concat ", ")
 let rowTypesMustBeDeclaredOnLeftmostCompound =
     "SQ070: <Row Types> may only be declared on the first SELECT of a compound expression (union, intersect, etc)"
+let rowTypesMayOnlyBeDeclaredAtTopLevel =
+    "SQ071: <Row Types> may only be declared on a top-level SELECT statement, not a subquery"

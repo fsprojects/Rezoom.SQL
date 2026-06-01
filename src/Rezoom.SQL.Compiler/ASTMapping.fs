@@ -61,7 +61,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                     Value =
                         match inex.Set.Value with
                         | InExpressions exprs -> exprs |> rmap this.Expr |> InExpressions
-                        | InSelect select -> InSelect <| this.Select(select)
+                        | InSelect select -> InSelect <| this.Select(select, topLevel = false)
                         | InTable table -> InTable <| this.TableInvocation(table)
                         | InParameter par -> InParameter par
                 }
@@ -91,9 +91,9 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | UnaryExpr un -> UnaryExpr <| this.Unary(un)
         | BetweenExpr between -> BetweenExpr <| this.Between(between)
         | InExpr inex -> InExpr <| this.In(inex)
-        | ExistsExpr select -> ExistsExpr <| this.Select(select)
+        | ExistsExpr select -> ExistsExpr <| this.Select(select, topLevel = false)
         | CaseExpr case -> CaseExpr <| this.Case(case)
-        | ScalarSubqueryExpr select -> ScalarSubqueryExpr <| this.Select(select)
+        | ScalarSubqueryExpr select -> ScalarSubqueryExpr <| this.Select(select, topLevel = false)
     member this.Expr(expr : Expr<'t1, 'e1>) =
         {   Value = this.ExprType(expr.Value)
             Source = expr.Source
@@ -106,7 +106,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
     member this.CTE(cte : CommonTableExpression<'t1, 'e1>) =
         {   Name = cte.Name
             ColumnNames = cte.ColumnNames
-            AsSelect = this.Select(cte.AsSelect)
+            AsSelect = this.Select(cte.AsSelect, topLevel = false)
             Info = mapT cte.Info
         }
     member this.WithClause(withClause : WithClause<'t1, 'e1>) =
@@ -133,8 +133,8 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
                     Columns = nav.Columns |> Array.map this.ResultColumn
                 } |> ColumnNav
         { Case = case; Source = resultColumn.Source }
-    abstract member ResultColumns : ResultColumns<'t1, 'e1> -> ResultColumns<'t2, 'e2>
-    default this.ResultColumns(resultColumns : ResultColumns<'t1, 'e1>) =
+    abstract member ResultColumns : resultColumns : ResultColumns<'t1, 'e1> * topLevel : bool -> ResultColumns<'t2, 'e2>
+    default this.ResultColumns(resultColumns : ResultColumns<'t1, 'e1>, _) =
         {   Distinct = resultColumns.Distinct
             Columns = resultColumns.Columns |> rmap this.ResultColumn
             RowTypes = resultColumns.RowTypes
@@ -145,7 +145,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             | Table (tinvoc) ->
                 Table (this.TableInvocation(tinvoc))
             | Subquery select ->
-                Subquery (this.Select(select))
+                Subquery (this.Select(select, topLevel = false))
         {   Table = tbl
             Alias = table.Alias
             Info = mapT table.Info
@@ -171,39 +171,39 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         {   By = groupBy.By |> rmap this.Expr
             Having = groupBy.Having |> Option.map this.Expr
         }
-    member this.SelectCore(select : SelectCore<'t1, 'e1>) =
-        {   Columns = this.ResultColumns(select.Columns)
+    member this.SelectCore(select : SelectCore<'t1, 'e1>, topLevel : bool) =
+        {   Columns = this.ResultColumns(select.Columns, topLevel)
             From = Option.map this.TableExpr select.From
             Where = Option.map this.Expr select.Where
             GroupBy = Option.map this.GroupBy select.GroupBy
             Info = mapT select.Info
         }
-    member this.CompoundTerm(term : CompoundTerm<'t1, 'e1>) : CompoundTerm<'t2, 'e2> =
+    member this.CompoundTerm(term : CompoundTerm<'t1, 'e1>, topLevel : bool) : CompoundTerm<'t2, 'e2> =
         {   Source = term.Source
             Value =
                 match term.Value with
                 | Values vals ->
                     Values (vals |> rmap (fun w -> { Value = rmap this.Expr w.Value; Source = w.Source }))
                 | Select select ->
-                    Select <| this.SelectCore(select)
+                    Select <| this.SelectCore(select, topLevel)
             Info = mapT term.Info
         }
-    member this.Compound(compound : CompoundExpr<'t1, 'e1>) =
+    member this.Compound(compound : CompoundExpr<'t1, 'e1>, topLevel : bool) =
         {   CompoundExpr.Source = compound.Source
             Value = 
                 match compound.Value with
-                | CompoundTerm term -> CompoundTerm <| this.CompoundTerm(term)
-                | Union (expr, term) -> Union (this.Compound(expr), this.CompoundTerm(term))
-                | UnionAll (expr, term) -> UnionAll (this.Compound(expr), this.CompoundTerm(term))
-                | Intersect (expr, term) -> Intersect (this.Compound(expr), this.CompoundTerm(term))
-                | Except (expr, term) -> Except (this.Compound(expr), this.CompoundTerm(term))
+                | CompoundTerm term -> CompoundTerm <| this.CompoundTerm(term, topLevel)
+                | Union (expr, term) -> Union (this.Compound(expr, topLevel), this.CompoundTerm(term, topLevel))
+                | UnionAll (expr, term) -> UnionAll (this.Compound(expr, topLevel), this.CompoundTerm(term, topLevel))
+                | Intersect (expr, term) -> Intersect (this.Compound(expr, topLevel), this.CompoundTerm(term, topLevel))
+                | Except (expr, term) -> Except (this.Compound(expr, topLevel), this.CompoundTerm(term, topLevel))
         }
-    member this.Select(select : SelectStmt<'t1, 'e1>) : SelectStmt<'t2, 'e2> =
+    member this.Select(select : SelectStmt<'t1, 'e1>, topLevel : bool) : SelectStmt<'t2, 'e2> =
         {   Source = select.Source
             Value =
                 let select = select.Value
                 {   With = Option.map this.WithClause select.With
-                    Compound = this.Compound(select.Compound)
+                    Compound = this.Compound(select.Compound, topLevel)
                     OrderBy = Option.map (rmap this.OrderingTerm) select.OrderBy
                     Limit = Option.map this.Limit select.Limit
                     Info = mapT select.Info
@@ -287,14 +287,14 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             Name = this.ObjectName(createTable.Name)
             As =
                 match createTable.As with
-                | CreateAsSelect select -> CreateAsSelect <| this.Select(select)
+                | CreateAsSelect select -> CreateAsSelect <| this.Select(select, topLevel = false)
                 | CreateAsDefinition def -> CreateAsDefinition <| this.CreateTableDefinition(def)
         }
     member this.CreateView(createView : CreateViewStmt<'t1, 'e1>) =
         {   Temporary = createView.Temporary
             ViewName = this.ObjectName(createView.ViewName)
             ColumnNames = createView.ColumnNames
-            AsSelect = this.Select(createView.AsSelect)
+            AsSelect = this.Select(createView.AsSelect, topLevel = false)
         }
     member this.Delete(delete : DeleteStmt<'t1, 'e1>) =
         {   With = Option.map this.WithClause delete.With
@@ -312,7 +312,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
             Or = insert.Or
             InsertInto = this.ObjectName(insert.InsertInto)
             Columns = insert.Columns
-            Data = this.Select insert.Data
+            Data = this.Select(insert.Data, topLevel = false)
         }
     member this.Update(update : UpdateStmt<'t1, 'e1>) =
         {   With = Option.map this.WithClause update.With
@@ -337,7 +337,7 @@ type ASTMapping<'t1, 'e1, 't2, 'e2>(mapT : 't1 -> 't2, mapE : 'e1 -> 'e2) =
         | DeleteStmt delete -> DeleteStmt <| this.Delete(delete)
         | DropObjectStmt drop -> DropObjectStmt <| this.DropObject(drop)
         | InsertStmt insert -> InsertStmt <| this.Insert(insert)
-        | SelectStmt select -> SelectStmt <| this.Select(select)
+        | SelectStmt select -> SelectStmt <| this.Select(select, topLevel = true)
         | UpdateStmt update -> UpdateStmt <| this.Update(update)
 
     member this.Vendor(vendor : VendorStmt<'t1, 'e1>) =

@@ -67,7 +67,7 @@ module private UserModelLoader =
                 match obj with
                 | SchemaView view ->
                     let inferredDefinition = typeChecker.Select(view.CreateDefinition.AsSelect, SelfQueryShape.Unknown)
-                    ignore <| concrete.Select(inferredDefinition)
+                    ignore <| concrete.Select(inferredDefinition, false)
                 | _ -> ()
 
     let foldMigrations

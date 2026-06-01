@@ -20,7 +20,7 @@ type private UserTypeResolutionPass(userTypeLibrary : UserTypeLibrary) =
                 let candidates = candidates |> Seq.map (fun t -> t.UserCLRType.FullName)
                 failAt typeName.Source <| Error.typeNameAmbiguous name candidates
         | _ -> typeName
-    override this.ResultColumns(resultColumns) =
+    override this.ResultColumns(resultColumns, topLevel : bool) =
         let resolveRowType (rowType : RowType WithSource) =
             let resolvedValue =
                 match rowType.Value with
@@ -36,6 +36,10 @@ type private UserTypeResolutionPass(userTypeLibrary : UserTypeLibrary) =
                         let candidates = candidates |> Seq.map (fun t -> t.UserCLRType.FullName)
                         failAt rowType.Source <| Error.typeNameAmbiguous name candidates
             { rowType with Value = resolvedValue }
+        match topLevel, resultColumns.RowTypes with
+        | false, Some xs when xs.Length > 0 ->
+            failAt xs.[0].Source <| Error.rowTypesMayOnlyBeDeclaredAtTopLevel
+        | _ -> ()
         {   Distinct = resultColumns.Distinct
             Columns = resultColumns.Columns |> rmap this.ResultColumn
             RowTypes =
