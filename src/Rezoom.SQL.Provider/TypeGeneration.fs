@@ -151,13 +151,13 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (impl
         let info = column.Expr.Info
         addField false info.PrimaryKey name <| info.Type.CLRType(useOptional = (model.Config.Optionals = Config.FsStyle))
     for KeyValue(name, subMap) in columnMap.SubMaps do
-        let propName = name.TrimEnd('*', '?')
+        let cardinality, propName = ResultColumnNavCardinality.OfColName(name)
         let subImplements =
             implements
             |> Seq.choose (fun t ->
                 t.GetProperty(propName, BindingFlags.Public ||| BindingFlags.Instance)
                     |> Option.ofObj
-                    |> Option.map (interfaceTyToImplementOnRowForProp subMap.FirstColumn.Expr.Source))
+                    |> Option.map (interfaceTyToImplementOnRowForProp subMap.FirstColumn.Expr.Source cardinality model.Config.Optionals))
             |> Seq.toArray
         let subTy = generateRowTypeFromColumns false model (toRowTypeName name) subImplements subMap
         ty.AddMember(subTy)

@@ -458,6 +458,12 @@ and ResultColumnNavCardinality =
     | NavOne
     | NavOptional
     | NavMany
+    static member OfColName(colName : string) =
+        if isNull colName then NavOne, ""
+        elif colName.EndsWith("?") then NavOptional, colName.Substring(0, colName.Length - 1)
+        elif colName.EndsWith("*") then NavMany, colName.Substring(0, colName.Length - 1)
+        else NavOne, colName
+        
     member this.Separator =
         match this with
         | NavOne -> "$"

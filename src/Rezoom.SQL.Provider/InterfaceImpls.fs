@@ -13,25 +13,31 @@ type ProvidedPropertyMeta =
 
 let private fsharpOption = "Microsoft.FSharp.Core.FSharpOption`1"
 
-let private validGenerics =
+let private collectionTypes =
     [|  "System.Collections.Generic.IEnumerable`1"
         "System.Collections.Generic.IReadOnlyCollection`1"
         "System.Collections.Generic.IReadOnlyList`1"
-        fsharpOption
     |] |> Set.ofArray
 
-let interfaceTyToImplementOnRowForProp (location : SourceInfo) (prop : PropertyInfo) : Type =
+let interfaceTyToImplementOnRowForProp
+    (location : SourceInfo)
+    (cardinality : ResultColumnNavCardinality)
+    (optionals : Config.ConfigOptionalStyle)
+    (prop : PropertyInfo) : Type =
     let propTy = prop.PropertyType
-    if propTy.IsGenericType then
-        let genericDef = propTy.GetGenericTypeDefinition()
-        if validGenerics.Contains(genericDef.FullName) then
-            propTy.GetGenericArguments().[0]
-        else
-            failAt location <| Error.interfaceSubMapMustBeASupportedGenericType prop.Name propTy.FullName
-    else
+    match cardinality with
+    | NavOne when propTy.IsInterface && not propTy.IsGenericType ->
         propTy
+    | NavMany when propTy.IsGenericType && collectionTypes.Contains(propTy.GetGenericTypeDefinition().FullName) ->
+        propTy.GetGenericArguments().[0]
+    | NavOptional when propTy.IsInterface && not propTy.IsGenericType && optionals = Config.CsStyle ->
+        propTy
+    | NavOptional when propTy.IsGenericType && propTy.GetGenericTypeDefinition().FullName = fsharpOption && optionals = Config.FsStyle ->
+        propTy.GetGenericArguments().[0]
+    | _ ->
+        failAt location <| Error.interfacePropCardinalityMismatch prop.Name cardinality
 
-let mapperCode (iProp : PropertyInfo) (found : ProvidedProperty) (row : Expr) =
+let mapperCode (iProp : PropertyInfo) (row : Expr) =
     if iProp.PropertyType.IsGenericType && iProp.PropertyType.GetGenericTypeDefinition().FullName = fsharpOption then
         let internalType = iProp.PropertyType.GetGenericArguments().[0]
         let method =
@@ -64,7 +70,7 @@ let implementInterface (ty : ProvidedTypeDefinition) (props : ProvidedPropertyMe
                         // Our type will be a generated type that implements the needed interface
                         // (and if not, it'll have blown up by now) but won't literally BE the needed interface.
                         // Use an explicit interface implementation getter and coerce or option-map.
-                        let converter = mapperCode iProp found
+                        let converter = mapperCode iProp
                         let explicitImplGet =
                             ProvidedMethod(interfaceTy.Name + "." + iProp.Name, [], iProp.PropertyType, invokeCode =
                                 function

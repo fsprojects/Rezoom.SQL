@@ -176,10 +176,10 @@ let rowPropertyHasWrongTypeForInterfaceProperty propName propType ifaceName ifac
         propType
         ifaceName
         ifacePropType
-let interfaceSubMapMustBeASupportedGenericType property actualType =
+let interfacePropCardinalityMismatch property cardinality =
     sprintf
-        "SQ075: Interface property ``%s`` is not a supported generic type like IEnumerable<ISomething> or IReadOnlyList<ISomething>. It is a ``%s``"
+        "SQ075: Interface property ``%s`` does not have the expected cardinality %A"
             property
-            actualType
+            cardinality
 let onlyInterfacesAreSupportedForRowTypes typeName =
     sprintf "SQ076: <Row Types> must be interfaces. ``%s`` is not an interface" typeName
