@@ -106,7 +106,13 @@ let private addScalarInterface (ty : ProvidedTypeDefinition) (field : ProvidedFi
     ty.DefineMethodOverride(getterMethod, getScalarValue)
     ty.AddMember(getterMethod)
     
-let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (implements : Type array) (columnMap : CompileTimeColumnMap) =
+let rec private generateRowTypeFromColumns
+    (isRoot : bool)
+    (parent : ProvidedTypeDefinition)
+    (model : UserModel)
+    (name : string)
+    (implements : Type array)
+    (columnMap : CompileTimeColumnMap) =
     let ty =
         ProvidedTypeDefinition
             ( name
@@ -117,6 +123,7 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (impl
     ty.AddCustomAttribute(SerializableAttributeData())
     if isRoot && not columnMap.HasSubMaps then
         ty.AddCustomAttribute(BlueprintNoKeyAttributeData())
+    parent.AddMember ty
     let fields = ResizeArray()
     let props = ResizeArray()
     let addField (isSubMap : bool) (pk : bool) (name : string) (fieldTy : Type) =
@@ -159,8 +166,7 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (impl
                     |> Option.ofObj
                     |> Option.map (interfaceTyToImplementOnRowForProp subMap.FirstColumn.Expr.Source cardinality model.Config.Optionals))
             |> Seq.toArray
-        let subTy = generateRowTypeFromColumns false model (toRowTypeName name) subImplements subMap
-        ty.AddMember(subTy)
+        let subTy = generateRowTypeFromColumns false ty model (toRowTypeName name) subImplements subMap
         addField true false name subTy
     let ctorParams = [ for camel, field in fields -> ProvidedParameter(camel, field.FieldType) ]
     let ctor =
@@ -181,9 +187,9 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (impl
         implementInterface ty props implTy columnMap.FirstColumn.Expr.Source
     ty
 
-let private generateRowType (model : UserModel) (name : string) (query : ColumnType QueryExprInfo) =
+let private generateRowType parent (model : UserModel) (name : string) (query : ColumnType QueryExprInfo) =
     CompileTimeColumnMap.Parse(query.Columns)
-    |> generateRowTypeFromColumns true model name (query.RowTypes |> Array.map (fun t -> t.UserCLRType))
+    |> generateRowTypeFromColumns true parent model name (query.RowTypes |> Array.map (fun t -> t.UserCLRType))
 
 let private maskOfTables (model : UserModel) (tables : QualifiedObjectName seq) =
     let mutable mask = BitMask.Zero
@@ -307,42 +313,6 @@ let generateSQLType (generate : GenerateType) (sql : string) =
         match query.StaticRowCount with
         | Some 1 -> rowType
         | _ -> ProvidedTypeBuilder.MakeGenericType(typedefof<_ IReadOnlyList>, [rowType])
-    let rowTypes, commandCtorMethod, commandType =
-        let genRowType = generateRowType generate.UserModel
-        match commandEffect.ResultSets() |> Seq.toList with
-        | [] ->
-            []
-            , commandCtor.GetMethod("Command0")
-            , cmd typeof<unit>
-        | [ resultSet ] ->
-            let rowType = genRowType "Row" resultSet
-            [ rowType ]
-            , ProvidedTypeBuilder.MakeGenericMethod(commandCtor.GetMethod("Command1"), [lst resultSet rowType])
-            , cmd (lst resultSet rowType)
-        | [ resultSet1; resultSet2 ] ->
-            let rowType1 = genRowType "Row1" resultSet1
-            let rowType2 = genRowType "Row2" resultSet2
-            [ rowType1; rowType2 ]
-            , ProvidedTypeBuilder.MakeGenericMethod(commandCtor.GetMethod("Command2"), [lst resultSet1 rowType1; lst resultSet2 rowType2])
-            , cmd <| ProvidedTypeBuilder.MakeGenericType(typedefof<ResultSets<_, _>>, [lst resultSet1 rowType1; lst resultSet2 rowType2])
-        | [ resultSet1; resultSet2; resultSet3 ] ->
-            let rowType1 = genRowType "Row1" resultSet1
-            let rowType2 = genRowType "Row2" resultSet2
-            let rowType3 = genRowType "Row3" resultSet3
-            [ rowType1; rowType2; rowType3 ]
-            , ProvidedTypeBuilder.MakeGenericMethod(commandCtor.GetMethod("Command3"), [lst resultSet1 rowType1; lst resultSet2 rowType2; lst resultSet3 rowType3])
-            , cmd <| ProvidedTypeBuilder.MakeGenericType(typedefof<ResultSets<_, _, _>>, [lst resultSet1 rowType1; lst resultSet2 rowType2; lst resultSet3 rowType3])
-        | [ resultSet1; resultSet2; resultSet3; resultSet4 ] ->
-            let rowType1 = genRowType "Row1" resultSet1
-            let rowType2 = genRowType "Row2" resultSet2
-            let rowType3 = genRowType "Row3" resultSet3
-            let rowType4 = genRowType "Row4" resultSet4
-            [ rowType1; rowType2; rowType3; rowType4 ]
-            , ProvidedTypeBuilder.MakeGenericMethod(commandCtor.GetMethod("Command4"), [lst resultSet1 rowType1; lst resultSet2 rowType2; lst resultSet3 rowType3; lst resultSet4 rowType4])
-            , cmd <|
-                ProvidedTypeBuilder.MakeGenericType(typedefof<ResultSets<_, _, _, _>>, [lst resultSet1 rowType1; lst resultSet2 rowType2; lst resultSet3 rowType3; lst resultSet4 rowType4])
-        | sets ->
-            fail <| Error.commandContainsTooManyResultSets (List.length sets)
     let provided =
         ProvidedTypeDefinition
             ( generate.Assembly
@@ -352,8 +322,38 @@ let generateSQLType (generate : GenerateType) (sql : string) =
             , isErased = false
             , hideObjectMethods = true
             )
+    let commandCtorMethod, commandType =
+        let genRowType = generateRowType provided generate.UserModel
+        match commandEffect.ResultSets() |> Seq.toList with
+        | [] ->
+            commandCtor.GetMethod("Command0")
+            , cmd typeof<unit>
+        | [ resultSet ] ->
+            let rowType = genRowType "Row" resultSet
+            ProvidedTypeBuilder.MakeGenericMethod(commandCtor.GetMethod("Command1"), [lst resultSet rowType])
+            , cmd (lst resultSet rowType)
+        | [ resultSet1; resultSet2 ] ->
+            let rowType1 = genRowType "Row1" resultSet1
+            let rowType2 = genRowType "Row2" resultSet2
+            ProvidedTypeBuilder.MakeGenericMethod(commandCtor.GetMethod("Command2"), [lst resultSet1 rowType1; lst resultSet2 rowType2])
+            , cmd <| ProvidedTypeBuilder.MakeGenericType(typedefof<ResultSets<_, _>>, [lst resultSet1 rowType1; lst resultSet2 rowType2])
+        | [ resultSet1; resultSet2; resultSet3 ] ->
+            let rowType1 = genRowType "Row1" resultSet1
+            let rowType2 = genRowType "Row2" resultSet2
+            let rowType3 = genRowType "Row3" resultSet3
+            ProvidedTypeBuilder.MakeGenericMethod(commandCtor.GetMethod("Command3"), [lst resultSet1 rowType1; lst resultSet2 rowType2; lst resultSet3 rowType3])
+            , cmd <| ProvidedTypeBuilder.MakeGenericType(typedefof<ResultSets<_, _, _>>, [lst resultSet1 rowType1; lst resultSet2 rowType2; lst resultSet3 rowType3])
+        | [ resultSet1; resultSet2; resultSet3; resultSet4 ] ->
+            let rowType1 = genRowType "Row1" resultSet1
+            let rowType2 = genRowType "Row2" resultSet2
+            let rowType3 = genRowType "Row3" resultSet3
+            let rowType4 = genRowType "Row4" resultSet4
+            ProvidedTypeBuilder.MakeGenericMethod(commandCtor.GetMethod("Command4"), [lst resultSet1 rowType1; lst resultSet2 rowType2; lst resultSet3 rowType3; lst resultSet4 rowType4])
+            , cmd <|
+                ProvidedTypeBuilder.MakeGenericType(typedefof<ResultSets<_, _, _, _>>, [lst resultSet1 rowType1; lst resultSet2 rowType2; lst resultSet3 rowType3; lst resultSet4 rowType4])
+        | sets ->
+            fail <| Error.commandContainsTooManyResultSets (List.length sets)
     provided.AddXmlDocDelayed (fun () -> DocStrings.commandEffectDocString commandEffect)
-    provided.AddMembers rowTypes
     provided.AddMember <| generateCommandMethod generate commandEffect commandType commandCtorMethod
     provided
 
