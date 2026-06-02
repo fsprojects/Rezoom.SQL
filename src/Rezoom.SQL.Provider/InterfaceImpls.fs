@@ -40,10 +40,13 @@ let interfaceTyToImplementOnRowForProp
 let mapperCode (iProp : PropertyInfo) (row : Expr) =
     if iProp.PropertyType.IsGenericType && iProp.PropertyType.GetGenericTypeDefinition().FullName = fsharpOption then
         let internalType = iProp.PropertyType.GetGenericArguments().[0]
-        let method =
+        let methodDef =
             typeof<RuntimeUserConvert.RowTypeConverter>.GetMethod
                 (nameof RuntimeUserConvert.RowTypeConverter.ToOptionalRowType, BindingFlags.Static ||| BindingFlags.Public)
-        let method = method.MakeGenericMethod(internalType)
+        // Use ProvidedTypeBuilder.MakeGenericMethod so MLC-loaded interface
+        // arguments (the typical case for `internalType`) produce a method
+        // symbol the TP can lower to IL. Not methodDef.MakeGenericMethod().
+        let method = ProvidedTypeBuilder.MakeGenericMethod(methodDef, [internalType])
         Expr.Call(method, [Expr.Coerce(row, typeof<obj>)])
     else
         Expr.Coerce(row, iProp.PropertyType)
@@ -82,6 +85,7 @@ let implementInterface (ty : ProvidedTypeDefinition) (props : ProvidedPropertyMe
                             ||| MethodAttributes.Final
                             ||| MethodAttributes.NewSlot
                         explicitImplGet.SetMethodAttrs(flags)
+                        ty.AddMember(explicitImplGet)
                         explicitImplGet
 
                     else
