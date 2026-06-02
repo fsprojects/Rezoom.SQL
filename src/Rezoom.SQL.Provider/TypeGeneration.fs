@@ -12,6 +12,7 @@ open Rezoom.SQL
 open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 open Rezoom.SQL.Compiler
+open Rezoom.SQL.Provider.InterfaceImpls
 
 type GenerateTypeCase =
     | GenerateSQL of string
@@ -105,7 +106,7 @@ let private addScalarInterface (ty : ProvidedTypeDefinition) (field : ProvidedFi
     ty.DefineMethodOverride(getterMethod, getScalarValue)
     ty.AddMember(getterMethod)
     
-let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (columnMap : CompileTimeColumnMap) =
+let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (implements : Type array) (columnMap : CompileTimeColumnMap) =
     let ty =
         ProvidedTypeDefinition
             ( name
@@ -118,7 +119,7 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (colu
         ty.AddCustomAttribute(BlueprintNoKeyAttributeData())
     let fields = ResizeArray()
     let props = ResizeArray()
-    let addField pk (name : string) (fieldTy : Type) =
+    let addField (isSubMap : bool) (pk : bool) (name : string) (fieldTy : Type) =
         let fieldTy, propName =
             if name.EndsWith("*") then
                 ProvidedTypeBuilder.MakeGenericType(typedefof<_ IReadOnlyList>, [fieldTy]), name.Substring(0, name.Length - 1)
@@ -137,14 +138,19 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (colu
             getter.AddCustomAttribute(BlueprintColumnNameAttributeData(name))
         ty.AddMembers [ field :> MemberInfo; getter :> _ ]
         fields.Add(camel, field)
-        props.Add(getter)
+        props.Add({ Prop = getter; IsSubMap = isSubMap })
     for KeyValue(name, (_, column)) in columnMap.Columns do
         let info = column.Expr.Info
-        addField info.PrimaryKey name <| info.Type.CLRType(useOptional = (model.Config.Optionals = Config.FsStyle))
+        addField false info.PrimaryKey name <| info.Type.CLRType(useOptional = (model.Config.Optionals = Config.FsStyle))
     for KeyValue(name, subMap) in columnMap.SubMaps do
-        let subTy = generateRowTypeFromColumns false model (toRowTypeName name) subMap
+        let subImplements =
+            implements
+            |> Seq.choose (fun t ->
+                t.GetProperty(name, BindingFlags.Public) |> Option.ofObj |> Option.map (fun p -> p.PropertyType))
+            |> Seq.toArray
+        let subTy = generateRowTypeFromColumns false model (toRowTypeName name) subImplements subMap
         ty.AddMember(subTy)
-        addField false name subTy
+        addField true false name subTy
     let ctorParams = [ for camel, field in fields -> ProvidedParameter(camel, field.FieldType) ]
     let ctor =
         ProvidedConstructor
@@ -160,11 +166,13 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (colu
     ty.AddMember(ctor)
     if fields.Count = 1 then
         addScalarInterface ty (snd fields.[0])
+    for implTy in implements do
+        implementInterfaces ty props implTy columnMap.FirstColumn.Expr.Source
     ty
 
 let private generateRowType (model : UserModel) (name : string) (query : ColumnType QueryExprInfo) =
-    CompileTimeColumnMap.Parse(query.Columns)
-    |> generateRowTypeFromColumns true model name
+    CompileTimeColumnMap(query.Columns)
+    |> generateRowTypeFromColumns true model name (query.RowTypes |> Array.map (fun t -> t.UserCLRType))
 
 let private maskOfTables (model : UserModel) (tables : QualifiedObjectName seq) =
     let mutable mask = BitMask.Zero

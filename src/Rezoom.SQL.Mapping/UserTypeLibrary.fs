@@ -48,6 +48,8 @@ type UserPrimitiveType =
 type UserRowType =
     {   UserCLRType : Type
     }
+    member this.Property(name : string) =
+        this.UserCLRType.GetProperty(name, BindingFlags.Public) |> Option.ofObj
 
 type TypeResolutionByName<'a> =
     | FoundType of 'a
