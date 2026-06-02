@@ -65,3 +65,15 @@ module RuntimeUserConvert =
             let builder = Func<FreezeDriedUserPrimitiveType, obj -> obj>(fun fd -> buildInvoker fd)
             invokerCache.GetOrAdd(fd, builder)
         invoker value
+
+    type RowTypeConverter() =
+        static member ToOptionalRowType<'t> (value : obj) : 't option =
+            if isNull value then None else
+            let value =
+                let t = value.GetType()
+                if t.IsGenericType && t.GetGenericTypeDefinition() = typedefof<_ option>
+                then t.GetProperty("Value").GetValue(value)
+                else value
+            match value with
+            | :? 't as expectedType -> Some expectedType
+            | _ -> None

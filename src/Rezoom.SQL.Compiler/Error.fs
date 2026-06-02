@@ -176,3 +176,10 @@ let rowPropertyHasWrongTypeForInterfaceProperty propName propType ifaceName ifac
         propType
         ifaceName
         ifacePropType
+let interfaceSubMapMustBeASupportedGenericType property actualType =
+    sprintf
+        "SQ075: Interface property ``%s`` is not a supported generic type like IEnumerable<ISomething> or IReadOnlyList<ISomething>. It is a ``%s``"
+            property
+            actualType
+let onlyInterfacesAreSupportedForRowTypes typeName =
+    sprintf "SQ076: <Row Types> must be interfaces. ``%s`` is not an interface" typeName

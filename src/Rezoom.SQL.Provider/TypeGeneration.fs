@@ -132,6 +132,14 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (impl
         let getter = ProvidedProperty(propName, fieldTy, getterCode = function
             | [ this ] -> Expr.FieldGetUnchecked(this, field)
             | _ -> bug "Invalid getter argument list")
+        if implements.Length > 0 then
+            // make the getter virtual so it can implement an interface. currently we shotgun all the getters
+            // not just the ones that are actually used by the interface(s).
+            (getter.GetMethod :?> ProvidedMethod).SetMethodAttrs(
+                MethodAttributes.Virtual
+                ||| MethodAttributes.Public
+                ||| MethodAttributes.Final
+                ||| MethodAttributes.NewSlot)
         if pk then
             getter.AddCustomAttribute(BlueprintKeyAttributeData())
         if name <> propName then
@@ -143,10 +151,13 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (impl
         let info = column.Expr.Info
         addField false info.PrimaryKey name <| info.Type.CLRType(useOptional = (model.Config.Optionals = Config.FsStyle))
     for KeyValue(name, subMap) in columnMap.SubMaps do
+        let propName = name.TrimEnd('*', '?')
         let subImplements =
             implements
             |> Seq.choose (fun t ->
-                t.GetProperty(name, BindingFlags.Public) |> Option.ofObj |> Option.map (fun p -> p.PropertyType))
+                t.GetProperty(propName, BindingFlags.Public ||| BindingFlags.Instance)
+                    |> Option.ofObj
+                    |> Option.map (interfaceTyToImplementOnRowForProp subMap.FirstColumn.Expr.Source))
             |> Seq.toArray
         let subTy = generateRowTypeFromColumns false model (toRowTypeName name) subImplements subMap
         ty.AddMember(subTy)
@@ -167,7 +178,7 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (impl
     if fields.Count = 1 then
         addScalarInterface ty (snd fields.[0])
     for implTy in implements do
-        implementInterfaces ty props implTy columnMap.FirstColumn.Expr.Source
+        implementInterface ty props implTy columnMap.FirstColumn.Expr.Source
     ty
 
 let private generateRowType (model : UserModel) (name : string) (query : ColumnType QueryExprInfo) =
