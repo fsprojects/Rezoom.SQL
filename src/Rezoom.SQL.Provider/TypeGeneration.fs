@@ -182,7 +182,7 @@ let rec private generateRowTypeFromColumns isRoot (model : UserModel) name (impl
     ty
 
 let private generateRowType (model : UserModel) (name : string) (query : ColumnType QueryExprInfo) =
-    CompileTimeColumnMap(query.Columns)
+    CompileTimeColumnMap.Parse(query.Columns)
     |> generateRowTypeFromColumns true model name (query.RowTypes |> Array.map (fun t -> t.UserCLRType))
 
 let private maskOfTables (model : UserModel) (tables : QualifiedObjectName seq) =
@@ -293,7 +293,13 @@ let validateSQLCommand (generate : GenerateType) (effect : CommandEffect) =
             fail <| Error.commandChangesSchema
 
 let generateSQLType (generate : GenerateType) (sql : string) =
-    let commandEffect = CommandEffect.OfSQL(generate.UserModel.Model, generate.TypeName, sql)
+    let commandEffect =
+        CommandEffect.OfSQL
+            ( generate.UserModel.Model
+            , generate.TypeName
+            , sql
+            , generate.UserModel.UserTypeLibrary
+            )
     validateSQLCommand generate commandEffect
     let commandCtor = typeof<CommandConstructor>
     let cmd (r : Type) = typedefof<_ Command>.MakeGenericType(r)

@@ -40,7 +40,7 @@ let ``row implements interface whose property is a user-primitive type`` () =
     let row = results.[0]
     let withId : IHasUserId = row :> IHasUserId
     Assert.AreEqual(UserId 1L, withId.Id)
-    let scalar : Rezoom.SQL.Mapping.IScalar<UserId> = row :> _
+    let scalar : Rezoom.SQL.IScalar<UserId> = row :> _
     Assert.AreEqual(UserId 1L, scalar.ScalarValue)
 
 // --- Multiple interfaces declared on one query --------------------------
