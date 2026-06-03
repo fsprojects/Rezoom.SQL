@@ -123,37 +123,37 @@ let ``read boolean`` () =
 let ``read DateTimeKind enum (via TryParser)`` () =
     let mutable e = DateTimeKind.Unspecified
     let succ = PrimitiveConverters.EnumTryParser<DateTimeKind>.TryParse("Local", &e)
-    Assert.IsTrue(succ)
+    Assert.That(succ)
     Assert.AreEqual(DateTimeKind.Local, e)
     let succ = PrimitiveConverters.EnumTryParser<DateTimeKind>.TryParse("Test", &e)
-    Assert.IsFalse(succ)
+    Assert.That(not succ)
 
 [<Test>]
 let ``read Enum16 (via TryParser)`` () =
     let mutable e = Enum16.One16
     let succ = PrimitiveConverters.EnumTryParser<Enum16>.TryParse("Two16", &e)
-    Assert.IsTrue(succ)
+    Assert.That(succ)
     Assert.AreEqual(Enum16.Two16, e)
 
 [<Test>]
 let ``read Enum32U (via TryParser)`` () =
     let mutable e = Enum32U.One32U
     let succ = PrimitiveConverters.EnumTryParser<Enum32U>.TryParse("Two32U", &e)
-    Assert.IsTrue(succ)
+    Assert.That(succ)
     Assert.AreEqual(Enum32U.Two32U, e)
 
 [<Test>]
 let ``read Enum64 (via TryParser)`` () =
     let mutable e = Enum64.One64
     let succ = PrimitiveConverters.EnumTryParser<Enum64>.TryParse("Two64", &e)
-    Assert.IsTrue(succ)
+    Assert.That(succ)
     Assert.AreEqual(Enum64.Two64, e)
 
 [<Test>]
 let ``read Enum64U (via TryParser)`` () =
     let mutable e = Enum64U.One64U
     let succ = PrimitiveConverters.EnumTryParser<Enum64U>.TryParse("Two64U", &e)
-    Assert.IsTrue(succ)
+    Assert.That(succ)
     Assert.AreEqual(Enum64U.Two64U, e)
 
 [<Test>]
@@ -184,7 +184,7 @@ let ``read enums from string``() =
         reader.ProcessColumns(colMap)
         reader.Read(ObjectRow(null : obj))
         let mat = reader.ToEntity()
-        Assert.IsNull(mat)
+        Assert.Null(box mat)
     let sad (example : 'a) (str : string) =
         let colMap =
             [|
@@ -193,7 +193,7 @@ let ``read enums from string``() =
         let row = ObjectRow(str :> obj)
         let reader = ReaderTemplate<'a>.Template().CreateReader()
         reader.ProcessColumns(colMap)
-        Assert.IsTrue(
+        Assert.That(
             try
                 reader.Read(row)
                 ignore <| reader.ToEntity()

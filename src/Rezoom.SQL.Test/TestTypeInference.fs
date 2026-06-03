@@ -26,13 +26,13 @@ let ``simple select`` () =
     let results = cmd.ResultSets() |> toReadOnlyList
     Assert.AreEqual(1, results.Count)
     let cs = results.[0].Columns
-    Assert.IsTrue(cs.[1].Expr.Info.PrimaryKey)
+    Assert.That(cs.[1].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("id"), cs.[1].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = IntegerType Integer32 }, cs.[1].Expr.Info.Type)
-    Assert.IsFalse(cs.[2].Expr.Info.PrimaryKey)
+    Assert.That(not cs.[2].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("name"), cs.[2].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].Expr.Info.Type)
-    Assert.IsFalse(cs.[0].Expr.Info.PrimaryKey)
+    Assert.That(not cs.[0].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("email"), cs.[0].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[0].Expr.Info.Type)
 
@@ -50,13 +50,13 @@ let ``simple select with parameter`` () =
     let results = cmd.ResultSets() |> toReadOnlyList
     Assert.AreEqual(1, results.Count)
     let cs = results.[0].Columns
-    Assert.IsTrue(cs.[1].Expr.Info.PrimaryKey)
+    Assert.That(cs.[1].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("id"), cs.[1].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = IntegerType Integer32 }, cs.[1].Expr.Info.Type)
-    Assert.IsFalse(cs.[2].Expr.Info.PrimaryKey)
+    Assert.That(not cs.[2].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("name"), cs.[2].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].Expr.Info.Type)
-    Assert.IsFalse(cs.[0].Expr.Info.PrimaryKey)
+    Assert.That(not cs.[0].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("email"), cs.[0].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[0].Expr.Info.Type)
 
@@ -74,13 +74,13 @@ let ``simple select with parameter nullable id`` () =
     let results = cmd.ResultSets() |> toReadOnlyList
     Assert.AreEqual(1, results.Count)
     let cs = results.[0].Columns
-    Assert.IsTrue(cs.[1].Expr.Info.PrimaryKey)
+    Assert.That(cs.[1].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("id"), cs.[1].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = IntegerType Integer32 }, cs.[1].Expr.Info.Type)
-    Assert.IsFalse(cs.[2].Expr.Info.PrimaryKey)
+    Assert.That(not cs.[2].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("name"), cs.[2].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].Expr.Info.Type)
-    Assert.IsFalse(cs.[0].Expr.Info.PrimaryKey)
+    Assert.That(not cs.[0].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("email"), cs.[0].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[0].Expr.Info.Type)
 
@@ -99,13 +99,13 @@ let ``simple select with parameter not null`` () =
     let results = cmd.ResultSets() |> toReadOnlyList
     Assert.AreEqual(1, results.Count)
     let cs = results.[0].Columns
-    Assert.IsTrue(cs.[1].Expr.Info.PrimaryKey)
+    Assert.That(cs.[1].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("id"), cs.[1].ColumnName)
     Assert.AreEqual({ Nullable = false; Type = IntegerType Integer32 }, cs.[1].Expr.Info.Type)
-    Assert.IsFalse(cs.[2].Expr.Info.PrimaryKey)
+    Assert.That(not cs.[2].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("name"), cs.[2].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[2].Expr.Info.Type)
-    Assert.IsFalse(cs.[0].Expr.Info.PrimaryKey)
+    Assert.That(not cs.[0].Expr.Info.PrimaryKey)
     Assert.AreEqual(Name("email"), cs.[0].ColumnName)
     Assert.AreEqual({ Nullable = true; Type = StringType }, cs.[0].Expr.Info.Type)
 
@@ -130,8 +130,8 @@ let ``coalesce not null`` () =
         ")
     printfn "%A" cmd.Parameters
     Assert.AreEqual(2, cmd.Parameters.Count)
-    Assert.IsFalse((snd cmd.Parameters.[0]).Nullable)
-    Assert.IsFalse((snd cmd.Parameters.[1]).Nullable)
+    Assert.That(not (snd cmd.Parameters.[0]).Nullable)
+    Assert.That(not (snd cmd.Parameters.[1]).Nullable)
 
 [<Test>]
 let ``coalesce null`` () =
@@ -144,8 +144,8 @@ let ``coalesce null`` () =
         ")
     printfn "%A" cmd.Parameters
     Assert.AreEqual(2, cmd.Parameters.Count)
-    Assert.IsTrue((snd cmd.Parameters.[0]).Nullable)
-    Assert.IsFalse((snd cmd.Parameters.[1]).Nullable)
+    Assert.That((snd cmd.Parameters.[0]).Nullable)
+    Assert.That(not (snd cmd.Parameters.[1]).Nullable)
 
 [<Test>]
 let ``union null from bottom`` () =
@@ -160,7 +160,7 @@ let ``union null from bottom`` () =
     Assert.AreEqual(0, cmd.Parameters.Count)
     let resultSets = cmd.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, resultSets.Length)
-    Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Nullable)
+    Assert.That(resultSets.[0].Columns.[0].Expr.Info.Type.Nullable)
 
 [<Test>]
 let ``union null from top`` () =
@@ -175,7 +175,7 @@ let ``union null from top`` () =
     Assert.AreEqual(0, cmd.Parameters.Count)
     let resultSets = cmd.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, resultSets.Length)
-    Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Nullable)
+    Assert.That(resultSets.[0].Columns.[0].Expr.Info.Type.Nullable)
 
 [<Test>]
 let ``union null in values clause`` () =
@@ -190,7 +190,7 @@ let ``union null in values clause`` () =
     Assert.AreEqual(0, cmd.Parameters.Count)
     let resultSets = cmd.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, resultSets.Length)
-    Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Nullable)
+    Assert.That(resultSets.[0].Columns.[0].Expr.Info.Type.Nullable)
 
 [<Test>]
 let ``select max`` () =
@@ -203,7 +203,7 @@ let ``select max`` () =
     Assert.AreEqual(0, cmd.Parameters.Count)
     let resultSets = cmd.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, resultSets.Length)
-    Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Type = StringType)
+    Assert.That(resultSets.[0].Columns.[0].Expr.Info.Type.Type = StringType)
 
 [<Test>]
 let ``correlated subquery`` () =
@@ -218,7 +218,7 @@ let ``correlated subquery`` () =
     let resultSets = cmd.ResultSets() |> Seq.toArray
     Assert.AreEqual(1, resultSets.Length)
     Assert.AreEqual(5, resultSets.[0].Columns.Count)
-    Assert.IsTrue(resultSets.[0].Columns.[0].Expr.Info.Type.Type = StringType)
+    Assert.That(resultSets.[0].Columns.[0].Expr.Info.Type.Type = StringType)
 
 [<Test>]
 let ``between expr`` () =

@@ -44,7 +44,7 @@ let ``read timeonly`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let timeRow = reader.ToEntity()
-    Assert.IsNotNull(timeRow)
+    Assert.NotNull(timeRow)
     Assert.AreEqual(27, timeRow.Id)
     Assert.AreEqual(testTime, timeRow.Time)
 
@@ -66,7 +66,7 @@ let ``read stringy phone number`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let phoneRow = reader.ToEntity()
-    Assert.IsNotNull(phoneRow)
+    Assert.NotNull(phoneRow)
     Assert.AreEqual(42, phoneRow.Id)
     Assert.AreEqual(testPhone, phoneRow.Phone)
 
@@ -88,7 +88,7 @@ let ``read inty phone number`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let phoneRow = reader.ToEntity()
-    Assert.IsNotNull(phoneRow)
+    Assert.NotNull(phoneRow)
     Assert.AreEqual(99, phoneRow.Id)
     Assert.AreEqual(testPhone.CountryCode, phoneRow.Phone.CountryCode)
     Assert.AreEqual(testPhone.AreaCode, phoneRow.Phone.AreaCode)
@@ -112,7 +112,7 @@ let ``read datetimeoffset via override`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let stampRow = reader.ToEntity()
-    Assert.IsNotNull(stampRow)
+    Assert.NotNull(stampRow)
     Assert.AreEqual(7, stampRow.Id)
     Assert.AreEqual(testStamp, stampRow.Stamp)
 
@@ -134,7 +134,7 @@ let ``read option of custom type with value`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let phoneRow = reader.ToEntity()
-    Assert.IsNotNull(phoneRow)
+    Assert.NotNull(phoneRow)
     Assert.AreEqual(42, phoneRow.Id)
     Assert.AreEqual(Some testPhone, phoneRow.Phone)
 
@@ -150,7 +150,7 @@ let ``read option of custom type with null`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let phoneRow = reader.ToEntity()
-    Assert.IsNotNull(phoneRow)
+    Assert.NotNull(phoneRow)
     Assert.AreEqual(42, phoneRow.Id)
     Assert.AreEqual(None, phoneRow.Phone)
 
@@ -172,9 +172,9 @@ let ``read nullable of custom type with value`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let timeRow = reader.ToEntity()
-    Assert.IsNotNull(timeRow)
+    Assert.NotNull(timeRow)
     Assert.AreEqual(27, timeRow.Id)
-    Assert.IsTrue(timeRow.Time.HasValue)
+    Assert.That(timeRow.Time.HasValue)
     Assert.AreEqual(testTime, timeRow.Time.Value)
 
 [<Test>]
@@ -189,9 +189,9 @@ let ``read nullable of custom type with null`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let timeRow = reader.ToEntity()
-    Assert.IsNotNull(timeRow)
+    Assert.NotNull(timeRow)
     Assert.AreEqual(27, timeRow.Id)
-    Assert.IsFalse(timeRow.Time.HasValue)
+    Assert.That(not timeRow.Time.HasValue)
 
 type CustomUserIdTestRow =
     {   Id : int
@@ -211,7 +211,7 @@ let ``read single-case ref DU wrapping Guid`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let userRow = reader.ToEntity()
-    Assert.IsNotNull(userRow)
+    Assert.NotNull(userRow)
     Assert.AreEqual(1, userRow.Id)
     Assert.AreEqual(CustomUserId testGuid, userRow.UserId)
 
@@ -233,7 +233,7 @@ let ``read single-case ref DU wrapping string`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let stringRow = reader.ToEntity()
-    Assert.IsNotNull(stringRow)
+    Assert.NotNull(stringRow)
     Assert.AreEqual(2, stringRow.Id)
     Assert.AreEqual(CustomStringId testString, stringRow.StringId)
 
@@ -255,7 +255,7 @@ let ``read single-case struct DU wrapping Guid`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let userRow = reader.ToEntity()
-    Assert.IsNotNull(userRow)
+    Assert.NotNull(userRow)
     Assert.AreEqual(3, userRow.Id)
     Assert.AreEqual(CustomUserIdStruct testGuid, userRow.UserId)
 
@@ -277,7 +277,7 @@ let ``read single-case struct DU wrapping string`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let stringRow = reader.ToEntity()
-    Assert.IsNotNull(stringRow)
+    Assert.NotNull(stringRow)
     Assert.AreEqual(4, stringRow.Id)
     Assert.AreEqual(CustomStringIdStruct testString, stringRow.StringId)
 
@@ -294,7 +294,7 @@ let ``read single-case DU without explicit usertype mappings`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let stringRow = reader.ToEntity()
-    Assert.IsNotNull(stringRow)
+    Assert.NotNull(stringRow)
     Assert.AreEqual(4, stringRow.Id)
     Assert.AreEqual(CustomStringIdStruct testString, stringRow.StringId)
 
@@ -316,6 +316,6 @@ let ``read timespan via let-bound converters`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let spanRow = reader.ToEntity()
-    Assert.IsNotNull(spanRow)
+    Assert.NotNull(spanRow)
     Assert.AreEqual(13, spanRow.Id)
     Assert.AreEqual(testSpan, spanRow.Span)
