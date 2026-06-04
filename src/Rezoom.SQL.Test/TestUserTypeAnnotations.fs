@@ -70,6 +70,32 @@ let ``tsql RawBackendSQLType emits the literal type in CREATE TABLE`` () =
             } |> Good
     } |> assertSimple
 
+// --- CAST exprs go through the same TypeName mapper -------------------
+
+[<Test>]
+let ``sqlite CAST to RawBackendSQLType emits literal in expression context`` () =
+    { sqliteTestWithUserTypes with
+        Command = "select cast(42 as CompactInt) as c"
+        Expect =
+            { expect with
+                OutputCommand =
+                    """ SELECT CAST(42 AS MEDIUMINT) AS "c"; """.SmushWhitespace()
+                    |> Some
+            } |> Good
+    } |> assertSimple
+
+[<Test>]
+let ``tsql CAST to RawBackendSQLType emits literal in expression context`` () =
+    { tsqlTestWithUserTypes with
+        Command = "select cast(42 as CompactInt) as c"
+        Expect =
+            { expect with
+                OutputCommand =
+                    """ SELECT CAST(42 AS MEDIUMINT) AS [c]; """.SmushWhitespace()
+                    |> Some
+            } |> Good
+    } |> assertSimple
+
 [<Test>]
 let ``without UserTypes a custom type name fails to resolve`` () =
     // Sanity check that the default (Empty) library still produces the
