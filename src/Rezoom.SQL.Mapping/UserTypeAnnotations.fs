@@ -2,13 +2,23 @@ module Rezoom.SQL.Mapping.UserTypeAnnotations
 open System
 open System.Reflection
 
-// Have to do comparisons by name, because we use this on MLC types
-// and typeof<> is not going to be reference-identical.
+// Attribute identity is compared by FullName because
+// (a) we read attributes off MLC-loaded types whose runtime-Type
+// identity does not match the executing assembly's view, and
+// (b) using typeof<Rezoom.SQL.Annotations.etc> here would force a
+// live load of Rezoom.SQL.Annotations the first time this
+// module is touched. The F# compiler TP host resolves dependencies
+// via its own load contexts and can end up with the reference-only
+// /ref/ DLL pinned, which then refuses to load for execution and blows up the TP.
+// Hardcoded FullName strings are ugly but avoid both.
 
+/// Attribute name from Rezoom.SQL.Annotations assembly.
 let private rawBackendSqlTypeName =
-    typeof<Rezoom.SQL.Annotations.RawBackendSQLTypeAttribute>.FullName
+    "Rezoom.SQL.Annotations.RawBackendSQLTypeAttribute"
+
+/// Attribute name from Rezoom.SQL.Annotations assembly.
 let private sqlTypeLengthName =
-    typeof<Rezoom.SQL.Annotations.SQLTypeLengthAttribute>.FullName
+    "Rezoom.SQL.Annotations.SQLTypeLengthAttribute"
 
 /// Read both annotation attributes from a single member.
 /// Returns (rawBackendSqlType, sqlTypeLength).

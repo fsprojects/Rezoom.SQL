@@ -15,6 +15,7 @@
     <Compile Include="Shared.fs" />
     <Compile Include="TestSelects.fs" />
     <Compile Include="TestRowTypeInterfaces.fs" />
+    <Compile Include="TestUserTypeAnnotations.fs" />
     <Compile Include="TestPickles.fs" />
     <Compile Include="TestMigrateConnectionString.fs" />
     <Compile Include="Program.fs" />
