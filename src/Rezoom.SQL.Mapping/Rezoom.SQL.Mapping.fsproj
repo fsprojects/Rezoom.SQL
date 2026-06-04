@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
     <Authors>Robert Peele</Authors>
@@ -11,7 +10,6 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
-
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
     <Compile Include="AssemblyInfo.fs" />
@@ -23,6 +21,7 @@
     <Compile Include="EntityReader.fs" />
     <Compile Include="Converters.fs" />
     <Compile Include="UserTypeLibrary.fs" />
+    <Compile Include="UserTypeAnnotations.fs" />
     <Compile Include="PrimitiveConverters.fs" />
     <Compile Include="UserTypeLibraryLoader.fs" />
     <Compile Include="FreezeDry.fs" />
@@ -54,26 +53,17 @@
     <Compile Include="Plans.fsi" />
     <Compile Include="Plans.fs" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />
     <PackageReference Include="LicenseToCIL" Version="1.2.0" />
     <PackageReference Include="Rezoom" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
-    <!-- MetadataLoadContext lets the TP inspect user-types DLLs without loading
-         them into the default AssemblyLoadContext. That isolation is essential
-         in Visual Studio's F# language service host, where loading a user-types
-         DLL into the default ALC triggers CLR attribute materialization on the
-         F#-auto-emitted [<DebuggerDisplay>], and VS's bundled System.Runtime
-         lacks the type-forward chain that would let DebuggerDisplayAttribute
-         resolve. -->
     <PackageReference Include="System.Reflection.MetadataLoadContext" Version="8.0.0" />
   </ItemGroup>
-
-  <!-- TypeBuilder / DynamicMethod / LocalBuilder are not in the netstandard2.0 BCL surface,
-       so the reference packages are still needed for that target. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Rezoom.SQL.Annotations\Rezoom.SQL.Annotations.csproj" />
+  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
   </ItemGroup>
-
 </Project>

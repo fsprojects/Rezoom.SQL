@@ -427,11 +427,12 @@ and findSingleCaseDU (publicType : Type) : UserPrimitiveType ValueOption =
                     && hasCompilationMappingKind p SourceConstructFlags.Field)
             match candidates with
             | [| singleProp |] ->
+                let raw, len = UserTypeAnnotations.resolveType publicType
                 ValueSome
                     {   UserCLRType = publicType
                         UnderlyingCLRType = singleParam.ParameterType
-                        RawBackendSQLType = None
-                        SQLTypeLength = None
+                        RawBackendSQLType = raw
+                        SQLTypeLength = len
                         RuntimeMapping =
                             {   FromPrimitiveMethod = singleCaseCtor
                                 ToPrimitiveMethod = singleProp.GetMethod

@@ -9,4 +9,9 @@
     <Compile Include="Library.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Thin reference: attributes only, no Rezoom.SQL.Mapping in our deps. -->
+    <ProjectReference Include="..\..\Rezoom.SQL.Annotations\Rezoom.SQL.Annotations.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,5 +1,7 @@
 ﻿namespace TypeProviderUser.UserTypes
 
+open Rezoom.SQL.Annotations
+
 type UserId = UserId of int64
 
 module Extensions =
@@ -8,6 +10,36 @@ module Extensions =
             this.ToString("o")
         static member FromPrimitive(s : string) =
             System.TimeOnly.ParseExact(s, "o")
+
+// --- Fixtures for the Rezoom.SQL.Annotations attribute pipeline ----------
+
+/// Single-case DU with a type-level RawBackendSQLType attribute. The
+/// loader's findSingleCaseDU path should pick this up and emit the
+/// literal "MEDIUMINT" wherever this primitive is used in SQL.
+[<RawBackendSQLType("MEDIUMINT")>]
+type CompactInt = CompactInt of int
+
+/// Single-case DU with a type-level SQLTypeLength attribute. The
+/// loader should populate the length field; the backend then applies
+/// its default string mapping (e.g. NVARCHAR / VARCHAR) parameterized
+/// by 80.
+[<SQLTypeLength(80)>]
+type ShortName = ShortName of string
+
+/// Extension-method conversion on a BCL type the user does not own.
+/// The attribute is method-level (on ToPrimitive) because we can't
+/// place an attribute on System.DateTimeOffset itself. Mirrors the
+/// existing TimeOnly pattern: instance ToPrimitive + static
+/// FromPrimitive, both of which the loader's
+/// toPrimitiveFSharpExtension / fromPrimitive regex picks up off the
+/// compiled module class.
+module DateTimeOffsetExtensions =
+    type System.DateTimeOffset with
+        [<RawBackendSQLType("DATETIMEOFFSET(7)")>]
+        member this.ToPrimitive() = this.ToString("o")
+        static member FromPrimitive(s : string) =
+            System.DateTimeOffset.ParseExact(
+                s, "o", System.Globalization.CultureInfo.InvariantCulture)
 
 // Interfaces exposed for SELECT<...> row-type implementation tests
 // (TypeProviderUser.SQLite.TestRowTypeInterfaces).

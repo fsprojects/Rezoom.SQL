@@ -27,6 +27,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TypeProviderUsers", "TypePr
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TypeProviderUser.UserTypes", "TypeProviderUsers\TypeProviderUser.UserTypes\TypeProviderUser.UserTypes.fsproj", "{656693D7-3399-48C8-9751-A0E1695C7E4B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Rezoom.SQL.Annotations", "Rezoom.SQL.Annotations\Rezoom.SQL.Annotations.csproj", "{57CB5182-3177-4A4E-A731-B655880E6B53}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -157,6 +159,18 @@ Global
 		{656693D7-3399-48C8-9751-A0E1695C7E4B}.Release|x64.Build.0 = Release|Any CPU
 		{656693D7-3399-48C8-9751-A0E1695C7E4B}.Release|x86.ActiveCfg = Release|Any CPU
 		{656693D7-3399-48C8-9751-A0E1695C7E4B}.Release|x86.Build.0 = Release|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Debug|x64.Build.0 = Debug|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Debug|x86.Build.0 = Debug|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Release|x64.ActiveCfg = Release|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Release|x64.Build.0 = Release|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Release|x86.ActiveCfg = Release|Any CPU
+		{57CB5182-3177-4A4E-A731-B655880E6B53}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

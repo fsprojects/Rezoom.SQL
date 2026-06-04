@@ -67,6 +67,7 @@ Write-Host "Packing release version $releaseVersion to $OutputPath" -ForegroundC
 
 # Clear any matching entries in the global packages cache.
 $pkgs = @(
+    'rezoom.sql.annotations',
     'rezoom.sql.mapping','rezoom.sql.compiler','rezoom.sql.provider',
     'rezoom.sql.provider.sqlite','rezoom.sql.provider.tsql','rezoom.sql.provider.postgres'
 )
@@ -77,6 +78,7 @@ foreach ($p in $pkgs) {
 }
 
 $projects = @(
+    'src/Rezoom.SQL.Annotations/Rezoom.SQL.Annotations.csproj',
     'src/Rezoom.SQL.Mapping/Rezoom.SQL.Mapping.fsproj',
     'src/Rezoom.SQL.Compiler/Rezoom.SQL.Compiler.fsproj',
     'src/Rezoom.SQL.Provider/Rezoom.SQL.Provider.fsproj',

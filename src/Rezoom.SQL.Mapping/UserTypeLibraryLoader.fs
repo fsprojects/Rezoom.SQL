@@ -96,11 +96,18 @@ let private findUserTypesInAssembly (asm : Assembly) : UserPrimitiveType seq =
     seq {
         for publicType in asm.GetExportedTypes() do
             for customMapping in findCustomMappingsInType publicType do
+                let userCLRType = customMapping.FromPrimitiveMethod.ReturnType
+                let raw, len =
+                    UserTypeAnnotations.resolveExplicit
+                        userCLRType.FullName
+                        publicType
+                        customMapping.ToPrimitiveMethod
+                        customMapping.FromPrimitiveMethod
                 yield
-                    {   UserCLRType = customMapping.FromPrimitiveMethod.ReturnType
+                    {   UserCLRType = userCLRType
                         UnderlyingCLRType = customMapping.ToPrimitiveMethod.ReturnType
-                        RawBackendSQLType = None
-                        SQLTypeLength = None
+                        RawBackendSQLType = raw
+                        SQLTypeLength = len
                         RuntimeMapping = customMapping
                         IsAutomaticImplementation = false
                     }

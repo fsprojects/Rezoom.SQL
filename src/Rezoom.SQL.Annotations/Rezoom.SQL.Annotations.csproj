@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
+    <IsPackable>true</IsPackable>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Rezoom.SQL.Annotations</RootNamespace>
+    <Authors>Robert Peele</Authors>
+    <Description>Lightweight attribute set for annotating Rezoom.SQL user primitives with backend-specific SQL type metadata. Reference this from user-types libraries to avoid pulling in Rezoom.SQL.Mapping.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
+    <PackageTags>rezoom sql annotations attributes</PackageTags>
+    <PackageReleaseNotes>1.0.0: initial release. RawBackendSQLType and SQLTypeLength attributes for annotating Rezoom.SQL user primitive types.</PackageReleaseNotes>
+  </PropertyGroup>
+</Project>
