@@ -10,4 +10,8 @@
     <Compile Include="UserPrimitives.fs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Rezoom.SQL.Annotations\Rezoom.SQL.Annotations.csproj" />
+  </ItemGroup>
+
 </Project>

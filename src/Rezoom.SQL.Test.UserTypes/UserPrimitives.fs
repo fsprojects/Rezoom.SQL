@@ -1,8 +1,18 @@
 ﻿namespace Rezoom.SQL.Test.UserTypes
 
+open Rezoom.SQL.Annotations
+
 // Sample user primitives that we can test materializing from Rezoom.SQL.Mapping!
 // The implementations here are trashy placeholders with no error checking, no validation!
 // We just care about testing the mapping calls the right methods.
+
+/// Has annotation attribute  for testing.
+[<RawBackendSQLType("MEDIUMINT")>]
+type CompactInt = CompactInt of int
+
+/// Has annotation attribute for testing.
+[<SQLTypeLength(80)>]
+type ShortName = ShortName of string
 
 /// A type that declares its own ToPrimitive and FromPrimitive.
 type StringyPhoneNumber =
