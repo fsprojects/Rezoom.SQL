@@ -12,6 +12,7 @@ let clrTypeDict =
         typeof<int32>, fun _ -> IntegerTypeName Integer32
         typeof<int64>, fun _ -> IntegerTypeName Integer64
         typeof<string>, fun ut -> StringTypeName ut.SQLTypeLength
+        typeof<byte array>, fun bt -> BinaryTypeName bt.SQLTypeLength
         typeof<Guid>, fun _ -> GuidTypeName
         typeof<single>, fun _ -> FloatTypeName Float32
         typeof<double>, fun _ -> FloatTypeName Float64
