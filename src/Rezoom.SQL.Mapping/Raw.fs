@@ -6,7 +6,6 @@ module Rezoom.SQL.Raw
 open System
 open System.Data
 open Rezoom.SQL.Mapping
-open System.Collections.Generic
 
 let sql text = CommandText text
 
@@ -40,4 +39,4 @@ let arg (o : obj) =
     let dbType =
         if isNull o then DbType.Object
         else guessDbType (o.GetType())
-    argOfType dbType o
+    argOfType (StdDbType dbType) o

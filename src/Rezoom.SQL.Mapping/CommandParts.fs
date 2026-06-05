@@ -4,6 +4,14 @@ open System.Data
 open System.Collections.Generic
 open Rezoom
 
+/// Extended DbType: can either be a true DbType enum value in the simple case,
+/// or can be a driver-specific property to set via reflection for e.g. NpgsqlDbType.
+[<NoComparison>]
+[<Struct>]
+type XDbType =
+    | StdDbType of dbType : DbType
+    | CustomDbType of dbTypePropertyName : string * dbTypeValue : int
+
 [<NoComparison>]
 type CommandFragment =
     /// A name which should be localized to this command for batching.
@@ -15,7 +23,7 @@ type CommandFragment =
     /// References parameter by index.
     | Parameter of int
     /// Directly specifies parameter value.
-    | InlineParameter of DbType * obj
+    | InlineParameter of XDbType * obj
     /// At least one unit of whitespace.
     | Whitespace
     /// Whitespace, preferably a line break.
@@ -96,8 +104,8 @@ type CommandCategory = CommandCategory of connectionName : string
 [<NoComparison>]
 [<CustomEquality>]
 type CommandParameter =
-    | ListParameter of DbType * Array
-    | ScalarParameter of DbType * obj
+    | ListParameter of XDbType * Array
+    | ScalarParameter of XDbType * obj
     | RawSQLParameter of CommandFragment array
     member this.Equals(other : CommandParameter) =
         match this, other with
