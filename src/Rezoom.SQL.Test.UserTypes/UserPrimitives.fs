@@ -77,3 +77,20 @@ type EmailAddress = EmailAddress of string
 
 [<Struct>]
 type UserId = UserId of int
+
+// Overriding built-in CLR types with alternative representations
+
+module GuidOverrideExtension =
+    type System.Guid with
+        [<RawBackendSQLType("CHAR(36)")>]
+        member this.ToPrimitive() = this.ToString()
+        static member FromPrimitive(s : string) = System.Guid.Parse(s)
+
+/// Single-case DU over byte[] with no length specified, acts
+/// like BinaryTypeName(None).
+type FileHash = FileHash of byte[]
+
+/// Single-case DU over byte[] with [<SQLTypeLength>] acts like
+/// BinaryTypeName(Some 32).
+[<SQLTypeLength(32)>]
+type ShortHash = ShortHash of byte[]
