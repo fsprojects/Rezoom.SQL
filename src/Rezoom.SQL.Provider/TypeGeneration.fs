@@ -262,7 +262,7 @@ let private generateCommandMethod
                         | ListType elemTy ->
                             let elemColType = { ty with Type = elemTy }
                             let tx = backend.ParameterTransform(elemColType)
-                            let dbType = Quotations.Expr.Value(tx.ParameterType)
+                            let dbType = tx.ParameterType.Quote()
                             let inputArr = Expr.Coerce(ex, typeof<Array>)
                             // Coerce each element to the actual element CLR type,
                             // so backend always sees a typed Expr like it does
@@ -279,7 +279,7 @@ let private generateCommandMethod
                             <@@ RawSQLParameter %%ex @@>
                         | _ ->
                             let tx = backend.ParameterTransform(ty)
-                            let dbType = Quotations.Expr.Value(tx.ParameterType)
+                            let dbType = tx.ParameterType.Quote()
                             <@@ ScalarParameter(%%dbType, %%tx.ValueTransform ex) @@>)
                     )
             Expr.CallUnchecked(callMeth, [ commandData; arr ]))

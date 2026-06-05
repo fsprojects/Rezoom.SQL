@@ -1,8 +1,17 @@
 ﻿namespace Rezoom.SQL.Mapping
+open FSharp.Quotations
 open System
 open System.Data
 open System.Collections.Generic
 open Rezoom
+
+
+[<NoComparison>]
+type CustomDbTypeInfo =
+    {   DbTypePropertyName : string
+        SQLTypeName : string
+        DbTypeValue : int
+    }
 
 /// Extended DbType: can either be a true DbType enum value in the simple case,
 /// or can be a driver-specific property to set via reflection for e.g. NpgsqlDbType.
@@ -10,7 +19,12 @@ open Rezoom
 [<Struct>]
 type XDbType =
     | StdDbType of dbType : DbType
-    | CustomDbType of dbTypePropertyName : string * dbTypeValue : int
+    | CustomDbType of CustomDbTypeInfo
+    member this.Quote() =
+        match this with 
+        | StdDbType d -> <@@ StdDbType (%%Expr.Value(d)) @@>
+        | CustomDbType { DbTypePropertyName = dp; SQLTypeName = st; DbTypeValue = dt } ->
+            <@@ CustomDbType { DbTypePropertyName = %%Expr.Value(dp); SQLTypeName = %%Expr.Value(st); DbTypeValue = %%Expr.Value(dt) } @@>
 
 [<NoComparison>]
 type CommandFragment =

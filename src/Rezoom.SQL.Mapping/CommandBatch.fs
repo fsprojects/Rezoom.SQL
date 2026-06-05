@@ -67,7 +67,7 @@ type private CommandBatchRuntimeBackend =
             let typeSpecifier =
                 match ty with
                 | StdDbType ty -> CommandBatchRuntimeBackend.PgType(ty)
-                | CustomDbType (_, _) -> "unknown" // ?????????? fuck
+                | CustomDbType t -> t.SQLTypeName
             // PG has to be difficult and demand a type specifier matching the input
             "(SELECT NULL::" + typeSpecifier + " WHERE FALSE)"
         | SQLite ->
@@ -93,7 +93,7 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
     let applyXDbType (dbParam : DbParameter) (dbType : XDbType) =
         match dbType with
         | StdDbType dbType -> dbParam.DbType <- dbType
-        | CustomDbType (propName, intValue) ->
+        | CustomDbType { DbTypePropertyName = propName; DbTypeValue = intValue } ->
             let prop = dbParam.GetType().GetProperty(propName, BindingFlags.Instance|||BindingFlags.Public)
             if isNull prop then failwithf "Specified DbType property %s was not found" propName
             if not prop.CanWrite then failwithf "Specified DbType property %s is not writable" propName

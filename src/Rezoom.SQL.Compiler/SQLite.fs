@@ -106,16 +106,16 @@ type SQLiteBackend() =
             ParameterTransform.Default(columnType, fun columnType ->
                 match columnType.Type with
                 | DateTimeType ->
-                    {   ParameterType = DbType.String
+                    {   ParameterType = StdDbType DbType.String
                         ValueTransform = fun expr ->
                             Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.DateTimeToString), [ expr ])
                     }
                 | GuidType ->
-                    {   ParameterType = DbType.Binary
+                    {   ParameterType = StdDbType DbType.Binary
                         ValueTransform = fun expr ->
                             Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.GuidToBytes), [ expr ])
                     }
-                | _ -> { ParameterType = columnType.DbType; ValueTransform = fun e -> e }
+                | _ -> { ParameterType = columnType.XDbType; ValueTransform = fun e -> e }
             )
             
         member this.ToCommandFragments(indexer, stmts) =

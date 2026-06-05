@@ -16,10 +16,10 @@ type IParameterIndexer =
 [<NoComparison>]
 [<NoEquality>]
 type ParameterTransform =
-    {   ParameterType : DbType
+    {   ParameterType : XDbType
         ValueTransform : Quotations.Expr -> Quotations.Expr
     }
-    static member Default(columnType : ColumnType) = ParameterTransform.Default(columnType, fun t -> { ParameterType = t.DbType; ValueTransform = fun e -> e })
+    static member Default(columnType : ColumnType) = ParameterTransform.Default(columnType, fun t -> { ParameterType = t.XDbType; ValueTransform = fun e -> e })
     static member Default(columnType : ColumnType, interiorPrimitiveTransform : ColumnType -> ParameterTransform) =
         // Null/None -> DBNull, else continue. (For non-user types only; a
         // user-typed parameter does its own Option unwrap inside the runtime

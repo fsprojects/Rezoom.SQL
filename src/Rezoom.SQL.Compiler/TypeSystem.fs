@@ -151,39 +151,45 @@ type ColumnType =
             else
                 clrType
         match ty.Type with
-        | IntegerType Integer16 -> DbType.Int16, nullify typeof<int16>
+        | IntegerType Integer16 -> StdDbType DbType.Int16, nullify typeof<int16>
         | IntegralTypeClass
-        | IntegerType Integer32 -> DbType.Int32, nullify typeof<int32>
-        | IntegerType Integer64 -> DbType.Int64, nullify typeof<int64>
-        | FloatType Float32 -> DbType.Single, nullify typeof<float32>
-        | FloatType Float64 -> DbType.Double, nullify typeof<double>
-        | BooleanType -> DbType.Boolean, nullify typeof<bool>
+        | IntegerType Integer32 -> StdDbType DbType.Int32, nullify typeof<int32>
+        | IntegerType Integer64 -> StdDbType DbType.Int64, nullify typeof<int64>
+        | FloatType Float32 -> StdDbType DbType.Single, nullify typeof<float32>
+        | FloatType Float64 -> StdDbType DbType.Double, nullify typeof<double>
+        | BooleanType -> StdDbType DbType.Boolean, nullify typeof<bool>
         | FractionalTypeClass
         | NumericTypeClass
-        | DecimalType -> DbType.Decimal, nullify typeof<decimal>
-        | DateTimeType -> DbType.DateTime, nullify typeof<DateTime>
+        | DecimalType -> StdDbType DbType.Decimal, nullify typeof<decimal>
+        | DateTimeType -> StdDbType DbType.DateTime, nullify typeof<DateTime>
         | DateTimeishTypeClass
-        | DateTimeOffsetType -> DbType.DateTimeOffset, nullify typeof<DateTimeOffset>
-        | GuidType -> DbType.Guid, nullify typeof<Guid>
-        | StringType -> DbType.String, nullify typeof<string>
-        | BinaryType -> DbType.Binary, nullify typeof<byte array>
+        | DateTimeOffsetType -> StdDbType DbType.DateTimeOffset, nullify typeof<DateTimeOffset>
+        | GuidType -> StdDbType DbType.Guid, nullify typeof<Guid>
+        | StringType -> StdDbType DbType.String, nullify typeof<string>
+        | BinaryType -> StdDbType DbType.Binary, nullify typeof<byte array>
         | StringishTypeClass
         | ScalarTypeClass
-        | AnyTypeClass -> DbType.Object, nullify typeof<obj>
+        | AnyTypeClass -> StdDbType DbType.Object, nullify typeof<obj>
         | ListType t ->
             let dbType, clrType = { Type = t; Nullable = ty.Nullable }.TypeInfo(useOptional)
             dbType, clrType.MakeArrayType()
         | RawSQLType ->
-            // DbType part is not really used here
-            Unchecked.defaultof<DbType>, typeof<CommandFragment array>
+            // DbType part is not really used here, won't matter at all, these
+            // get string-interpolated unsafely
+            StdDbType Unchecked.defaultof<DbType>, typeof<CommandFragment array>
         | UserTypeBasedOn (userTy, underlying) ->
-            let underlyingDbType, _ =
-                {   Type = underlying
-                    Nullable = ty.Nullable
-                }.TypeInfo(useOptional)
-            underlyingDbType, nullify userTy.UserCLRType
+            let dbType =
+                match userTy.SQLParameterDbType with
+                | None ->
+                    {   Type = underlying
+                        Nullable = ty.Nullable
+                    }.TypeInfo(useOptional) |> fst
+                | Some (propName, propVal) ->
+                    let sqlTypeName = userTy.RawBackendSQLType.Value // TODO requires these are used together, not really good
+                    CustomDbType { SQLTypeName = sqlTypeName; DbTypeValue = propVal; DbTypePropertyName = propName }
+            dbType, nullify userTy.UserCLRType
     member ty.CLRType(useOptional) = snd <| ty.TypeInfo(useOptional)
-    member ty.DbType = fst <| ty.TypeInfo(false)
+    member ty.XDbType = fst <| ty.TypeInfo(false)
     override ty.ToString() =
         string ty.Type + (if ty.Nullable then "?" else "")
 
