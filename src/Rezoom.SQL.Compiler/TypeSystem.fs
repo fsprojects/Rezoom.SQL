@@ -125,7 +125,14 @@ type CoreColumnType =
         | UnresolvedTypeName name ->
             bug <| sprintf "User type %s hit the type checker before the UserTypeResolution pass." name
         | ResolvedUserType t ->
-            UserTypeBasedOn (t, CoreColumnType.OfTypeName(t.UnderlyingSQLTypeName))
+            // Special case of usertypes that map to obj: they subclass underneath ScalarTypeClass in the hierarchy
+            // and we don't really know of functions or operators that work on them specifically.
+            // You can do truly generic stuff like comparisons and coalesce(),
+            // but other than that, you're on your own.
+            if t.UnderlyingCLRType.FullName = typeof<obj>.FullName then
+                UserTypeBasedOn (t, ScalarTypeClass)
+            else
+                UserTypeBasedOn (t, CoreColumnType.OfTypeName(t.UnderlyingSQLTypeName))
 
 type ColumnType =
     {   Type : CoreColumnType

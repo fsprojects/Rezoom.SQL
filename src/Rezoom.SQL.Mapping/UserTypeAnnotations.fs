@@ -20,60 +20,82 @@ let private rawBackendSqlTypeName =
 let private sqlTypeLengthName =
     "Rezoom.SQL.Annotations.SQLTypeLengthAttribute"
 
-/// Read both annotation attributes from a single member.
-/// Returns (rawBackendSqlType, sqlTypeLength).
-let readMember (m : MemberInfo) =
-    let mutable raw = None
-    let mutable len = None
+/// Attribute name from Rezoom.SQL.Annotations assembly.
+let private sqlParameterDbTypeName =
+    "Rezoom.SQL.AnnotationsSQLParameterDbTypeAttribute"
+
+type AnnotationsForMember =
+    {   TypeName : string
+        RawType : string option
+        Length : int option
+        ParameterDbType : (string * int) option
+    }
+    member this.ValidateExclusive() =
+        match this.RawType, this.Length with
+        | Some _, Some _ ->
+            failwithf
+                "User primitive %s has both [<RawBackendSQLType>] and [<SQLTypeLength>] applied. They are mutually exclusive — RawBackendSQLType already specifies the complete SQL type string including any length parameter."
+                this.TypeName
+        | _ -> this
+    member this.Merge(other : AnnotationsForMember) =
+        let tName = this.TypeName
+        let inline agree attrLabel l r =
+            match l, r with
+            | Some lv, Some rv when lv = rv -> l
+            | Some lv, Some rv ->
+                failwithf
+                    "User primitive %s has conflicting [<%s>] attributes."
+                    tName attrLabel
+            | Some _, None -> l
+            | None, Some _ -> r
+            | None, None -> None
+        {   TypeName = this.TypeName
+            RawType = agree rawBackendSqlTypeName this.RawType other.RawType
+            Length = agree sqlTypeLengthName this.Length other.Length
+            ParameterDbType = agree sqlParameterDbTypeName this.ParameterDbType other.ParameterDbType
+        }
+
+let readMember (typeName : string) (m : MemberInfo) : AnnotationsForMember =
+    let mutable acc = { TypeName = typeName; RawType = None; Length = None; ParameterDbType = None }
     for attr in m.GetCustomAttributesData() do
-        let fullName = attr.AttributeType.FullName
-        if fullName = rawBackendSqlTypeName
-           && attr.ConstructorArguments.Count >= 1 then
-            match attr.ConstructorArguments.[0].Value with
-            | :? string as v -> raw <- Some v
-            | _ -> ()
-        elif fullName = sqlTypeLengthName
-             && attr.ConstructorArguments.Count >= 1 then
-            match attr.ConstructorArguments.[0].Value with
-            | :? int as v -> len <- Some v
-            | _ -> ()
-    raw, len
-
-let private validateExclusive (label : string) (raw, len) =
-    match raw, len with
-    | Some _, Some _ ->
-        failwithf
-            "User primitive %s has both [<RawBackendSQLType>] and [<SQLTypeLength>] applied. They are mutually exclusive — RawBackendSQLType already specifies the complete SQL type string including any length parameter."
-            label
-    | _ -> raw, len
-
-// If both methods set the attribute they must set the same
-// value; if only one does, that one wins.
-let private agreeOnMethods (attrLabel : string) (label : string) (a : 'a option) (b : 'a option) =
-    match a, b with
-    | None, x | x, None -> x
-    | Some av, Some bv when av = bv -> Some av
-    | Some av, Some bv ->
-        failwithf
-            "User primitive %s has conflicting [<%s>] attributes on its ToPrimitive (%A) and FromPrimitive (%A) methods."
-            label attrLabel av bv
+        acc <-
+            let fullName = attr.AttributeType.FullName
+            if fullName = rawBackendSqlTypeName
+               && attr.ConstructorArguments.Count >= 1 then
+                match attr.ConstructorArguments.[0].Value with
+                | :? string as v -> acc.Merge({ acc with RawType = Some v }).ValidateExclusive()
+                | _ -> acc
+            elif fullName = sqlTypeLengthName
+                 && attr.ConstructorArguments.Count >= 1 then
+                match attr.ConstructorArguments.[0].Value with
+                | :? int as v -> acc.Merge({ acc with Length = Some v }).ValidateExclusive()
+                | _ -> acc
+            elif fullName = sqlParameterDbTypeName
+                && attr.ConstructorArguments.Count >= 2 then
+                match attr.ConstructorArguments.Count with
+                | 1 ->
+                    // single-arg ctor is the DbType-only version
+                    match attr.ConstructorArguments.[0].Value with
+                    | :? int as v -> acc.Merge({ acc with ParameterDbType = Some ("DbType", v) })
+                    | _ -> acc
+                | _ ->
+                    match attr.ConstructorArguments.[0].Value, attr.ConstructorArguments.[1].Value with
+                    | (:? string as propName), (:? int as dbType) ->
+                        acc.Merge({ acc with ParameterDbType = Some (propName, dbType) })
+                    | _ -> acc
+            else acc
+    acc
 
 /// Resolve attributes for an explicit ToPrimitive/FromPrimitive
 /// user primitive. `declaring` is the wrapper class that holds
 /// type-level attributes; the two methods may also be annotated.
-/// Method-level wins over type-level.
-let resolveExplicit (label : string) (declaring : Type) (toPrim : MethodInfo) (fromPrim : MethodInfo) =
-    let typeRaw, typeLen = readMember (declaring :> MemberInfo)
-    let toRaw, toLen = readMember (toPrim :> MemberInfo)
-    let fromRaw, fromLen = readMember (fromPrim :> MemberInfo)
-    let methodRaw = agreeOnMethods "RawBackendSQLType" label toRaw fromRaw
-    let methodLen = agreeOnMethods "SQLTypeLength" label toLen fromLen
-    let raw = methodRaw |> Option.orElse typeRaw
-    let len = methodLen |> Option.orElse typeLen
-    validateExclusive label (raw, len)
+let resolveExplicit (declaring : Type) (toPrim : MethodInfo) (fromPrim : MethodInfo) =
+    let typeAttrs = readMember declaring.Name (declaring :> MemberInfo)
+    let toPrimAttrs = readMember declaring.Name (toPrim :> MemberInfo)
+    let fromPrimAttrs = readMember declaring.Name (fromPrim :> MemberInfo)
+    typeAttrs.Merge(toPrimAttrs).Merge(fromPrimAttrs).ValidateExclusive()
 
 /// Resolve attributes for the auto-DU path where there is just one
 /// type (the DU itself) to inspect.
 let resolveType (typ : Type) =
-    readMember (typ :> MemberInfo)
-    |> validateExclusive typ.FullName
+    readMember typ.Name (typ :> MemberInfo)

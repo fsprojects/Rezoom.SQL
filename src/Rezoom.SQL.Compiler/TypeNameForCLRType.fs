@@ -26,7 +26,10 @@ let clrTypeDict =
         typeof<uint16>, fun _ -> IntegerTypeName Integer32
         typeof<uint32>, fun _ -> IntegerTypeName Integer64
         typeof<uint64>, fun _ -> IntegerTypeName Integer64
+        // No mapping for System.Object which is the only thing mapped in PrimitiveConverters.Converters
+        // that is NOT here. It gets special handling in TypeSystem.fs, CoreColumnType.OfTypeName.
     |] |> Array.map (fun (t, f) -> (t.FullName, f)) |> dict
+
 type UserPrimitiveType with
     member this.UnderlyingSQLTypeName =
         let succ, found = clrTypeDict.TryGetValue(this.UnderlyingCLRType.FullName)

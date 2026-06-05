@@ -107,6 +107,7 @@ let rehydrate (freezeDried : FreezeDriedUserTypeLibrary) : UserTypeLibrary =
                     UnderlyingCLRType = toPrim.ReturnType
                     RawBackendSQLType = None // don't need at runtime
                     SQLTypeLength = None // don't need at runtime
+                    SQLParameterDbType = None // don't currently use at runtime, but note: may eventually need to upgrade, when we start doing dynamic filtering
                     RuntimeMapping = { FromPrimitiveMethod = fromPrim; ToPrimitiveMethod = toPrim }
                     // Freeze-dried libraries do not include auto-implementations since the runtime would rederive them anyway
                     // so it would be code bloat.

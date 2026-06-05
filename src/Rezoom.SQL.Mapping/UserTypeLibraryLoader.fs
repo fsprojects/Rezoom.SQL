@@ -92,29 +92,40 @@ let private findCustomMappingsInType (publicType : Type) : RuntimeMapping seq =
                     publicType.FullName
     }
 
+/// Called during assembly search to check for invalid/impossible to support mappings.
+/// Not validated at runtime because we may not actually have all the info available at runtime due to
+/// FreezeDry excluding metadata runtime doesn't need.
+let private designTimeValidate (userPrim : UserPrimitiveType) =
+    if userPrim.UnderlyingCLRType.FullName = typeof<obj>.FullName
+        && Option.isNone userPrim.RawBackendSQLType then
+        failwithf
+            "User primitive %s is mapped to System.Object. The attribute [<RawBackendSQLType>] must be applied so we know what column type to use in SQL."
+            userPrim.Name
+    userPrim
+
 let private findUserTypesInAssembly (asm : Assembly) : UserPrimitiveType seq =
     seq {
         for publicType in asm.GetExportedTypes() do
             for customMapping in findCustomMappingsInType publicType do
                 let userCLRType = customMapping.FromPrimitiveMethod.ReturnType
-                let raw, len =
+                let annotations =
                     UserTypeAnnotations.resolveExplicit
-                        userCLRType.FullName
                         publicType
                         customMapping.ToPrimitiveMethod
                         customMapping.FromPrimitiveMethod
                 yield
                     {   UserCLRType = userCLRType
                         UnderlyingCLRType = customMapping.ToPrimitiveMethod.ReturnType
-                        RawBackendSQLType = raw
-                        SQLTypeLength = len
+                        RawBackendSQLType = annotations.RawType
+                        SQLTypeLength = annotations.Length
+                        SQLParameterDbType = annotations.ParameterDbType
                         RuntimeMapping = customMapping
                         IsAutomaticImplementation = false
                     }
             match PrimitiveConverters.findSingleCaseDU publicType with
             | ValueNone -> ()
             | ValueSome singleCase -> yield singleCase
-    }
+    } |> Seq.map designTimeValidate
 
 let private findRowTypesInAssembly (asm : Assembly) : UserRowType seq =
     seq {

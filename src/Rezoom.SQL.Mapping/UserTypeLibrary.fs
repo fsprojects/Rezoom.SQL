@@ -36,6 +36,9 @@ type UserPrimitiveType =
         /// If our underlying type is string, we may want to specify a max length in SQL.
         /// Ignored if RawBackendSQLType is Some, in which case we trust it directly.
         SQLTypeLength : int option
+        /// If specified, this is a property name to set on the DbParameter plus an integer value to set it to.
+        /// Used to set DbType, or SqlDbType, or NpgsqlDbType properties.
+        SQLParameterDbType : (string * int) option
         RuntimeMapping : RuntimeMapping
         /// True if this is an implementation we derived automatically, such as for an F#
         /// single-case DU, as opposed to one the user specified with their own ToPrimitive
