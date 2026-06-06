@@ -13,15 +13,19 @@ type TestModel = SQLModel<".">
 
 type CleanTestData = SQL<"""
 vendor tsql {
-    drop table __RZSQL_MIGRATIONS;
-    drop table ArticleComments;
-    drop table Articles;
-    drop table Users;
-    drop table Pictures;
+    drop table if exists __RZSQL_MIGRATIONS;
+    drop table if exists UserLocations;
+    drop table if exists UserAddresses;
+    drop table if exists ArticleComments;
+    drop table if exists Articles;
+    drop table if exists Users;
+    drop table if exists Pictures;
 }
 """>
 
 type TestData = SQL<"""
+delete from UserLocations;
+delete from UserAddresses;
 delete from ArticleComments;
 delete from Articles;
 delete from Users;

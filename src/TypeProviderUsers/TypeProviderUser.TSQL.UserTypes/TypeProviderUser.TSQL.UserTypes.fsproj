@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Rezoom.SQL.Annotations\Rezoom.SQL.Annotations.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- SqlGeography is the CLR representation of the geography backend
+         type. We only need it for the FromPrimitive read path; parameter
+         binding goes through nvarchar because UDT binding requires
+         setting UdtTypeName on the SqlParameter, which the current
+         SQLParameterDbType attribute cannot drive. -->
+    <PackageReference Include="Microsoft.SqlServer.Types" Version="160.1000.6" />
+  </ItemGroup>
+</Project>
