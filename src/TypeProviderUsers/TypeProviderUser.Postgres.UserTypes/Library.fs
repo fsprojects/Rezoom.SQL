@@ -25,3 +25,23 @@ type Address =
         box (JsonSerializer.Serialize(a))
     static member FromPrimitive(o : obj) : Address =
         JsonSerializer.Deserialize<Address>(o :?> string)
+
+/// 2D point as a user primitive that stores as PG `point`. Where Address
+/// exercises an obj-underlying type whose value carries the column data as
+/// a string, Point2D exercises an obj-underlying type whose value is a
+/// driver-specific struct (NpgsqlPoint) — Npgsql's native CLR
+/// representation for the `point` backend type. This proves the
+/// System.Object escape hatch also handles non-string driver values.
+// Note: 15 = NpgsqlTypes.NpgsqlDbType.Point (Npgsql 8.x). Hardcoded
+// as a literal for the same attribute-argument reason as Jsonb above.
+[<RawBackendSQLType("point")>]
+[<SQLParameterDbType("NpgsqlDbType", 15)>]
+type Point2D =
+    {   X : double
+        Y : double
+    }
+    static member ToPrimitive(p : Point2D) : obj =
+        box (NpgsqlTypes.NpgsqlPoint(p.X, p.Y))
+    static member FromPrimitive(o : obj) : Point2D =
+        let pt = o :?> NpgsqlTypes.NpgsqlPoint
+        { X = pt.X; Y = pt.Y }

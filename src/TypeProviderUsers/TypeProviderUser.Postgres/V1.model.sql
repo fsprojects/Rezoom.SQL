@@ -36,3 +36,9 @@ create table UserAddresses
 , Home Address
 );
 
+create table UserLocations
+( Id int64 primary key autoincrement
+, UserId int64 references Users(Id)
+, Coord Point2D
+);
+

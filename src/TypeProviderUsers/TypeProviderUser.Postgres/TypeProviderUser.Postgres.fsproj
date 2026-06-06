@@ -17,6 +17,7 @@
     <Compile Include="Shared.fs" />
     <Compile Include="TestSelects.fs" />
     <Compile Include="TestUserPrimitiveSystemObject.fs" />
+    <Compile Include="TestUserPrimitivePoint.fs" />
     <Compile Include="TestMigrateConnectionString.fs" />
     <Compile Include="Program.fs" />
     <None Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
