@@ -218,4 +218,8 @@ type PostgresBackend() =
         |> BackendUtilities.simplifyFragments
         |> ResizeArray
         :> _ IReadOnlyList
+    /// Have to do this because the Postgres runtime needs parameters with SQL column types,
+    /// for generating IN (empty param list) as IN (select null::typename where false).
+    /// See CommandBatch.fs in runtime.
+    override this.AlwaysUseCustomDbType = true
     override this.SQLTypeString (typeName : TypeName) = PostgresExpression.PostgresTypeString(typeName, false)

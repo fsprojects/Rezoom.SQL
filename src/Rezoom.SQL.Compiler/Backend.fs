@@ -38,6 +38,8 @@ type BackendBase() =
         : indexer : IParameterIndexer * stmts : TTotalStmts -> CommandFragment IReadOnlyList
     abstract member InteriorPrimitiveTransform : builtInColumnType : ColumnType -> ParameterTransform
     abstract member SQLTypeString : TypeName -> string
+    abstract member AlwaysUseCustomDbType : bool
+    default this.AlwaysUseCustomDbType = false
     default this.InteriorPrimitiveTransform(builtInColumnType) = { ParameterType = StdDbType builtInColumnType.DbType; ValueTransform = fun e -> e }
     default this.ParameterTransform(columnType) = 
         // Null/None -> DBNull, else continue. (For non-user types only; a
@@ -82,8 +84,11 @@ type BackendBase() =
                             SQLTypeName = this.SQLTypeString(underlying.ApproximateTypeName())
                         }
                 | None, None ->
-                    interior.ParameterType
-            {   ParameterType = interior.ParameterType
+                    if this.AlwaysUseCustomDbType then
+                        interior.ParameterType.WithSQLTypeName(this.SQLTypeString(underlying.ApproximateTypeName()))
+                    else
+                        interior.ParameterType
+            {   ParameterType = finalParamType
                 ValueTransform = fun e ->
                     let asObj = Expr.Coerce(e, typeof<obj>)
                     let underlyingObj =

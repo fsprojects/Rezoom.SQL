@@ -66,6 +66,8 @@ type private CommandBatchRuntimeBackend =
         | Postgres ->
             let typeSpecifier =
                 match ty with
+                // This fallback should no longer be needed for non-dynamic command situations,
+                // since our compiler backend now emits CustomDbType for ALL statically known PG parameters.
                 | StdDbType ty -> CommandBatchRuntimeBackend.PgType(ty)
                 | CustomDbType t -> t.SQLTypeName
             // PG has to be difficult and demand a type specifier matching the input
