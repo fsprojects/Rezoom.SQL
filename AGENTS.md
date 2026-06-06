@@ -24,7 +24,7 @@ AI agents may be used to *critique* code and docs, give feedback, bounce ideas a
 
 They can be used to create build / packaging / CI scripts. They can be used to assist with infrastructure housekeeping e.g. "Update all the project files to add a .NET 12.0 packaging target".
 
-I *do* allow AI-written unit tests and sample projects (TypeProviderUsers) that exercise the code. This saves tons of human effort in an area that is more chore than creativity.
+I *do* allow AI-written unit tests and sample projects (TypeProviderUsers, aka TPUs) that exercise the code. This saves tons of human effort in an area that is more chore than creativity.
 
 This includes generating test fixture data.
 
@@ -55,12 +55,16 @@ In the absence of specific requests like "write a test for xyz", agents should d
 
 # Projects where AI is allowed to write code directly, at the user's request
 
-* Rezoom.Test
-* Rezoom.SQL.Test
-* Rezoom.SQL.Test.UserTypes
-* Rezoom.SQL.Test
-* Rezoom.SQL.Provider.Test
-* The Rezoom.SQL e2e test/sample projects under the TypeProviderUsers/ folder
+* Rezoom.Test - tests of the Rezoom core library (plans, errands, caching, batching)
+* Rezoom.SQL.Test - tests of the runtime and compiler at the library-level
+* Rezoom.SQL.Test.UserTypes - fixtures for the UserTypes feature
+* Rezoom.SQL.Provider.Test - smoke tests for the type provider's codegen paths
+* The projects under the src/TypeProviderUsers/ folder - also called TPUs for short, these are real e2e tests of the type provider in action
+
+The TPUs require using build/pack-dev.ps1 and can be run with src/TypeProviderUsers/test-tp-users.ps1 and
+src/TypeProviderUsers/test-vs-build.ps1. Running both scripts is advised because they exercise two code paths,
+the TP hosted in "dotnet build" and the TP hosted in Visual Studio's msbuild. Sometimes TP code will work
+in one but blow up in the other due to cross-compiling headaches, loading .NET Core assemblies in a .NET Framework host.
 
 # MD file litter
 
@@ -68,13 +72,4 @@ Agents should not litter the repository with their own .md files / working notes
 
 If the programmer requests to save a conceptual note or roadmap of something they are working on, and that file will be
 agent-generated, it should be stored above the repository so it doesn't end up littered into git history by mistake.
-
-
-
-
-
-
-
-
-
 
