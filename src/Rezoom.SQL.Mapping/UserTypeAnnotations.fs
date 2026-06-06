@@ -71,7 +71,7 @@ let readMember (typeName : string) (m : MemberInfo) : AnnotationsForMember =
                 | :? int as v -> acc.Merge({ acc with Length = Some v }).ValidateExclusive()
                 | _ -> acc
             elif fullName = sqlParameterDbTypeName
-                && attr.ConstructorArguments.Count >= 2 then
+                && attr.ConstructorArguments.Count >= 1 then
                 match attr.ConstructorArguments.Count with
                 | 1 ->
                     // single-arg ctor is the DbType-only version
