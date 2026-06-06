@@ -26,6 +26,10 @@ type CompactInt = CompactInt of int
 [<SQLTypeLength(80)>]
 type ShortName = ShortName of string
 
+/// Single-case DU over byte[] — exercises the byte[] underlying-CLR-type
+/// path end-to-end through the SQLite TPU.
+type FileHash = FileHash of byte[]
+
 /// Extension-method conversion on a BCL type the user does not own.
 /// The attribute is method-level (on ToPrimitive) because we can't
 /// place an attribute on System.DateTimeOffset itself. Mirrors the

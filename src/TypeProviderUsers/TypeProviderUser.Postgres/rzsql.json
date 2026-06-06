@@ -1,3 +1,4 @@
-﻿{
-  "backend":  "postgres"
+{
+  "backend": "postgres",
+  "usertypes": [ "TypeProviderUser.Postgres.UserTypes" ]
 }

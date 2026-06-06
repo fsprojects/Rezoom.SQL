@@ -30,3 +30,9 @@ create table ArticleComments
 
 create index IX_ArticleComments_AuthorId on ArticleComments(AuthorId);
 
+create table UserAddresses
+( Id int64 primary key autoincrement
+, UserId int64 references Users(Id)
+, Home Address
+);
+

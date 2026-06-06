@@ -94,3 +94,24 @@ type FileHash = FileHash of byte[]
 /// BinaryTypeName(Some 32).
 [<SQLTypeLength(32)>]
 type ShortHash = ShortHash of byte[]
+
+// --- SQLParameterDbType fixtures --------------------------------------
+// These exist purely so the loader-inspection tests in
+// Rezoom.SQL.Test.TestUserTypeAnnotations can assert the
+// SQLParameterDbType attribute round-trips into UserPrimitiveType. The
+// types themselves are never bound at runtime in the Rezoom.SQL.Test
+// suite; the assertions read the loaded UserTypeLibrary directly.
+
+/// Exercises the single-arg constructor — SQLParameterDbType(DbType).
+/// Expected to surface as ("DbType", int DbType.AnsiString) on the
+/// loaded UserPrimitiveType.SQLParameterDbType.
+[<SQLParameterDbType(System.Data.DbType.AnsiString)>]
+type AnsiLabel = AnsiLabel of string
+
+/// Exercises the two-arg escape-hatch constructor for provider-specific
+/// enums — SQLParameterDbType(propertyName, int). The values here are
+/// deliberately not bound at runtime; we only care that the metadata
+/// round-trips. (36 happens to be NpgsqlDbType.Jsonb but no
+/// Postgres-specific assembly is referenced from this fixture.)
+[<SQLParameterDbType("NpgsqlDbType", 36)>]
+type OpaqueDbTypeProbe = OpaqueDbTypeProbe of string

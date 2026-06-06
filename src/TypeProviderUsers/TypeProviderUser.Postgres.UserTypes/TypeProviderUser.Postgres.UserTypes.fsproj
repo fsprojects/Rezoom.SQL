@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Rezoom.SQL.Annotations\Rezoom.SQL.Annotations.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Pulled in only so the NpgsqlDbType enum is available at compile
+         time for the [<ParameterDbType("NpgsqlDbType", int NpgsqlDbType.Jsonb)>]
+         attribute argument. The attribute itself stores the int; Rezoom's
+         MLC loader doesn't need to resolve Npgsql at TP design time. -->
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+  </ItemGroup>
+
+</Project>

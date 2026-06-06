@@ -16,6 +16,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Shared.fs" />
     <Compile Include="TestSelects.fs" />
+    <Compile Include="TestUserPrimitiveSystemObject.fs" />
     <Compile Include="TestMigrateConnectionString.fs" />
     <Compile Include="Program.fs" />
     <None Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
@@ -37,6 +38,10 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TypeProviderUser.Postgres.UserTypes\TypeProviderUser.Postgres.UserTypes.fsproj" />
   </ItemGroup>
 
 </Project>

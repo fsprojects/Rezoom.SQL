@@ -33,3 +33,8 @@ create table ArticleComments
 
 create index IX_ArticleComments_AuthorId on ArticleComments(AuthorId);
 
+create table HashedBlobs
+( Id int primary key autoincrement
+, Hash FileHash
+);
+

@@ -1,5 +1,6 @@
 module Rezoom.SQL.Test.TestUserTypeAnnotations
 open NUnit.Framework
+open Rezoom.SQL.Mapping
 
 // --- SQLite: RawBackendSQLType emits the literal type verbatim --------
 
@@ -250,3 +251,48 @@ let ``tsql DU over byte[] without SQLTypeLength emits VARBINARY(max)`` () =
                     |> Some
             } |> Good
     } |> assertSimple
+
+// --- SQLParameterDbType loader-inspection regression tests ------------
+// These do not exercise SQL emission. Instead they load the user-types
+// library and inspect UserPrimitiveType.SQLParameterDbType directly,
+// catching attribute-loader breakage at compiler-test speed instead of
+// having to wait for a TPU run to surface it as a downstream PG error
+// like `column "home" is of type jsonb but expression is of type text`.
+
+let private userTypesLib =
+    lazy ((userModelByName "user-model-7-usertypes").UserTypeLibrary)
+
+let private primitive name =
+    match userTypesLib.Value.UserPrimitiveByName(name) with
+    | FoundType prim -> prim
+    | AmbiguousType _ ->
+        Assert.Fail(sprintf "User primitive '%s' is ambiguous in the loaded library." name)
+        Unchecked.defaultof<_>
+    | NotFoundType _ ->
+        Assert.Fail(sprintf "User primitive '%s' was not found in the loaded library." name)
+        Unchecked.defaultof<_>
+
+[<Test>]
+let ``SQLParameterDbType single-arg ctor on AnsiLabel loads as Some(DbType, int)`` () =
+    // [<SQLParameterDbType(System.Data.DbType.AnsiString)>] on AnsiLabel
+    // is the standard-DbType ctor; the C# attribute delegates to the
+    // two-arg form with property name "DbType" and value (int)dbType,
+    // and the loader records the same shape.
+    let expected = Some ("DbType", int System.Data.DbType.AnsiString)
+    Assert.That((primitive "AnsiLabel").SQLParameterDbType, Is.EqualTo(expected))
+
+[<Test>]
+let ``SQLParameterDbType two-arg ctor on OpaqueDbTypeProbe loads as Some(prop, int)`` () =
+    // [<SQLParameterDbType("NpgsqlDbType", 36)>] on OpaqueDbTypeProbe is
+    // the escape-hatch ctor used by provider-specific enums; the
+    // attribute identity check, ctor-arity branch, and tuple read all
+    // have to survive for the metadata to round-trip.
+    let expected = Some ("NpgsqlDbType", 36)
+    Assert.That((primitive "OpaqueDbTypeProbe").SQLParameterDbType, Is.EqualTo(expected))
+
+[<Test>]
+let ``SQLParameterDbType is None on a primitive without the attribute`` () =
+    // CompactInt has [<RawBackendSQLType>] but no [<SQLParameterDbType>],
+    // so the loader should leave the field as None. Guards against a
+    // future change that accidentally always-Somes the field.
+    Assert.That((primitive "CompactInt").SQLParameterDbType, Is.EqualTo(None))
