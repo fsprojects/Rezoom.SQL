@@ -3,6 +3,26 @@ open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.BackendUtilities
 open Rezoom.SQL.Mapping
 
+module DefaultSQLTypeString =
+    let rec typeNameFor name =
+        match name with
+        | BooleanTypeName -> "BOOL"
+        | GuidTypeName -> "GUID"
+        | IntegerTypeName Integer16 -> "INT16"
+        | IntegerTypeName Integer32 -> "INT32"
+        | IntegerTypeName Integer64 -> "INT64"
+        | FloatTypeName Float32 -> "FLOAT32"
+        | FloatTypeName Float64 -> "FLOAT64"
+        | StringTypeName(Some size) -> "STRING(" + string size + ")"
+        | StringTypeName(None) -> "STRING"
+        | BinaryTypeName(Some size) -> "BINARY(" + string size + ")"
+        | BinaryTypeName(None) -> "BINARY"
+        | DecimalTypeName -> "DECIMAL"
+        | DateTimeTypeName -> "DATETIME"
+        | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
+        | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
+        | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> typeNameFor r.UnderlyingSQLTypeName)
+
 type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameterIndexer) =
     inherit ExprTranslator()
     override __.Literal = upcast DefaultLiteralTranslator()
@@ -11,25 +31,7 @@ type DefaultExprTranslator(statement : StatementTranslator, indexer : IParameter
         |> text
     override this.CollationName(name) = this.Name(name)
     override __.TypeName(name, _) =
-        let rec tyName name =
-            match name with
-            | BooleanTypeName -> "BOOL"
-            | GuidTypeName -> "GUID"
-            | IntegerTypeName Integer16 -> "INT16"
-            | IntegerTypeName Integer32 -> "INT32"
-            | IntegerTypeName Integer64 -> "INT64"
-            | FloatTypeName Float32 -> "FLOAT32"
-            | FloatTypeName Float64 -> "FLOAT64"
-            | StringTypeName(Some size) -> "STRING(" + string size + ")"
-            | StringTypeName(None) -> "STRING"
-            | BinaryTypeName(Some size) -> "BINARY(" + string size + ")"
-            | BinaryTypeName(None) -> "BINARY"
-            | DecimalTypeName -> "DECIMAL"
-            | DateTimeTypeName -> "DATETIME"
-            | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
-            | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
-            | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> tyName r.UnderlyingSQLTypeName)
-        tyName name |> text |> Seq.singleton
+        DefaultSQLTypeString.typeNameFor name |> text |> Seq.singleton
             
     override __.BinaryOperator op =
         CommandText <|

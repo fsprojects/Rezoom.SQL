@@ -37,6 +37,7 @@ type BackendBase() =
     abstract member ToCommandFragments
         : indexer : IParameterIndexer * stmts : TTotalStmts -> CommandFragment IReadOnlyList
     abstract member InteriorPrimitiveTransform : builtInColumnType : ColumnType -> ParameterTransform
+    abstract member SQLTypeString : TypeName -> string
     default this.InteriorPrimitiveTransform(builtInColumnType) = { ParameterType = StdDbType builtInColumnType.DbType; ValueTransform = fun e -> e }
     default this.ParameterTransform(columnType) = 
         // Null/None -> DBNull, else continue. (For non-user types only; a
@@ -64,6 +65,24 @@ type BackendBase() =
             let interior = this.InteriorPrimitiveTransform underlyingColumn
             let underlyingClr = underlyingColumn.CLRType(false)
             let fdExpr = FreezeDry.FreezeDriedUserPrimitiveType.Of(userTy).Quote()
+            let finalParamType =
+                match userTy.SQLParameterDbType, userTy.RawBackendSQLType with
+                | Some (overrideProp, overrideVal), Some overrideType ->
+                    CustomDbType
+                        {   DbTypePropertyName = overrideProp
+                            DbTypeValue = overrideVal
+                            SQLTypeName = overrideType
+                        }
+                | None, Some overrideType ->
+                    interior.ParameterType.WithSQLTypeName(overrideType)
+                | Some (overrideProp, overrideVal), None ->
+                    CustomDbType
+                        {   DbTypePropertyName = overrideProp
+                            DbTypeValue = overrideVal
+                            SQLTypeName = this.SQLTypeString(underlying.ApproximateTypeName())
+                        }
+                | None, None ->
+                    interior.ParameterType
             {   ParameterType = interior.ParameterType
                 ValueTransform = fun e ->
                     let asObj = Expr.Coerce(e, typeof<obj>)

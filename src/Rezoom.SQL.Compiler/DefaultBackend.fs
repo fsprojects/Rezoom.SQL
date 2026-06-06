@@ -37,4 +37,6 @@ type DefaultBackend() =
         |> BackendUtilities.simplifyFragments
         |> ResizeArray
         :> _ IReadOnlyList
+    override this.SQLTypeString (tyName : TypeName) = 
+        DefaultSQLTypeString.typeNameFor tyName
        

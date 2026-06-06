@@ -36,7 +36,7 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
     let literal = SQLiteLiteral()
     override __.Literal = upcast literal
-    override __.TypeName(name, autoIncrement) =
+    static member SQLiteTypeString(name, autoIncrement) =
         let rec tyName name =
             match name with
             | BooleanTypeName
@@ -53,7 +53,9 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | DateTimeOffsetTypeName -> fail <| sprintf "Unsupported type ``%A``" name
             | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
             | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> tyName r.UnderlyingSQLTypeName)
-        tyName name |> text |> Seq.singleton
+        tyName name
+    override __.TypeName(name, autoIncrement) =
+        SQLiteExpression.SQLiteTypeString(name, autoIncrement) |> text |> Seq.singleton
 
 type private SQLiteStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(Name("SQLITE"), indexer)
@@ -121,4 +123,5 @@ type SQLiteBackend() =
         |> BackendUtilities.simplifyFragments
         |> ResizeArray
         :> _ IReadOnlyList
-       
+    override this.SQLTypeString (tyName : TypeName) = 
+        SQLiteExpression.SQLiteTypeString(tyName, false)

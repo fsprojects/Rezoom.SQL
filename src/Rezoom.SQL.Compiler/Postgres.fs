@@ -33,7 +33,7 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
     override __.CollationName(name) = // no ToLower, use as-is
         "\"" + name.Value.Replace("\"", "\"\"") + "\""
         |> text
-    override __.TypeName(name, autoIncrement) =
+    static member PostgresTypeString(name : TypeName, autoIncrement : bool) =
         let rec tyName name =
             match name with
             | BooleanTypeName -> "BOOLEAN"
@@ -54,7 +54,9 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
             | DateTimeOffsetTypeName -> "TIMESTAMPTZ"
             | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
             | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> tyName r.UnderlyingSQLTypeName)
-        tyName name |> text |> Seq.singleton
+        tyName name
+    override __.TypeName(name, autoIncrement) =
+        PostgresExpression.PostgresTypeString(name, autoIncrement) |> text |> Seq.singleton
     override this.ObjectName name =
         seq {
             match name.SchemaName with
@@ -216,3 +218,4 @@ type PostgresBackend() =
         |> BackendUtilities.simplifyFragments
         |> ResizeArray
         :> _ IReadOnlyList
+    override this.SQLTypeString (typeName : TypeName) = PostgresExpression.PostgresTypeString(typeName, false)

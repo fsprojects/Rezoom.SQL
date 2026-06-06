@@ -20,6 +20,10 @@ type CustomDbTypeInfo =
 type XDbType =
     | StdDbType of dbType : DbType
     | CustomDbType of CustomDbTypeInfo
+    member this.WithSQLTypeName(sqlTypeName : string) =
+        match this with
+        | StdDbType d -> CustomDbType { DbTypePropertyName = nameof(DbType); SQLTypeName = sqlTypeName; DbTypeValue = int d }
+        | CustomDbType c -> CustomDbType { c with SQLTypeName =  sqlTypeName }
     member this.Quote() =
         match this with 
         | StdDbType d -> <@@ StdDbType (%%Expr.Value(d)) @@>

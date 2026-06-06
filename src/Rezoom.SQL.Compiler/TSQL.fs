@@ -28,4 +28,5 @@ type TSQLBackend() =
         |> BackendUtilities.simplifyFragments
         |> ResizeArray
         :> _ IReadOnlyList
-       
+    override this.SQLTypeString (tyName : TypeName) = 
+        TSQLExpression.TSQLTypeString(tyName)
