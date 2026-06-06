@@ -22,7 +22,7 @@ let private sqlTypeLengthName =
 
 /// Attribute name from Rezoom.SQL.Annotations assembly.
 let private sqlParameterDbTypeName =
-    "Rezoom.SQL.AnnotationsSQLParameterDbTypeAttribute"
+    "Rezoom.SQL.Annotations.SQLParameterDbTypeAttribute"
 
 type AnnotationsForMember =
     {   TypeName : string
