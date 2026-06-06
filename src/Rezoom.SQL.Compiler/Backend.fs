@@ -19,8 +19,26 @@ type ParameterTransform =
     {   ParameterType : XDbType
         ValueTransform : Quotations.Expr -> Quotations.Expr
     }
-    static member Default(columnType : ColumnType) = ParameterTransform.Default(columnType, fun t -> { ParameterType = t.XDbType; ValueTransform = fun e -> e })
-    static member Default(columnType : ColumnType, interiorPrimitiveTransform : ColumnType -> ParameterTransform) =
+
+type IBackend =
+    abstract member InitialModel : Model
+    abstract member MigrationBackend : Quotations.Expr<ConnectionInfo -> IMigrationBackend>
+    abstract member ParameterTransform
+        : columnType : ColumnType -> ParameterTransform
+    abstract member ToCommandFragments
+        : indexer : IParameterIndexer * stmts : TTotalStmts -> CommandFragment IReadOnlyList
+
+[<AbstractClass>]
+type BackendBase() =
+    abstract member InitialModel : Model
+    abstract member MigrationBackend : Quotations.Expr<ConnectionInfo -> IMigrationBackend>
+    abstract member ParameterTransform
+        : columnType : ColumnType -> ParameterTransform
+    abstract member ToCommandFragments
+        : indexer : IParameterIndexer * stmts : TTotalStmts -> CommandFragment IReadOnlyList
+    abstract member InteriorPrimitiveTransform : builtInColumnType : ColumnType -> ParameterTransform
+    default this.InteriorPrimitiveTransform(builtInColumnType) = { ParameterType = StdDbType builtInColumnType.DbType; ValueTransform = fun e -> e }
+    default this.ParameterTransform(columnType) = 
         // Null/None -> DBNull, else continue. (For non-user types only; a
         // user-typed parameter does its own Option unwrap inside the runtime
         // converter below.) Surprisingly we don't need this for Nullable<T>: a
@@ -43,7 +61,7 @@ type ParameterTransform =
             // still runs at design time because it operates on the underlying
             // runtime primitive that comes back out of the converter.
             let underlyingColumn = { Nullable = false; Type = underlying }
-            let interior = interiorPrimitiveTransform underlyingColumn
+            let interior = this.InteriorPrimitiveTransform underlyingColumn
             let underlyingClr = underlyingColumn.CLRType(false)
             let fdExpr = FreezeDry.FreezeDriedUserPrimitiveType.Of(userTy).Quote()
             {   ParameterType = interior.ParameterType
@@ -62,17 +80,13 @@ type ParameterTransform =
             // The fundamental underlying primitive could still be one the backend
             // doesn't *really* support (e.g. SQLite fakes DateTime as a string),
             // so the backend gets to intercept via the interior transform.
-            let interior = interiorPrimitiveTransform { columnType with Nullable = false }
+            let interior = this.InteriorPrimitiveTransform { columnType with Nullable = false }
             {   ParameterType = interior.ParameterType
                 ValueTransform = fun e ->
                     optionalsToDbNull e (fun next -> interior.ValueTransform next)
             }
-        
-
-type IBackend =
-    abstract member InitialModel : Model
-    abstract member MigrationBackend : Quotations.Expr<ConnectionInfo -> IMigrationBackend>
-    abstract member ParameterTransform
-        : columnType : ColumnType -> ParameterTransform
-    abstract member ToCommandFragments
-        : indexer : IParameterIndexer * stmts : TTotalStmts -> CommandFragment IReadOnlyList
+    interface IBackend with
+        member this.InitialModel = this.InitialModel
+        member this.MigrationBackend = this.MigrationBackend
+        member this.ParameterTransform (columnType : ColumnType) = this.ParameterTransform(columnType)
+        member this.ToCommandFragments (indexer: IParameterIndexer, stmts: TTotalStmts) = this.ToCommandFragments(indexer, stmts)

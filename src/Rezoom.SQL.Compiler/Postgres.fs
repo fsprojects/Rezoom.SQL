@@ -192,6 +192,7 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
         }
 
 type PostgresBackend() =
+    inherit BackendBase()
     static let initialModel =
         let main, temp = Name("public"), Name("temp")
         {   Schemas =
@@ -207,13 +208,11 @@ type PostgresBackend() =
                 {   CanDropColumnWithDefaultValue = true
                 }
         }
-    interface IBackend with
-        member this.MigrationBackend = <@ fun conn -> new PostgresMigrationBackend(conn) :> IMigrationBackend @>
-        member this.InitialModel = initialModel
-        member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
-        member this.ToCommandFragments(indexer, stmts) =
-            let translator = PostgresStatement(indexer)
-            translator.TotalStatements(stmts)
-            |> BackendUtilities.simplifyFragments
-            |> ResizeArray
-            :> _ IReadOnlyList
+    override this.MigrationBackend = <@ fun conn -> new PostgresMigrationBackend(conn) :> IMigrationBackend @>
+    override this.InitialModel = initialModel
+    override this.ToCommandFragments(indexer, stmts) =
+        let translator = PostgresStatement(indexer)
+        translator.TotalStatements(stmts)
+        |> BackendUtilities.simplifyFragments
+        |> ResizeArray
+        :> _ IReadOnlyList

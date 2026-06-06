@@ -84,6 +84,7 @@ type SQLiteMigrationBackend(info : ConnectionInfo) =
         base.Initialize()
 
 type SQLiteBackend() =
+    inherit BackendBase()
     static let initialModel =
         let main, temp = Name("main"), Name("temp")
         {   Schemas =
@@ -99,29 +100,25 @@ type SQLiteBackend() =
                 {   CanDropColumnWithDefaultValue = true
                 }
         }
-    interface IBackend with
-        member this.MigrationBackend = <@ fun settings -> new SQLiteMigrationBackend(settings) :> IMigrationBackend @>
-        member this.InitialModel = initialModel
-        member this.ParameterTransform(columnType) =
-            ParameterTransform.Default(columnType, fun columnType ->
-                match columnType.Type with
-                | DateTimeType ->
-                    {   ParameterType = StdDbType DbType.String
-                        ValueTransform = fun expr ->
-                            Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.DateTimeToString), [ expr ])
-                    }
-                | GuidType ->
-                    {   ParameterType = StdDbType DbType.Binary
-                        ValueTransform = fun expr ->
-                            Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.GuidToBytes), [ expr ])
-                    }
-                | _ -> { ParameterType = columnType.XDbType; ValueTransform = fun e -> e }
-            )
-            
-        member this.ToCommandFragments(indexer, stmts) =
-            let translator = SQLiteStatement(indexer)
-            translator.TotalStatements(stmts)
-            |> BackendUtilities.simplifyFragments
-            |> ResizeArray
-            :> _ IReadOnlyList
+    override this.MigrationBackend = <@ fun settings -> new SQLiteMigrationBackend(settings) :> IMigrationBackend @>
+    override this.InitialModel = initialModel
+    override this.InteriorPrimitiveTransform (columnType: ColumnType): ParameterTransform = 
+        match columnType.Type with
+        | DateTimeType ->
+            {   ParameterType = StdDbType DbType.String
+                ValueTransform = fun expr ->
+                    Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.DateTimeToString), [ expr ])
+            }
+        | GuidType ->
+            {   ParameterType = StdDbType DbType.Binary
+                ValueTransform = fun expr ->
+                    Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.GuidToBytes), [ expr ])
+            }
+        | _ -> { ParameterType = StdDbType columnType.DbType; ValueTransform = fun e -> e }
+    override this.ToCommandFragments(indexer, stmts) =
+        let translator = SQLiteStatement(indexer)
+        translator.TotalStatements(stmts)
+        |> BackendUtilities.simplifyFragments
+        |> ResizeArray
+        :> _ IReadOnlyList
        
