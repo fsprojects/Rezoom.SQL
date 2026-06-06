@@ -36,7 +36,6 @@ work on this project [a long time](https://www.youtube.com/watch?v=izQB2-Kmiic):
 * Interpreted in-memory implementation of each DB backend, for easy unit testing
 * Linq-ish query builder using the type provider's database model
 * Statically typed (w/ schema) JSON/XML access
-* Custom data types (e.g. Postgres range types)
 
 ## In my nightmares
 
