@@ -1,7 +1,7 @@
 <!-- nav-top -->
 [Home](../../../README.md) &gt; [Language](../README.md) &gt; Functions
 
-[&larr; Vendor statements](../VendorStatements.md) | [SQLite &rarr;](SQLiteFunctions.md)
+[&larr; UserTypes](../UserTypes/README.md) | [SQLite &rarr;](SQLiteFunctions.md)
 <!-- /nav-top -->
 
 # Functions
@@ -112,6 +112,6 @@ This way, only `@b` will be nullable.
 
 ---
 <!-- nav-bottom -->
-[&larr; Vendor statements](../VendorStatements.md) | [SQLite &rarr;](SQLiteFunctions.md)
+[&larr; UserTypes](../UserTypes/README.md) | [SQLite &rarr;](SQLiteFunctions.md)
 <!-- /nav-bottom -->
 

@@ -211,7 +211,6 @@ representation*! With the above example ToPrimitive and FromPrimitive methods us
 actually work fine, but a different representation might not hold up so well. So choose your underlying representation
 carefully and be mindful of how your queries are actually working.
 
-
 ---
 <!-- nav-bottom -->
 [&larr; Configuration](README.md) | [Runtime configuration &rarr;](Configuration.md)

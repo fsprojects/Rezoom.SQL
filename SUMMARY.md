@@ -27,6 +27,7 @@
     * [Drop object statements](doc/Language/DropStmt.md)
     * [Navigation properties](doc/Language/NavigationProperties.md)
     * [Vendor statements](doc/Language/VendorStatements.md)
+    * [UserTypes](doc/Language/UserTypes/README.md)
     * [Functions](doc/Language/Functions/README.md)
         * [SQLite](doc/Language/Functions/SQLiteFunctions.md)
         * [TSQL](doc/Language/Functions/TSQLFunctions.md)

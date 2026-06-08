@@ -1,3 +1,9 @@
+<!-- nav-top -->
+[Home](../../../README.md) &gt; [Language](../README.md) &gt; UserTypes
+
+[&larr; Vendor statements](../VendorStatements.md) | [Functions &rarr;](../Functions/README.md)
+<!-- /nav-top -->
+
 # UserTypes
 
 The UserTypes feature allows you to bring custom .NET data types into RZSQL by pointing the type provider at your own assemblies.
@@ -452,4 +458,9 @@ VENDOR tsql {
 ```
 
 The key thing to remember here is it is up to you to be disciplined about changing your storage representation!
+
+---
+<!-- nav-bottom -->
+[&larr; Vendor statements](../VendorStatements.md) | [Functions &rarr;](../Functions/README.md)
+<!-- /nav-bottom -->
 

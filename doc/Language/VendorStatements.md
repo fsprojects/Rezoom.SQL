@@ -1,7 +1,7 @@
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Vendor statements
 
-[&larr; Navigation properties](NavigationProperties.md) | [Functions &rarr;](Functions/README.md)
+[&larr; Navigation properties](NavigationProperties.md) | [UserTypes &rarr;](UserTypes/README.md)
 <!-- /nav-top -->
 
 # Vendor Statements
@@ -138,6 +138,6 @@ vendor tsql <#
 
 ---
 <!-- nav-bottom -->
-[&larr; Navigation properties](NavigationProperties.md) | [Functions &rarr;](Functions/README.md)
+[&larr; Navigation properties](NavigationProperties.md) | [UserTypes &rarr;](UserTypes/README.md)
 <!-- /nav-bottom -->
 
