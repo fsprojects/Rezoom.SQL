@@ -8,7 +8,7 @@ has_children: true
 <!-- nav-top -->
 [Home](../../../README.md) &gt; [Language](../README.md) &gt; Functions
 
-[&larr; UserTypes](../UserTypes/README.md) | [SQLite &rarr;](SQLiteFunctions.md)
+[&larr; Pitfalls and limitations](../UserTypes/Pitfalls.md) | [SQLite &rarr;](SQLiteFunctions.md)
 <!-- /nav-top -->
 
 # Functions
@@ -119,6 +119,6 @@ This way, only `@b` will be nullable.
 
 ---
 <!-- nav-bottom -->
-[&larr; UserTypes](../UserTypes/README.md) | [SQLite &rarr;](SQLiteFunctions.md)
+[&larr; Pitfalls and limitations](../UserTypes/Pitfalls.md) | [SQLite &rarr;](SQLiteFunctions.md)
 <!-- /nav-bottom -->
 
