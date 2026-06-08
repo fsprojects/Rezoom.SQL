@@ -17,6 +17,7 @@ remote_theme: just-the-docs/just-the-docs
 
 plugins:
   - jekyll-remote-theme
+  - jekyll-readme-index
 
 # --- Theme options -------------------------------------------------------
 
@@ -67,3 +68,5 @@ exclude:
   - "*.cs"
   - "*.gv"
   - SUMMARY.md
+  - DEVELOPER_README.md
+  - CHANGELOG.md
