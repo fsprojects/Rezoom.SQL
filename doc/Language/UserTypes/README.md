@@ -119,7 +119,7 @@ module MyCustomMappings =
 ```
 
 You can have as many classes as you want defining static custom mappings. But you can't split the mapping for a *single
-usertype* across multiple classes. `ToPrimitive : Foo -> string` has to be defined in the *same* class as `FromPrimitive
+UserType* across multiple classes. `ToPrimitive : Foo -> string` has to be defined in the *same* class as `FromPrimitive
 : string -> Foo` for the mapping to be valid.
 
 ## Using the mapped types
@@ -261,7 +261,7 @@ module ExampleOverrides =
     let unixEpoch = DateTime(1970,1,1)
     type System.DateTime with
         member this.ToPrimitive() : int64 = int64 (this - unixEpoch).TotalSeconds
-        static member FromPrimitive(i : int64) = unixEpoch + TimeSpan.FromSeconds(i)
+        static member FromPrimitive(i : int64) = unixEpoch + TimeSpan.FromSeconds(float i)
 
     // change Guid to store as a string instead of a byte[] blob
     type System.Guid with
@@ -274,20 +274,20 @@ UserTypes, when it's a builtin type you've re-mapped, you *don't* have to be cas
 queries. That would just be far too confusing if typing `DateTime` applied your overridden methods but `datetime`
 didn't!
 
-### Decimal and DateTimeOffset on SQLite
+### Supporting Decimal and DateTimeOffset on SQLite
 
-I especially recommend doing this for the SQLite backend if you'd like to use `decimal` or `DateTimeOffset`. By default
-these types will throw an exception if used with a SQLite backend because I couldn't think of an acceptable *default*
-way to support them. For decimal, if we mapped to `REAL` you would lose the precision and basetenity of `decimal`. The
-only lossless way to store and retrieve a `decimal` value would be in a SQLite `BLOB` or `TEXT` column, but then
-mathematical operators would break or silently decay to binary floating point.
+Custom mapping can help you with the SQLite backend if you'd like to use `decimal` or `DateTimeOffset`. By default these
+types will throw an exception if used with a SQLite backend because I couldn't think of an acceptable *default* way to
+support them. For decimal, if we mapped to `REAL` you would lose the precision and base-10 math of `decimal`. The only
+lossless way to store and retrieve a `decimal` value would be in a SQLite `BLOB` or `TEXT` column, but then mathematical
+operators would break or silently decay to binary floating point.
 
 Likewise with `DateTimeOffset`, the obvious choice would be to use `.ToString("o")` like we do with DateTime, but then
-comparisons and equality would produce unexpected results. The below expression evalutes TRUE in SQLite using string
-comparison, but should be FALSE comparing the actual moment in time the two `DateTimeOffset` types represent. The UTC+0
+comparisons and equality would produce unexpected results. The below expression evaluates FALSE in SQLite using string
+comparison, but should be TRUE comparing the actual moment in time two `DateTimeOffset` types represent. The UTC+0
 one is a minute before the UTC-4 one.
 
-`'2026-06-07T21:16:00.0000000-04:00' > '2026-06-08T01:15:00.0000000+00:00'`
+`'2026-06-08T01:15:00.0000000+00:00' < '2026-06-07T21:16:00.0000000-04:00'`
 
 If you understand the problem space and have chosen storage format where the tradeoffs work for *your needs*, mapping
 these types can be the right call.

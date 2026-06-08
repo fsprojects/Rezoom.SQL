@@ -23,7 +23,7 @@ digraph "Solution Layout" {
     <table border="3" cellborder="1" cellspacing="0" cellpadding="14">
       <tr><td><b>YourProject.UserTypes.fsproj</b></td></tr>
       <tr><td align="left">type IUser = abstract member Id : UserId...</td></tr>
-      <tr><td align="left">type UserId = UserId of int</td></tr>
+      <tr><td align="left">type UserId = UserId of Guid</td></tr>
       <tr><td align="left">[&lt;SQLTypeLength(254)&gt;]<br align="left"/>type EmailAddress = EmailAddress of string</td></tr>
       <tr><td align="left">type System.TimeOnly with member this.ToPrimitive() = this.ToString(&quot;o&quot;)...</td></tr>
     </table>
@@ -35,7 +35,7 @@ digraph "Solution Layout" {
       <tr><td>rzsql.json</td><td align="left">{ &quot;UserTypes&quot;: [&quot;YourProject.UserTypes&quot;] }</td></tr>
       <tr><td>V1.model.sql</td><td align="left">create table Users(Id UserId primary key, Email EmailAddress, ...)</td></tr>
       <tr><td rowspan="3">Query.fs</td><td align="left">type MyQuery = SQL&lt;&quot;select&lt;IUser&gt; * from Users where Id = @id&quot;&gt;</td></tr>
-      <tr><td align="left">let! rows = MyQuery.Command(id = UserId 123).Plan()</td></tr>
+      <tr><td align="left">let! rows = MyQuery.Command(id = UserId(myGuid)).Plan()</td></tr>
       <tr><td align="left">let user = rows.[0] :&gt; IUser</td></tr>
 
     </table>

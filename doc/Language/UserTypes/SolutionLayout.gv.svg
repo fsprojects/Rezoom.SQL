@@ -37,7 +37,7 @@
 <polygon fill="none" stroke="black" points="205.25,-469.5 205.25,-513.75 797.75,-513.75 797.75,-469.5 205.25,-469.5"/>
 <text xml:space="preserve" text-anchor="start" x="220.25" y="-488.25" font-family="Consolas" font-size="14.00">type IUser = abstract member Id : UserId...</text>
 <polygon fill="none" stroke="black" points="205.25,-425.25 205.25,-469.5 797.75,-469.5 797.75,-425.25 205.25,-425.25"/>
-<text xml:space="preserve" text-anchor="start" x="220.25" y="-444" font-family="Consolas" font-size="14.00">type UserId = UserId of int</text>
+<text xml:space="preserve" text-anchor="start" x="220.25" y="-444" font-family="Consolas" font-size="14.00">type UserId = UserId of Guid</text>
 <polygon fill="none" stroke="black" points="205.25,-366.75 205.25,-425.25 797.75,-425.25 797.75,-366.75 205.25,-366.75"/>
 <text xml:space="preserve" text-anchor="start" x="220.25" y="-399.75" font-family="Consolas" font-size="14.00">[&lt;SQLTypeLength(254)&gt;]</text>
 <text xml:space="preserve" text-anchor="start" x="220.25" y="-385.5" font-family="Consolas" font-size="14.00">type EmailAddress = EmailAddress of string</text>
@@ -69,7 +69,7 @@
 <polygon fill="none" stroke="black" points="131,-95.5 131,-139.75 656,-139.75 656,-95.5 131,-95.5"/>
 <text xml:space="preserve" text-anchor="start" x="146" y="-114.25" font-family="Consolas" font-size="14.00">type MyQuery = SQL&lt;&quot;select&lt;IUser&gt; * from Users where Id = @id&quot;&gt;</text>
 <polygon fill="none" stroke="black" points="131,-51.25 131,-95.5 656,-95.5 656,-51.25 131,-51.25"/>
-<text xml:space="preserve" text-anchor="start" x="146" y="-70" font-family="Consolas" font-size="14.00">let! rows = MyQuery.Command(id = UserId 123).Plan()</text>
+<text xml:space="preserve" text-anchor="start" x="146" y="-70" font-family="Consolas" font-size="14.00">let! rows = MyQuery.Command(id = UserId(myGuid)).Plan()</text>
 <polygon fill="none" stroke="black" points="131,-7 131,-51.25 656,-51.25 656,-7 131,-7"/>
 <text xml:space="preserve" text-anchor="start" x="146" y="-25.75" font-family="Consolas" font-size="14.00">let user = rows.[0] :&gt; IUser</text>
 <polygon fill="none" stroke="black" stroke-width="3" points="9.5,-5.5 9.5,-274 657.5,-274 657.5,-5.5 9.5,-5.5"/>
