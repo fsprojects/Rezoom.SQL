@@ -1,12 +1,11 @@
 ---
 title: Advanced primitive mapping
 parent: UserTypes
-grand_parent: Language
 nav_order: 2
 ---
 
 <!-- nav-top -->
-[Home](../../../README.md) &gt; [Language](../README.md) &gt; [UserTypes](README.md) &gt; Advanced primitive mapping
+[Home](../../README.md) &gt; [UserTypes](README.md) &gt; Advanced primitive mapping
 
 [&larr; Field lengths and storage type](FieldLengthsAndStorage.md) | [Annotation attributes reference &rarr;](AttributesReference.md)
 <!-- /nav-top -->
@@ -61,7 +60,7 @@ these types can be the right call.
 
 ## Mapping to vendor-specific database column types
 
-In addition to the aforementioned [built-in primitive](../DataTypes.md) datatypes, your `ToPrimitive` and
+In addition to the aforementioned [built-in primitive](../Language/DataTypes.md) datatypes, your `ToPrimitive` and
 `FromPrimitive` methods can map a UserType to `System.Object`.
 
 This allows you to store and retrieve *anything* your underlying ADO.NET provider can handle.
@@ -122,7 +121,7 @@ being the integer value of NpgsqlDbType.Point.
 The above example helped you store a `point` and retrieve it, but you still can't do much with it in your database
 queries. RZSQL doesn't know what operations `point` supports, and doesn't have type signatures for Postgres's geometric
 functions, because they don't fit into its default backend-agnostic type hierarchy. For doing more than just CRUD
-storage and retrieval, you'll want to get familiar with [VENDOR statements](../VendorStatements.md).
+storage and retrieval, you'll want to get familiar with [VENDOR statements](../Language/VendorStatements.md).
 
 ---
 <!-- nav-bottom -->

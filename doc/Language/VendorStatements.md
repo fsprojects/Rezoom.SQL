@@ -7,7 +7,7 @@ nav_order: 15
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Vendor statements
 
-[&larr; Navigation properties](NavigationProperties.md) | [UserTypes &rarr;](UserTypes/README.md)
+[&larr; Navigation properties](NavigationProperties.md) | [Functions &rarr;](Functions/README.md)
 <!-- /nav-top -->
 
 # Vendor Statements
@@ -144,6 +144,6 @@ vendor tsql <#
 
 ---
 <!-- nav-bottom -->
-[&larr; Navigation properties](NavigationProperties.md) | [UserTypes &rarr;](UserTypes/README.md)
+[&larr; Navigation properties](NavigationProperties.md) | [Functions &rarr;](Functions/README.md)
 <!-- /nav-bottom -->
 

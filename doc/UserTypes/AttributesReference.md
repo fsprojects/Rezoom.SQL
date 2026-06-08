@@ -1,12 +1,11 @@
 ---
 title: Annotation attributes reference
 parent: UserTypes
-grand_parent: Language
 nav_order: 3
 ---
 
 <!-- nav-top -->
-[Home](../../../README.md) &gt; [Language](../README.md) &gt; [UserTypes](README.md) &gt; Annotation attributes reference
+[Home](../../README.md) &gt; [UserTypes](README.md) &gt; Annotation attributes reference
 
 [&larr; Advanced primitive mapping](AdvancedMapping.md) | [Pitfalls and limitations &rarr;](Pitfalls.md)
 <!-- /nav-top -->

@@ -1,14 +1,13 @@
 ---
 title: UserTypes
-parent: Language
-nav_order: 16
+nav_order: 6
 has_children: true
 ---
 
 <!-- nav-top -->
-[Home](../../../README.md) &gt; [Language](../README.md) &gt; UserTypes
+[Home](../../README.md) &gt; UserTypes
 
-[&larr; Vendor statements](../VendorStatements.md) | [Field lengths and storage type &rarr;](FieldLengthsAndStorage.md)
+[&larr; Language Omissions](../Language/MissingFeatures.md) | [Field lengths and storage type &rarr;](FieldLengthsAndStorage.md)
 <!-- /nav-top -->
 
 # UserTypes
@@ -33,7 +32,7 @@ Your UserTypes MUST be in a separate assembly from your SQL queries, and must bu
 The type provider cannot "see" types defined in the same assembly it's trying to compile. They don't exist yet!
 
 The fsproj where you're using Rezoom.SQL.Provider must have a project reference to your UserType project(s). It must
-**also** name those projects in [rzsql.json's](../../Configuration/Json.md) `"usertypes"` list. This tells the type
+**also** name those projects in [rzsql.json's](../Configuration/Json.md) `"usertypes"` list. This tells the type
 provider to search the listed assemblies at design-time to find your custom types.
 
 Referencing Rezoom.SQL.Annotations is optional. This is a lightweight package that only defines attributes.
@@ -69,7 +68,7 @@ With UserTypes you can solve this. A user-mapped primitive type can take either 
 ### Single-case union
 
 This is the simplest case. Any F# union type with a single case that wraps an underlying [built-in
-primitive](../DataTypes.md) will automatically be detected as a valid UserType without needing further annotations or
+primitive](../Language/DataTypes.md) will automatically be detected as a valid UserType without needing further annotations or
 methods.
 
 ```fsharp
@@ -137,7 +136,7 @@ You can have as many classes as you want defining static custom mappings. But yo
 
 ## Using the mapped types
 
-Once you've got your UserTypes assembly plugged in via [rzsql.json](../../Configuration/Json.md), you can use your
+Once you've got your UserTypes assembly plugged in via [rzsql.json](../Configuration/Json.md), you can use your
 domain types in your database model. Instead of writing `create table Users(Id guid primary key)`, write `create table Users(Id UserId primary key)`.
 
 **Note that while built-in types in RZSQL are case-insensitive, when you reference a UserType you *must* match its .NET type name exactly, case-sensitively!**
@@ -213,6 +212,6 @@ select<IUserRow, ISoftDelete, IHasThumbnail, IHaveALotOfInterfaces> * from Users
 
 ---
 <!-- nav-bottom -->
-[&larr; Vendor statements](../VendorStatements.md) | [Field lengths and storage type &rarr;](FieldLengthsAndStorage.md)
+[&larr; Language Omissions](../Language/MissingFeatures.md) | [Field lengths and storage type &rarr;](FieldLengthsAndStorage.md)
 <!-- /nav-bottom -->
 

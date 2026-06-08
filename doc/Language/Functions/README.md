@@ -1,14 +1,14 @@
 ---
 title: Functions
 parent: Language
-nav_order: 17
+nav_order: 16
 has_children: true
 ---
 
 <!-- nav-top -->
 [Home](../../../README.md) &gt; [Language](../README.md) &gt; Functions
 
-[&larr; Pitfalls and limitations](../UserTypes/Pitfalls.md) | [SQLite &rarr;](SQLiteFunctions.md)
+[&larr; Vendor statements](../VendorStatements.md) | [SQLite &rarr;](SQLiteFunctions.md)
 <!-- /nav-top -->
 
 # Functions
@@ -119,6 +119,6 @@ This way, only `@b` will be nullable.
 
 ---
 <!-- nav-bottom -->
-[&larr; Pitfalls and limitations](../UserTypes/Pitfalls.md) | [SQLite &rarr;](SQLiteFunctions.md)
+[&larr; Vendor statements](../VendorStatements.md) | [SQLite &rarr;](SQLiteFunctions.md)
 <!-- /nav-bottom -->
 

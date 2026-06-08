@@ -1,13 +1,13 @@
 ---
 title: API
-nav_order: 6
+nav_order: 7
 has_children: true
 ---
 
 <!-- nav-top -->
 [Home](../../README.md) &gt; API
 
-[&larr; What's missing?](../Language/MissingFeatures.md) | [Rezoom.SQL &rarr;](RezoomSQL.md)
+[&larr; Pitfalls and limitations](../UserTypes/Pitfalls.md) | [Rezoom.SQL &rarr;](RezoomSQL.md)
 <!-- /nav-top -->
 
 # API
@@ -44,6 +44,6 @@ outside the lines and minor version releases may break the API.
 
 ---
 <!-- nav-bottom -->
-[&larr; What's missing?](../Language/MissingFeatures.md) | [Rezoom.SQL &rarr;](RezoomSQL.md)
+[&larr; Pitfalls and limitations](../UserTypes/Pitfalls.md) | [Rezoom.SQL &rarr;](RezoomSQL.md)
 <!-- /nav-bottom -->
 

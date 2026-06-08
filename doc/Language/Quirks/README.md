@@ -1,7 +1,7 @@
 ---
 title: Quirks
 parent: Language
-nav_order: 18
+nav_order: 17
 has_children: true
 ---
 

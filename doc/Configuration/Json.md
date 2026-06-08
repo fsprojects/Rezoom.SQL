@@ -127,7 +127,7 @@ Reference the assembly full name in rzsql.json like so:
 
 Your F# project using the type provider must also reference the MyProduct.MyCustomTypesAssembly project.
 
-Read [the full UserTypes feature documentation here](../Language/UserTypes/README.md).
+Read [the full UserTypes feature documentation here](../UserTypes/README.md).
 
 You can reference multiple assemblies in this list. For example, you could have your primitive mappings in one assembly
 and your row interfaces in another.

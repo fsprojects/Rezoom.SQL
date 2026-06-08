@@ -1,12 +1,11 @@
 ---
 title: Field lengths and storage type
 parent: UserTypes
-grand_parent: Language
 nav_order: 1
 ---
 
 <!-- nav-top -->
-[Home](../../../README.md) &gt; [Language](../README.md) &gt; [UserTypes](README.md) &gt; Field lengths and storage type
+[Home](../../README.md) &gt; [UserTypes](README.md) &gt; Field lengths and storage type
 
 [&larr; UserTypes](README.md) | [Advanced primitive mapping &rarr;](AdvancedMapping.md)
 <!-- /nav-top -->

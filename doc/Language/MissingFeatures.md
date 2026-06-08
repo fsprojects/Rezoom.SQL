@@ -1,16 +1,16 @@
 ---
-title: What's missing?
+title: Language Omissions
 parent: Language
-nav_order: 20
+nav_order: 19
 ---
 
 <!-- nav-top -->
-[Home](../../README.md) &gt; [Language](README.md) &gt; What's missing?
+[Home](../../README.md) &gt; [Language](README.md) &gt; Language Omissions
 
-[&larr; Dynamic SQL](DynamicSQL.md) | [API &rarr;](../API/README.md)
+[&larr; Dynamic SQL](DynamicSQL.md) | [UserTypes &rarr;](../UserTypes/README.md)
 <!-- /nav-top -->
 
-# What's missing?
+# Language Omissions
 
 If you are already familiar with a SQL dialect, here are some features you may
 miss that are not currently supported by RZSQL.
@@ -25,6 +25,7 @@ goals and would make sense to add eventually. Pull requests would of course be
 appreciated!
 
 * Support for mixing dynamic SQL into static queries, especially `ORDER BY` clause
+* Tools to generate an RZSQL migration file from an existing DB
 * Window functions
 * Table-valued functions
 * User-defined functions
@@ -53,6 +54,6 @@ though!
 
 ---
 <!-- nav-bottom -->
-[&larr; Dynamic SQL](DynamicSQL.md) | [API &rarr;](../API/README.md)
+[&larr; Dynamic SQL](DynamicSQL.md) | [UserTypes &rarr;](../UserTypes/README.md)
 <!-- /nav-bottom -->
 

@@ -1,14 +1,13 @@
 ---
 title: Pitfalls and limitations
 parent: UserTypes
-grand_parent: Language
 nav_order: 4
 ---
 
 <!-- nav-top -->
-[Home](../../../README.md) &gt; [Language](../README.md) &gt; [UserTypes](README.md) &gt; Pitfalls and limitations
+[Home](../../README.md) &gt; [UserTypes](README.md) &gt; Pitfalls and limitations
 
-[&larr; Annotation attributes reference](AttributesReference.md) | [Functions &rarr;](../Functions/README.md)
+[&larr; Annotation attributes reference](AttributesReference.md) | [API &rarr;](../API/README.md)
 <!-- /nav-top -->
 
 # Pitfalls and limitations
@@ -48,7 +47,7 @@ Now that you've changed the `TimeOnly` mapping, RZSQL thinks that old migration 
 existence of the `nvarchar` column has been memory-holed: we have always been at war with Eastasia. Your queries will
 fail at runtime because RZSQL's idea of your database model no longer matches reality.
 
-The solution is to write a new migration and use a [VENDOR statement](../VendorStatements.md) to port data over from the old
+The solution is to write a new migration and use a [VENDOR statement](../Language/VendorStatements.md) to port data over from the old
 format to the new. The vendor statement will allow you to bypass RZSQL's outdated conception of the data types and work
 on the real data in the table. Something like:
 
@@ -71,6 +70,6 @@ The key thing to remember here is it is up to you to be disciplined about changi
 
 ---
 <!-- nav-bottom -->
-[&larr; Annotation attributes reference](AttributesReference.md) | [Functions &rarr;](../Functions/README.md)
+[&larr; Annotation attributes reference](AttributesReference.md) | [API &rarr;](../API/README.md)
 <!-- /nav-bottom -->
 
