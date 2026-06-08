@@ -1,3 +1,9 @@
+---
+title: API
+nav_order: 6
+has_children: true
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; API
 

@@ -1,3 +1,9 @@
+---
+title: Dynamic SQL
+parent: Language
+nav_order: 19
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Dynamic SQL
 

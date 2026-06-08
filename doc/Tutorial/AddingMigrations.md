@@ -1,3 +1,9 @@
+---
+title: Adding migrations
+parent: Tutorial
+nav_order: 1
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Tutorial](README.md) &gt; Adding migrations
 

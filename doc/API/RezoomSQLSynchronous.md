@@ -1,3 +1,9 @@
+---
+title: Rezoom.SQL.Synchronous
+parent: API
+nav_order: 2
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL.Synchronous
 

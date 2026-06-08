@@ -1,3 +1,9 @@
+---
+title: Create table statements
+parent: Language
+nav_order: 10
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Create table statements
 

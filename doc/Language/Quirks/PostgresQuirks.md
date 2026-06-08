@@ -1,3 +1,10 @@
+---
+title: Postgres
+parent: Quirks
+grand_parent: Language
+nav_order: 3
+---
+
 <!-- nav-top -->
 [Home](../../../README.md) &gt; [Language](../README.md) &gt; [Quirks](README.md) &gt; Postgres
 

@@ -1,3 +1,9 @@
+---
+title: Common table expressions
+parent: Language
+nav_order: 9
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Common table expressions
 

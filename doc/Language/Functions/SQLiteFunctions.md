@@ -1,3 +1,10 @@
+---
+title: SQLite
+parent: Functions
+grand_parent: Language
+nav_order: 1
+---
+
 <!-- nav-top -->
 [Home](../../../README.md) &gt; [Language](../README.md) &gt; [Functions](README.md) &gt; SQLite
 

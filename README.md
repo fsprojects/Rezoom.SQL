@@ -1,3 +1,8 @@
+---
+title: About
+nav_order: 0
+---
+
 <!-- nav-top -->
 **Documentation:** [Tutorial](doc/Tutorial/README.md) | [Using Rezoom](doc/Rezoom/README.md) | [Configuration](doc/Configuration/README.md) | [Language](doc/Language/README.md) | [API](doc/API/README.md)
 <!-- /nav-top -->

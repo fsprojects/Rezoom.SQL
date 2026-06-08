@@ -1,3 +1,9 @@
+---
+title: Drop object statements
+parent: Language
+nav_order: 13
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Drop object statements
 

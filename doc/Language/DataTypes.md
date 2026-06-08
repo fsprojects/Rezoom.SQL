@@ -1,3 +1,9 @@
+---
+title: Data types
+parent: Language
+nav_order: 2
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Data types
 

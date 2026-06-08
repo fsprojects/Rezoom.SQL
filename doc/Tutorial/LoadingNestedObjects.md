@@ -1,3 +1,9 @@
+---
+title: Loading nested objects
+parent: Tutorial
+nav_order: 3
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Tutorial](README.md) &gt; Loading nested objects
 

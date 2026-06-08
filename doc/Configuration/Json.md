@@ -1,3 +1,9 @@
+---
+title: rzsql.json
+parent: Configuration
+nav_order: 1
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Configuration](README.md) &gt; rzsql.json
 
