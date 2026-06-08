@@ -130,9 +130,9 @@ module MyCustomMappings =
         static member FromPrimitive(str : string) = DateOnly.ParseExact(str, "o")
 ```
 
-You can have as many classes as you want defining static custom mappings. But you can't split the mapping for a *single
-UserType* across multiple classes. `ToPrimitive : Foo -> string` has to be defined in the *same* class as `FromPrimitive
-: string -> Foo` for the mapping to be valid.
+You can have as many classes as you want defining static custom mappings. But you can't split the mapping for a
+*single UserType* across multiple classes. `ToPrimitive : Foo -> string` has to be defined in the *same* class as
+`FromPrimitive : string -> Foo` for the mapping to be valid.
 
 ## Using the mapped types
 
@@ -426,8 +426,8 @@ harder to follow for any reader of your code.
 
 You cannot map a .NET generic type as a UserType. For example, maybe every entity in your domain has a Guid PK. You
 might wish to write a single `type Id<'a> = Id of Guid` and then use `Id<User>`, `Id<Group>`, etc. instead of defining
-individual types for each one. This is not supported. You'll have to use `type UserId = UserId of Guid` and `type
-GroupId = GroupId of Guid` and so on.
+individual types for each one. This is not supported. You'll have to use
+`type UserId = UserId of Guid` and `type GroupId = GroupId of Guid` and so on.
 
 ### Changes affecting schema
 

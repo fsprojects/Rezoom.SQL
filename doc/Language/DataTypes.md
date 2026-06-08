@@ -49,9 +49,9 @@ an `int64` to an `int32`. When the typechecker encounters an expression such as
 `a` and `b` have the same types or one is an ancestor of the other's type.
 
 A type variable such as `@x` may be unified with types in many places. The most
-specific type always wins, so in the expression `@x >= someInt32 and @x <
-someInt16`, @x is inferred to have type `int32`, because it is lower in the type
-hierarchy than `int16`.
+specific type always wins, so in the expression
+`@x >= someInt32 and @x < someInt16`, @x is inferred to have type `int32`,
+because it is lower in the type hierarchy than `int16`.
 
 Here is the current type hierarchy. Notice that there are some types in the
 hierarchy that do not appear in the above table. These exist just as constraints
@@ -70,10 +70,10 @@ show up in the corresponding column.
 
 Most expressions (like `a * b`) are assumed to be potentially null if _either_
 of their inputs are potentially null. When an expression uses a function, the
-nullability depends on the function. For example, in TSQL, the `power(base,
-power)` function has "infectious" arguments in that if either of them is
-nullable, the output is inferred to be nullable. However, the `coalesce`
-function's output is only nullable if its last argument is nullable.
+nullability depends on the function. For example, in TSQL, the
+`power(base, power)` function has "infectious" arguments in that if either of
+them is nullable, the output is inferred to be nullable. However, the
+`coalesce` function's output is only nullable if its last argument is nullable.
 
 When a query is parameterized, RZSQL must also figure out which parameters
 should be nullable. To this end, it assumes some expressions must be nullable.
@@ -127,8 +127,8 @@ In the simplest case, as seen above, the expression is a parameter, like
 nullable.
 
 This also works for somewhat more complex expressions. For example, it could be
-a binary operation like `@count + 1`, or even a scalar sub-query, like `(select
-@name as n)`. In both these cases. the typechecker concludes that the whole
+a binary operation like `@count + 1`, or even a scalar sub-query, like
+`(select @name as n)`. In both these cases. the typechecker concludes that the whole
 subquery's result is nullable if-and-only-if the parameter in question is
 nullable, so again, it makes the parameter's type nullable to satisfy the
 constraint.

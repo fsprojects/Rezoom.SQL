@@ -255,8 +255,8 @@ The four compound operators supported by RZSQL are:
 * `EXCEPT`: the result set contains all rows from the left compound term **not
   found in** the right compound term.
 
-Compound operators are all left-associative, meaning that `x except y union all
-z` groups like `(x except y) union all z`. The parentheses here are purely for
+Compound operators are all left-associative, meaning that
+`x except y union all z` groups like `(x except y) union all z`. The parentheses here are purely for
 illustration. In RZSQL, you _cannot_ use parentheses around compound exprs to
 override their associativity. If you need an associativity other than
 left-to-right, you'll need to use subqueries instead.

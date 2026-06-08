@@ -21,9 +21,9 @@ There is no data type in Postgres that stores a date, time, and timezone offset.
 
 You would think that `TIMESTAMP WITH TIME ZONE` would do that, but it does not.
 It stores a UTC timestamp, and annoyingly converts it to different local times
-in various situations such as during conversion to `TIMESTAMP WITHOUT TIME
-ZONE`. It is baffling to me why anybody would ever want a database to be aware
-of anybody's local time, but I'm not the database guy.
+in various situations such as during conversion to
+`TIMESTAMP WITHOUT TIME ZONE`. It is baffling to me why anybody would ever
+want a database to be aware of anybody's local time, but I'm not the database guy.
 
 When using RZSQL, both the `DateTime` and `DateTimeOffset` types are mapped to
 `TIMESTAMP WITH TIME ZONE`. With both types, querying the DB will give you a UTC
