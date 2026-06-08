@@ -13,7 +13,7 @@ This allows you to:
 
 This is how an example solution with UserTypes is arranged:
 
-![](SolutionLayout.gv.svg)
+![Solution has YourProject.SQLQueries.fsproj referencing Rezoom.SQL.Provider and YourProject.UserTypes.fsproj referencing Rezoom.SQL.Annotations. There is a project reference from YourProject.SQLQueries to YourProject.UserTypes.](SolutionLayout.gv.svg)
 
 Your UserTypes MUST be in a separate assembly from your SQL queries, and must build first.
 
@@ -32,7 +32,8 @@ It's a good practice to model your domain tightly with types. This helps make co
 compiler to catch errors where function arguments are passed out-of-order. For example, if you have a function in your domain:
 
 ```fsharp
-addUserToGroup (userId : int) -> (groupId : int) -> Plan<unit>
+let addUserToGroup (userId : int) (groupId : int) =
+    // do stuff
 ```
 
 It's very easy to accidentally call `addUserToGroup group.Id user.Id` and miss the mistake.
@@ -40,12 +41,13 @@ It's very easy to accidentally call `addUserToGroup group.Id user.Id` and miss t
 If you have wrapper types and your function signature changes to:
 
 ```fsharp
-addUserToGroup (userId : UserId) -> (groupId : GroupId) -> Plan<unit>
+let addUserToGroup (userId : UserId) (groupId : GroupId) =
+    // do stuff
 ```
 
 Then you can't make that mixup without the compiler catching it.
 
-However, implementing a domain model with those wrapper types on top of vanilla Rezoom.SQL would be frustrating. You'd
+However, implementing a domain model with those wrapper types on top of vanilla RZSQL would be frustrating. You'd
 constantly have to convert the raw primitive `int` or `string` or `Guid` values that come out of your SQL query results
 to your domain types, and unpack your domain types back to primitives to pass them in as query parameters.
 
@@ -77,13 +79,14 @@ type EmailAddress(rawEmail : string) =
         if isNull rawEmail || not(rawEmail.Contains("@")) then
             invalidArg (nameof rawEmail) "Email must be non-null and contain @"
 
-    override this.ToString() = raw
+    override this.ToString() = rawEmail
 
     static member ToPrimitive(email : EmailAddress) : string = email.ToString()
     static member FromPrimitive(raw : string) : EmailAddress = EmailAddress(raw)
 ```
 
-`EmailAddress` will be detected as a valid UserType because of the ToPrimitive and FromPrimitive methods mapping it it to string.
+`EmailAddress` will be detected as a valid UserType because of the ToPrimitive and FromPrimitive methods mapping it to
+string.
 
 If you don't like having those static methods littering your domain, or you can't add them because the type you're
 trying to map is from another library you can't edit, that's not a problem!
@@ -112,7 +115,7 @@ Or my personal preference, F# extension methods:
 module MyCustomMappings =
     type DateOnly with
         member this.ToPrimitive() = this.ToString("o")
-        static member this.FromPrimitive(str : string) = DateOnly.ParseExact(str, "o")
+        static member FromPrimitive(str : string) = DateOnly.ParseExact(str, "o")
 ```
 
 You can have as many classes as you want defining static custom mappings. But you can't split the mapping for a *single
@@ -123,6 +126,8 @@ usertype* across multiple classes. `ToPrimitive : Foo -> string` has to be defin
 
 Once you've got your UserTypes assembly plugged in via [rzsql.json](../../Configuration/Json.md), you can use your
 domain types in your database model. Instead of writing `create table Users(Id guid primary key)`, write `create table Users(Id UserId primary key)`.
+
+**Note that while built-in types in RZSQL are case-insensitive, when you reference a UserType you *must* match its .NET type name exactly, case-sensitively!**
 
 When you `select` from that table, you'll get the `Id` column back out in your F# code as a `UserId`, not just a plain `System.Guid`.
 
@@ -165,8 +170,8 @@ In your UserTypes assembly, write an interface matching the shape of the columns
 
 ```fsharp
 type IUserRow =
-    member Id : UserId
-    member Email : EmailAddress
+    abstract member Id : UserId
+    abstract member Email : EmailAddress
     // ... etc
 ```
 
@@ -221,7 +226,7 @@ module MyCustomMappings =
     type DateOnly with
         [<SQLTypeLength(10)>] // store as nvarchar(10)
         member this.ToPrimitive() = this.ToString("o")
-        static member this.FromPrimitive(str : string) = DateOnly.ParseExact(str, "o")
+        static member FromPrimitive(str : string) = DateOnly.ParseExact(str, "o")
 ```
 
 A more heavy-handed alternative is to override the entire type name used on the backend.
@@ -232,7 +237,7 @@ This is done with the `RawBackendSQLType` attribute.
     type DateOnly with
         [<RawBackendSQLType("char(10)")>]
         member this.ToPrimitive() = this.ToString("o")
-        static member this.FromPrimitive(str : string) = DateOnly.ParseExact(str.Trim(), "o")
+        static member FromPrimitive(str : string) = DateOnly.ParseExact(str.Trim(), "o")
 ```
 
 Note that `RawBackendSQLType` and `SQLTypeLength` cannot be specified on the same type, because the former completely
@@ -241,10 +246,56 @@ overrides the latter and makes it redundant.
 The string passed to `RawBackendSQLType` is opaque to RZSQL and not type-checked. It is your responsibility to ensure
 that it's syntactically valid and that it can store the data you're mapping into it.
 
+## Re-mapping a builtin type
+
+You can also use UserTypes to change how an already-supported RZSQL primitive type is stored.
+
+This would primarily be useful on SQLite, where the database itself has very few types, so RZSQL made opinionated
+decisions on storing GUIDs (as binary BLOBs) and DateTimes (as ISO8601 strings).
+
+If you don't feel those decisions fit your project you can change them the same way you'd override any other UserType:
+
+```fsharp
+module ExampleOverrides =
+    // change DateTime to store as a unix time instead of an ISO string
+    let unixEpoch = DateTime(1970,1,1)
+    type System.DateTime with
+        member this.ToPrimitive() : int64 = int64 (this - unixEpoch).TotalSeconds
+        static member FromPrimitive(i : int64) = unixEpoch + TimeSpan.FromSeconds(i)
+
+    // change Guid to store as a string instead of a byte[] blob
+    type System.Guid with
+        member this.ToPrimitive() : string = this.ToString()
+        static member FromPrimitive(str : string) = Guid.Parse(str)
+```
+
+These overrides will apply everywhere your SQL queries reference the `datetime` and `guid` builtin types. Unlike most
+UserTypes, when it's a builtin type you've re-mapped, you *don't* have to be case-sensitive to use it in your schema and
+queries. That would just be far too confusing if typing `DateTime` applied your overridden methods but `datetime`
+didn't!
+
+### Decimal and DateTimeOffset on SQLite
+
+I especially recommend doing this for the SQLite backend if you'd like to use `decimal` or `DateTimeOffset`. By default
+these types will throw an exception if used with a SQLite backend because I couldn't think of an acceptable *default*
+way to support them. For decimal, if we mapped to `REAL` you would lose the precision and basetenity of `decimal`. The
+only lossless way to store and retrieve a `decimal` value would be in a SQLite `BLOB` or `TEXT` column, but then
+mathematical operators would break or silently decay to binary floating point.
+
+Likewise with `DateTimeOffset`, the obvious choice would be to use `.ToString("o")` like we do with DateTime, but then
+comparisons and equality would produce unexpected results. The below expression evalutes TRUE in SQLite using string
+comparison, but should be FALSE comparing the actual moment in time the two `DateTimeOffset` types represent. The UTC+0
+one is a minute before the UTC-4 one.
+
+`'2026-06-07T21:16:00.0000000-04:00' > '2026-06-08T01:15:00.0000000+00:00'`
+
+If you understand the problem space and have chosen storage format where the tradeoffs work for *your needs*, mapping
+these types can be the right call.
+
 ## Mapping to vendor-specific database column types
 
 In addition to the aforementioned [built-in primitive](../DataTypes.md) datatypes, your `ToPrimitive` and
-`FromPrimitive` methods can map to `System.Object`.
+`FromPrimitive` methods can map a UserType to `System.Object`.
 
 This allows you to store and retrieve *anything* your underlying ADO.NET provider can handle.
 
@@ -278,7 +329,7 @@ representation via `ToPrimitive`. The output of that `ToPrimitive()` call become
 
 By default,
 [dbParam.DbType](https://learn.microsoft.com/en-us/dotnet/api/system.data.common.dbparameter.dbtype?view=net-10.0)
-is set based on the underlying type being mapped to. For example, if you mapped to int, Rezoom.SQL will assume
+is set based on the underlying type being mapped to. For example, if you mapped to int, RZSQL will assume
 `DbType.Int32` is appropriate.
 
 Usually that is fine.
@@ -299,13 +350,20 @@ prop.SetValue(dbParam, Enum.ToObject(prop.PropertyType, intValue))
 In the above snippet, `propName` and `intValue` come from the `[<SQLParameterDbType("NpgsqlDbType", 15)>]` attribute, 15
 being the integer value of NpgsqlDbType.Point.
 
+### Writing SQL dealing with backend-specific types
+
+The above example helped you store a `point` and retrieve it, but you still can't do much with it in your database
+queries. RZSQL doesn't know what operations `point` supports, and doesn't have type signatures for Postgres's geometric
+functions, because they don't fit into its default backend-agnostic type hierarchy. For doing more than just CRUD
+storage and retrieval, you'll want to get familiar with [VENDOR statements](../VendorStmts.md).
+
 ## Annotation attributes reference
 
 ### RawBackendSQLType
 
 Usage: `[<RawBackendSQLType(sqlType : string)>]`
 
-Specifies the literal type RZSQL should use for columns storing this usertype and in typename-carrying expressions like `CAST(x AS MyUserType)`.
+Specifies the literal type RZSQL should use for columns storing this UserType and in typename-carrying expressions like `CAST(x AS MyUserType)`.
 This allows you to override the default storage format RZSQL would use for the underlying primitive type.
 
 You SHOULD include the length specifier, if one is needed, in the string such as `"varchar(50)"`.
@@ -325,9 +383,9 @@ Not valid to combine this with `RawBackendSQLType`, since that already includes 
 
 ### SQLParameterDbType
 
-Usage 1: `[<SQLParameterDbType(dbType : System.Data.DbType)>]`
+Constructor 1: `[<SQLParameterDbType(dbType : System.Data.DbType)>]`
 
-Usage 2: `[<SQLParameterDbType(dbParameterPropertyName : string, value : int)>]`
+Constructor 2: `[<SQLParameterDbType(dbParameterPropertyName : string, value : int)>]`
 
 Specifies the `DbType` to use when this UserType is passed into a query as a parameter.
 
@@ -339,16 +397,29 @@ will be resolved by name at runtime and set to the specified integer value.
 
 ## Pitfalls and limitations
 
+### Must map each specific type, not just a base type
+
+If you have ToPrimitive and FromPrimitive defined on a base class, that does *not* automatically make all its subclasses valid UserTypes. Each one needs its own mapping.
+
+### No chaining primitives
+
+Your `ToPrimitive` and `FromPrimitive` must map *directly* to a builtin primitive type, not *another* wrapper type.
+
+You can't have `Foo` mapped to underlying type `Bar`, `Bar` mapped to `Baz` and `Baz` mapped to `int`. Even though it
+would be possible to follow that chain of wrappers and unwrappers to convert between `Foo` and `int`, RZSQL does not do
+this. It would require additional error-checking to prevent cyclical paths and it would just make the mapping of `Foo`
+harder to follow for any reader of your code.
+
 ### No generics
 
-You cannot map a .NET generic type as a usertype. For example, maybe every entity in your domain has a Guid PK. You
+You cannot map a .NET generic type as a UserType. For example, maybe every entity in your domain has a Guid PK. You
 might wish to write a single `type Id<'a> = Id of Guid` and then use `Id<User>`, `Id<Group>`, etc. instead of defining
 individual types for each one. This is not supported. You'll have to use `type UserId = UserId of Guid` and `type
 GroupId = GroupId of Guid` and so on.
 
 ### Changes affecting schema
 
-When you change your usertypes library, RZSQL has no way of knowing about the history.
+When you change your UserTypes library, RZSQL has no way of knowing about the history.
 
 Suppose for a long time you had `System.TimeOnly` mapped to a `string` (hh:mm:ss) and you have decided to change it to map
 to an `int` (seconds since midnight). It's a small task to change your .NET assembly to replace the `ToPrimitive` and

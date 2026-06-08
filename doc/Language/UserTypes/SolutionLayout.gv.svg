@@ -69,7 +69,7 @@
 <polygon fill="none" stroke="black" points="131,-95.5 131,-139.75 656,-139.75 656,-95.5 131,-95.5"/>
 <text xml:space="preserve" text-anchor="start" x="146" y="-114.25" font-family="Consolas" font-size="14.00">type MyQuery = SQL&lt;&quot;select&lt;IUser&gt; * from Users where Id = @id&quot;&gt;</text>
 <polygon fill="none" stroke="black" points="131,-51.25 131,-95.5 656,-95.5 656,-51.25 131,-51.25"/>
-<text xml:space="preserve" text-anchor="start" x="146" y="-70" font-family="Consolas" font-size="14.00">let rows = MyQuery.Command(id = UserId 123).Execute(connection)</text>
+<text xml:space="preserve" text-anchor="start" x="146" y="-70" font-family="Consolas" font-size="14.00">let! rows = MyQuery.Command(id = UserId 123).Plan()</text>
 <polygon fill="none" stroke="black" points="131,-7 131,-51.25 656,-51.25 656,-7 131,-7"/>
 <text xml:space="preserve" text-anchor="start" x="146" y="-25.75" font-family="Consolas" font-size="14.00">let user = rows.[0] :&gt; IUser</text>
 <polygon fill="none" stroke="black" stroke-width="3" points="9.5,-5.5 9.5,-274 657.5,-274 657.5,-5.5 9.5,-5.5"/>

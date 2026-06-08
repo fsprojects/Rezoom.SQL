@@ -35,7 +35,7 @@ digraph "Solution Layout" {
       <tr><td>rzsql.json</td><td align="left">{ &quot;UserTypes&quot;: [&quot;YourProject.UserTypes&quot;] }</td></tr>
       <tr><td>V1.model.sql</td><td align="left">create table Users(Id UserId primary key, Email EmailAddress, ...)</td></tr>
       <tr><td rowspan="3">Query.fs</td><td align="left">type MyQuery = SQL&lt;&quot;select&lt;IUser&gt; * from Users where Id = @id&quot;&gt;</td></tr>
-      <tr><td align="left">let rows = MyQuery.Command(id = UserId 123).Execute(connection)</td></tr>
+      <tr><td align="left">let! rows = MyQuery.Command(id = UserId 123).Plan()</td></tr>
       <tr><td align="left">let user = rows.[0] :&gt; IUser</td></tr>
 
     </table>
