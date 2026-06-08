@@ -17,6 +17,7 @@
     <Compile Include="TestRowTypeInterfaces.fs" />
     <Compile Include="TestUserTypeAnnotations.fs" />
     <Compile Include="TestUserPrimitiveByteArray.fs" />
+    <Compile Include="TestUserPrimitiveEnum.fs" />
     <Compile Include="TestPickles.fs" />
     <Compile Include="TestMigrateConnectionString.fs" />
     <Compile Include="Program.fs" />

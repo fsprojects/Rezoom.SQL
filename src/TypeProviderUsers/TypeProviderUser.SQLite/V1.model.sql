@@ -38,3 +38,13 @@ create table HashedBlobs
 , Hash FileHash
 );
 
+create table ColorRows
+( Id int primary key autoincrement
+, Color FavoriteColor
+);
+
+create table KindRows
+( Id int primary key autoincrement
+, Kind DateTimeKind
+);
+

@@ -11,6 +11,36 @@ module Extensions =
         static member FromPrimitive(s : string) =
             System.TimeOnly.ParseExact(s, "o")
 
+// --- Enum fixtures -------------------------------------------------------
+//
+// Two different ways of routing a CLR enum through the user-type pipeline:
+//   FavoriteColor   — user-defined F# enum, mapped to string via ToString /
+//                     Enum.Parse so storage is human-readable ("Red", "Blue").
+//   DateTimeKind    — BCL enum we cannot edit, mapped to its underlying int
+//                     value via the cast operator. Demonstrates that the same
+//                     external-static-class pattern that handles BCL classes
+//                     also handles BCL enums.
+//
+// F# enums compile to CLR enums (System.Enum subtypes), distinct from F#
+// single-case DUs which compile to class hierarchies. So findSingleCaseDU
+// will return None for these and the loader falls through to the explicit
+// ToPrimitive/FromPrimitive static-class path.
+
+type FavoriteColor =
+    | Red = 0
+    | Green = 1
+    | Blue = 2
+
+type FavoriteColorMapping() =
+    static member ToPrimitive(c : FavoriteColor) : string = c.ToString()
+    static member FromPrimitive(s : string) : FavoriteColor =
+        System.Enum.Parse<FavoriteColor>(s)
+
+type DateTimeKindMapping() =
+    static member ToPrimitive(k : System.DateTimeKind) : int = int k
+    static member FromPrimitive(i : int) : System.DateTimeKind =
+        enum<System.DateTimeKind> i
+
 // --- Fixtures for the Rezoom.SQL.Annotations attribute pipeline ----------
 
 /// Single-case DU with a type-level RawBackendSQLType attribute. The
