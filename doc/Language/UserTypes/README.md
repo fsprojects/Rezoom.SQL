@@ -33,7 +33,7 @@ Your UserTypes MUST be in a separate assembly from your SQL queries, and must bu
 The type provider cannot "see" types defined in the same assembly it's trying to compile. They don't exist yet!
 
 The fsproj where you're using Rezoom.SQL.Provider must have a project reference to your UserType project(s). It must
-**also** name those projects in [rzsql.json's](../../Configuration/Json.md) `"UserTypes"` list. This tells the type
+**also** name those projects in [rzsql.json's](../../Configuration/Json.md) `"usertypes"` list. This tells the type
 provider to search the listed assemblies at design-time to find your custom types.
 
 Referencing Rezoom.SQL.Annotations is optional. This is a lightweight package that only defines attributes.

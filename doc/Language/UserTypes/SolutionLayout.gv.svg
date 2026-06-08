@@ -59,7 +59,7 @@
 <polygon fill="none" stroke="black" points="11,-184 11,-228.25 131,-228.25 131,-184 11,-184"/>
 <text xml:space="preserve" text-anchor="start" x="33.5" y="-202.75" font-family="Consolas" font-size="14.00">rzsql.json</text>
 <polygon fill="none" stroke="black" points="131,-184 131,-228.25 656,-228.25 656,-184 131,-184"/>
-<text xml:space="preserve" text-anchor="start" x="146" y="-202.75" font-family="Consolas" font-size="14.00">{ &quot;UserTypes&quot;: [&quot;YourProject.UserTypes&quot;] }</text>
+<text xml:space="preserve" text-anchor="start" x="146" y="-202.75" font-family="Consolas" font-size="14.00">{ &quot;usertypes&quot;: [&quot;YourProject.UserTypes&quot;] }</text>
 <polygon fill="none" stroke="black" points="11,-139.75 11,-184 131,-184 131,-139.75 11,-139.75"/>
 <text xml:space="preserve" text-anchor="start" x="26" y="-158.5" font-family="Consolas" font-size="14.00">V1.model.sql</text>
 <polygon fill="none" stroke="black" points="131,-139.75 131,-184 656,-184 656,-139.75 131,-139.75"/>
