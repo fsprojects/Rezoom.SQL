@@ -149,6 +149,10 @@ type UserModel =
         Migrations : string MigrationTree IReadOnlyList
         UserTypeLibrary : UserTypeLibrary
     }
+    member this.CommandEffect(statements : TotalStmts) =
+        CommandEffect.OfSQL(this.Model, statements, this.UserTypeLibrary)
+    member this.CommandEffect(descr : string, sql : string) =
+        CommandEffect.OfSQL(this.Model, descr, sql, this.UserTypeLibrary)
     static member ConfigFileName = "rzsql.json"
     static member Load(resolutionFolder : string, modelPath : string) =
         UserModel.Load(resolutionFolder, modelPath, Seq.empty)

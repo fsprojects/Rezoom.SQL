@@ -31,6 +31,7 @@ type CommandEffect =
         |> Seq.map (fun s -> s.Value.Info.Table.Query)
     static member ParseSQL(descr: string, sql : string) : TotalStmts =
         Parser.parseStatements descr sql |> toReadOnlyList
+    [<Obsolete("This overload assumes no UserTypeLibrary and is deprecated. Pass a UserTypeLibrary explicitly or use UserModel.CommandEffect().")>]
     static member OfSQL(model : Model, stmts : TotalStmts) = CommandEffect.OfSQL(model, stmts, Mapping.UserTypeLibrary.Empty)
     static member OfSQL(model : Model, stmts : TotalStmts, userTypes : Mapping.UserTypeLibrary) =
         let builder = CommandEffectBuilder(model)
@@ -39,6 +40,7 @@ type CommandEffect =
             let stmt = typeResolution.TotalStmt(stmt)
             builder.AddTotalStmt(stmt)
         builder.CommandEffect()
+    [<Obsolete("This overload assumes no UserTypeLibrary and is deprecated. Pass a UserTypeLibrary explicitly or use UserModel.CommandEffect().")>]
     static member OfSQL(model : Model, descr : string, sql : string) =
         CommandEffect.OfSQL(model, descr, sql, Mapping.UserTypeLibrary.Empty)
     static member OfSQL(model : Model, descr : string, sql : string, userTypes : Mapping.UserTypeLibrary) =
