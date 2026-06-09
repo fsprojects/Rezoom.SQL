@@ -7,7 +7,7 @@ open Rezoom.SQL.Mapping
 
 let private resultSets expected sql =
     let userModel = userModel1()
-    let effect = CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
+    let effect = userModel.CommandEffect("anonymous", sql)
     let resultSet = effect.ResultSets() |> Seq.exactlyOne
     Assert.AreEqual(expected, resultSet.StaticRowCount)
 

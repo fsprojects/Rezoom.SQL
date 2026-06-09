@@ -7,13 +7,13 @@ open Rezoom.SQL.Mapping
 
 let roundtrip (sql : string) =
     let userModel = userModel1()
-    let parsed = CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
+    let parsed = userModel.CommandEffect("anonymous", sql)
     let indexer = { new IParameterIndexer with member __.ParameterIndex(_) = 0 }
     let backend = DefaultBackend() :> IBackend
     let fragments = backend.ToCommandFragments(indexer, parsed.Statements)
     let str = CommandFragment.Stringize(fragments)
     Console.WriteLine(str)
-    let parsedBack = CommandEffect.OfSQL(userModel.Model, "readback", str)
+    let parsedBack = userModel.CommandEffect("readback", str)
     let fragmentsBack = backend.ToCommandFragments(indexer, parsedBack.Statements)
     let strBack = CommandFragment.Stringize(fragmentsBack)
     Console.WriteLine(String('-', 80))

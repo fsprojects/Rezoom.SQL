@@ -14,7 +14,7 @@ let normalizeFragments fragments =
 
 let vendor (sql : string) expected =
     let userModel = userModel1()
-    let parsed = CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
+    let parsed = userModel.CommandEffect("anonymous", sql)
     let indexer = dispenserParameterIndexer()
     let fragments =
         userModel.Backend.ToCommandFragments(indexer, parsed.Statements)

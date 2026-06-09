@@ -22,7 +22,7 @@ let userModel2() = userModelByName "user-model-2"
 let expectErrorWithModel (mkMsg : Model -> string) (sql : string) =
     let userModel = userModel1()
     try
-        ignore <| CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
+        ignore <| userModel.CommandEffect("anonymous", sql)
         failwith "Should've thrown an exception!"
     with
     | :? SourceException as exn ->
