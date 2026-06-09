@@ -299,13 +299,7 @@ let validateSQLCommand (generate : GenerateType) (effect : CommandEffect) =
             fail <| Error.commandChangesSchema
 
 let generateSQLType (generate : GenerateType) (sql : string) =
-    let commandEffect =
-        CommandEffect.OfSQL
-            ( generate.UserModel.Model
-            , generate.TypeName
-            , sql
-            , generate.UserModel.UserTypeLibrary
-            )
+    let commandEffect = generate.UserModel.CommandEffect(generate.TypeName, sql)
     validateSQLCommand generate commandEffect
     let commandCtor = typeof<CommandConstructor>
     let cmd (r : Type) = typedefof<_ Command>.MakeGenericType(r)
