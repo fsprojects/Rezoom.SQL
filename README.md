@@ -1,13 +1,6 @@
----
-title: About
-nav_order: 0
----
-
 <!-- nav-top -->
-**Documentation:** [Tutorial](doc/Tutorial/README.md) | [Using Rezoom](doc/Rezoom/README.md) | [Configuration](doc/Configuration/README.md) | [Language](doc/Language/README.md) | [UserTypes](doc/UserTypes/README.md) | [API](doc/API/README.md)
+**Documentation:** [Tutorial](https://fsprojects.github.io/Rezoom.SQL/doc/Tutorial/README.html) | [Using Rezoom](https://fsprojects.github.io/Rezoom.SQL/doc/Rezoom/README.html) | [Configuration](https://fsprojects.github.io/Rezoom.SQL/doc/Configuration/README.html) | [Language](https://fsprojects.github.io/Rezoom.SQL/doc/Language/README.html) | [UserTypes](https://fsprojects.github.io/Rezoom.SQL/doc/UserTypes/README.html) | [API](https://fsprojects.github.io/Rezoom.SQL/doc/API/README.html)
 <!-- /nav-top -->
-
-[More nicely formatted docs with sidebar navigation on Github.io](https://fsprojects.github.io/Rezoom.SQL/README.html)
 
 [Query playground -- try out the SQL dialect live!](https://rzsql.com/#1F854F9945C2061389778AE5DB98238E21D3A62B)
 
