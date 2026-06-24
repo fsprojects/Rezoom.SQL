@@ -1,21 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Type providers must be loaded by the F# compiler / IDE tooling at design time.
-         netstandard2.0 maximizes host compatibility (modern fsc loads ns2.0 providers fine). -->
     <TargetFramework>netstandard2.0</TargetFramework>
     <Authors>Robert Peele</Authors>
     <Description>F# type provider for Rezoom.SQL.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>1.0.0: ALC-aware assembly resolution for .NET 8+ TP loading. Tracks modernized Rezoom.SQL.Compiler / Mapping. See the Rezoom.SQL CHANGELOG.md for the full 1.0.0 story.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.1.0: adds support for custom user defined types.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="README.md" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Watcher.fs" />
     <Compile Include="UserModelCache.fs" />
@@ -24,6 +22,7 @@
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
     <Compile Include="DocStrings.fs" />
+    <Compile Include="InterfaceImpls.fs" />
     <Compile Include="TypeGeneration.fs" />
     <Compile Include="Provider.fs" />
   </ItemGroup>

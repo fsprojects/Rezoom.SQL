@@ -23,6 +23,7 @@ type CoreColumnType =
     | AnyTypeClass
     | ListType of CoreColumnType
     | RawSQLType
+    | UserTypeBasedOn of userTy : UserPrimitiveType * basedOn : CoreColumnType
     member this.ParentType =
         match this with
         | IntegerType Integer16 -> IntegralTypeClass
@@ -49,6 +50,7 @@ type CoreColumnType =
             let elementParent = element.ParentType
             if elementParent = element then AnyTypeClass
             else ListType elementParent
+        | UserTypeBasedOn (_, basedOn) -> basedOn
     member this.HasAncestor(candidate) =
         if this = candidate then true else
         let parent = this.ParentType
@@ -84,6 +86,7 @@ type CoreColumnType =
         | AnyTypeClass -> "<any>"
         | RawSQLType -> "<rawsql>"
         | ListType t -> "[" + string t + "]"
+        | UserTypeBasedOn (userTy, _) -> userTy.Name
     member this.ApproximateTypeName() =
         match this with
         | BooleanType -> BooleanTypeName
@@ -107,6 +110,7 @@ type CoreColumnType =
         | DateTimeishTypeClass
         | DateTimeType -> DateTimeTypeName
         | DateTimeOffsetType -> DateTimeOffsetTypeName
+        | UserTypeBasedOn (t, _) -> ResolvedUserType t
     static member OfTypeName(typeName : TypeName) =
         match typeName with
         | GuidTypeName -> GuidType
@@ -118,6 +122,17 @@ type CoreColumnType =
         | BooleanTypeName -> BooleanType
         | DateTimeTypeName -> DateTimeType
         | DateTimeOffsetTypeName -> DateTimeOffsetType
+        | UnresolvedTypeName name ->
+            bug <| sprintf "User type %s hit the type checker before the UserTypeResolution pass." name
+        | ResolvedUserType t ->
+            // Special case of usertypes that map to obj: they subclass underneath ScalarTypeClass in the hierarchy
+            // and we don't really know of functions or operators that work on them specifically.
+            // You can do truly generic stuff like comparisons and coalesce(),
+            // but other than that, you're on your own.
+            if t.UnderlyingCLRType.FullName = typeof<obj>.FullName then
+                UserTypeBasedOn (t, ScalarTypeClass)
+            else
+                UserTypeBasedOn (t, CoreColumnType.OfTypeName(t.UnderlyingSQLTypeName))
 
 type ColumnType =
     {   Type : CoreColumnType
@@ -161,6 +176,12 @@ type ColumnType =
         | RawSQLType ->
             // DbType part is not really used here
             Unchecked.defaultof<DbType>, typeof<CommandFragment array>
+        | UserTypeBasedOn (userTy, underlying) ->
+            let underlyingDbType, _ =
+                {   Type = underlying
+                    Nullable = ty.Nullable
+                }.TypeInfo(useOptional)
+            underlyingDbType, nullify userTy.UserCLRType
     member ty.CLRType(useOptional) = snd <| ty.TypeInfo(useOptional)
     member ty.DbType = fst <| ty.TypeInfo(false)
     override ty.ToString() =

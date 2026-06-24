@@ -1,3 +1,9 @@
+---
+title: Configuration
+nav_order: 4
+has_children: true
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; Configuration
 

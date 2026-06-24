@@ -156,6 +156,30 @@ let insertDuplicateColumn columnName =
     sprintf "SQ065: The column ``%O`` is specified multiple times in the insert statement" columnName
 let updateDuplicateColumn columnName =
     sprintf "SQ066: The column ``%O`` is specified multiple times in the update statement" columnName
-
-let tableNameNotSuitableForPG =
-    "SQ069: Table name is not suitable for PG (maybe you thought you were writing R?)"
+let typeNameNotFound typeName asmList =
+    sprintf "SQ067: Type name ``%s`` is not a built-in nor found in user assemblies (%s)" typeName asmList
+let typeNameNotFoundButClose typeName candidates =
+    sprintf "SQ068: Type name ``%s`` not found. Did you mean %s?" typeName (candidates |> String.concat " or ")
+let typeNameAmbiguous typeName candidates =
+    sprintf "SQ069: Type name ``%s`` is ambiguous between %s" typeName (candidates |> String.concat ", ")
+let rowTypesMustBeDeclaredOnLeftmostCompound =
+    "SQ070: <Row Types> may only be declared on the first SELECT of a compound expression (union, intersect, etc)"
+let rowTypesMayOnlyBeDeclaredAtTopLevel =
+    "SQ071: <Row Types> may only be declared on a top-level SELECT statement, not a subquery"
+let rowTypeMayOnlyImplementReadOnlyInterface ifaceName =
+    sprintf "SQ072: Row types are immutable and cannot implement an interface ``%s`` with writable properties" ifaceName
+let rowTypeIsMissingInterfaceProperty ifaceName ifaceProp =
+    sprintf "SQ073: Row type cannot implement interface ``%s`` because it lacks property ``%s``" ifaceName ifaceProp
+let rowPropertyHasWrongTypeForInterfaceProperty propName propType ifaceName ifacePropType =
+    sprintf "SQ074: Row type property ``%s`` has type ``%s``, but declared interface ``%s`` expects a ``%s``-typed property"
+        propName
+        propType
+        ifaceName
+        ifacePropType
+let interfacePropCardinalityMismatch property cardinality =
+    sprintf
+        "SQ075: Interface property ``%s`` does not have the expected cardinality %A"
+            property
+            cardinality
+let onlyInterfacesAreSupportedForRowTypes typeName =
+    sprintf "SQ076: <Row Types> must be interfaces. ``%s`` is not an interface" typeName

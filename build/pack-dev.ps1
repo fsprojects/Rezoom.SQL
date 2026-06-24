@@ -69,6 +69,7 @@ Write-Host "Set version to $fullVersion in version.local.props" -ForegroundColor
 
 # Clear any stale entries in the global packages cache for this version.
 $pkgs = @(
+    'rezoom.sql.annotations',
     'rezoom.sql.mapping','rezoom.sql.compiler','rezoom.sql.provider',
     'rezoom.sql.provider.sqlite','rezoom.sql.provider.tsql','rezoom.sql.provider.postgres'
 )
@@ -78,8 +79,10 @@ foreach ($p in $pkgs) {
     if (Test-Path $cacheDir) { Remove-Item -Recurse -Force $cacheDir }
 }
 
-# Pack in topological order: runtime libs first, then wrappers that reference them.
+# Pack in topological order: leaf attribute lib first, then runtime libs,
+# then wrappers that reference them.
 $projects = @(
+    'src/Rezoom.SQL.Annotations/Rezoom.SQL.Annotations.csproj',
     'src/Rezoom.SQL.Mapping/Rezoom.SQL.Mapping.fsproj',
     'src/Rezoom.SQL.Compiler/Rezoom.SQL.Compiler.fsproj',
     'src/Rezoom.SQL.Provider/Rezoom.SQL.Provider.fsproj',

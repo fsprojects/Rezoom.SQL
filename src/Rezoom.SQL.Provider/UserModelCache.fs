@@ -22,11 +22,11 @@ type private UserModelCache() as this =
     [<CLIEvent>]
     member __.Invalidated = invalidated.Publish
 
-    member this.Load(resolutionFolder, modelPath) =
+    member this.Load(resolutionFolder, modelPath, referencedAssemblyPaths : string seq) =
         let key = (resolutionFolder, modelPath)
         let succ, cachedModel = cache.TryGetValue(key)
         if succ then cachedModel else
-        let model = UserModel.Load(resolutionFolder, modelPath)
+        let model = UserModel.Load(resolutionFolder, modelPath, referencedAssemblyPaths)
         cache.[key] <- model
         addWatcher model.ConfigDirectory key
         addWatcher model.MigrationsDirectory key

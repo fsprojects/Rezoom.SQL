@@ -22,7 +22,7 @@ let userModel2() = userModelByName "user-model-2"
 let expectErrorWithModel (mkMsg : Model -> string) (sql : string) =
     let userModel = userModel1()
     try
-        ignore <| CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
+        ignore <| userModel.CommandEffect("anonymous", sql)
         failwith "Should've thrown an exception!"
     with
     | :? SourceException as exn ->
@@ -85,6 +85,8 @@ type SimpleTest =
     {   Migration : string
         Command : string
         TestBackend : IBackend
+        // defaults to empty
+        UserTypes : UserTypeLibrary
         Expect : SimpleTestExpectation
     }
 
@@ -92,6 +94,7 @@ let defaultTest =
     {   Migration = ""
         Command = ""
         TestBackend = DefaultBackend()
+        UserTypes = UserTypeLibrary.Empty
         Expect = BadCommand "expectation not specified"
     }
 
@@ -110,16 +113,31 @@ let postgresTest =
         TestBackend = Postgres.PostgresBackend()
     }
 
+let private testUserTypes =
+    lazy ((userModelByName "user-model-7-usertypes").UserTypeLibrary)
+
+let sqliteTestWithUserTypes =
+    { sqliteTest with UserTypes = testUserTypes.Value }
+
+let tsqlTestWithUserTypes =
+    { tsqlTest with UserTypes = testUserTypes.Value }
+
+let postgresTestWithUserTypes =
+    { postgresTest with UserTypes = testUserTypes.Value }
+
 let private runSimple (test : SimpleTest) =
     let indexer = dispenserParameterIndexer()
     try
-        let migrationEffect = CommandEffect.OfSQL(test.TestBackend.InitialModel, "migration", test.Migration)
+        let migrationEffect =
+            CommandEffect.OfSQL
+                (test.TestBackend.InitialModel, "migration", test.Migration, test.UserTypes)
         let outputMigration =
             test.TestBackend.ToCommandFragments(indexer, migrationEffect.Statements)
             |> CommandFragment.Stringize
         let commandModel = migrationEffect.ModelChange |? test.TestBackend.InitialModel
         try
-            let commandEffect = CommandEffect.OfSQL(commandModel, "command", test.Command)
+            let commandEffect =
+                CommandEffect.OfSQL(commandModel, "command", test.Command, test.UserTypes)
             let outputCommand =
                 test.TestBackend.ToCommandFragments(indexer, commandEffect.Statements)
                 |> CommandFragment.Stringize

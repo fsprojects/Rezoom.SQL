@@ -211,6 +211,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 ignore <| cxt.Unify(selected.Source, selected.Info.Type.InferredType, TypeKnown ScalarTypeClass)
         {   Distinct = resultColumns.Distinct
             Columns = columns
+            RowTypes = resultColumns.RowTypes
         }
 
     member this.GroupBy(groupBy : GroupBy) =
@@ -259,6 +260,15 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 let byIdempotent = groupBy.By |> Array.forall (fun e -> e.Info.Idempotent)
                 let havingIdempotent = groupBy.Having |> Option.forall (fun e -> e.Info.Idempotent)
                 Some groupBy, byIdempotent && havingIdempotent
+        let rowTypes =
+            select.Columns.RowTypes
+            |> Option.map
+                (Array.map (fun t ->
+                    match t.Value with
+                    | ResolvedRowType t -> t
+                    | UnresolvedRowType _ ->
+                        bug "Row type should have been resolved before TypeChecker"))
+            |> Option.defaultValue [||]
         checker,
             {   Columns = columns
                 From = from
@@ -270,6 +280,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                             {   Columns = infoColumns
                                 StaticRowCount = staticCount
                                 ClausesIdempotent = whereIdempotent && groupByIdempotent
+                                RowTypes = rowTypes
                             }
                     } |> TableLike
             } |> AggregateChecker.check
@@ -332,7 +343,7 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                 let idempotent = vals |> Array.forall (fun r -> r.Value |> Array.forall (fun v -> v.Info.Idempotent))
                 TableLike
                     {   Table = CompoundTermResults
-                        Query = { Columns = columns; StaticRowCount = Some vals.Length; ClausesIdempotent = idempotent }
+                        Query = { Columns = columns; StaticRowCount = Some vals.Length; ClausesIdempotent = idempotent; RowTypes = [||] }
                     }, this, Values vals
             | Values _, None ->
                 failAt term.Source Error.valuesRequiresKnownShape
@@ -409,6 +420,9 @@ type private TypeChecker(cxt : ITypeInferenceContext, scope : InferredSelectScop
                     | Some withClause ->
                         let checker, withClause = this.WithClause(withClause)
                         checker, Some withClause
+                let illegalTerms = select.Compound.Value.Terms |> Seq.skip 1 |> Seq.filter (fun t -> t.Value.RowTypes |> Option.isSome)
+                for illegalTerm in illegalTerms do
+                    failAt illegalTerm.Source <| Error.rowTypesMustBeDeclaredOnLeftmostCompound
                 let fromChecker, compound = checker.CompoundTop(select.Compound, selfShape)
                 let limit = Option.map checker.Limit select.Limit
                 let info =

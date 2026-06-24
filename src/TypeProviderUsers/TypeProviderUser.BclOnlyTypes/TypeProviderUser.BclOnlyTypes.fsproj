@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- A user-types assembly that contains ONLY a BCL extension (System.DateOnly)
+       and no single-case DU. This is the edge case for UserTypeLibrary.SourceAssemblies:
+       the only way this DLL gets registered as a ProvidedTypes source assembly is via
+       the *declaring* assembly of its To/FromPrimitive methods. If SourceAssemblies
+       used UserCLRType.Assembly instead, DateOnly's assembly would resolve to the
+       MLC System.Runtime (which gets dropped), this DLL would never be registered,
+       and DateOnly's FromPrimitive would fail to resolve in generated commands. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+</Project>

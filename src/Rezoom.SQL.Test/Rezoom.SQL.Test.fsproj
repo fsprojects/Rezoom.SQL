@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -10,11 +10,13 @@
 
   <ItemGroup>
     <Compile Include="Environment.fs" />
+    <Compile Include="TestLevenshtein.fs" />
     <Compile Include="TestAggregateErrors.fs" />
     <Compile Include="TestAlterTable.fs" />
     <Compile Include="TestBlueprints.fs" />
     <Compile Include="TestCompositeReaders.fs" />
     <Compile Include="TestCTEs.fs" />
+    <Compile Include="TestRowTypesDeclarations.fs" />
     <Compile Include="TestIdempotence.fs" />
     <Compile Include="TestManyPrimitives.fs" />
     <Compile Include="TestMigrations.fs" />
@@ -26,6 +28,8 @@
     <Compile Include="TestPostgres.fs" />
     <Compile Include="TestPostgresSmoke.fs" />
     <Compile Include="TestPrimitiveReaders.fs" />
+    <Compile Include="TestUserPrimitives.fs" />
+    <Compile Include="TestUserPrimitivesCompiler.fs" />
     <Compile Include="TestQueryParents.fs" />
     <Compile Include="TestReadWriteReferences.fs" />
     <Compile Include="TestRoundTrip.fs" />
@@ -35,23 +39,23 @@
     <Compile Include="TestTSQL.fs" />
     <Compile Include="TestTypeErrors.fs" />
     <Compile Include="TestTypeInference.fs" />
+    <Compile Include="TestUserTypeAnnotations.fs" />
     <Compile Include="TestVendorStatements.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="8.0.401" />
-    <!-- Pinning to NUnit 3.x: NUnit 4 removed static Assert.IsTrue/IsNull/etc. that this
-         codebase still uses; revisit when there's time to mass-rewrite to Assert.That. -->
-    <PackageReference Include="FsUnit" Version="5.6.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="NUnit" Version="3.14.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="FSharp.Core" Version="10.1.300" />
+    <PackageReference Include="FsUnit" Version="7.1.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
+    <PackageReference Include="NUnit" Version="4.6.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Rezoom.SQL.Compiler\Rezoom.SQL.Compiler.fsproj" />
     <ProjectReference Include="..\Rezoom.SQL.Mapping\Rezoom.SQL.Mapping.fsproj" />
+    <ProjectReference Include="..\Rezoom.SQL.Test.UserTypes\Rezoom.SQL.Test.UserTypes.fsproj" />
   </ItemGroup>
 
 </Project>

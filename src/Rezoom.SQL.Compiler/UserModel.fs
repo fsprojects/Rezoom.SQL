@@ -67,7 +67,7 @@ module private UserModelLoader =
                 match obj with
                 | SchemaView view ->
                     let inferredDefinition = typeChecker.Select(view.CreateDefinition.AsSelect, SelfQueryShape.Unknown)
-                    ignore <| concrete.Select(inferredDefinition)
+                    ignore <| concrete.Select(inferredDefinition, false)
                 | _ -> ()
 
     let foldMigrations
@@ -88,13 +88,13 @@ module private UserModelLoader =
         let trees = [ for tree in migrationTrees -> mapFold true totalModel tree ]
         trees, totalModel
 
-    let nextModel initialModel (migrationTrees : TotalStmts MigrationTree seq) =
+    let nextModel (userTypes : UserTypeLibrary) initialModel (migrationTrees : TotalStmts MigrationTree seq) =
         let folder isRoot (parentModel : Model) (totalModel : Model) (migration : TotalStmts Migration) =
-            let totalEffect = CommandEffect.OfSQL(totalModel, migration.Source)
+            let totalEffect = CommandEffect.OfSQL(totalModel, migration.Source, userTypes)
             if not isRoot && totalEffect.DestructiveUpdates.Value then
                 fail <| Error.minorMigrationContainsDestruction migration.MigrationName
             let childModel =
-                CommandEffect.OfSQL(parentModel, migration.Source).ModelChange |? parentModel
+                CommandEffect.OfSQL(parentModel, migration.Source, userTypes).ModelChange |? parentModel
             let totalModel =
                 totalEffect.ModelChange |? totalModel
             totalEffect.Statements, childModel, totalModel
@@ -147,9 +147,16 @@ type UserModel =
         Model : Model
         TableIds : Map<QualifiedObjectName, int> Lazy
         Migrations : string MigrationTree IReadOnlyList
+        UserTypeLibrary : UserTypeLibrary
     }
+    member this.CommandEffect(statements : TotalStmts) =
+        CommandEffect.OfSQL(this.Model, statements, this.UserTypeLibrary)
+    member this.CommandEffect(descr : string, sql : string) =
+        CommandEffect.OfSQL(this.Model, descr, sql, this.UserTypeLibrary)
     static member ConfigFileName = "rzsql.json"
     static member Load(resolutionFolder : string, modelPath : string) =
+        UserModel.Load(resolutionFolder, modelPath, Seq.empty)
+    static member Load(resolutionFolder : string, modelPath : string, referencedAssemblyPaths : string seq) =
         let config, configDirectory =
             if String.IsNullOrEmpty(modelPath) then // implicit based on location of dbconfig.json
                 let configPath =
@@ -172,7 +179,12 @@ type UserModel =
         let migrationsDirectory = Path.Combine(configDirectory, config.MigrationsPath) |> Path.GetFullPath
         let migrations = loadMigrations migrationsDirectory
         let backend = Config.toIBackend config.Backend
-        let migrations, model = nextModel backend.InitialModel migrations
+        let userTypes =
+            UserTypeLibraryLoader.loadUserTypeLibraryFromConfig
+                configDirectory
+                referencedAssemblyPaths
+                config.UserTypes
+        let migrations, model = nextModel userTypes backend.InitialModel migrations
         let migrations = stringizeMigrationTree backend migrations |> toReadOnlyList
         {   ConnectionName = config.ConnectionName
             MigrationsDirectory = migrationsDirectory
@@ -182,4 +194,5 @@ type UserModel =
             Model = model
             TableIds = lazy tableIds model
             Migrations = migrations
+            UserTypeLibrary = userTypes
         }

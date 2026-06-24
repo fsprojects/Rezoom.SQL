@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="UserInterfaces.fs" />
+    <Compile Include="UserPrimitives.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Rezoom.SQL.Annotations\Rezoom.SQL.Annotations.csproj" />
+  </ItemGroup>
+
+</Project>

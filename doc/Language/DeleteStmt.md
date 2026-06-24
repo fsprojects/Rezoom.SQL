@@ -1,3 +1,9 @@
+---
+title: Delete statements
+parent: Language
+nav_order: 8
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Delete statements
 

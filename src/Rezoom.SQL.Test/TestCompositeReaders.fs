@@ -79,7 +79,7 @@ let ``read user`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let user = reader.ToEntity()
-    Assert.IsNotNull(user)
+    Assert.NotNull(user)
     Assert.AreEqual(1, user.UserId)
     Assert.AreEqual("jim", user.Name)
 
@@ -117,7 +117,7 @@ let ``read employee (optional nav)`` () =
     reader.ProcessColumns(colMap)
     reader.Read(row)
     let jim = reader.ToEntity()
-    Assert.IsNotNull(jim)
+    Assert.NotNull(jim)
     Assert.AreEqual(1, jim.EmployeeId)
     Assert.AreEqual("jim", jim.Name)
     match jim.Employer with
@@ -136,7 +136,7 @@ let ``read folder 1 level deep`` () =
     reader.ProcessColumns(colMap)
     reader.Read(ObjectRow(1))
     let folder = reader.ToEntity()
-    Assert.IsNotNull(folder)
+    Assert.NotNull(folder)
     Assert.AreEqual(1, folder.FolderId)
     Assert.AreEqual(0, folder.Children.Length)
 
@@ -152,7 +152,7 @@ let ``read folder 2 levels deep`` () =
     reader.Read(ObjectRow(1, 2))
     reader.Read(ObjectRow(1, 3))
     let folder = reader.ToEntity()
-    Assert.IsNotNull(folder)
+    Assert.NotNull(folder)
     Assert.AreEqual(1, folder.FolderId)
     Assert.AreEqual(2, folder.Children.Length)
     Assert.AreEqual(2, folder.Children.[0].FolderId)
@@ -175,7 +175,7 @@ let ``read manywithstuff children null`` () =
     reader.Read(ObjectRow(2, DateTime.MaxValue.ToString(CultureInfo.InvariantCulture), DBNull.Value, DBNull.Value))
     reader.Read(ObjectRow(3, DateTime.MaxValue.ToString(CultureInfo.InvariantCulture), DBNull.Value, DBNull.Value))
     let things = reader.ToEntity()
-    Assert.IsNotNull(things)
+    Assert.NotNull(things)
     Assert.AreEqual(3, things.Length)
     for thing in things do
         Assert.AreEqual(0, thing.Children.Length)
@@ -191,10 +191,10 @@ let ``read person 1 level deep`` () =
     reader.ProcessColumns(colMap)
     reader.Read(ObjectRow(1, "ben"))
     let person = reader.ToEntity()
-    Assert.IsNotNull(person)
+    Assert.NotNull(person)
     Assert.AreEqual(1, person.PersonId)
     Assert.AreEqual("ben", person.Name)
-    Assert.IsNull(person.Parent)
+    Assert.Null(person.Parent)
 
 [<Test>]
 let ``read person 2 levels deep`` () =
@@ -209,10 +209,10 @@ let ``read person 2 levels deep`` () =
     reader.ProcessColumns(colMap)
     reader.Read(ObjectRow(1, "ben", 2, "pat"))
     let person = reader.ToEntity()
-    Assert.IsNotNull(person)
+    Assert.NotNull(person)
     Assert.AreEqual(1, person.PersonId)
     Assert.AreEqual("ben", person.Name)
-    Assert.IsNotNull(person.Parent)
+    Assert.NotNull(person.Parent)
     Assert.AreEqual(2, person.Parent.PersonId)
     Assert.AreEqual("pat", person.Parent.Name)
 

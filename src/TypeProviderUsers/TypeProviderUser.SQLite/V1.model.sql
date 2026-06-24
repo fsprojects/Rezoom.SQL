@@ -4,12 +4,15 @@
 );
 
 create table Users
-( Id int64 primary key autoincrement
+( Id UserId primary key autoincrement
 , Name string(80)
 , Email string(254)
 , ProfilePictureSHA256 binary(32) null references Pictures(SHA256)
 , Created datetime
 , RandomId guid default(cast(randomblob(16) as guid))
+, FavoriteTimeOfDay TimeOnly default('00:00:00.0000000')
+, BedtimeIfAny TimeOnly null
+, SignupDate DateOnly null
 );
 
 create table Articles
@@ -29,4 +32,19 @@ create table ArticleComments
 );
 
 create index IX_ArticleComments_AuthorId on ArticleComments(AuthorId);
+
+create table HashedBlobs
+( Id int primary key autoincrement
+, Hash FileHash
+);
+
+create table ColorRows
+( Id int primary key autoincrement
+, Color FavoriteColor
+);
+
+create table KindRows
+( Id int primary key autoincrement
+, Kind DateTimeKind
+);
 

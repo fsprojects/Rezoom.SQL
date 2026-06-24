@@ -1,3 +1,9 @@
+---
+title: Runtime configuration
+parent: Configuration
+nav_order: 2
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Configuration](README.md) &gt; Runtime configuration
 

@@ -1,0 +1,4 @@
+{
+  "backend": "sqlite",
+  "usertypes": [ "TypeProviderUser.UserTypes" ]
+}

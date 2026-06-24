@@ -1,7 +1,13 @@
+---
+title: Dynamic SQL
+parent: Language
+nav_order: 18
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Dynamic SQL
 
-[&larr; Postgres](Quirks/PostgresQuirks.md) | [What's missing? &rarr;](MissingFeatures.md)
+[&larr; Postgres](Quirks/PostgresQuirks.md) | [Language Omissions &rarr;](MissingFeatures.md)
 <!-- /nav-top -->
 
 # Dynamic SQL
@@ -97,6 +103,6 @@ let exampleCommand (nameSearch : string) =
 
 ---
 <!-- nav-bottom -->
-[&larr; Postgres](Quirks/PostgresQuirks.md) | [What's missing? &rarr;](MissingFeatures.md)
+[&larr; Postgres](Quirks/PostgresQuirks.md) | [Language Omissions &rarr;](MissingFeatures.md)
 <!-- /nav-bottom -->
 

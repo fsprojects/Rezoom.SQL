@@ -1,3 +1,9 @@
+---
+title: rzsql.json
+parent: Configuration
+nav_order: 1
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Configuration](README.md) &gt; rzsql.json
 
@@ -19,7 +25,8 @@ rzsql.json looks like this:
   "backend": "tsql",
   "connectionname": "rzsql",
   "optionals":  "f#",
-  "migrations": "."
+  "migrations": ".",
+  "usertypes": ["Contoso.IdTypes", "Contoso.Primitives"]
 }
 ```
 
@@ -105,6 +112,30 @@ as rzsql.json.
 Since it is painful to use sub-folders in F# projects, the default setting is
 recommended if you want to have your migration scripts be part of your project
 file (which is also recommended!).
+
+## UserTypes
+
+_default: `[]`_
+
+This optional setting allows you to bring your own types into RZSQL's type system.
+
+Reference the assembly full name in rzsql.json like so:
+
+```javascript
+  "usertypes": ["MyProduct.MyCustomTypesAssembly"]
+```
+
+Your F# project using the type provider must also reference the MyProduct.MyCustomTypesAssembly project.
+
+Read [the full UserTypes feature documentation here](../UserTypes/README.md).
+
+You can reference multiple assemblies in this list. For example, you could have your primitive mappings in one assembly
+and your row interfaces in another.
+
+It is also supported to reference a path to a .dll file for the assembly. Paths will be resolved relative to the folder
+containing rzsql.json. However, it is generally better to use a project reference and just name the project, without
+path elements or the ".dll" extension. Otherwise you'll have issues where, for example, you're pointing at the path to
+the DLL under "debug", and your build breaks or pulls an outdated assembly when you're building in "release" mode.
 
 ---
 <!-- nav-bottom -->

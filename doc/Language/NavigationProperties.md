@@ -1,3 +1,9 @@
+---
+title: Navigation properties
+parent: Language
+nav_order: 14
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Navigation properties
 

@@ -1,3 +1,9 @@
+---
+title: Rezoom.SQL.Asynchronous
+parent: API
+nav_order: 3
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL.Asynchronous
 

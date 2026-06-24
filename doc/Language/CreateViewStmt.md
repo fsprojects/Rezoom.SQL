@@ -1,3 +1,9 @@
+---
+title: Create view statements
+parent: Language
+nav_order: 11
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Create view statements
 

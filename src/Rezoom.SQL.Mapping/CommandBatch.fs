@@ -6,6 +6,7 @@ open System.Collections.Generic
 open System.Text
 open System.Threading
 open System.Threading.Tasks
+open System.Reflection
 open Rezoom.SQL
 
 type private CommandBatchRuntimeBackend =
@@ -60,11 +61,17 @@ type private CommandBatchRuntimeBackend =
         | DbType.DateTime2
         | DbType.DateTimeOffset -> "timestamptz"
         | _ -> "unknown"
-    member this.EmptyInList(ty : DbType) =
+    member this.EmptyInList(ty : XDbType) =
         match this with
         | Postgres ->
+            let typeSpecifier =
+                match ty with
+                // This fallback should no longer be needed for non-dynamic command situations,
+                // since our compiler backend now emits CustomDbType for ALL statically known PG parameters.
+                | StdDbType ty -> CommandBatchRuntimeBackend.PgType(ty)
+                | CustomDbType t -> t.SQLTypeName
             // PG has to be difficult and demand a type specifier matching the input
-            "(SELECT NULL::" + CommandBatchRuntimeBackend.PgType(ty) + " WHERE FALSE)"
+            "(SELECT NULL::" + typeSpecifier + " WHERE FALSE)"
         | SQLite ->
             // SQLite is cool and accepts the simple approach. This might be faster than the empty subquery.
             "()"
@@ -85,12 +92,26 @@ type private CommandBatchBuilder(conn : DbConnection, tran : DbTransaction) =
     let mutable parameterCount = 0
     let mutable evaluating = false
 
+    let applyXDbType (dbParam : DbParameter) (dbType : XDbType) =
+        match dbType with
+        | StdDbType dbType -> dbParam.DbType <- dbType
+        | CustomDbType { DbTypePropertyName = propName; DbTypeValue = intValue } ->
+            let prop = dbParam.GetType().GetProperty(propName, BindingFlags.Instance|||BindingFlags.Public)
+            if isNull prop then failwithf "Specified DbType property %s was not found" propName
+            if not prop.CanWrite then failwithf "Specified DbType property %s is not writable" propName
+            if prop.PropertyType = typeof<int> then
+                prop.SetValue(dbParam, intValue)
+            elif prop.PropertyType.IsEnum && prop.PropertyType.GetEnumUnderlyingType() = typeof<int> then
+                prop.SetValue(dbParam, Enum.ToObject(prop.PropertyType, intValue))
+            else
+                failwithf "Specified DbType property %s is not a supported int32 or int32 enum type" propName
+
     let addCommand (builder : StringBuilder) (dbCommand : DbCommand) (commandIndex : int) (command : Command) =
         let parameterOffset = dbCommand.Parameters.Count
-        let addParam name dbType (value : obj) =
+        let addParam name (dbType : XDbType) (value : obj) =
             let dbParam = dbCommand.CreateParameter()
             dbParam.ParameterName <- name
-            dbParam.DbType <- dbType
+            applyXDbType dbParam dbType
             dbParam.Value <- if isNull value then box DBNull.Value else value
             ignore <| dbCommand.Parameters.Add(dbParam)
         for i, parameter in command.Parameters |> Seq.indexed do

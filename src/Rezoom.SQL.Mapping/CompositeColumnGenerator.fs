@@ -8,7 +8,7 @@ open System.Collections.Generic
 open System.Reflection
 open System.Reflection.Emit
 
-type private CompositeColumnGenerator(builder : TypeBuilder, column, composite : Composite) =
+type private CompositeColumnGenerator(builder : TypeBuilder, column, composite : Composite, templateCacheField : TemplateCacheStaticField) =
     inherit EntityReaderColumnGenerator()
     let output = column.Blueprint.Value.Output
     let staticTemplate = Generation.readerTemplateGeneric.MakeGenericType(output)
@@ -31,8 +31,7 @@ type private CompositeColumnGenerator(builder : TypeBuilder, column, composite :
             yield brfalse's ncase
             yield cil {
                 yield dup
-                yield call0 (staticTemplate.GetMethod("Template"))
-                yield callvirt1 (entTemplate.GetMethod("CreateReader"))
+                yield Generation.newEntReader templateCacheField output
                 yield dup
                 yield ldloc sub
                 yield callvirt2'void Generation.processColumnsMethod
@@ -52,8 +51,7 @@ type private CompositeColumnGenerator(builder : TypeBuilder, column, composite :
                 yield castclass builder
                 yield ldarg 0
                 yield ldfld entReader
-                yield call0 (staticTemplate.GetMethod("Template"))
-                yield callvirt1 (entTemplate.GetMethod("CreateReader"))
+                yield Generation.newEntReader templateCacheField output
                 yield dup
                 yield stloc newReader
                 yield callvirt2'void (entReaderType.GetMethod("ImpartKnowledgeToNext"))

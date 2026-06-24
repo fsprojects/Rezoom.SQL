@@ -1,3 +1,10 @@
+---
+title: Quirks
+parent: Language
+nav_order: 17
+has_children: true
+---
+
 <!-- nav-top -->
 [Home](../../../README.md) &gt; [Language](../README.md) &gt; Quirks
 

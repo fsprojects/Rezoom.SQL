@@ -1,3 +1,9 @@
+---
+title: Insert statements
+parent: Language
+nav_order: 6
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Insert statements
 

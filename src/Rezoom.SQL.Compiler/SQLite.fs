@@ -9,22 +9,35 @@ open FSharp.Quotations
 open Rezoom.SQL.Compiler
 open Rezoom.SQL.Compiler.BackendUtilities
 open Rezoom.SQL.Compiler.Translators
-open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
+
+/// For the SQLite backend we convert DateTimes and GUIDs to supported underlying types
+/// clob and blob respectively. The conversion methods live in this module so our quotations
+/// can call them rather than inlining conversion code.
+type SQLiteParamConversions() =
+    static member DateTimeToString(dt : DateTime) : string =
+        let utc =
+            if dt.Kind = DateTimeKind.Unspecified then
+                DateTime.SpecifyKind(dt, DateTimeKind.Utc)
+            else
+                dt.ToUniversalTime()
+        utc.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ")
+
+    static member GuidToBytes(g : Guid) : byte[] = g.ToByteArray()
 
 type private SQLiteLiteral() =
     inherit DefaultLiteralTranslator()
     override __.BooleanLiteral(t) =
         CommandText <| if t then "1" else "0"
     override __.DateTimeLiteral(dt) =
-        CommandText <| "'" + dt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") + "'"
+        CommandText <| "'" + SQLiteParamConversions.DateTimeToString(dt) + "'"
 
 type private SQLiteExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
     let literal = SQLiteLiteral()
     override __.Literal = upcast literal
-    override __.TypeName(name, autoIncrement) =
-        (Seq.singleton << text) <|
+    static member SQLiteTypeString(name, autoIncrement) =
+        let rec tyName name =
             match name with
             | BooleanTypeName
             | IntegerTypeName Integer16
@@ -38,6 +51,11 @@ type private SQLiteExpression(statement : StatementTranslator, indexer) =
             | BinaryTypeName(_) -> "BLOB"
             | DecimalTypeName
             | DateTimeOffsetTypeName -> fail <| sprintf "Unsupported type ``%A``" name
+            | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
+            | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> tyName r.UnderlyingSQLTypeName)
+        tyName name
+    override __.TypeName(name, autoIncrement) =
+        SQLiteExpression.SQLiteTypeString(name, autoIncrement) |> text |> Seq.singleton
 
 type private SQLiteStatement(indexer : IParameterIndexer) as this =
     inherit DefaultStatementTranslator(Name("SQLITE"), indexer)
@@ -68,6 +86,7 @@ type SQLiteMigrationBackend(info : ConnectionInfo) =
         base.Initialize()
 
 type SQLiteBackend() =
+    inherit BackendBase()
     static let initialModel =
         let main, temp = Name("main"), Name("temp")
         {   Schemas =
@@ -83,57 +102,26 @@ type SQLiteBackend() =
                 {   CanDropColumnWithDefaultValue = true
                 }
         }
-    interface IBackend with
-        member this.MigrationBackend = <@ fun settings -> new SQLiteMigrationBackend(settings) :> IMigrationBackend @>
-        member this.InitialModel = initialModel
-        member this.ParameterTransform(columnType) =
-            match columnType.Type with
-            | DateTimeType ->
-                let transform (expr : Quotations.Expr) =
-                    let xform (dtExpr : Quotations.Expr<DateTime>) =
-                        <@  let utcDt =
-                                let dtExpr = %dtExpr
-                                if dtExpr.Kind = DateTimeKind.Unspecified
-                                then DateTime.SpecifyKind(dtExpr, DateTimeKind.Utc)
-                                else dtExpr.ToUniversalTime()
-                            utcDt.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fffZ") |> box
-                        @>
-                    let xform (dtExpr : Quotations.Expr) =
-                        (xform (Expr.Cast(Expr.Coerce(dtExpr, typeof<DateTime>)))).Raw
-                    let ty = expr.Type
-                    let asObj = Expr.Coerce(expr, typeof<obj>)
-                    if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
-                        let invokeValue = Expr.Coerce(Expr.PropertyGet(expr, ty.GetProperty("Value")), typeof<obj>)
-                        <@@ if isNull %%asObj then box DBNull.Value else %%xform invokeValue @@>
-                    else
-                        <@@ if isNull %%asObj then box DBNull.Value else %%xform asObj @@>
-                {   ParameterType = DbType.String
-                    ValueTransform = transform
-                }
-            | GuidType ->
-                let transform (expr : Quotations.Expr) =
-                    let xform (gExpr : Quotations.Expr<Guid>) =
-                        <@  let guid = %gExpr
-                            let bytes = guid.ToByteArray()
-                            box bytes
-                        @>
-                    let xform (gExpr : Quotations.Expr) =
-                        (xform (Expr.Cast(Expr.Coerce(gExpr, typeof<Guid>)))).Raw
-                    let ty = expr.Type
-                    let asObj = Expr.Coerce(expr, typeof<obj>)
-                    if ty.IsConstructedGenericType && ty.GetGenericTypeDefinition() = typedefof<_ option> then
-                        let invokeValue = Expr.Coerce(Expr.PropertyGet(expr, ty.GetProperty("Value")), typeof<obj>)
-                        <@@ if isNull %%asObj then box DBNull.Value else %%xform invokeValue @@>
-                    else
-                        <@@ if isNull %%asObj then box DBNull.Value else %%xform asObj @@>
-                {   ParameterType = DbType.Binary
-                    ValueTransform = transform
-                }
-            | _ -> ParameterTransform.Default(columnType)
-        member this.ToCommandFragments(indexer, stmts) =
-            let translator = SQLiteStatement(indexer)
-            translator.TotalStatements(stmts)
-            |> BackendUtilities.simplifyFragments
-            |> ResizeArray
-            :> _ IReadOnlyList
-       
+    override this.MigrationBackend = <@ fun settings -> new SQLiteMigrationBackend(settings) :> IMigrationBackend @>
+    override this.InitialModel = initialModel
+    override this.InteriorPrimitiveTransform (columnType: ColumnType): ParameterTransform = 
+        match columnType.Type with
+        | DateTimeType ->
+            {   ParameterType = StdDbType DbType.String
+                ValueTransform = fun expr ->
+                    Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.DateTimeToString), [ expr ])
+            }
+        | GuidType ->
+            {   ParameterType = StdDbType DbType.Binary
+                ValueTransform = fun expr ->
+                    Expr.Call(typeof<SQLiteParamConversions>.GetMethod(nameof SQLiteParamConversions.GuidToBytes), [ expr ])
+            }
+        | _ -> { ParameterType = StdDbType columnType.DbType; ValueTransform = fun e -> e }
+    override this.ToCommandFragments(indexer, stmts) =
+        let translator = SQLiteStatement(indexer)
+        translator.TotalStatements(stmts)
+        |> BackendUtilities.simplifyFragments
+        |> ResizeArray
+        :> _ IReadOnlyList
+    override this.SQLTypeString (tyName : TypeName) = 
+        SQLiteExpression.SQLiteTypeString(tyName, false)

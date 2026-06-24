@@ -7,13 +7,13 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>1.0.0: ConnectionProvider returns to its minimal abstract shape (Open / BeginTransaction). ConnectionInfo and configuration concerns move to ConfigurationConnectionProvider. Commands now carry their compile-time dialect as a typed Backend DU (RzSQL / SQLite / TSQL / Postgres) rather than a string, parsed at the rzsql.json boundary and threaded through everywhere else. Breaking change for custom ConnectionProvider subclasses: Open now takes (connectionName : string, backend : Backend). See CHANGELOG.md for the full 1.0.0 story.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.1.0: adds support for custom user defined types.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="README.md" />
+    <None Include="README.md" Pack="true" PackagePath="\"/>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Error.fs" />
     <Compile Include="SourceTypes.fs" />
@@ -23,6 +23,8 @@
     <Compile Include="ASTMapping.fs" />
     <Compile Include="CoreParser.fs" />
     <Compile Include="Parser.fs" />
+    <Compile Include="UserTypeResolutionPass.fs" />
+    <Compile Include="TypeNameForCLRType.fs" />
     <Compile Include="TypeSystem.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="ModelOps.fs" />
@@ -58,8 +60,6 @@
     <Compile Include="Config.fs" />
     <Compile Include="UserModel.fs" />
   </ItemGroup>
-
-  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="8.0.401" />

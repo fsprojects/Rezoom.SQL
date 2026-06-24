@@ -318,7 +318,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
         seq {
             yield this.Expr.Name(col.Name)
             yield ws
-            yield! this.Expr.TypeName(col.Type, col.IsAutoIncrementPrimaryKey)
+            yield! this.Expr.TypeName(col.Type.Value, col.IsAutoIncrementPrimaryKey)
             if this.ColumnsNullableByDefault && not col.Nullable then
                 yield ws
                 yield text "NOT NULL"
@@ -416,7 +416,7 @@ type DefaultStatementTranslator(expectedVendorName : Name, indexer : IParameterI
                 yield ws
                 yield this.Expr.Name(change.Column)
                 yield ws
-                yield! this.Expr.TypeName(change.NewType)
+                yield! this.Expr.TypeName(change.NewType.Value)
             | ChangeNullability change ->
                 yield text "ALTER COLUMN"
                 yield ws

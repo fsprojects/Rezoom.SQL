@@ -12,11 +12,13 @@ type TestModel = SQLModel<".">
 
 type CleanTestData = SQL<"""
 vendor postgres {
-    drop table __RZSQL_MIGRATIONS;
-    drop table ArticleComments;
-    drop table Articles;
-    drop table Users;
-    drop table Pictures;
+    drop table if exists __RZSQL_MIGRATIONS;
+    drop table if exists UserLocations;
+    drop table if exists UserAddresses;
+    drop table if exists ArticleComments;
+    drop table if exists Articles;
+    drop table if exists Users;
+    drop table if exists Pictures;
 }
 """>
 

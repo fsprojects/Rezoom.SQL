@@ -1,3 +1,9 @@
+---
+title: Rezoom.SQL.Migrations
+parent: API
+nav_order: 5
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL.Migrations
 

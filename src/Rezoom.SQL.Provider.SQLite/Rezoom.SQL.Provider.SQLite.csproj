@@ -1,9 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Meta-package: brings in Rezoom.SQL.Provider plus the Microsoft.Data.Sqlite
-         ADO.NET driver. Modern cross-platform SQLite driver (replaces the older
-         System.Data.SQLite.Core that the original wrapper used). -->
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>

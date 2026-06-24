@@ -1,8 +1,34 @@
 ﻿namespace Rezoom.SQL.Mapping
+open FSharp.Quotations
 open System
 open System.Data
 open System.Collections.Generic
 open Rezoom
+
+
+[<NoComparison>]
+type CustomDbTypeInfo =
+    {   DbTypePropertyName : string
+        SQLTypeName : string
+        DbTypeValue : int
+    }
+
+/// Extended DbType: can either be a true DbType enum value in the simple case,
+/// or can be a driver-specific property to set via reflection for e.g. NpgsqlDbType.
+[<NoComparison>]
+[<Struct>]
+type XDbType =
+    | StdDbType of dbType : DbType
+    | CustomDbType of CustomDbTypeInfo
+    member this.WithSQLTypeName(sqlTypeName : string) =
+        match this with
+        | StdDbType d -> CustomDbType { DbTypePropertyName = nameof(DbType); SQLTypeName = sqlTypeName; DbTypeValue = int d }
+        | CustomDbType c -> CustomDbType { c with SQLTypeName =  sqlTypeName }
+    member this.Quote() =
+        match this with 
+        | StdDbType d -> <@@ StdDbType (%%Expr.Value(d)) @@>
+        | CustomDbType { DbTypePropertyName = dp; SQLTypeName = st; DbTypeValue = dt } ->
+            <@@ CustomDbType { DbTypePropertyName = %%Expr.Value(dp); SQLTypeName = %%Expr.Value(st); DbTypeValue = %%Expr.Value(dt) } @@>
 
 [<NoComparison>]
 type CommandFragment =
@@ -15,7 +41,7 @@ type CommandFragment =
     /// References parameter by index.
     | Parameter of int
     /// Directly specifies parameter value.
-    | InlineParameter of DbType * obj
+    | InlineParameter of XDbType * obj
     /// At least one unit of whitespace.
     | Whitespace
     /// Whitespace, preferably a line break.
@@ -87,6 +113,8 @@ type CommandData =
         InvalidationMask : BitMask
         Cacheable : bool
         ResultSetCount : int option
+        /// User type library to use (if any) when reading result entities.
+        UserTypeLibrary : FreezeDry.FreezeDriedUserTypeLibrary option
     }
 
 type CommandCategory = CommandCategory of connectionName : string
@@ -94,8 +122,8 @@ type CommandCategory = CommandCategory of connectionName : string
 [<NoComparison>]
 [<CustomEquality>]
 type CommandParameter =
-    | ListParameter of DbType * Array
-    | ScalarParameter of DbType * obj
+    | ListParameter of XDbType * Array
+    | ScalarParameter of XDbType * obj
     | RawSQLParameter of CommandFragment array
     member this.Equals(other : CommandParameter) =
         match this, other with

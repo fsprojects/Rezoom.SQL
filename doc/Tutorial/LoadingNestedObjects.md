@@ -1,3 +1,9 @@
+---
+title: Loading nested objects
+parent: Tutorial
+nav_order: 3
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Tutorial](README.md) &gt; Loading nested objects
 
@@ -54,8 +60,8 @@ users. Behind the scenes, it is getting the same old flat result set from SQL,
 but it processes it into a nested collection of objects in memory. In order to
 do this, it must have some way to de-duplicate the repeated user information. By
 default, this is done by comparing all the columns at the user level of the
-query that are selected from primary key columns -- in this case, just `u.Id as
-UserId`.
+query that are selected from primary key columns -- in this case, just
+`u.Id as UserId`.
 
 You can read more about this feature on the [Navigation
 Properties](../Language/NavigationProperties.md) page.

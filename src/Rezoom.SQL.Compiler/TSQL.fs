@@ -1,11 +1,10 @@
 ﻿namespace Rezoom.SQL.Compiler.TSQL
 open System.Collections.Generic
 open Rezoom.SQL.Compiler
-open Rezoom.SQL.Compiler.BackendUtilities
-open Rezoom.SQL.Compiler.Translators
 open Rezoom.SQL.Migrations
 
 type TSQLBackend() =
+    inherit BackendBase()
     static let initialModel =
         let main, temp = Name("dbo"), Name("temp")
         {   Schemas =
@@ -21,14 +20,13 @@ type TSQLBackend() =
                 {   CanDropColumnWithDefaultValue = false
                 }
         }
-    interface IBackend with
-        member this.MigrationBackend = <@ fun conn -> new TSQLMigrationBackend(conn) :> IMigrationBackend @>
-        member this.InitialModel = initialModel
-        member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
-        member this.ToCommandFragments(indexer, stmts) =
-            let translator = TSQLStatement(indexer)
-            translator.TotalStatements(stmts)
-            |> BackendUtilities.simplifyFragments
-            |> ResizeArray
-            :> _ IReadOnlyList
-       
+    override this.MigrationBackend = <@ fun conn -> new TSQLMigrationBackend(conn) :> IMigrationBackend @>
+    override this.InitialModel = initialModel
+    override this.ToCommandFragments(indexer, stmts) =
+        let translator = TSQLStatement(indexer)
+        translator.TotalStatements(stmts)
+        |> BackendUtilities.simplifyFragments
+        |> ResizeArray
+        :> _ IReadOnlyList
+    override this.SQLTypeString (tyName : TypeName) = 
+        TSQLExpression.TSQLTypeString(tyName)

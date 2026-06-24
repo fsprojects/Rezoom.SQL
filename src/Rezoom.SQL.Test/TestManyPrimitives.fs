@@ -30,11 +30,11 @@ let ``read friend`` () =
     for row in rows do
         reader.Read(row)
     let friend = reader.ToEntity()
-    Assert.IsNotNull(friend)
+    Assert.NotNull(friend)
     Assert.AreEqual(3, friend.Id)
     Assert.AreEqual("Robert", friend.Name)
     Assert.AreEqual(4, friend.Aliases.Length)
-    Assert.IsTrue([| "Bob"; "Bobby"; "Rob"; "Robby" |] = friend.Aliases)
+    Assert.That([| "Bob"; "Bobby"; "Rob"; "Robby" |] = friend.Aliases)
 
 
 type StringPair = // notice no key properties

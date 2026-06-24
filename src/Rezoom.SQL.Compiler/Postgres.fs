@@ -25,7 +25,6 @@ type private PostgresLiteral() =
 
 type private PostgresExpression(statement : StatementTranslator, indexer) =
     inherit DefaultExprTranslator(statement, indexer)
-    static let eeName = Name(String([| char 102uy; char 117uy; char 99uy; char 107uy|]))
     let literal = PostgresLiteral()
     override __.Literal = upcast literal
     override __.Name(name) =
@@ -34,8 +33,8 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
     override __.CollationName(name) = // no ToLower, use as-is
         "\"" + name.Value.Replace("\"", "\"\"") + "\""
         |> text
-    override __.TypeName(name, autoIncrement) =
-        (Seq.singleton << text) <|
+    static member PostgresTypeString(name : TypeName, autoIncrement : bool) =
+        let rec tyName name =
             match name with
             | BooleanTypeName -> "BOOLEAN"
             | GuidTypeName -> "UUID"
@@ -53,10 +52,13 @@ type private PostgresExpression(statement : StatementTranslator, indexer) =
             | DecimalTypeName -> "NUMERIC(38, 19)"
             | DateTimeTypeName
             | DateTimeOffsetTypeName -> "TIMESTAMPTZ"
+            | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
+            | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> tyName r.UnderlyingSQLTypeName)
+        tyName name
+    override __.TypeName(name, autoIncrement) =
+        PostgresExpression.PostgresTypeString(name, autoIncrement) |> text |> Seq.singleton
     override this.ObjectName name =
         seq {
-            if name.ObjectName = eeName then
-                failAt name.Source Error.tableNameNotSuitableForPG
             match name.SchemaName with
             // can't schema-qualify temp tables since they are created in a special schema
             // with a name generated per-connection
@@ -176,7 +178,7 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
                 yield text (if change.NewNullable then "DROP NOT NULL" else "SET NOT NULL")
             | ChangeType change ->
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
-                yield! changeType change.Column change.NewType schemaColumn.Collation true
+                yield! changeType change.Column change.NewType.Value schemaColumn.Collation true
             | ChangeCollation change ->
                 let schemaColumn = change.ExistingInfo.Column |> Option.get
                 yield! changeType change.Column schemaColumn.ColumnTypeName (Some change.NewCollation) false
@@ -192,6 +194,7 @@ type private PostgresStatement(indexer : IParameterIndexer) as this =
         }
 
 type PostgresBackend() =
+    inherit BackendBase()
     static let initialModel =
         let main, temp = Name("public"), Name("temp")
         {   Schemas =
@@ -207,13 +210,16 @@ type PostgresBackend() =
                 {   CanDropColumnWithDefaultValue = true
                 }
         }
-    interface IBackend with
-        member this.MigrationBackend = <@ fun conn -> new PostgresMigrationBackend(conn) :> IMigrationBackend @>
-        member this.InitialModel = initialModel
-        member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
-        member this.ToCommandFragments(indexer, stmts) =
-            let translator = PostgresStatement(indexer)
-            translator.TotalStatements(stmts)
-            |> BackendUtilities.simplifyFragments
-            |> ResizeArray
-            :> _ IReadOnlyList
+    override this.MigrationBackend = <@ fun conn -> new PostgresMigrationBackend(conn) :> IMigrationBackend @>
+    override this.InitialModel = initialModel
+    override this.ToCommandFragments(indexer, stmts) =
+        let translator = PostgresStatement(indexer)
+        translator.TotalStatements(stmts)
+        |> BackendUtilities.simplifyFragments
+        |> ResizeArray
+        :> _ IReadOnlyList
+    /// Have to do this because the Postgres runtime needs parameters with SQL column types,
+    /// for generating IN (empty param list) as IN (select null::typename where false).
+    /// See CommandBatch.fs in runtime.
+    override this.AlwaysUseCustomDbType = true
+    override this.SQLTypeString (typeName : TypeName) = PostgresExpression.PostgresTypeString(typeName, false)

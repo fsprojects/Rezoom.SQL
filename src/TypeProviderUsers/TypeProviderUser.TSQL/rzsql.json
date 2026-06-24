@@ -1,3 +1,4 @@
-﻿{
-  "backend": "tsql"
+{
+  "backend": "tsql",
+  "usertypes": [ "TypeProviderUser.TSQL.UserTypes" ]
 }

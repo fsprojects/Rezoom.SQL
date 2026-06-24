@@ -20,7 +20,7 @@ type ScalarCommandExtensions = class
     /// Create a plan which will execute the command and return its single result.
     /// If the command returns no rows or more than one row, an exception will be thrown.
     [<Extension>]
-    static member ExactlyOne : command : Command<#IReadOnlyList<'a>> -> Plan<'a>
+    static member ExactlyOne : cmd : Command<#IReadOnlyList<'a>> -> Plan<'a>
 
     /// Create a plan which will execute the command and return its scalar result.
     [<Extension>]

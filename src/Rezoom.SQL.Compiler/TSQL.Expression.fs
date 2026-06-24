@@ -27,8 +27,8 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
         "[" + name.Value.Replace("]", "]]") + "]"
         |> text
     override __.CollationName(name) = text name.Value
-    override __.TypeName(name, _) =
-        (Seq.singleton << text) <|
+    static member TSQLTypeString(name) =
+        let rec tyName name =
             match name with
             | BooleanTypeName -> "BIT"
             | GuidTypeName -> "UNIQUEIDENTIFIER"
@@ -44,6 +44,11 @@ type private TSQLExpression(statement : StatementTranslator, indexer) =
             | DecimalTypeName -> "NUMERIC(38, 19)"
             | DateTimeTypeName -> "DATETIME2"
             | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
+            | UnresolvedTypeName t -> bug <| sprintf "Unresolved UserType %s beyond resolution layer" t
+            | ResolvedUserType r -> r.RawBackendSQLType |> Option.defaultWith (fun () -> tyName r.UnderlyingSQLTypeName)
+        tyName name
+    override __.TypeName(name, _) =
+         TSQLExpression.TSQLTypeString(name) |> text |> Seq.singleton
     override this.ObjectName name =
         seq {
             match name.SchemaName with

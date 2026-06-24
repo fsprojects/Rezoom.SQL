@@ -1,8 +1,22 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.0] - 2026-06-23
 
-## [1.0.0] - 2026-XX-XX
+Central feature: "UserTypes", which allows you to map table columns and query parameters to your own custom .NET types.
+
+### Added
+- "usertypes" setting in rzsql.json
+- Can define custom "wrapper" primitives like single-case DU
+- Can override default handling of DateTime, Guid, etc
+- Can map to underlying database types RZSQL is not natively aware of
+- Row results can implement user-defined interfaces so row-processing code can be reused
+
+### Changed
+- CommandEffect.OfSQL() API in Rezoom.SQL.Compiler is now deprecated
+- New UserModel.CommandEffect() API replaces it, or pass a UserTypeLibrary explicitly to OfSQL
+- These changes only affect consumers who were using the Compiler library to do SQL static analysis at runtime
+
+## [1.0.0] - 2026-05-16
 
 The Rip Van Winkle release.
 

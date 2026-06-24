@@ -1,3 +1,10 @@
+---
+title: Functions
+parent: Language
+nav_order: 16
+has_children: true
+---
+
 <!-- nav-top -->
 [Home](../../../README.md) &gt; [Language](../README.md) &gt; Functions
 

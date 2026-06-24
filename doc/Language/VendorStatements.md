@@ -1,3 +1,9 @@
+---
+title: Vendor statements
+parent: Language
+nav_order: 15
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Vendor statements
 

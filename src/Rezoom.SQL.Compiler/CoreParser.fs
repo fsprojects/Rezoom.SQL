@@ -1,4 +1,5 @@
 ﻿// Parses our typechecked subset of the SQL language.
+// CoreParser is the RZSQL language. Parser adds "vendor statements" on top to allow bypassing RZSQL.
 
 module private Rezoom.SQL.Compiler.CoreParser
 open System
@@ -274,6 +275,15 @@ let private literal =
         %% +.numericLiteral -|> NumericLiteral
     ] <?> "literal"
 
+let private clrTypeName =
+    let acceptable (c : char) =
+        c >= 'a' && c <= 'z'
+        || c >= 'A' && c <= 'Z'
+        || c >= '0' && c <= '9'
+        || c = '_'
+        || c = '.'
+    many1Satisfy acceptable .>> ws
+
 let private typeName =
     let maxBound = %% '(' -- ws -- +.p<int> -- ws -- ')' -- ws -%> id
     %[  %% kw "STRING" -- +.(zeroOrOne * maxBound) -%> StringTypeName
@@ -290,7 +300,8 @@ let private typeName =
         %% kw "BOOL" -%> BooleanTypeName
         %% kw "DATETIME" -%> DateTimeTypeName
         %% kw "DATETIMEOFFSET" -%> DateTimeOffsetTypeName
-    ] <?> "type-name"
+        %% +.clrTypeName -|> UnresolvedTypeName
+    ] <?> "type-name" |> withSource
 
 let private cast expr =
     %% kw "CAST"
@@ -603,18 +614,27 @@ let private resultColumns =
         %% +.(qty.[1..] /. tws ',' * column)
         -|> Seq.toArray
 
+let private rowTypeParameters =
+    %% '<'
+    -- ws
+    -- +.(qty.[1..] / tws ',' * withSource (clrTypeName |>> UnresolvedRowType))
+    -- '>'
+    -- ws
+    -|> Seq.toArray
+
 let private selectColumns =
     let badTop =
         (%ci "TOP" <?> "TOP")
         .>> FParsec.Primitives.fail
             "SELECT TOP (X) syntax is not supported, use LIMIT (X) at the end of your query instead"
     %% kw "SELECT"
+    -- +.(zeroOrOne * rowTypeParameters)
     -- (zeroOrOne * badTop)
     -- +.[  %% kw "DISTINCT" -|> Some Distinct
             preturn None
         ]
     -- +.resultColumns
-    -|> fun distinct cols -> { Distinct = distinct; Columns = cols }
+    -|> fun rowTypes distinct cols -> { RowTypes = rowTypes; Distinct = distinct; Columns = cols }
 
 let private tableOrSubquery =
     let subterm =

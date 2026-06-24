@@ -7,7 +7,7 @@ open Rezoom.SQL.Mapping
 
 let expect (sql : string) expectedColumns expectedParams =
     let userModel = userModel1()
-    let parsed = CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
+    let parsed = userModel.CommandEffect("anonymous", sql)
     let sets = parsed.ResultSets() |> Seq.toArray
     if sets.Length <> 1 then failwith "expected 1 result set"
     let cols = sets.[0].Columns |> Seq.map (fun c -> c.ColumnName.Value, c.Expr.Info.Type.ToString()) |> Seq.toList

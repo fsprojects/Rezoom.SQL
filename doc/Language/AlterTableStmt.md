@@ -1,3 +1,9 @@
+---
+title: Alter table statements
+parent: Language
+nav_order: 12
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Language](README.md) &gt; Alter table statements
 

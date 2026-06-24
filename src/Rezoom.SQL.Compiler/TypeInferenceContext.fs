@@ -206,6 +206,7 @@ module private TypeInferenceExtensions =
                     } |> toReadOnlyList
                 StaticRowCount = None
                 ClausesIdempotent = true
+                RowTypes = [||]
             }
         member typeInference.Function(source : SourceInfo, func : FunctionType, invoc : InfFunctionArguments) =
             let functionVars = Dictionary()

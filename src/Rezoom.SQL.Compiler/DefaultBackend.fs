@@ -10,6 +10,7 @@ open Rezoom.SQL.Mapping
 open Rezoom.SQL.Migrations
 
 type DefaultBackend() =
+    inherit BackendBase()
     static let initialModel =
         let main, temp = Name("main"), Name("temp")
         {   Schemas =
@@ -25,18 +26,17 @@ type DefaultBackend() =
                 {   CanDropColumnWithDefaultValue = true
                 }
         }
-
-    interface IBackend with
-        member this.MigrationBackend =
-            <@ fun settings ->
-                new DefaultMigrationBackend(settings) :> IMigrationBackend
-            @>
-        member this.InitialModel = initialModel
-        member this.ParameterTransform(columnType) = ParameterTransform.Default(columnType)
-        member this.ToCommandFragments(indexer, stmts) =
-            let translator = DefaultStatementTranslator(Name("RZSQL"), indexer)
-            translator.TotalStatements(stmts)
-            |> BackendUtilities.simplifyFragments
-            |> ResizeArray
-            :> _ IReadOnlyList
+    override this.MigrationBackend =
+        <@ fun settings ->
+            new DefaultMigrationBackend(settings) :> IMigrationBackend
+        @>
+    override this.InitialModel = initialModel
+    override this.ToCommandFragments(indexer, stmts) =
+        let translator = DefaultStatementTranslator(Name("RZSQL"), indexer)
+        translator.TotalStatements(stmts)
+        |> BackendUtilities.simplifyFragments
+        |> ResizeArray
+        :> _ IReadOnlyList
+    override this.SQLTypeString (tyName : TypeName) = 
+        DefaultSQLTypeString.typeNameFor tyName
        

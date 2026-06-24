@@ -1,10 +1,16 @@
-<!-- nav-top -->
-[Home](../../README.md) &gt; [Language](README.md) &gt; What's missing?
+---
+title: Language Omissions
+parent: Language
+nav_order: 19
+---
 
-[&larr; Dynamic SQL](DynamicSQL.md) | [API &rarr;](../API/README.md)
+<!-- nav-top -->
+[Home](../../README.md) &gt; [Language](README.md) &gt; Language Omissions
+
+[&larr; Dynamic SQL](DynamicSQL.md) | [UserTypes &rarr;](../UserTypes/README.md)
 <!-- /nav-top -->
 
-# What's missing?
+# Language Omissions
 
 If you are already familiar with a SQL dialect, here are some features you may
 miss that are not currently supported by RZSQL.
@@ -19,6 +25,7 @@ goals and would make sense to add eventually. Pull requests would of course be
 appreciated!
 
 * Support for mixing dynamic SQL into static queries, especially `ORDER BY` clause
+* Tools to generate an RZSQL migration file from an existing DB
 * Window functions
 * Table-valued functions
 * User-defined functions
@@ -36,7 +43,6 @@ work on this project [a long time](https://www.youtube.com/watch?v=izQB2-Kmiic):
 * Interpreted in-memory implementation of each DB backend, for easy unit testing
 * Linq-ish query builder using the type provider's database model
 * Statically typed (w/ schema) JSON/XML access
-* Custom data types (e.g. Postgres range types)
 
 ## In my nightmares
 
@@ -48,6 +54,6 @@ though!
 
 ---
 <!-- nav-bottom -->
-[&larr; Dynamic SQL](DynamicSQL.md) | [API &rarr;](../API/README.md)
+[&larr; Dynamic SQL](DynamicSQL.md) | [UserTypes &rarr;](../UserTypes/README.md)
 <!-- /nav-bottom -->
 

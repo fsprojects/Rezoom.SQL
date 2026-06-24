@@ -1,9 +1,8 @@
-﻿module Rezoom.SQL.Mapping.CodeGeneration.PrimitiveConverters
+module Rezoom.SQL.Mapping.CodeGeneration.PrimitiveConverters
 open Rezoom.SQL.Mapping
 open LicenseToCIL
 open LicenseToCIL.Ops
 open System
-open System.Collections.Generic
 open System.Globalization
 open System.Reflection
 open System.Reflection.Emit
@@ -189,6 +188,12 @@ let private convertersByType =
         (fun m -> m.ReturnType, m)
     |> dict
 
+// Have to look this up by type name rather than type reference, because sometimes
+// we are in a MetadataLoadContext and don't have access to the real runtime Type.
+let isFundamentalPrimitiveByFullName =
+    let names = convertersByType |> Seq.map (fun kv -> kv.Key.FullName) |> System.Collections.Generic.HashSet
+    fun (ty : Type) -> names.Contains(ty.FullName)
+
 let private columnIndexField = typeof<ColumnInfo>.GetField("Index")
 let private columnTypeField = typeof<ColumnInfo>.GetField("Type")
 let private rowIsNullMethod = typeof<Row>.GetMethod("IsNull")
@@ -257,12 +262,18 @@ type EnumTryParser<'enum>() =
     static member TryParse(str : string, enum : 'enum byref) =
         parser.Invoke(str, &enum)
 
-let rec converter (ty : Type) : RowConversionMethod option =
+let rec converter (custom : UserTypeLibrary) (ty : Type) : RowConversionMethod option =
+    match custom.TryGetMapping(ty) with
+    | ValueSome customMapping -> converterForRuntimeMapping custom customMapping
+    | ValueNone ->
+    match findSingleCaseDU ty with
+    | ValueSome autoMapping -> converterForRuntimeMapping custom autoMapping.RuntimeMapping
+    | ValueNone ->
     let succ, meth = convertersByType.TryGetValue(ty)
     if succ then
         Some (Ops.call2 meth)
     elif ty.IsEnum then
-        match converter (ty.GetEnumUnderlyingType()) with
+        match converter custom (ty.GetEnumUnderlyingType()) with
         | None -> None
         | Some converter ->
             cil {
@@ -290,15 +301,31 @@ let rec converter (ty : Type) : RowConversionMethod option =
                 yield converter
                 yield mark exit
             } |> Some
-    else genericConverter ty
+    else genericConverter custom ty
 
-and genericConverter (ty : Type) : RowConversionMethod option =
+and converterForRuntimeMapping custom customMapping =
+    let rawConverter = converter custom customMapping.UnderlyingPrimitive
+    match rawConverter with
+    | None ->
+        // we should not get here. the custom mapping loader already filters out mappings
+        // that do not use real primitives.
+        failwithf 
+            "No converter found for underlying primitive %s of custom type %s. Should never happen."
+            customMapping.UnderlyingPrimitive.FullName
+            customMapping.CustomType.FullName
+    | Some rawConverter ->
+        cil {
+            yield rawConverter
+            yield Ops.call1 customMapping.FromPrimitiveMethod
+        } |> Some
+
+and genericConverter (custom : UserTypeLibrary) (ty : Type) : RowConversionMethod option =
     if ty.IsConstructedGenericType then
         let def = ty.GetGenericTypeDefinition()
         if def = typedefof<_ Nullable> then
             match ty.GetGenericArguments() with
             | [| nTy |] ->
-                match converter nTy with
+                match converter custom nTy with
                 | None -> None
                 | Some innerConverter ->
                 cil {
@@ -331,7 +358,7 @@ and genericConverter (ty : Type) : RowConversionMethod option =
         elif def = typedefof<_ option> then
             match ty.GetGenericArguments() with
             | [| nTy |] ->
-                match converter nTy with
+                match converter custom nTy with
                 | None -> None
                 | Some innerConverter ->
                 cil {
@@ -360,3 +387,62 @@ and genericConverter (ty : Type) : RowConversionMethod option =
             | _ -> failwith "Cannot function in world where FSharpOption<T> doesn't have one type argument."
         else None
     else None
+
+/// Look at a member's CustomAttributeData for a CompilationMappingAttribute
+/// and return its SourceConstructFlags kind, if any. Works on MetadataLoadContext types
+/// and real runtime types.
+and private compilationMappingKind (m : MemberInfo) : SourceConstructFlags option =
+    m.GetCustomAttributesData()
+    |> Seq.tryPick (fun cad ->
+        if cad.AttributeType.FullName = "Microsoft.FSharp.Core.CompilationMappingAttribute"
+           && cad.ConstructorArguments.Count >= 1
+        then
+            match cad.ConstructorArguments.[0].Value with
+            | :? int as v ->
+                Some (enum<SourceConstructFlags> (v &&& int SourceConstructFlags.KindMask))
+            | _ -> None
+        else None)
+
+and private hasCompilationMappingKind (m : MemberInfo) (kind : SourceConstructFlags) =
+    compilationMappingKind m = Some kind
+
+/// Detects a single-case F# discriminated union like `Type UserId = UserId of int`.
+/// Can't use FSharpType.IsUnion, FSharpType.GetUnionCases, because this has to work on MetadataLoadContext
+/// types as well as real runtime types. So we have to duplicate the logic of those by looking at attribute metadata without
+/// instantiating live attribute instances.
+and findSingleCaseDU (publicType : Type) : UserPrimitiveType ValueOption =
+    if not (hasCompilationMappingKind publicType SourceConstructFlags.SumType) then ValueNone else
+    let caseCtors =
+        publicType.GetMethods(BindingFlags.Public ||| BindingFlags.Static ||| BindingFlags.DeclaredOnly)
+        |> Array.filter (fun m -> hasCompilationMappingKind m SourceConstructFlags.UnionCase)
+    match caseCtors with
+    | [| singleCaseCtor |] ->
+        match singleCaseCtor.GetParameters() with
+        | [| singleParam |] when isFundamentalPrimitiveByFullName singleParam.ParameterType ->
+            let candidates =
+                publicType.GetProperties(BindingFlags.Public ||| BindingFlags.Instance ||| BindingFlags.DeclaredOnly)
+                |> Array.filter (fun p ->
+                    p.PropertyType = singleParam.ParameterType
+                    && not (isNull p.GetMethod)
+                    && hasCompilationMappingKind p SourceConstructFlags.Field)
+            match candidates with
+            | [| singleProp |] ->
+                let annotations = UserTypeAnnotations.resolveType publicType
+                ValueSome
+                    {   UserCLRType = publicType
+                        UnderlyingCLRType = singleParam.ParameterType
+                        RawBackendSQLType = annotations.RawType
+                        SQLTypeLength = annotations.Length
+                        SQLParameterDbType = annotations.ParameterDbType
+                        RuntimeMapping =
+                            {   FromPrimitiveMethod = singleCaseCtor
+                                ToPrimitiveMethod = singleProp.GetMethod
+                            }
+                        IsAutomaticImplementation = true
+                    }
+            | _ -> ValueNone
+        | _ -> ValueNone
+    | _ -> ValueNone
+
+and isFundamentalPrimitive (ty : Type) =
+    converter UserTypeLibrary.Empty ty |> Option.isSome

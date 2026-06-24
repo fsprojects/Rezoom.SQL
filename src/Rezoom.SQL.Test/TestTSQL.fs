@@ -13,7 +13,7 @@ let translate (sql : string) (expectedTSQL : string) =
             Backend = backend
             Model = { userModel.Model with Builtin = backend.InitialModel.Builtin }
         }
-    let parsed = CommandEffect.OfSQL(userModel.Model, "anonymous", sql)
+    let parsed = userModel.CommandEffect("anonymous", sql)
     let indexer = { new IParameterIndexer with member __.ParameterIndex(_) = 0 }
     let fragments = userModel.Backend.ToCommandFragments(indexer, parsed.Statements)
     let str = CommandFragment.Stringize(fragments)

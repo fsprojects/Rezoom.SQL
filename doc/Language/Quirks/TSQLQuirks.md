@@ -1,3 +1,10 @@
+---
+title: TSQL
+parent: Quirks
+grand_parent: Language
+nav_order: 2
+---
+
 <!-- nav-top -->
 [Home](../../../README.md) &gt; [Language](../README.md) &gt; [Quirks](README.md) &gt; TSQL
 
@@ -19,8 +26,8 @@ work for comparison with a literal `NULL` -- you can't, for example, compare two
 columns this way.
 
 When faced with a usage of `IS` or `IS NOT` that doesn't have a literal `NULL`
-as its right-hand side, RZSQL uses this idiom for `LeftSideExpr IS
-RightSideExpr`:
+as its right-hand side, RZSQL uses this idiom for
+`LeftSideExpr IS RightSideExpr`:
 
 ```sql
 EXISTS(SELECT LeftSideExpr INTERSECT SELECT RightSideExpr);
@@ -62,8 +69,8 @@ whenever a "fake boolean" is used in a boolean clause:
 SELECT * FROM SomeTable WHERE (SomeBitColumn<>0)
 ```
 
-Conversely, it adds a `CASE` expression whenever a boolean expression such as `x
-< y` is used where a scalar value is needed:
+Conversely, it adds a `CASE` expression whenever a boolean expression such as
+`x < y` is used where a scalar value is needed:
 
 ```sql
 SELECT
@@ -122,8 +129,8 @@ T-SQL models default values as constraints, and refuses to let you drop a column
 while it has constraints referencing it, even if the constraints will become
 completely pointless once the column is gone.
 
-Therefore, you must `ALTER TABLE DROP DEFAULT FOR ColumnName` before you `ALTER
-TABLE DROP COLUMN ColumnName`, if the column has a default value.
+Therefore, you must `ALTER TABLE DROP DEFAULT FOR ColumnName` before you
+`ALTER TABLE DROP COLUMN ColumnName`, if the column has a default value.
 
 You'll get informed of this at compile time.
 

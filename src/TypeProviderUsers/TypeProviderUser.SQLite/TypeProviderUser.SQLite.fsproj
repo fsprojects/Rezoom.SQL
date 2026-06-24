@@ -14,6 +14,10 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Shared.fs" />
     <Compile Include="TestSelects.fs" />
+    <Compile Include="TestRowTypeInterfaces.fs" />
+    <Compile Include="TestUserTypeAnnotations.fs" />
+    <Compile Include="TestUserPrimitiveByteArray.fs" />
+    <Compile Include="TestUserPrimitiveEnum.fs" />
     <Compile Include="TestPickles.fs" />
     <Compile Include="TestMigrateConnectionString.fs" />
     <Compile Include="Program.fs" />
@@ -23,8 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="8.0.401" />
-    <PackageReference Include="Rezoom" Version="1.4.0" />
+    <PackageReference Include="FSharp.Core" Version="10.1.300" />
+    <PackageReference Include="Rezoom" Version="2.0.0" />
     <!-- Wrapper meta-package: brings in Rezoom.SQL.Provider, Compiler, Mapping, and
          Microsoft.Data.Sqlite as the SQLite runtime driver. -->
     <PackageReference Include="Rezoom.SQL.Provider.SQLite" Version="$(RezoomSqlPkgVersion)" />
@@ -38,6 +42,11 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TypeProviderUser.UserTypes\TypeProviderUser.UserTypes.fsproj" />
+    <ProjectReference Include="..\TypeProviderUser.BclOnlyTypes\TypeProviderUser.BclOnlyTypes.fsproj" />
   </ItemGroup>
 
 </Project>

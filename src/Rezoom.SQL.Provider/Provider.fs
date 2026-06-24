@@ -254,7 +254,15 @@ type public Provider(cfg : TypeProviderConfig) as this =
     let modelCache = new UserModelCache()
     let generateType typeName model case =
         let tmpAssembly = ProvidedAssembly()
-        let model = modelCache.Load(cfg.ResolutionFolder, model)
+        let model = modelCache.Load(cfg.ResolutionFolder, model, cfg.ReferencedAssemblies)
+        // Register the user-types assemblies with ProvidedTypes so
+        // its target-to-source conversion can resolve references to user
+        // primitives (e.g. TypeProviderUser.UserTypes.UserId). Without this,
+        // F# errors with FS3033 ("target type blah was not found in the
+        // design-time assembly set"). AddSourceAssembly is
+        // idempotent across repeated generateType calls.
+        for asm in model.UserTypeLibrary.SourceAssemblies do
+            this.TargetContext.AddSourceAssembly(asm)
         let ty =
             {   Assembly = tmpAssembly
                 Namespace = rootNamespace

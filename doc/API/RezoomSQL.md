@@ -1,3 +1,9 @@
+---
+title: Rezoom.SQL
+parent: API
+nav_order: 1
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL
 

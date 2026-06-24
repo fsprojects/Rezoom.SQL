@@ -23,6 +23,7 @@
 namespace Rezoom.SQL.Compiler
 open System
 open System.Collections.Generic
+open Rezoom.SQL.Mapping
 
 type NumericLiteral =
     | IntegerLiteral of uint64
@@ -55,7 +56,7 @@ type FloatSize =
     | Float32
     | Float64
 
-type TypeName =
+and TypeName =
     | GuidTypeName
     | StringTypeName of maxLength : int option
     | BinaryTypeName of maxLength : int option
@@ -65,6 +66,12 @@ type TypeName =
     | BooleanTypeName
     | DateTimeTypeName
     | DateTimeOffsetTypeName
+    /// Note: case-sensitive! When resolving user types (CLR types mapped to SQL primitives)
+    /// we require an exact case-sensitive match to the CLR type name.
+    | UnresolvedTypeName of typeName : string
+    /// After the AST goes through user-type resolution all UnresolvedTypeNames are eliminated and replaced
+    /// with ResolvedUserTypes.
+    | ResolvedUserType of UserPrimitiveType
     member this.SupportsCollation =
         match this with
         | StringTypeName _ -> true
@@ -85,6 +92,8 @@ type TypeName =
         | BooleanTypeName -> "BOOL"
         | DateTimeTypeName -> "DATETIME"
         | DateTimeOffsetTypeName -> "DATETIMEOFFSET"
+        | UnresolvedTypeName s -> s
+        | ResolvedUserType r -> r.Name
 
 [<NoComparison>]
 [<CustomEquality>]
@@ -243,7 +252,7 @@ and [<NoComparison>] BetweenExpr<'t, 'e> =
 
 and [<NoComparison>] CastExpr<'t, 'e> =
     {   Expression : Expr<'t, 'e>
-        AsType : TypeName
+        AsType : TypeName WithSource
     }
  
 and [<NoComparison>] TableInvocation<'t, 'e> =
@@ -353,6 +362,17 @@ and [<NoComparison>] CompoundExprCore<'t, 'e> =
     | UnionAll of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
     | Intersect of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
     | Except of CompoundExpr<'t, 'e> * CompoundTerm<'t, 'e>
+    member this.Terms =
+        seq {
+            match this with
+            | CompoundTerm term -> yield term
+            | Union (leftExpr, term)
+            | UnionAll (leftExpr, term)
+            | Intersect (leftExpr, term)
+            | Except (leftExpr, term) ->
+                yield! leftExpr.Value.Terms
+                yield term
+        }
     member this.LeftmostInfo =
         match this with
         | CompoundTerm term -> term.Info
@@ -373,6 +393,10 @@ and CompoundExpr<'t, 'e> = CompoundExprCore<'t, 'e> WithSource
 and [<NoComparison>] CompoundTermCore<'t, 'e> =
     | Values of Expr<'t, 'e> array WithSource array
     | Select of SelectCore<'t, 'e>
+    member this.RowTypes =
+        match this with
+        | Values _ -> None
+        | Select s -> s.Columns.RowTypes
 
 and
     [<NoComparison>]
@@ -424,8 +448,14 @@ and [<NoComparison>] GroupBy<'t, 'e> =
         Having : Expr<'t, 'e> option
     }
 
+and [<NoComparison>] RowType =
+    | UnresolvedRowType of string
+    | ResolvedRowType of UserRowType
+
 and [<NoComparison>] ResultColumns<'t, 'e> =
-    {   Distinct : Distinct option
+    {   /// CLR type names (interfaces) the user declares this result set can implement
+        RowTypes : RowType WithSource array option
+        Distinct : Distinct option
         Columns : ResultColumn<'t, 'e> array
     }
 
@@ -433,6 +463,12 @@ and ResultColumnNavCardinality =
     | NavOne
     | NavOptional
     | NavMany
+    static member OfColName(colName : string) =
+        if isNull colName then NavOne, ""
+        elif colName.EndsWith("?") then NavOptional, colName.Substring(0, colName.Length - 1)
+        elif colName.EndsWith("*") then NavMany, colName.Substring(0, colName.Length - 1)
+        else NavOne, colName
+        
     member this.Separator =
         match this with
         | NavOne -> "$"
@@ -548,7 +584,7 @@ type [<NoComparison>] ColumnConstraint<'t, 'e> =
 
 type [<NoComparison>] ColumnDef<'t, 'e> =
     {   Name : Name
-        Type : TypeName
+        Type : TypeName WithSource
         Nullable : bool
         Collation : Name option
         DefaultValue : Expr<'t, 'e> option
@@ -622,7 +658,7 @@ type [<NoComparison>] CreateIndexStmt<'t, 'e> =
 type AlterTableChangeType<'e> =
     {   ExistingInfo : 'e
         Column : Name
-        NewType : TypeName
+        NewType : TypeName WithSource
     }
 
 type AlterTableChangeNullability<'e> =

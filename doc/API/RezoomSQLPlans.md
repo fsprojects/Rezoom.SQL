@@ -1,3 +1,9 @@
+---
+title: Rezoom.SQL.Plans
+parent: API
+nav_order: 4
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [API](README.md) &gt; Rezoom.SQL.Plans
 

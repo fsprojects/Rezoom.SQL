@@ -9,6 +9,6 @@
       into version.local.props (gitignored). The combined version then looks
       like 0.13.0-dev.5 until the next release.
     -->
-    <RezoomSqlVersion>1.0.0</RezoomSqlVersion>
+    <RezoomSqlVersion>1.1.0</RezoomSqlVersion>
   </PropertyGroup>
 </Project>

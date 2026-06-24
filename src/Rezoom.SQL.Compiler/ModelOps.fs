@@ -197,6 +197,7 @@ let addConstraint (tableName : QualifiedObjectName WithSource) (constraintName :
                             if autoIncrement then
                                 match found.ColumnType.Type with
                                 | IntegerType _ -> ()
+                                | UserTypeBasedOn (_, IntegerType _) -> ()
                                 | _ -> failAt constraintName.Source <| Error.onlyIntPrimaryKeyAutoincrement
                             { found with PrimaryKey = true })
                     { table with Columns = table.Columns |> replaceMany columns (fun c -> c.ColumnName) }
@@ -395,7 +396,7 @@ let dropConstraint (tableName : QualifiedObjectName WithSource) (constraintName 
                 let unPKed = constr.Columns |> Seq.map (fun c -> { Map.find c table.Columns with PrimaryKey = false })
                 let table = { table with Columns = table.Columns |> replaceMany unPKed (fun c -> c.ColumnName) }
                 return! putObject tableName (SchemaTable table)
-            | CheckConstraintType _
+            | CheckConstraintType
             | UniqueConstraintType -> ()
     }
 

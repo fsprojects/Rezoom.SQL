@@ -1,3 +1,9 @@
+---
+title: Migration Trees
+parent: Configuration
+nav_order: 3
+---
+
 <!-- nav-top -->
 [Home](../../README.md) &gt; [Configuration](README.md) &gt; Migration Trees
 

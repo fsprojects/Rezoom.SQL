@@ -89,11 +89,11 @@ let private validate (input : FiddleInput) =
     let backend = backendOf input.Backend
     let initialModel = backend.InitialModel
     try
-        let modelEffect = CommandEffect.OfSQL(initialModel, "Model", input.Model)
+        let modelEffect = CommandEffect.OfSQL(initialModel, "Model", input.Model, Rezoom.SQL.Mapping.UserTypeLibrary.Empty)
         let model =
             defaultArg modelEffect.ModelChange initialModel
         try
-            let commandEffect = CommandEffect.OfSQL(model, "Command", input.Command)
+            let commandEffect = CommandEffect.OfSQL(model, "Command", input.Command, Rezoom.SQL.Mapping.UserTypeLibrary.Empty)
             FiddleValid (typeInfoFrom backend modelEffect commandEffect)
         with
         | :? SQLCompilerException as exn ->
