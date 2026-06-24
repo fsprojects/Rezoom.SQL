@@ -12,6 +12,14 @@
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
 	<PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>rezoom sql annotations attributes</PackageTags>
-    <PackageReleaseNotes>1.0.0: initial release. RawBackendSQLType and SQLTypeLength attributes for annotating Rezoom.SQL user primitive types.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.1.0: RawBackendSQLType, SQLParameterDbType, and SQLTypeLength attributes.</PackageReleaseNotes>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="README.md" Pack="true" PackagePath="\">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

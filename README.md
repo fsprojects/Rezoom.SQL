@@ -9,7 +9,7 @@ nav_order: 0
 
 [Query playground -- try out the SQL dialect live!](https://rzsql.com/#1F854F9945C2061389778AE5DB98238E21D3A62B)
 
-# Statically typed SQL for F# #
+# Statically typed SQL for F#, new and improved for 2026 #
 
 Rezoom.SQL is an F# ORM for SQL databases.
 

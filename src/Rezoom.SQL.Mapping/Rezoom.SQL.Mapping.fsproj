@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
     <Authors>Robert Peele</Authors>
@@ -6,7 +6,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>1.0.0: multi-target netstandard2.0 / net8.0 / net10.0. Drop TaskBuilder.fs. Modernize configuration to IConfiguration instead of the old ConfigurationManager. See the Rezoom.SQL CHANGELOG.md for the full 1.0.0 story.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.1.0: adds support for custom user defined types.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>

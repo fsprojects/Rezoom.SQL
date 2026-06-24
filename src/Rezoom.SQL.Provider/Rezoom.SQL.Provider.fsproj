@@ -7,7 +7,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
-    <PackageReleaseNotes>1.0.0: ALC-aware assembly resolution for .NET 8+ TP loading. Tracks modernized Rezoom.SQL.Compiler / Mapping. See the Rezoom.SQL CHANGELOG.md for the full 1.0.0 story.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.1.0: adds support for custom user defined types.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
