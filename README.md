@@ -7,6 +7,8 @@ nav_order: 0
 **Documentation:** [Tutorial](doc/Tutorial/README.md) | [Using Rezoom](doc/Rezoom/README.md) | [Configuration](doc/Configuration/README.md) | [Language](doc/Language/README.md) | [UserTypes](doc/UserTypes/README.md) | [API](doc/API/README.md)
 <!-- /nav-top -->
 
+[More nicely formatted docs with sidebar navigation on Github.io](https://fsprojects.github.io/Rezoom.SQL/README.html)
+
 [Query playground -- try out the SQL dialect live!](https://rzsql.com/#1F854F9945C2061389778AE5DB98238E21D3A62B)
 
 # Statically typed SQL for F#, new and improved for 2026 #
