@@ -10,6 +10,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rspeele/Rezoom.SQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rspeele/Rezoom.SQL</RepositoryUrl>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>rezoom sql annotations attributes</PackageTags>
     <PackageReleaseNotes>1.0.0: initial release. RawBackendSQLType and SQLTypeLength attributes for annotating Rezoom.SQL user primitive types.</PackageReleaseNotes>
   </PropertyGroup>

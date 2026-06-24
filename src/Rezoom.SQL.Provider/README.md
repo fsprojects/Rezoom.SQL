@@ -1,8 +1,5 @@
 # Rezoom.SQL.Provider
 
-The F# type provider for Rezoom.SQL. Not a massive amount of code, but it's confusing because writing type providers is hard.
+F# type provider for Rezoom.SQL. Typechecks SQL queries at compile time and provided a statically typed interface to run them and read results.
 
-This is a generative type provider, not erased. It outputs real .NET classes that can be also be consumed from C#/VB code.
-
-The heavy lifting is done by Rezoom.SQL.Compiler (compile-time) and Rezoom.SQL.Mapping (runtime)
-so this just generates the row types and some thin wrapper classes around the runtime API.
+See https://github.com/fsprojects/Rezoom.SQL

@@ -11,6 +11,7 @@
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="README_DEV.md" />
     <None Include="README.md" Pack="true" PackagePath="\" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Levenshtein.fs" />
